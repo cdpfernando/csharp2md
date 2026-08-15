@@ -438,12 +438,19 @@ T20 -> T21
 - Skill: `dotnet-skills:serialization`
 
 **Done when**:
-- [ ] Serializer built with `WithQuotingNecessaryStrings()` and `WithNewLine("\n")` so output is byte-identical across platforms
-- [ ] Keys emitted in the schema's declared order
-- [ ] A test round-trips a title containing `:`, `"`, `#`, and a leading `-` and asserts the value survives intact
-- [ ] `Validate` returns a failure naming the file and the specific error; it never throws
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] Serializer built with `WithQuotingNecessaryStrings()` and `WithNewLine("\n")` so output is byte-identical across platforms
+- [x] Keys emitted in the schema's declared order
+- [x] A test round-trips a title containing `:`, `"`, `#`, and a leading `-` and asserts the value survives intact
+- [x] `Validate` returns a failure naming the file and the specific error; it never throws
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
+
+> Note: `Validate` strips the leading/trailing `---` delimiter lines before deserializing — verified
+> empirically (not assumed) that YamlDotNet's `Deserializer.Deserialize<T>(string)` throws
+> `Expected 'StreamEnd', got 'DocumentStart'` on a document with a stray trailing `---`, since that
+> reads as the start of a second (empty) document in a YAML stream. Frontmatter delimiters are a
+> Markdown-body convention, not part of the YAML content itself, so stripping them before parsing is
+> the correct behavior, not a workaround for a parser defect.
 
 **Tests**: unit
 **Gate**: quick
