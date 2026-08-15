@@ -1,7 +1,7 @@
 # csharp2md + LLMWiki Phase 1 Design
 
 **Spec**: `.specs/features/csharp2md-llmwiki-phase1/spec.md`
-**Status**: Draft
+**Status**: Approved (user, 2026-08-15)
 
 ---
 
@@ -113,6 +113,7 @@ graph TD
   - `TagDeriver` — additive pattern matching, emitting a sorted, de-duplicated list
 - **Dependencies**: `Microsoft.CodeAnalysis.CSharp.Syntax`
 - **Reuses**: the detector convention of walking `tree.GetRoot().DescendantNodes()` — the same traversal shape as `MessagingDetector.cs:29`
+- **Precondition (why syntax-only is total, not best-effort)**: a syntax tree is guaranteed wherever this runs, because the pipeline drops any document that lacks one before rendering — `!document.SupportsSyntaxTree` at `AnalysisPipeline.cs:233` and a null `GetSyntaxTreeAsync` at `AnalysisPipeline.cs:244` both `return` early. No tree means no document, which means no frontmatter to derive. The semantic model on the very next line (`AnalysisPipeline.cs:249-250`) is explicitly conditional and may be null. That asymmetry — tree enforced by guard, semantics optional by construction — is the whole reason this component never consults the semantic model. Roslyn's parser is additionally error-tolerant, so a file that fails to compile still yields a tree with error nodes; `Acme.Payments` proves it in the fixture.
 
 ### `FrontmatterYaml`
 
@@ -202,6 +203,7 @@ public sealed record RunLogData(
 | **`ToMarkdown()` acquires a second vocabulary** — it currently assembles only source-derived content | `src/Csharp2Md.Core/Rendering/RenderedDocument.cs:36` | Risk of frontmatter leaking into span-coverage reasoning, the invariant AD-002 rests on | The three `SpanCoverageTests` assert over `Sections` and use `Contains` for the Markdown check, so prepending cannot break them — verified by reading `SpanCoverageTests.cs:23-60`. Add one test asserting the body below the block is byte-identical to the un-decorated render (WIKI-08). |
 | **Breaking layout change with no compatibility mode** (AD-006) | `tests/…/Pipeline/AnalysisPipelineTests.cs`, `Cli/EndToEndTests.cs` | Every test asserting a root-level output path fails at once, obscuring real regressions | Update path assertions in a single dedicated task before any frontmatter task lands, so one commit isolates the layout move from behavior changes |
 | **No JSON Schema validator in the dependency set** | `Directory.Packages.props` | WIKI-12 names `schemas/frontmatter.schema.json` as the validation target, but nothing can execute it | Validate structurally instead (round-trip + required-field check over a closed record) and keep the schema file as a published contract, with a test asserting it stays in sync with `Frontmatter`. Proposed spec refinement, listed below. |
+| **A syntax tree that exists is not necessarily a complete one** — a syntax error in a type header can cost the parser the base list while still producing a tree | `src/Csharp2Md.Core/Topic/FrontmatterBuilder.cs` (new) | `file_type` silently falls back to `class` for a file whose real classification was recoverable. Wrong metadata, no error, no crash — the worst failure shape because nothing signals it. | Distinct from the inheritance-depth limit in Tech Decisions and easy to confuse with it. Mitigate by emitting the tier-4 / no-rule-matched warning that WIKI-13's warnings already require, so a suspiciously large `class` count is visible on stderr rather than silent. Add a `FrontmatterBuilder` unit test over a deliberately malformed type header asserting `class` plus a warning, so the degradation is pinned as intended behavior rather than discovered later. |
 | **`log.md` timestamp is the only nondeterministic output** | new `RunLogWriter` | A wall-clock call inside the writer makes the two-run determinism criterion untestable | Inject `TimeProvider`; tests pass a fixed instance. `TimeProvider` is in-box on `net10.0`, no package needed. |
 | **`Acme.Payments` frontmatter depends on its degraded state staying degraded** | `fixtures/SyntheticSolution/Acme.Payments/` | If someone restores the fixture, the WIKI-13 evidence silently stops proving anything | `AnalysisPipelineTests.RunAsync_UnrestoredProject_IsReportedAsPossibleMissingRestore` already pins the degraded state; the frontmatter test asserts against that same run |
 

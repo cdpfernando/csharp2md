@@ -1,0 +1,843 @@
+# csharp2md + LLMWiki Phase 1 Tasks
+
+## Execution Protocol (MANDATORY -- do not skip)
+
+Implement these tasks with the `tlc-spec-driven` skill: **activate it by name and follow its Execute flow and Critical Rules.** Do not search for skill files by filesystem path. The skill is the source of truth for the full flow (per-task cycle, sub-agent delegation, adequacy review, Verifier, discrimination sensor).
+
+**If the skill cannot be activated, STOP and tell the user - do not proceed without it.**
+
+---
+
+**Design**: `.specs/features/csharp2md-llmwiki-phase1/design.md`
+**Status**: Approved (user, 2026-08-15)
+**Branch**: `feat/llmwiki-phase1` (AD-007 — never commit this feature to `master`)
+
+---
+
+## Test Coverage Matrix
+
+> Generated from codebase, project guidelines, and spec — confirm before Execute. Guidelines found: `AGENTS.md`, `CLAUDE.md` (Quality gates table). No `.github/workflows`, no `CONTRIBUTING.md`, no coverage threshold configured — the strong default applies for depth.
+
+| Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
+| --- | --- | --- | --- | --- |
+| Topic derivation & options (`src/Csharp2Md.Core/Topic/`) | unit | All branches; 1:1 to spec ACs; every listed edge case has a test | `tests/Csharp2Md.Core.Tests/Topic/*Tests.cs` | `dotnet test --filter "Category!=Integration"` |
+| Output writers (`src/Csharp2Md.Core/Output/`) | unit | Key write paths + error handling | `tests/Csharp2Md.Core.Tests/Output/*Tests.cs` | `dotnet test --filter "Category!=Integration"` |
+| Rendering (`src/Csharp2Md.Core/Rendering/`) | unit | All branches; the span-coverage invariant stays asserted | `tests/Csharp2Md.Core.Tests/Rendering/*Tests.cs` | `dotnet test --filter "Category!=Integration"` |
+| Manifests (`src/Csharp2Md.Core/Manifests/`) | unit | Every malformed-input path returns an error rather than throwing | `tests/Csharp2Md.Core.Tests/Manifests/*Tests.cs` | `dotnet test --filter "Category!=Integration"` |
+| Pipeline (`src/Csharp2Md.Core/Pipeline/`) | integration | Full run over the fixture: artifact set, layout, degraded project | `tests/Csharp2Md.Core.Tests/Pipeline/*Tests.cs` (`[Trait("Category","Integration")]`) | `dotnet test` |
+| CLI (`src/Csharp2Md.Cli/`) | integration | Happy path + every listed error path + exit codes | `tests/Csharp2Md.Core.Tests/Cli/*Tests.cs` | `dotnet test` |
+| Published contract (`schemas/*.json`) | unit | A sync test fails when the record and the schema diverge | `tests/Csharp2Md.Core.Tests/Topic/*Tests.cs` | `dotnet test --filter "Category!=Integration"` |
+| Fixture sources (`fixtures/`) | none | build gate only — assertions live in the Pipeline layer | — | build gate only |
+
+Provenance: test style, location, and framework inferred from 31 existing test files under `tests/Csharp2Md.Core.Tests/`, which mirror the `src/Csharp2Md.Core/` folder structure one-to-one. xUnit 2.9.3 on VSTest (`xunit.runner.visualstudio`), integration tests marked with `[Trait("Category", "Integration")]`.
+
+## Gate Check Commands
+
+> Generated from codebase — confirm before Execute. All three verified to run in this repository before this file was written.
+
+| Gate Level | When to Use | Command |
+| --- | --- | --- |
+| Quick | After tasks with unit tests only | `dotnet test --filter "Category!=Integration"` |
+| Full | After tasks with integration tests | `dotnet test` |
+| Build | After phase completion or packaging tasks | `dotnet build -c Release` then `dotnet format --verify-no-changes` then `dotnet test` |
+
+Verified: the trait filter selects 260 of 303 tests in ~0.8 s (`AGENTS.md` warns that filter syntax differs between VSTest and MTP — this project is VSTest, and the syntax was confirmed by running it, not assumed). `dotnet format --verify-no-changes` exits 0 on the current tree. Baseline is **303 tests passing, 0 failing**; no task may reduce that number.
+
+## Knowledge Verification (binding for T7–T10)
+
+`CLAUDE.md` warns that the Roslyn API surface is where fabricated members are most likely, and there is **no general-Roslyn skill available** — `dotnet-skills:roslyn-incremental-generator-specialist` is source-generator-only by that file's own note, and Context7 is not configured in this project. So verification means official documentation, not a skill.
+
+An inventory of `src/Csharp2Md.Core` shows what the repository already proves and what it does not:
+
+| Already exercised in `src/` (follow the existing detectors) | **No precedent — verify against official docs before writing** |
+| --- | --- |
+| `TypeDeclarationSyntax`, `EnumDeclarationSyntax`, `RecordDeclarationSyntax`, `NamespaceDeclarationSyntax`, `MethodDeclarationSyntax`, `CompilationUnitSyntax`, `InvocationExpressionSyntax`, `MemberAccessExpressionSyntax`, `GenericNameSyntax` | `BaseListSyntax` / `SimpleBaseTypeSyntax`, `InterfaceDeclarationSyntax`, `FileScopedNamespaceDeclarationSyntax`, `.Modifiers` inspection, extension-method detection via the `this` parameter modifier |
+
+**Trap to avoid:** the fixture uses *both* namespace styles — `Acme.Orders/OrderService.cs` is file-scoped, `Acme.Orders/PaymentsGrpcClient.cs` uses block namespaces. Handling only `NamespaceDeclarationSyntax` makes the tier-2 title rule fail silently on half the fixture, and the failure looks like a heuristic bug rather than a missing syntax node.
+
+Rule: any member in the right-hand column is verified before use. Members in the left-hand column follow the existing detectors — they are already proven by the 303-test baseline.
+
+---
+
+## Execution Plan
+
+Phases are ordered and run sequentially — each phase completes before the next begins, and tasks within a phase execute in order.
+
+### Phase 1: Foundation
+
+Three independent building blocks. T1 is a pre-existing defect fixed first because the CLI work in Phase 5 travels the same path.
+
+```
+T1
+T2
+T3
+```
+
+### Phase 2: Layout migration
+
+The breaking change, alone in its own commit so the `raw/` move is separable from every behavior change that follows.
+
+```
+T3 -> T4
+```
+
+### Phase 3: Frontmatter model and derivation
+
+Pure logic, no pipeline wiring. Every rule in the spec's heuristic tables gets its own task and its own tests.
+
+```
+T5 -> T6
+T5 -> T8
+T5 -> T10
+T7 -> T10
+T8 -> T10
+T9 -> T10
+T2 -> T10
+T5 -> T11
+```
+
+### Phase 4: Emission and wiring
+
+Derivation reaches disk.
+
+```
+T5 -> T12
+T11 -> T12
+T4 -> T13
+T10 -> T13
+T12 -> T13
+T4 -> T14
+T11 -> T14
+T11 -> T15
+T13 -> T15
+```
+
+### Phase 5: Topic scaffold and CLI
+
+The remaining artifacts and the user-facing surface.
+
+```
+T2 -> T16
+T3 -> T16
+T3 -> T17
+T15 -> T17
+T2 -> T18
+T15 -> T18
+```
+
+### Phase 6: Fixture proof and release
+
+Proves the heuristics against the fixture and marks the break.
+
+```
+T13 -> T19
+T17 -> T20
+T18 -> T20
+T20 -> T21
+```
+
+---
+
+## Task Breakdown
+
+### T1: Fix ManifestLoader null-services crash
+
+**What**: Make a syntactically valid manifest whose `services` property is missing or null return the intended `ZeroEntries` error instead of throwing `NullReferenceException`.
+**Where**: `src/Csharp2Md.Core/Manifests/ManifestLoader.cs` (modify)
+**Depends on**: None
+**Reuses**: the existing `ManifestLoadResult.Failed` / `ManifestErrorCode.ZeroEntries` path already in the file
+**Requirement**: design.md Risks & Concerns (pre-existing defect; P1-16's "expected error, never an exception" contract)
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] `manifest.Services.Count` is no longer dereferenced before the null check
+- [ ] A test covers `{"services": null}` and one covers a JSON object with no `services` key at all; both assert `ZeroEntries`, not an exception
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: 303 baseline + 2 new, none removed
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `fix(manifests): return zero-entries error instead of throwing on null services`
+
+---
+
+### T2: Create TopicOptions
+
+**What**: The validated `topic`/`domain` pair, with slug derivation from the input directory name and slug-pattern rejection.
+**Where**: `src/Csharp2Md.Core/Topic/TopicOptions.cs`
+**Depends on**: None
+**Reuses**: the "expected error, not exception" result convention from `ManifestLoader`
+**Requirement**: WIKI-14, WIKI-15, WIKI-16
+
+**Tools**:
+- MCP: NONE
+- Skill: `dotnet-skills:csharp-coding-standards` (use the explicit-property value-object form — the skill's validated primary-constructor snippet does not compile, CS0111)
+
+**Done when**:
+- [ ] `Slugify` lowercases, collapses non-alphanumeric runs to a single `-`, and trims leading/trailing `-`
+- [ ] Default topic is the slug of the input directory name; default domain is `system-design`
+- [ ] A topic failing `^[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)*$` returns an error, never throws
+- [ ] Tests cover: accepted plain slug, accepted `group/name` slug, rejected uppercase, rejected leading `-`, rejected empty, and each default
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(topic): add validated topic and domain options`
+
+---
+
+### T3: Create TopicLayout
+
+**What**: Pure path resolution for the LLMWiki layout — `raw/`, `raw/codebase/`, and a service's root within it.
+**Where**: `src/Csharp2Md.Core/Topic/TopicLayout.cs`
+**Depends on**: None
+**Reuses**: `ServiceName`
+**Requirement**: WIKI-01, WIKI-02, WIKI-03
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] `RawRoot`, `CodebaseRoot`, and `ServiceRoot` return the paths the spec's layout section names
+- [ ] Tests assert the exact relative shape from an arbitrary output root, including that `ServiceRoot` nests under `raw/codebase/`
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(topic): add llmwiki layout path resolution`
+
+---
+
+### T4: Move generated output beneath raw/
+
+**What**: Wire `TopicLayout` into the pipeline so documents, indexes, `dependencies.json`, and `dependencies.mmd` land under `raw/`, while the ownership marker stays at the output root.
+**Where**: `src/Csharp2Md.Core/Pipeline/AnalysisPipeline.cs` (modify)
+**Depends on**: T3
+**Reuses**: `OutputWriter`, `IndexWriter`, `DependencyJsonWriter`, `MermaidWriter` unchanged — only the roots they receive change
+**Requirement**: WIKI-01, WIKI-02, WIKI-03, WIKI-04
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] `OutputWriter.PrepareRun` still receives `outputRoot`, so `.csharp2md-output` and the `--force` gate are unchanged
+- [ ] Per-service writers receive `TopicLayout.ServiceRoot`; Stage 3 aggregates receive `TopicLayout.RawRoot`
+- [ ] Every existing test asserting a root-level output path is updated in this task — no test is deleted or disabled to make the suite green
+- [ ] An integration test asserts the full artifact set at its new location and that the marker is *not* inside `raw/`
+- [ ] Gate check passes: `dotnet build -c Release`, `dotnet format --verify-no-changes`, `dotnet test`
+- [ ] Test count: 303 baseline preserved, none removed
+
+**Tests**: integration
+**Gate**: build
+
+**Commit**: `feat(output)!: move generated tree beneath raw/ for llmwiki topics`
+
+---
+
+### T5: Create Frontmatter record and FileType enum
+
+**What**: The closed model of a frontmatter block, with Phase 1 constants computed rather than settable.
+**Where**: `src/Csharp2Md.Core/Topic/Frontmatter.cs`
+**Depends on**: None
+**Reuses**: the sealed-record style used across `Rendering` and `Graph`
+**Requirement**: WIKI-06
+
+**Tools**:
+- MCP: NONE
+- Skill: `dotnet-skills:csharp-type-design-performance`
+
+**Done when**:
+- [ ] `FileType` declares all eleven values from the spec's enum
+- [ ] `Language`, `CreatedBy`, `SourceService`, and `AnalysisStatus` are computed properties, not constructor parameters
+- [ ] `SourceKind` distinguishes `codebase-file` from `codebase-index`
+- [ ] Tests assert the four Phase 1 constants and that `Tags` is never null
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(topic): add frontmatter model`
+
+---
+
+### T6: Publish frontmatter JSON schema with a sync test
+
+**What**: The external contract file, plus the test that fails when it drifts from the `Frontmatter` record.
+**Where**: `schemas/frontmatter.schema.json`
+**Depends on**: T5
+**Reuses**: the field table in spec.md's Frontmatter Schema section as the source of truth
+**Requirement**: WIKI-06
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Schema lists every required field and the full `file_type` enum
+- [ ] A test derives the expected property and enum sets from the `Frontmatter` record and `FileType` via reflection and fails on any divergence
+- [ ] The test names the drifting field, so a failure is actionable without opening the schema
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `docs(schemas): publish frontmatter contract with drift test`
+
+---
+
+### T7: Create TitleResolver
+
+**What**: The four-tier title rule — file-name match, project-namespace match, first in source order, file-name fallback with warning.
+**Where**: `src/Csharp2Md.Core/Topic/TitleResolver.cs`
+**Depends on**: None
+**Reuses**: the syntax-walking shape used by `MessagingDetector`
+**Requirement**: WIKI-06, WIKI-13
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+- Verify first (see Knowledge Verification): `FileScopedNamespaceDeclarationSyntax` alongside `NamespaceDeclarationSyntax` — the fixture uses both styles
+
+**Done when**:
+- [ ] Each of the four tiers has a test built from a parsed syntax tree
+- [ ] Tier 2 is proven by a document declaring a foreign-namespace type before the project's own — the `PaymentsGrpcClient.cs` shape
+- [ ] Tier 3 is proven by two same-namespace types where the file name matches neither — the `Events.cs` shape
+- [ ] Tier 4 emits a warning and is proven by a document declaring no type
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(topic): add four-tier title resolution`
+
+---
+
+### T8: Create FileTypeClassifier
+
+**What**: The eleven-value classification table, first match wins, warning on multi-match.
+**Where**: `src/Csharp2Md.Core/Topic/FileTypeClassifier.cs`
+**Depends on**: T5
+**Reuses**: `FileType` from T5
+**Requirement**: WIKI-06, WIKI-13
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+- Verify first (see Knowledge Verification): `BaseListSyntax`/`SimpleBaseTypeSyntax`, `InterfaceDeclarationSyntax`, `.Modifiers`, extension-method detection via the `this` parameter
+
+**Done when**:
+- [ ] Every one of the eleven values has at least one test asserting it
+- [ ] Rule order is asserted: declaration-kind rules beat name and base-type rules
+- [ ] A type matching two rules produces the first in table order plus a warning naming both
+- [ ] Classification uses no semantic model — the test constructs trees with `CSharpSyntaxTree.ParseText` and no compilation
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(topic): add file-type classification heuristics`
+
+---
+
+### T9: Create TagDeriver
+
+**What**: The six additive tag rules, emitting a sorted, de-duplicated list.
+**Where**: `src/Csharp2Md.Core/Topic/TagDeriver.cs`
+**Depends on**: None
+**Reuses**: the syntax-walking shape used by `MessagingDetector`
+**Requirement**: WIKI-06
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+- Verify first (see Knowledge Verification): `BaseListSyntax` for the `api-endpoint` rule
+
+**Done when**:
+- [ ] Each of the six rules has a test asserting it fires
+- [ ] `event-driven` fires on bare `Subscribe` as well as `SubscribeAsync`
+- [ ] A document matching several rules yields all matching tags, sorted, with no duplicates
+- [ ] A document matching none yields an empty list, not null
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(topic): add tag derivation heuristics`
+
+---
+
+### T10: Create FrontmatterBuilder
+
+**What**: Compose title, file type, and tags into a `Frontmatter`, collecting warnings — syntax tree in, model out, no semantic model consulted.
+**Where**: `src/Csharp2Md.Core/Topic/FrontmatterBuilder.cs`
+**Depends on**: T2, T5, T7, T8, T9
+**Reuses**: `TitleResolver`, `FileTypeClassifier`, `TagDeriver`, `TopicOptions`
+**Requirement**: WIKI-06, WIKI-13
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+- Verify first: nothing new — T10 composes T7–T9 and introduces no further Roslyn surface
+
+**Done when**:
+- [ ] `Build` takes a syntax tree, source path, root namespace, and `TopicOptions`, and never accepts a `SemanticModel`
+- [ ] A test parses a file whose base types are unresolvable and asserts the same result a resolvable equivalent produces — the WIKI-13 guarantee
+- [ ] A test with a deliberately malformed type header asserts `file_type: class` plus a warning, pinning the incomplete-tree degradation from design.md Risks as intended behavior
+- [ ] `source_path` is forward-slash separated on every platform
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(topic): compose frontmatter from syntax alone`
+
+---
+
+### T11: Create FrontmatterYaml
+
+**What**: Render the `---`-delimited block and validate it by round-trip plus required-field check.
+**Where**: `src/Csharp2Md.Core/Topic/FrontmatterYaml.cs`
+**Depends on**: T5
+**Reuses**: YamlDotNet, already referenced and used by `ConfigIndexer`
+**Requirement**: WIKI-05, WIKI-07, WIKI-12
+
+**Tools**:
+- MCP: NONE
+- Skill: `dotnet-skills:serialization`
+
+**Done when**:
+- [ ] Serializer built with `WithQuotingNecessaryStrings()` and `WithNewLine("\n")` so output is byte-identical across platforms
+- [ ] Keys emitted in the schema's declared order
+- [ ] A test round-trips a title containing `:`, `"`, `#`, and a leading `-` and asserts the value survives intact
+- [ ] `Validate` returns a failure naming the file and the specific error; it never throws
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(topic): render and validate frontmatter yaml`
+
+---
+
+### T12: Attach frontmatter to RenderedDocument
+
+**What**: An init-only `Frontmatter` property that `ToMarkdown()` prepends above the heading, leaving the body untouched.
+**Where**: `src/Csharp2Md.Core/Rendering/RenderedDocument.cs` (modify)
+**Depends on**: T5, T11
+**Reuses**: the `DependencySection` pattern in the same file — a property outside `Sections` for content that maps to no source bytes
+**Requirement**: WIKI-05, WIKI-08
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Block precedes the `# ` heading and is delimited by `---` lines
+- [ ] A test asserts the rendered body with frontmatter is byte-identical to the body without it, once the block is stripped
+- [ ] The three existing `SpanCoverageTests` still pass unmodified
+- [ ] A document with no frontmatter renders exactly as before
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(rendering): prepend frontmatter to rendered documents`
+
+---
+
+### T13: Derive frontmatter during document analysis
+
+**What**: Call `FrontmatterBuilder` in `AnalyzeDocumentAsync` where the syntax tree is already materialized, and attach the result to the rendered document.
+**Where**: `src/Csharp2Md.Core/Pipeline/AnalysisPipeline.cs` (modify)
+**Depends on**: T4, T10, T12
+**Reuses**: the existing syntax tree and relative path already computed for the detectors
+**Requirement**: WIKI-06, WIKI-09, WIKI-13
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Derivation reads the tree already in scope — no second parse, no re-read of a written file
+- [ ] An integration test asserts every generated document under `raw/codebase/` carries a parseable block
+- [ ] An integration test asserts `Acme.Payments` documents — degraded, no restore — carry the same classifications a healthy project yields
+- [ ] Document count under `raw/codebase/` still equals the source document count
+- [ ] Gate check passes: `dotnet test`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: integration
+**Gate**: full
+
+**Commit**: `feat(pipeline): derive frontmatter for every rendered document`
+
+---
+
+### T14: Add frontmatter to generated index documents
+
+**What**: Give per-service and root `index.md` the same block shape with `source_kind: codebase-index` and `file_type: index`.
+**Where**: `src/Csharp2Md.Core/Output/IndexWriter.cs` (modify)
+**Depends on**: T4, T11
+**Reuses**: `IndexWriter.WriteFile`'s existing shape
+**Requirement**: WIKI-05, WIKI-06
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Both index writers emit a block before their heading
+- [ ] Existing index-content assertions still pass — links and headings unchanged
+- [ ] A test asserts an index block validates under the same validator document blocks use
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(output): add frontmatter to generated indexes`
+
+---
+
+### T15: Report frontmatter validation failures and exit non-zero
+
+**What**: Collect per-document validation failures onto the run result, print each to stderr, and exit `1` while still generating everything else.
+**Where**: `src/Csharp2Md.Core/Pipeline/AnalysisPipeline.cs` (modify)
+**Depends on**: T11, T13
+**Reuses**: `PipelineRunResult`'s existing warning channel and the CLI's existing `return 1` path
+**Requirement**: WIKI-12
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] A failing document does not stop the run — remaining documents are still written
+- [ ] Failures surface on `PipelineRunResult`, each naming the file path and the specific error
+- [ ] An integration test forces a failure and asserts exit code `1` with every other artifact present
+- [ ] A degraded-load run still exits `0` — the two conditions stay distinct
+- [ ] Gate check passes: `dotnet test`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: integration
+**Gate**: full
+
+**Commit**: `feat(pipeline): fail the run when frontmatter validation fails`
+
+---
+
+### T16: Create TopicScaffoldWriter
+
+**What**: Write `raw/topic.yaml` and `raw/CLAUDE.md`.
+**Where**: `src/Csharp2Md.Core/Topic/TopicScaffoldWriter.cs`
+**Depends on**: T2, T3
+**Reuses**: `TopicLayout`, `TopicOptions`
+**Requirement**: WIKI-10, WIKI-11
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] `topic.yaml` carries `slug` (the resolved topic), `title`, and a description naming csharp2md as generator
+- [ ] `topic.yaml` parses as YAML
+- [ ] `CLAUDE.md` documents the generator and version, the frontmatter schema, the directory conventions, and that Phase 2 resolves `source_service` and `analysis_status`
+- [ ] Tests assert both files' required content, not merely their existence
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(topic): write topic.yaml and conventions document`
+
+---
+
+### T17: Create RunLogWriter
+
+**What**: Write `raw/log.md` with timestamp, reconstructed invocation, five statistics, Phase 2 placeholders, and any validation failures.
+**Where**: `src/Csharp2Md.Core/Topic/RunLogWriter.cs`
+**Depends on**: T3, T15
+**Reuses**: `TopicLayout`; `TimeProvider` (in-box on net10.0) injected for the timestamp
+**Requirement**: WIKI-18, WIKI-19, WIKI-20, WIKI-21, WIKI-22
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Timestamp comes from an injected `TimeProvider`, never `DateTimeOffset.UtcNow` directly
+- [ ] All five statistics present: documents, edges, services, validation failures, output topic path
+- [ ] Empty `## Graph Resolution` and `## Calibration Notes` sections present
+- [ ] A run with validation failures lists each failing path and error
+- [ ] The log is written even on a run that exits `1`
+- [ ] Tests use a fixed `TimeProvider` and assert exact timestamp formatting
+- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(topic): write auditable run log`
+
+---
+
+### T18: Add --topic and --domain to the CLI
+
+**What**: Register both options, resolve them through `TopicOptions`, and extend the run summary with document and failure counts.
+**Where**: `src/Csharp2Md.Cli/Program.cs` (modify)
+**Depends on**: T2, T15
+**Reuses**: the existing `Option<T>` + `parseResult.GetValue` shape of `--manifest`/`--output`/`--force`
+**Requirement**: WIKI-14, WIKI-15, WIKI-16, WIKI-17
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Both options appear in `--help` with descriptions
+- [ ] An invalid `--topic` exits `1` before any output directory is touched — asserted by checking the directory does not exist afterwards
+- [ ] Omitting both yields the derived slug and `system-design`
+- [ ] Summary reports documents written, validation failures, and the output topic path
+- [ ] Gate check passes: `dotnet test`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: integration
+**Gate**: full
+
+**Commit**: `feat(cli): add topic and domain options`
+
+---
+
+### T19: Assert fixture heuristic coverage
+
+**What**: The committed expectations file plus the test proving every rule is exercised and every fixture document classifies as specified.
+**Where**: `tests/Csharp2Md.Core.Tests/Topic/FixtureExpectationsTests.cs`
+**Depends on**: T13
+**Reuses**: `SyntheticFixtureRun` — the shared full-pipeline run, so no new workspace is opened
+**Requirement**: WIKI-23
+
+**Tools**:
+- MCP: NONE
+- Skill: `dotnet-test:assertion-quality`
+
+**Done when**:
+- [ ] Expectations encode the spec's Fixture Expectations table: title, tier, file_type, and tags per document
+- [ ] A test asserts the union of derived `file_type` values covers all eleven enum members
+- [ ] A test asserts the union of derived tags covers all six rules
+- [ ] A test asserts all four title tiers are exercised, including tier 4 via `Properties/AssemblyInfo.cs`
+- [ ] A failure names the document and the differing field
+- [ ] Gate check passes: `dotnet test`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: integration
+**Gate**: full
+
+**Commit**: `test(topic): assert fixture covers every heuristic rule`
+
+---
+
+### T20: Assert run determinism
+
+**What**: Prove two consecutive runs over unchanged input produce byte-identical output except the log timestamp.
+**Where**: `tests/Csharp2Md.Core.Tests/Pipeline/DeterminismTests.cs`
+**Depends on**: T17, T18
+**Reuses**: `FixtureManifest`, the existing temp-workspace pattern from `SyntheticFixtureRun`
+**Requirement**: spec.md Success Criteria (determinism)
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Two runs into separate output roots are compared file by file
+- [ ] Every file except `raw/log.md` is byte-identical
+- [ ] `raw/log.md` differs only in the timestamp line — asserted by comparing all other lines
+- [ ] The test fails if a new nondeterministic artifact is introduced later, because it compares the full file set rather than a sample
+- [ ] Gate check passes: `dotnet test`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: integration
+**Gate**: full
+
+**Commit**: `test(pipeline): assert two runs are byte-identical except the log`
+
+---
+
+### T21: Mark the breaking release as 2.0.0
+
+**What**: Introduce the `Version` property so the packaged tool announces the output-contract break by semver.
+**Where**: `Directory.Build.props` (modify)
+**Depends on**: T20
+**Reuses**: the existing `PackagingSmokeTests` as the verification gate
+**Requirement**: AD-007
+
+**Tools**:
+- MCP: NONE
+- Skill: `dotnet-skills:project-structure`
+
+**Done when**:
+- [ ] `<Version>2.0.0</Version>` set, and `dotnet pack` produces `csharp2md.2.0.0.nupkg`
+- [ ] `PackagingSmokeTests` still passes against the packed tool
+- [ ] Gate check passes: `dotnet build -c Release`, `dotnet format --verify-no-changes`, `dotnet test`
+- [ ] Test count: no reduction from the running baseline
+
+**Tests**: integration
+**Gate**: build
+
+**Commit**: `chore(release)!: bump to 2.0.0 for the output layout break`
+
+> The `v2.0.0` tag is applied to the merge commit, not here — it cannot exist until the PR merges (AD-007).
+
+---
+
+## Phase Execution Map
+
+Phases run in sequence; tasks within a phase run in order.
+
+```
+Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6
+```
+
+Execution is strictly sequential — there is no intra-phase parallelism. A single agent (or batch worker) works one task at a time, in order.
+
+**Batch packing** (~7 tasks per worker, whole phases, cuts only on phase boundaries):
+
+| Batch | Phases | Tasks | Count |
+| --- | --- | --- | --- |
+| 1 | Phase 1 + Phase 2 | T1–T4 | 4 |
+| 2 | Phase 3 | T5–T11 | 7 |
+| 3 | Phase 4 + Phase 5 | T12–T18 | 7 |
+| 4 | Phase 6 | T19–T21 | 3 |
+
+21 tasks → 4 batches. Batches run sequentially; a batch never starts before the previous reports every task complete.
+
+---
+
+## Task Granularity Check
+
+| Task | Scope | Status |
+| --- | --- | --- |
+| T1: Fix ManifestLoader crash | 1 file, 1 guard | ✅ Granular |
+| T2: TopicOptions | 1 type | ✅ Granular |
+| T3: TopicLayout | 1 type | ✅ Granular |
+| T4: Move output beneath raw/ | 1 file modified, wiring only | ✅ Granular |
+| T5: Frontmatter record + FileType | 2 cohesive types, 1 file | ⚠️ OK — the enum exists only for the record |
+| T6: JSON schema + sync test | 1 artifact + its test | ✅ Granular |
+| T7: TitleResolver | 1 type | ✅ Granular |
+| T8: FileTypeClassifier | 1 type | ✅ Granular |
+| T9: TagDeriver | 1 type | ✅ Granular |
+| T10: FrontmatterBuilder | 1 type, composition only | ✅ Granular |
+| T11: FrontmatterYaml | 1 type | ✅ Granular |
+| T12: RenderedDocument frontmatter | 1 file, 1 property | ✅ Granular |
+| T13: Derive during analysis | 1 file, 1 call site | ✅ Granular |
+| T14: Index frontmatter | 1 file | ✅ Granular |
+| T15: Report validation failures | 1 file, 1 channel | ✅ Granular |
+| T16: TopicScaffoldWriter | 1 type, 2 artifacts | ⚠️ OK — both are the topic scaffold, written together |
+| T17: RunLogWriter | 1 type | ✅ Granular |
+| T18: CLI options | 1 file | ✅ Granular |
+| T19: Fixture expectations | 1 test file | ✅ Granular |
+| T20: Determinism test | 1 test file | ✅ Granular |
+| T21: Version bump | 1 file, 1 property | ✅ Granular |
+
+---
+
+## Diagram-Definition Cross-Check
+
+| Task | Depends On (task body) | Diagram Shows | Status |
+| --- | --- | --- | --- |
+| T1 | None | — | ✅ Match |
+| T2 | None | — | ✅ Match |
+| T3 | None | — | ✅ Match |
+| T4 | T3 | T3 → T4 | ✅ Match |
+| T5 | None | — | ✅ Match |
+| T6 | T5 | T5 → T6 | ✅ Match |
+| T7 | None | — | ✅ Match |
+| T8 | T5 | T5 → T8 | ✅ Match |
+| T9 | None | — | ✅ Match |
+| T10 | T2, T5, T7, T8, T9 | T2 → T10, T5 → T10, T7 → T10, T8 → T10, T9 → T10 | ✅ Match |
+| T11 | T5 | T5 → T11 | ✅ Match |
+| T12 | T5, T11 | T5 → T12, T11 → T12 | ✅ Match |
+| T13 | T4, T10, T12 | T4 → T13, T10 → T13, T12 → T13 | ✅ Match |
+| T14 | T4, T11 | T4 → T14, T11 → T14 | ✅ Match |
+| T15 | T11, T13 | T11 → T15, T13 → T15 | ✅ Match |
+| T16 | T2, T3 | T2 → T16, T3 → T16 | ✅ Match |
+| T17 | T3, T15 | T3 → T17, T15 → T17 | ✅ Match |
+| T18 | T2, T15 | T2 → T18, T15 → T18 | ✅ Match |
+| T19 | T13 | T13 → T19 | ✅ Match |
+| T20 | T17, T18 | T17 → T20, T18 → T20 | ✅ Match |
+| T21 | T20 | T20 → T21 | ✅ Match |
+
+No dependency points to a later phase.
+
+---
+
+## Test Co-location Validation
+
+| Task | Code Layer Created/Modified | Matrix Requires | Task Says | Status |
+| --- | --- | --- | --- | --- |
+| T1 | Manifests | unit | unit | ✅ OK |
+| T2 | Topic | unit | unit | ✅ OK |
+| T3 | Topic | unit | unit | ✅ OK |
+| T4 | Pipeline | integration | integration | ✅ OK |
+| T5 | Topic | unit | unit | ✅ OK |
+| T6 | Published contract | unit | unit | ✅ OK |
+| T7 | Topic | unit | unit | ✅ OK |
+| T8 | Topic | unit | unit | ✅ OK |
+| T9 | Topic | unit | unit | ✅ OK |
+| T10 | Topic | unit | unit | ✅ OK |
+| T11 | Topic | unit | unit | ✅ OK |
+| T12 | Rendering | unit | unit | ✅ OK |
+| T13 | Pipeline | integration | integration | ✅ OK |
+| T14 | Output writers | unit | unit | ✅ OK |
+| T15 | Pipeline | integration | integration | ✅ OK |
+| T16 | Topic | unit | unit | ✅ OK |
+| T17 | Topic | unit | unit | ✅ OK |
+| T18 | CLI | integration | integration | ✅ OK |
+| T19 | Pipeline (fixture assertions) | integration | integration | ✅ OK |
+| T20 | Pipeline | integration | integration | ✅ OK |
+| T21 | CLI packaging | integration | integration | ✅ OK |
+
+No task carries `Tests: none`. No task defers its tests to another task.
+
+---
+
+## Requirement Coverage
+
+| Requirement | Tasks |
+| --- | --- |
+| WIKI-01, WIKI-02, WIKI-03 | T3, T4 |
+| WIKI-04 | T4 |
+| WIKI-05 | T11, T12, T14 |
+| WIKI-06 | T5, T6, T7, T8, T9, T10, T13, T14 |
+| WIKI-07 | T11 |
+| WIKI-08 | T12 |
+| WIKI-09 | T13 |
+| WIKI-10, WIKI-11 | T16 |
+| WIKI-12 | T11, T15 |
+| WIKI-13 | T7, T8, T10, T13 |
+| WIKI-14, WIKI-15, WIKI-16 | T2, T18 |
+| WIKI-17 | T18 |
+| WIKI-18 – WIKI-22 | T17 |
+| WIKI-23 | T19 |
+| Determinism (Success Criteria) | T20 |
+| AD-007 release marking | T21 |
+
+All 23 requirements are mapped. No task exists without a requirement.

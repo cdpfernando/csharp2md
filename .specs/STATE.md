@@ -60,12 +60,28 @@
 
 ## Handoff
 
-**Feature**: Optional Manifest and Directory CLI (`cli-directory-input`)
-**Phase/Task**: Complete — all 18 requirements verified independently.
-**Completed**: Manifests are optional; `csharp2md [directory]` and no-argument current-directory runs derive a sibling `<input>_md` output. Explicit `--output` remains literal. Generated outputs are marker-owned (`.csharp2md-output`); unmarked non-empty directories require `--force`, while filesystem roots, inputs, and input ancestors are always protected.
-**Validation**: Release build and formatting verification passed; 303 tests passed, 0 failed/skipped. Fresh independent verifier: 18/18 requirements evidence-backed, discrimination sensor 3/3 mutations killed. Report: `.specs/features/cli-directory-input/validation.md`.
-**Next step**: None for this feature.
+**Feature**: csharp2md + LLMWiki Phase 1 (`csharp2md-llmwiki-phase1`)
+**Phase/Task**: Planning complete — spec, design and tasks all **Approved**. Zero implementation tasks started. Next action is executing **T1**.
+**Branch**: `feat/llmwiki-phase1`, cut from `master`, 2 commits ahead (`24b661b` fixtures, `e8e27b7` specs, plus this tasks commit). `master` is untouched and identical to `origin/master`. Nothing has been pushed.
+
+**Completed this session**:
+- Reviewed and rewrote `spec.md`. The original draft carried contradictions that would have shipped as defects: three divergent frontmatter field lists, opposite error strategies under one requirement ID, three different topic slugs, a log gate depending on a `kb lint` check the tool never runs, and a determinism claim contradicted by its own log timestamp. Requirement IDs renumbered to `WIKI-01..WIKI-23` because `P1-NN` is owned by the v1 spec and cited in shipped source comments.
+- Extended `fixtures/SyntheticSolution` with 7 documents so all 11 `file_type` values, all 6 tag rules and all 4 title tiers have an exercising case (it covered 3, 2 and 2 before). Verified the additions emit **no dependency signal**: all 11 graph edges still cite only `OrderService.cs`, `PaymentsService.cs` and the two `.csproj` files. Deleted the stale untracked `fixtures/SyntheticSolution/manifest.json` that pointed at a local eShopOnContainers path.
+- Wrote `design.md` (Approved) and `tasks.md` (Approved): **21 tasks, 6 phases, 4 batches**. Both deterministic validators exit 0.
+
+**Next step**: Execute the 4 batches **via sub-agents, in a new conversation** (user decision, 2026-08-15). Batches are `T1–T4`, `T5–T11`, `T12–T18`, `T19–T21`; they run sequentially and a batch never starts before the previous reports every task complete. Each worker starts cold and reads `spec.md`, `design.md` and `tasks.md` from disk — every decision made in chat is already written into those files plus AD-006/AD-007, so nothing relies on conversational memory.
+
+**Baseline that must not regress**: 303 tests passing, 0 failing. `dotnet format --verify-no-changes` exits 0. Quick gate `dotnet test --filter "Category!=Integration"` selects 260 of 303 in ~0.8 s (filter syntax confirmed by running it, per `AGENTS.md`'s warning).
+
+**Binding constraints for whoever executes**:
+- AD-006: `raw/` layout replaces the v1 layout unconditionally; frontmatter injected inline; CLI grows `--topic`/`--domain`. No compatibility mode.
+- AD-007: never commit to `master`; merge via PR after the Verifier passes; `<Version>2.0.0</Version>` in T21 and the `v2.0.0` tag on the merge commit. **Push and PR each need explicit user approval.**
+- Derivation is **syntax-only** — never consult the semantic model. Guaranteed safe because `AnalysisPipeline.cs:233` and `:244` drop any document lacking a syntax tree before rendering, while the semantic model at `:249-250` is explicitly nullable.
+- `tasks.md` § Knowledge Verification is binding for T7–T10: five Roslyn members have no precedent in this repository and must be verified against official docs before use. The fixture uses both file-scoped and block namespaces, which is the trap that rule exists to catch.
+
 **Blockers**: None.
+
+**Prior features**: `csharp2md` (v1) and `cli-directory-input` are both complete and independently verified — see their `validation.md` files.
 
 ## Historical Handoff
 
