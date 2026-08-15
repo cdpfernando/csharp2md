@@ -406,13 +406,15 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`, `dotnet-skills:csharp-type-design-performance`
 
 **Done when**:
-- [ ] `ServiceName` uses the **explicit-property form** with validation — not the primary-constructor + validating-ctor form, which does not compile (CS0111)
-- [ ] `PackageId`, `SourceLocation` as `readonly record struct`; all records `sealed`; collections exposed as `IReadOnlyList<T>`
-- [ ] `CommunicationType` enumerates exactly the **five** amended values including `DirectReference` (P2-12)
-- [ ] `DependencySignal` carries `Role` for messaging half-edges; `DependencyEdge` carries evidence locations
-- [ ] Unit tests assert `ServiceName` rejects null/empty/whitespace and that value equality holds
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥4 tests pass (no silent deletions)
+- [x] `ServiceName` uses the **explicit-property form** with validation — not the primary-constructor + validating-ctor form, which does not compile (CS0111) — already satisfied by T6's forward-pulled `src/Csharp2Md.Core/ServiceName.cs`; T10 added the missing tests rather than redefining it
+- [x] `PackageId`, `SourceLocation` as `readonly record struct`; all records `sealed`; collections exposed as `IReadOnlyList<T>`
+- [x] `CommunicationType` enumerates exactly the **five** amended values including `DirectReference` (P2-12)
+- [x] `DependencySignal` carries `Role` for messaging half-edges; `DependencyEdge` carries evidence locations
+- [x] Unit tests assert `ServiceName` rejects null/empty/whitespace and that value equality holds
+- [x] Gate check passes: `dotnet test --filter Category!=Integration`
+- [x] Test count: 11 tests in `Graph/DomainModelTests.cs` (suite 41 → 52; no silent deletions)
+
+> `ServiceName`, `PackageId`, and `ResolutionKind` were already pulled forward into T6/T9 and were **not** redefined here (see the notes under those tasks). Load-health types (`ProjectLoadStatus`, `ProjectLoadResult`, `LoadReport`) already exist from T3 and were likewise left alone. T10's net-new files are all under `src/Csharp2Md.Core/Graph/`: `DependencyKind.cs`, `CommunicationType.cs`, `MessagingRole.cs`, `SourceLocation.cs`, `DependencySignal.cs`, `DependencyEdge.cs` (which also holds `DependencyGraph`).
 
 **Tests**: unit
 **Gate**: quick
