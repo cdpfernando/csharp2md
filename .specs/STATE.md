@@ -44,6 +44,15 @@
 
 ## Handoff
 
+**Feature**: Optional Manifest and Directory CLI (`cli-directory-input`)
+**Phase/Task**: Complete — all 18 requirements verified independently.
+**Completed**: Manifests are optional; `csharp2md [directory]` and no-argument current-directory runs derive a sibling `<input>_md` output. Explicit `--output` remains literal. Generated outputs are marker-owned (`.csharp2md-output`); unmarked non-empty directories require `--force`, while filesystem roots, inputs, and input ancestors are always protected.
+**Validation**: Release build and formatting verification passed; 303 tests passed, 0 failed/skipped. Fresh independent verifier: 18/18 requirements evidence-backed, discrimination sensor 3/3 mutations killed. Report: `.specs/features/cli-directory-input/validation.md`.
+**Next step**: None for this feature.
+**Blockers**: None.
+
+## Historical Handoff
+
 **Feature**: csharp2md (v1)
 **Phase/Task**: Execute — **all 26 tasks complete (T1-T26), feature-level validation PASSED.** Only the T26 commit remains.
 **Completed**: T1-T26. **283 tests passing, 0 failing.** 0 slopwatch findings. `dotnet build -c Release` → `dotnet format --verify-no-changes` → `dotnet test` all green. **AD-005 applied and verified in T19**; T26 exercises it directly (gRPC edge asserted `unresolved`, not catalog-matched). **Verifier (fresh sub-agent, author ≠ verifier) returned PASS**: 39/39 acceptance criteria evidence-backed (1 spec-precision gap on P2-14's resolution kind, resolved with documented reasoning, recorded as lesson L-001), discrimination sensor 6/6 injected mutations killed (including the two highest-risk invariants: span-coverage and sequential-workspace, both confirmed as real assertions, not comments). Report: `.specs/features/csharp2md/validation.md`.

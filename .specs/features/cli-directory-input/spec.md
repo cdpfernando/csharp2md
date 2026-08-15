@@ -6,11 +6,11 @@ The CLI currently requires both `--manifest` and `--output`, which adds ceremony
 
 ## Goals
 
-- [ ] Allow a run from an explicit directory without creating a manifest.
-- [ ] Allow a zero-argument run from the current working directory.
-- [ ] Derive a safe, predictable sibling output directory when `--output` is omitted.
-- [ ] Preserve manifest-based runs and explicit output selection.
-- [ ] Prevent accidental deletion of directories not previously created by csharp2md.
+- [x] Allow a run from an explicit directory without creating a manifest.
+- [x] Allow a zero-argument run from the current working directory.
+- [x] Derive a safe, predictable sibling output directory when `--output` is omitted.
+- [x] Preserve manifest-based runs and explicit output selection.
+- [x] Prevent accidental deletion of directories not previously created by csharp2md.
 
 ## Out of Scope
 
@@ -108,24 +108,24 @@ Every ambiguity is resolved or recorded here - nothing is left silently unclear.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| CLI-01 | P1: explicit directory | Execute | Implementing |
-| CLI-02 | P1: current directory | Execute | Implementing |
-| CLI-03 | P1: missing direct directory | Execute | Implementing |
-| CLI-04 | P1: mutually exclusive inputs | Execute | Implementing |
-| CLI-05 | P1: default direct output | Execute | Implementing |
-| CLI-06 | P1: default manifest output | Execute | Implementing |
-| CLI-07 | P1: explicit output override | Execute | Implementing |
-| CLI-08 | P1: preserved manifest mode | Execute | Implementing |
-| CLI-09 | Edge case: file as direct input | Execute | Implementing |
-| CLI-10 | Edge case: unnamed input root | Execute | Implementing |
-| CLI-11 | Edge case: invalid manifest | Execute | Implementing |
-| CLI-12 | P1: create ownership marker | Execute | Implementing |
-| CLI-13 | P1: regenerate marked output | Execute | Implementing |
-| CLI-14 | P1: refuse unmarked output | Execute | Implementing |
-| CLI-15 | P1: force unmarked output | Execute | Implementing |
-| CLI-16 | P1: protect filesystem root | Execute | Implementing |
-| CLI-17 | P1: protect input and ancestors | Execute | Implementing |
-| CLI-18 | Edge case: unnecessary force | Execute | Implementing |
+| CLI-01 | P1: explicit directory | Execute | Verified |
+| CLI-02 | P1: current directory | Execute | Verified |
+| CLI-03 | P1: missing direct directory | Execute | Verified |
+| CLI-04 | P1: mutually exclusive inputs | Execute | Verified |
+| CLI-05 | P1: default direct output | Execute | Verified |
+| CLI-06 | P1: default manifest output | Execute | Verified |
+| CLI-07 | P1: explicit output override | Execute | Verified |
+| CLI-08 | P1: preserved manifest mode | Execute | Verified |
+| CLI-09 | Edge case: file as direct input | Execute | Verified |
+| CLI-10 | Edge case: unnamed input root | Execute | Verified |
+| CLI-11 | Edge case: invalid manifest | Execute | Verified |
+| CLI-12 | P1: create ownership marker | Execute | Verified |
+| CLI-13 | P1: regenerate marked output | Execute | Verified |
+| CLI-14 | P1: refuse unmarked output | Execute | Verified |
+| CLI-15 | P1: force unmarked output | Execute | Verified |
+| CLI-16 | P1: protect filesystem root | Execute | Verified |
+| CLI-17 | P1: protect input and ancestors | Execute | Verified |
+| CLI-18 | Edge case: unnecessary force | Execute | Verified |
 
 **Coverage:** 18 total, 0 mapped to formal tasks (tasks phase skipped for medium scope), 18 mapped directly to Execute.
 
@@ -133,8 +133,8 @@ Every ambiguity is resolved or recorded here - nothing is left silently unclear.
 
 ## Success Criteria
 
-- [ ] `csharp2md`, `csharp2md <directory>`, and `csharp2md --manifest <file>` each complete successfully for valid inputs without requiring `--output`.
-- [ ] Existing manifest behavior and explicit `--output` behavior remain covered by automated tests.
-- [ ] Invalid or conflicting input modes fail before generated output is written.
-- [ ] Re-running against csharp2md-owned output succeeds without interaction, while non-empty unowned output requires `--force`.
-- [ ] No invocation can clear the input directory, an input ancestor, or a filesystem root.
+- [x] `csharp2md`, `csharp2md <directory>`, and `csharp2md --manifest <file>` each complete successfully for valid inputs without requiring `--output`.
+- [x] Existing manifest behavior and explicit `--output` behavior remain covered by automated tests.
+- [x] Invalid or conflicting input modes fail before generated output is written.
+- [x] Re-running against csharp2md-owned output succeeds without interaction, while non-empty unowned output requires `--force`.
+- [x] No invocation can clear the input directory, an input ancestor, or a filesystem root.
