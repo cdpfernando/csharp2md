@@ -436,14 +436,39 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`, `dotnet-skills:snapshot-testing`
 
 **Done when**:
-- [ ] Emits: file heading → namespace + index backlink → preamble section (usings, file-level attributes/comments) → one section per type → one subsection per member
-- [ ] Member bodies emitted **verbatim and complete**, never summarized or truncated (P1-12)
-- [ ] XML doc comments rendered as prose
-- [ ] **Span-coverage invariant asserted as a real test** (not a snapshot): every byte of the source file maps to exactly one emitted section. Covers usings, inter-member code, `#region`, and top-level statements (AD-002)
-- [ ] Verify snapshot covers the emitted Markdown shape
-- [ ] Renderer is syntax-driven and functions with a null `SemanticModel`
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥8 tests pass (no silent deletions)
+- [x] Emits: file heading → namespace + index backlink → preamble section (usings, file-level attributes/comments) → one section per type → one subsection per member
+- [x] Member bodies emitted **verbatim and complete**, never summarized or truncated (P1-12)
+- [x] XML doc comments rendered as prose
+- [x] **Span-coverage invariant asserted as a real test** (not a snapshot): every byte of the source file maps to exactly one emitted section. Covers usings, inter-member code, `#region`, and top-level statements (AD-002)
+- [x] Verify snapshot covers the emitted Markdown shape
+- [x] Renderer is syntax-driven and functions with a null `SemanticModel`
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: 32 tests across `Rendering/MarkdownRendererTests.cs` + `Rendering/SpanCoverageTests.cs` (suite 52 → 84; no silent deletions)
+
+> **Span coverage is structural, not incidental.** The renderer partitions the file with Roslyn
+> `FullSpan` boundaries (contiguous by construction across a syntax list) and emits any span the
+> walk does not claim under a neutral "Additional source" title, so source can never be dropped
+> silently. The test asserts the invariant three ways on six sources: spans are contiguous from 0
+> to `text.Length`, concatenating section text reproduces the file byte-for-byte, and every
+> section's text survives verbatim into the assembled Markdown.
+>
+> Two sub-decisions the design did not specify: (1) a member's XML doc comment is emitted **both**
+> as prose and inside its verbatim code fence — the prose is additive, and excluding the trivia
+> from the fence would have broken byte-for-byte reconstruction; (2) the code fence length is
+> computed per document as one backtick longer than the longest run in the source, so a file
+> containing ``` cannot escape its own fence (tested).
+>
+> Files beyond the `Where` field, all in `src/Csharp2Md.Core/Rendering/`: `RenderContext.cs`,
+> `RenderedDocument.cs` (also holds `RenderedSection`, and owns Markdown assembly so T12 can
+> re-assemble additively), `XmlDocProse.cs`. Same pattern as T3's `SolutionLoader.cs (+ LoadReport.cs)`.
+>
+> **Not emitted here: design.md's "detected-dependency section".** design.md's MarkdownRenderer
+> structure list includes it, but it is P2-10 and depends on detectors that do not exist until
+> Phase 3; T11's own Done-when list omits it. Left for the task that wires detectors into rendering.
+>
+> `Verify.Xunit` 31.12.5 added via `dotnet add package` (CPM). `tests/Csharp2Md.Core.Tests/VerifySetup.cs`
+> disables DiffEngine so a snapshot mismatch fails the gate instead of opening a diff tool. The
+> baseline was reviewed by hand and promoted from `.received.txt`; auto-accept is never enabled.
 
 **Tests**: unit
 **Gate**: quick
