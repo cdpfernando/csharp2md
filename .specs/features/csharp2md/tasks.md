@@ -721,11 +721,27 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`
 
 **Done when**:
-- [ ] Emits a signal carrying the topic/message type name and `MessagingRole` (publish or subscribe) — **not** a finished edge (P2-03 as amended)
-- [ ] Communication type is `pub-sub-evento`
-- [ ] Unit tests cover publish, subscribe, and a document containing both
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥5 tests pass (no silent deletions)
+- [x] Emits a signal carrying the topic/message type name and `MessagingRole` (publish or subscribe) — **not** a finished edge (P2-03 as amended)
+- [x] Communication type is `pub-sub-evento`
+- [x] Unit tests cover publish, subscribe, and a document containing both
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: 10 tests in `Detection/MessagingDetectorTests.cs` (suite 144 → 153; no silent deletions)
+
+> Recognised call shapes were taken from the T2 fixture rather than invented: `PublishAsync(new
+> OrderPlaced(...))` and `Subscribe<OrderPlaced>(handler)`. Verbs matched are `Publish`/`PublishAsync`
+> and `Subscribe`/`SubscribeAsync`. `Send`/`SendAsync` are deliberately **not** matched — those
+> usually carry commands, not events, and P2-03 scopes this to pub/sub.
+>
+> Topic resolution has three tiers, in order: an explicit type argument, an explicit `new T(...)`
+> argument, then the semantic type of the first argument. The first two need no `SemanticModel`, so
+> both fixture shapes keep working degraded. When only the semantic tier could answer and no model
+> is present, the detector records **nothing** rather than a guessed topic — a wrong topic name
+> would produce a false correlation in T19, which is worse than a missing edge. Tested both ways.
+>
+> `Resolution` is `Unresolved` at detection time, not `NotApplicable`: the counterpart lives in
+> another service and is genuinely uncorrelated until Stage 3, and this is exactly the value P2-15
+> requires for a signal that never finds a pair, so T19's unpaired path is a pass-through rather
+> than a rewrite. T19 decides what a **paired** edge's resolution becomes.
 
 **Tests**: unit
 **Gate**: quick
