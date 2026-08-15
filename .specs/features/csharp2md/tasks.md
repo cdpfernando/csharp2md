@@ -490,11 +490,30 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`, `dotnet-skills:csharp-nullable-reference-types`
 
 **Done when**:
-- [ ] Implemented as an **additive decorator** over T11's renderer — never woven into it (AD-002)
-- [ ] With a null or error-laden `SemanticModel`, falls back to source-as-written and **never throws**
-- [ ] Unit tests cover: healthy semantic model, null semantic model, and a compilation with unresolved types
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥5 tests pass (no silent deletions)
+- [x] Implemented as an **additive decorator** over T11's renderer — never woven into it (AD-002)
+- [x] With a null or error-laden `SemanticModel`, falls back to source-as-written and **never throws**
+- [x] Unit tests cover: healthy semantic model, null semantic model, and a compilation with unresolved types
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: 7 tests in `Rendering/SemanticEnricherTests.cs` (suite 84 → 91; no silent deletions)
+
+> Shape is `static RenderedDocument Enrich(RenderedDocument, RenderContext)` — a pure function over
+> T11's output, not an interface implementation. `MarkdownRenderer` contains no reference to this
+> type, so the decorator relationship is one-directional and deleting the call degrades output to
+> source-as-written, which is what AD-002 asks for. An interface seam was not introduced because
+> nothing needs to substitute the renderer.
+>
+> Degradation is handled by two explicit guards rather than a blanket `try/catch`: a null model or
+> a model built over a different `SyntaxTree` returns the document unchanged (the latter is what
+> would otherwise throw from `GetDeclaredSymbol`), and any base type or interface that resolves to
+> an error symbol is dropped rather than reported. Verified against a compilation built with **no**
+> metadata references, where every base and interface is an error symbol.
+>
+> Compiler-supplied bases (`object`, `ValueType`, `Enum`, `Delegate`, `MulticastDelegate`) are not
+> reported — they are noise the author never wrote. `Interfaces` (directly declared) is used rather
+> than `AllInterfaces` (inherited closure).
+>
+> Enrichment appends to `RenderedSection.Notes` and never rewrites `Span` or `Text`, so T11's
+> span-coverage invariant is preserved by construction and asserted again here.
 
 **Tests**: unit
 **Gate**: quick
