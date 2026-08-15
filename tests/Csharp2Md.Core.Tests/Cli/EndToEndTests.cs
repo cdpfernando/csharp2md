@@ -1,6 +1,8 @@
+using Csharp2Md.Core;
 using Csharp2Md.Core.Graph;
 using Csharp2Md.Core.Output;
 using Csharp2Md.Core.Tests.Pipeline;
+using Csharp2Md.Core.Topic;
 
 namespace Csharp2Md.Core.Tests.Cli;
 
@@ -32,22 +34,30 @@ public sealed class EndToEndTests : IAsyncLifetime
 
             Assert.True(result.ExitCode == 0, $"run failed (exit {result.ExitCode}):\n{result.StandardOutput}\n{result.StandardError}");
 
+            // WIKI-01/02: every artifact moves beneath raw/, source documents under raw/codebase/.
+            var rawRoot = TopicLayout.RawRoot(outputPath);
+            var codebaseRoot = TopicLayout.CodebaseRoot(outputPath);
+            var ordersOutputRoot = TopicLayout.ServiceRoot(outputPath, new ServiceName(SyntheticFixtureRun.Orders));
+
             // P1-11: one .md per .cs, mirroring the source tree.
             var ordersRoot = TestPaths.SyntheticSolution(SyntheticFixtureRun.Orders);
             var expectedDocs = FixtureManifest.ExpectedSourceFiles(ordersRoot).Select(source => source + ".md");
             var generatedDocs = Directory
-                .EnumerateFiles(Path.Combine(outputPath, SyntheticFixtureRun.Orders), "*.md", SearchOption.AllDirectories)
-                .Select(path => Path.GetRelativePath(Path.Combine(outputPath, SyntheticFixtureRun.Orders), path).Replace('\\', '/'))
+                .EnumerateFiles(ordersOutputRoot, "*.md", SearchOption.AllDirectories)
+                .Select(path => Path.GetRelativePath(ordersOutputRoot, path).Replace('\\', '/'))
                 .Where(relative => relative != IndexWriter.FileName);
             Assert.Equal(expectedDocs.OrderBy(x => x, StringComparer.Ordinal), generatedDocs.OrderBy(x => x, StringComparer.Ordinal));
 
-            // P1-13 / P1-14: per-service and root index.
-            Assert.True(File.Exists(Path.Combine(outputPath, SyntheticFixtureRun.Orders, IndexWriter.FileName)));
-            Assert.True(File.Exists(Path.Combine(outputPath, IndexWriter.FileName)));
+            // P1-13 / P1-14 (WIKI-03): per-service index under its own root, root index under raw/codebase/.
+            Assert.True(File.Exists(Path.Combine(ordersOutputRoot, IndexWriter.FileName)));
+            Assert.True(File.Exists(Path.Combine(codebaseRoot, IndexWriter.FileName)));
 
-            // P2-11 / P2-13: the consolidated graph artifacts.
-            Assert.True(File.Exists(Path.Combine(outputPath, DependencyJsonWriter.FileName)));
-            Assert.True(File.Exists(Path.Combine(outputPath, MermaidWriter.FileName)));
+            // P2-11 / P2-13 (WIKI-03): the consolidated graph artifacts sit at the root of raw/.
+            Assert.True(File.Exists(Path.Combine(rawRoot, DependencyJsonWriter.FileName)));
+            Assert.True(File.Exists(Path.Combine(rawRoot, MermaidWriter.FileName)));
+
+            // WIKI-04: the ownership marker stays outside raw/, at the output root.
+            Assert.True(File.Exists(Path.Combine(outputPath, ".csharp2md-output")));
 
             // P1-10: the console summary.
             Assert.Contains("Run summary:", result.StandardOutput, StringComparison.Ordinal);
@@ -74,7 +84,7 @@ public sealed class EndToEndTests : IAsyncLifetime
             Assert.True(result.ExitCode == 0, $"run failed (exit {result.ExitCode}):\n{result.StandardOutput}\n{result.StandardError}");
 
             var graph = DependencyJsonWriter.Deserialize(
-                File.ReadAllText(Path.Combine(outputPath, DependencyJsonWriter.FileName)));
+                File.ReadAllText(Path.Combine(TopicLayout.RawRoot(outputPath), DependencyJsonWriter.FileName)));
 
             // P2-01/P2-07 — HTTP call to a hard-coded appsettings entry.
             AssertEdge(graph, "Acme.Orders", "PaymentService", CommunicationType.SincronoBloqueante, ResolutionKind.HardCoded);

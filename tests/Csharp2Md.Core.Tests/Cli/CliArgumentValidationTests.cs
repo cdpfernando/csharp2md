@@ -1,6 +1,8 @@
+using Csharp2Md.Core;
 using Csharp2Md.Core.Manifests;
 using Csharp2Md.Core.Output;
 using Csharp2Md.Core.Tests.Pipeline;
+using Csharp2Md.Core.Topic;
 
 namespace Csharp2Md.Core.Tests.Cli;
 
@@ -312,8 +314,10 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
 
     private static void AssertGenerated(string output, string serviceName)
     {
+        // WIKI-01/02/04: marker stays at the output root; everything else moves beneath raw/.
         Assert.True(File.Exists(Path.Combine(output, ".csharp2md-output")));
-        Assert.True(File.Exists(Path.Combine(output, IndexWriter.FileName)));
-        Assert.True(File.Exists(Path.Combine(output, serviceName, "Program.cs.md")));
+        Assert.True(File.Exists(Path.Combine(TopicLayout.CodebaseRoot(output), IndexWriter.FileName)));
+        Assert.True(File.Exists(Path.Combine(
+            TopicLayout.ServiceRoot(output, new ServiceName(serviceName)), "Program.cs.md")));
     }
 }

@@ -260,10 +260,10 @@ The framework stand-ins these documents rely on (`WebApplication`, `IServiceColl
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| WIKI-01 | P1: Repackage as LLMWiki topic | Design | Pending |
-| WIKI-02 | P1: Repackage as LLMWiki topic | Design | Pending |
-| WIKI-03 | P1: Repackage as LLMWiki topic | Design | Pending |
-| WIKI-04 | P1: Repackage as LLMWiki topic | Design | Pending |
+| WIKI-01 | P1: Repackage as LLMWiki topic | Execute (T3, T4) | Implementing |
+| WIKI-02 | P1: Repackage as LLMWiki topic | Execute (T3, T4) | Implementing |
+| WIKI-03 | P1: Repackage as LLMWiki topic | Execute (T3, T4) | Implementing |
+| WIKI-04 | P1: Repackage as LLMWiki topic | Execute (T4) | Implementing |
 | WIKI-05 | P1: Repackage as LLMWiki topic | Design | Pending |
 | WIKI-06 | P1: Repackage as LLMWiki topic | Design | Pending |
 | WIKI-07 | P1: Repackage as LLMWiki topic | Design | Pending |

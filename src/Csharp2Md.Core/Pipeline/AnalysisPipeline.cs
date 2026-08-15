@@ -6,6 +6,7 @@ using Csharp2Md.Core.Loading;
 using Csharp2Md.Core.Manifests;
 using Csharp2Md.Core.Output;
 using Csharp2Md.Core.Rendering;
+using Csharp2Md.Core.Topic;
 using Microsoft.CodeAnalysis;
 
 namespace Csharp2Md.Core.Pipeline;
@@ -125,10 +126,13 @@ public sealed class AnalysisPipeline
         }
 
         // ── Stage 3: Aggregate ──────────────────────────────────────────────────────────────
+        // WIKI-01..03: dependencies.json/.mmd sit at the root of raw/, while the root index.md
+        // stays part of the mirrored raw/codebase/ tree it indexes, alongside every service's own.
         var graph = GraphBuilder.Build(signals);
-        DependencyJsonWriter.Write(graph, outputRoot);
-        MermaidWriter.Write(graph, outputRoot);
-        IndexWriter.WriteRootIndex(outputRoot, serviceIndexes);
+        var rawRoot = TopicLayout.RawRoot(outputRoot);
+        DependencyJsonWriter.Write(graph, rawRoot);
+        MermaidWriter.Write(graph, rawRoot);
+        IndexWriter.WriteRootIndex(TopicLayout.CodebaseRoot(outputRoot), serviceIndexes);
 
         return new PipelineRunResult(null, new LoadReport(loadResults), graph, warnings);
     }
@@ -174,7 +178,7 @@ public sealed class AnalysisPipeline
         List<ProjectLoadResult> loadResults,
         CancellationToken cancellationToken)
     {
-        var serviceOutputRoot = Path.Combine(outputRoot, service.Name.Value);
+        var serviceOutputRoot = TopicLayout.ServiceRoot(outputRoot, service.Name);
         var writer = new OutputWriter(serviceOutputRoot);
         var writtenPaths = new List<string>();
 

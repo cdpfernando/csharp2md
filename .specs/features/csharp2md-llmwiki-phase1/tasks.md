@@ -230,12 +230,16 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] `OutputWriter.PrepareRun` still receives `outputRoot`, so `.csharp2md-output` and the `--force` gate are unchanged
-- [ ] Per-service writers receive `TopicLayout.ServiceRoot`; Stage 3 aggregates receive `TopicLayout.RawRoot`
-- [ ] Every existing test asserting a root-level output path is updated in this task — no test is deleted or disabled to make the suite green
-- [ ] An integration test asserts the full artifact set at its new location and that the marker is *not* inside `raw/`
-- [ ] Gate check passes: `dotnet build -c Release`, `dotnet format --verify-no-changes`, `dotnet test`
-- [ ] Test count: 303 baseline preserved, none removed
+- [x] `OutputWriter.PrepareRun` still receives `outputRoot`, so `.csharp2md-output` and the `--force` gate are unchanged
+- [x] Per-service writers receive `TopicLayout.ServiceRoot`; Stage 3 aggregates receive `TopicLayout.RawRoot`
+- [x] Every existing test asserting a root-level output path is updated in this task — no test is deleted or disabled to make the suite green
+- [x] An integration test asserts the full artifact set at its new location and that the marker is *not* inside `raw/`
+- [x] Gate check passes: `dotnet build -c Release`, `dotnet format --verify-no-changes`, `dotnet test`
+- [x] Test count: 303 baseline preserved, none removed
+
+> Note: spec.md AC3 (WIKI-03) distinguishes the root `index.md` (stays part of the mirrored tree, under
+> `raw/codebase/`) from `dependencies.json`/`.mmd` (root of `raw/` directly). `IndexWriter.WriteRootIndex`
+> receives `TopicLayout.CodebaseRoot`, not `RawRoot`, to match that normative text precisely.
 
 **Tests**: integration
 **Gate**: build
