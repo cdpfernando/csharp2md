@@ -108,7 +108,7 @@ Every ambiguity is resolved or recorded here - nothing is left silently unclear.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| CLI-01 | P1: explicit directory | Execute | Pending |
+| CLI-01 | P1: explicit directory | Execute | Implementing |
 | CLI-02 | P1: current directory | Execute | Pending |
 | CLI-03 | P1: missing direct directory | Execute | Pending |
 | CLI-04 | P1: mutually exclusive inputs | Execute | Pending |

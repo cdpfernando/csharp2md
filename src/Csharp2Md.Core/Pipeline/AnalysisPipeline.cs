@@ -85,14 +85,29 @@ public sealed class AnalysisPipeline
             return PipelineRunResult.Failed(manifest.Error!.Value);
         }
 
-        var discovery = ServiceDiscoverer.Discover(manifest.Manifest!);
+        var inputRoot = Path.GetDirectoryName(Path.GetFullPath(manifestPath))!;
+        return await RunAsync(
+            manifest.Manifest!, inputRoot, outputRoot, cancellationToken, forceOutput);
+    }
+
+    public async Task<PipelineRunResult> RunAsync(
+        Manifest manifest,
+        string inputRoot,
+        string outputRoot,
+        CancellationToken cancellationToken = default,
+        bool forceOutput = false)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+        ArgumentNullException.ThrowIfNull(inputRoot);
+        ArgumentNullException.ThrowIfNull(outputRoot);
+
+        var discovery = ServiceDiscoverer.Discover(manifest);
         var warnings = new List<string>(discovery.Warnings);
         var catalog = Inventory(discovery.Catalog, warnings);
         var config = ConfigIndexer.Index(catalog);
         warnings.AddRange(config.Warnings);
 
         // ── Stage 2: Analysis ───────────────────────────────────────────────────────────────
-        var inputRoot = Path.GetDirectoryName(Path.GetFullPath(manifestPath))!;
         new OutputWriter(outputRoot).PrepareRun(inputRoot, forceOutput);
 
         var signals = new List<DependencySignal>();

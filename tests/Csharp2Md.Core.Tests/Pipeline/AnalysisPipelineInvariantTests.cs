@@ -110,6 +110,26 @@ public sealed class AnalysisPipelineInvariantTests : IDisposable
     }
 
     [Fact]
+    public async Task RunAsync_InMemorySingleRootManifest_AnalyzesDirectoryWithoutManifestFile()
+    {
+        var serviceRoot = TestPaths.SyntheticSolution(SyntheticFixtureRun.SharedContracts);
+        var projectPath = TestPaths.SyntheticSolution(
+            Path.Combine(SyntheticFixtureRun.SharedContracts, SyntheticFixtureRun.SharedContracts + ".csproj"));
+        var manifest = new Manifest(
+            [new ManifestEntry(serviceRoot, SyntheticFixtureRun.SharedContracts, [projectPath])]);
+        var outputRoot = Path.Combine(_workspace, "output");
+
+        var result = await new AnalysisPipeline().RunAsync(
+            manifest, serviceRoot, outputRoot, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(File.Exists(Path.Combine(outputRoot, ".csharp2md-output")));
+        Assert.True(File.Exists(Path.Combine(
+            outputRoot, SyntheticFixtureRun.SharedContracts, "Events.cs.md")));
+        Assert.Empty(Directory.EnumerateFiles(_workspace, "*.json"));
+    }
+
+    [Fact]
     public async Task RunAsync_CancelledToken_StopsBeforeLoadingAnyService()
     {
         var loads = 0;
