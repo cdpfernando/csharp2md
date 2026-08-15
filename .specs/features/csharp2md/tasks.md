@@ -615,12 +615,41 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`
 
 **Done when**:
-- [ ] Detects `IHttpClientFactory.CreateClient(...)` and typed `HttpClient` usage
-- [ ] Awaited / result-consumed → `sincrono-bloqueante`; not awaited / result discarded → `assincrono-fire-and-forget` (P2-01)
-- [ ] Logical target name passed through `ServiceNameResolver`; unresolved names still produce a signal
-- [ ] Unit tests cover both classifications, all three resolution outcomes, and a null `SemanticModel`
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥7 tests pass (no silent deletions)
+- [x] Detects `IHttpClientFactory.CreateClient(...)` and typed `HttpClient` usage
+- [x] Awaited / result-consumed → `sincrono-bloqueante`; not awaited / result discarded → `assincrono-fire-and-forget` (P2-01)
+- [x] Logical target name passed through `ServiceNameResolver`; unresolved names still produce a signal
+- [x] Unit tests cover both classifications, all three resolution outcomes, and a null `SemanticModel`
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: 14 tests in `Detection/HttpClientDetectorTests.cs` (suite 119 → 133; no silent deletions)
+
+> **Decision: `TargetService` stays `null` on HTTP signals; catalog correlation is T19's job.**
+> This closes the gap T9 flagged. `ServiceNameResolver.Resolve(string, ConfigIndex)` returns a
+> `NameResolution(LogicalName, Kind)` and nothing else, and **no rule for mapping a logical name or
+> a resolved address back to a `ServiceDescriptor` exists anywhere** in spec.md or design.md. The T2
+> fixture proves the obvious guess wrong on purpose: the config key is `"PaymentService"` while the
+> catalog service is `"Acme.Payments"`, so string equality resolves nothing and a substring or fuzzy
+> match would be an invention that silently fabricates graph edges. design.md's own data model calls
+> `DependencySignal.TargetService` "null until correlated/resolved", so null is the modelled state,
+> not a shortcut. The detector therefore records `RawTarget` (the logical name) plus `Resolution`
+> (P2-07/08/09), and correlation is left to `GraphBuilder`, the only component that holds the whole
+> catalog. A `SPEC_DEVIATION` block on `HttpClientDetector` states the same thing at the call site.
+>
+> **T19 does not describe that matching step either.** Its Done-when list covers messaging
+> correlation and says non-messaging signals "pass through with target and classification intact".
+> Somebody must decide the name→catalog rule before P2-11's `dependencies.json` can name a real
+> target service for HTTP/gRPC edges. Flagged, not guessed.
+>
+> Two detection paths with deliberately different degradation. `CreateClient("Name")` is recognised
+> **syntactically** by method name and string-literal argument, so it keeps working with a null
+> `SemanticModel`. A typed `HttpClient` call requires the model to prove the receiver's type really
+> is `System.Net.Http.HttpClient`; without the model that path reports nothing rather than guessing
+> from identifier names. Both behaviours are tested.
+>
+> Call shape climbs the surrounding expression chain rather than looking only at the direct parent,
+> so `ConfigureAwait(false)` still reads as awaited and `.Result`/`.Wait()` read as blocking even
+> though nothing is awaited. `_ = call(...)` reads as discarded. Target for a typed-client call is
+> the request-URI literal when present, since a typed client exposes no logical name;
+> such a URI is simply `Unresolved` against the config index, which is the P2-09 path.
 
 **Tests**: unit
 **Gate**: quick
