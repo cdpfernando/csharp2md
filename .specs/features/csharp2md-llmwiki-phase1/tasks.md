@@ -205,10 +205,10 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] `RawRoot`, `CodebaseRoot`, and `ServiceRoot` return the paths the spec's layout section names
-- [ ] Tests assert the exact relative shape from an arbitrary output root, including that `ServiceRoot` nests under `raw/codebase/`
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] `RawRoot`, `CodebaseRoot`, and `ServiceRoot` return the paths the spec's layout section names
+- [x] Tests assert the exact relative shape from an arbitrary output root, including that `ServiceRoot` nests under `raw/codebase/`
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
 
 **Tests**: unit
 **Gate**: quick
