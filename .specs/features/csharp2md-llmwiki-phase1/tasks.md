@@ -472,12 +472,12 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] Block precedes the `# ` heading and is delimited by `---` lines
-- [ ] A test asserts the rendered body with frontmatter is byte-identical to the body without it, once the block is stripped
-- [ ] The three existing `SpanCoverageTests` still pass unmodified
-- [ ] A document with no frontmatter renders exactly as before
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] Block precedes the `# ` heading and is delimited by `---` lines
+- [x] A test asserts the rendered body with frontmatter is byte-identical to the body without it, once the block is stripped
+- [x] The three existing `SpanCoverageTests` still pass unmodified
+- [x] A document with no frontmatter renders exactly as before
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
 
 **Tests**: unit
 **Gate**: quick
