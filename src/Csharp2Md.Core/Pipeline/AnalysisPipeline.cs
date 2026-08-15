@@ -140,7 +140,7 @@ public sealed class AnalysisPipeline
         var rawRoot = TopicLayout.RawRoot(outputRoot);
         DependencyJsonWriter.Write(graph, rawRoot);
         MermaidWriter.Write(graph, rawRoot);
-        IndexWriter.WriteRootIndex(TopicLayout.CodebaseRoot(outputRoot), serviceIndexes);
+        IndexWriter.WriteRootIndex(TopicLayout.CodebaseRoot(outputRoot), serviceIndexes, options);
 
         return new PipelineRunResult(null, new LoadReport(loadResults), graph, warnings);
     }
@@ -232,7 +232,7 @@ public sealed class AnalysisPipeline
             }
         }
 
-        return IndexWriter.WriteServiceIndex(serviceOutputRoot, service.Name, writtenPaths); // P1-13
+        return IndexWriter.WriteServiceIndex(serviceOutputRoot, service.Name, writtenPaths, options); // P1-13
     }
 
     private async Task AnalyzeDocumentAsync(

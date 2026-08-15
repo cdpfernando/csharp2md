@@ -526,11 +526,18 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] Both index writers emit a block before their heading
-- [ ] Existing index-content assertions still pass — links and headings unchanged
-- [ ] A test asserts an index block validates under the same validator document blocks use
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] Both index writers emit a block before their heading
+- [x] Existing index-content assertions still pass — links and headings unchanged
+- [x] A test asserts an index block validates under the same validator document blocks use
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
+
+> Note: WIKI-02's `source_path` rule is defined for source-derived documents only; the schema does
+> not carry a distinct rule for generated `index.md` files. Applied it mechanically to the index
+> file's own location beneath `raw/codebase/` with the trailing `.md` removed:
+> `<service-name>/index` for a per-service index, `index` for the root. Flagged as a spec-precision
+> gap, same category as T10's note — spec.md's Frontmatter Schema section and Fixture Expectations
+> table specify `title`/`file_type`/`tags` for index rows but never `source_path`.
 
 **Tests**: unit
 **Gate**: quick

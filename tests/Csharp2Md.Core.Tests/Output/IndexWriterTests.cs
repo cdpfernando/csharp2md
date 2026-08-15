@@ -1,5 +1,6 @@
 using Csharp2Md.Core;
 using Csharp2Md.Core.Output;
+using Csharp2Md.Core.Topic;
 using VerifyXunit;
 
 namespace Csharp2Md.Core.Tests.Output;
@@ -9,6 +10,8 @@ public sealed class IndexWriterTests : IDisposable
     private readonly string _root = Directory.CreateTempSubdirectory("csharp2md-index-").FullName;
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
+
+    private static TopicOptions Options() => TopicOptions.Create("acme-shop", "system-design", "input-root").Options!;
 
     private string ServiceRoot(string service) => Path.Combine(_root, service);
 
@@ -20,7 +23,7 @@ public sealed class IndexWriterTests : IDisposable
     ];
 
     private string WriteOrdersIndex() =>
-        IndexWriter.WriteServiceIndex(ServiceRoot("Acme.Orders"), new ServiceName("Acme.Orders"), OrdersFiles());
+        IndexWriter.WriteServiceIndex(ServiceRoot("Acme.Orders"), new ServiceName("Acme.Orders"), OrdersFiles(), Options());
 
     // P1-13: one index.md per service, at the root of that service's output folder.
     [Fact]
@@ -51,7 +54,41 @@ public sealed class IndexWriterTests : IDisposable
     [Fact]
     public void WriteServiceIndex_HeadsTheFileWithTheServiceName()
     {
-        Assert.StartsWith("# Acme.Orders\n", File.ReadAllText(WriteOrdersIndex()), StringComparison.Ordinal);
+        // WIKI-05: the heading itself is unchanged; it now follows the frontmatter block rather than
+        // starting the file.
+        Assert.Contains("\n---\n\n# Acme.Orders\n", File.ReadAllText(WriteOrdersIndex()), StringComparison.Ordinal);
+    }
+
+    // WIKI-05/WIKI-06: both index writers emit the same block shape a source document's frontmatter
+    // does, and it must round-trip through the same validator.
+    [Fact]
+    public void WriteServiceIndex_FrontmatterBlock_ValidatesUnderTheSameValidatorDocumentBlocksUse()
+    {
+        var block = ExtractFrontmatterBlock(File.ReadAllText(WriteOrdersIndex()));
+
+        Assert.Null(FrontmatterYaml.Validate(block, "Acme.Orders/index.md"));
+    }
+
+    [Fact]
+    public void WriteRootIndex_FrontmatterBlock_ValidatesUnderTheSameValidatorDocumentBlocksUse()
+    {
+        var path = IndexWriter.WriteRootIndex(
+            _root,
+            [new ServiceIndexEntry(new ServiceName("Acme.Orders"), Path.Combine(ServiceRoot("Acme.Orders"), "index.md"))],
+            Options());
+
+        var block = ExtractFrontmatterBlock(File.ReadAllText(path));
+
+        Assert.Null(FrontmatterYaml.Validate(block, "index.md"));
+    }
+
+    private static string ExtractFrontmatterBlock(string content)
+    {
+        Assert.StartsWith("---\n", content, StringComparison.Ordinal);
+        var closingDelimiterIndex = content.IndexOf("\n---\n", 4, StringComparison.Ordinal);
+        Assert.True(closingDelimiterIndex > 0, "expected a closing '---' delimiter line");
+
+        return content[..(closingDelimiterIndex + "\n---\n".Length)];
     }
 
     // Spec Assumptions: links stay relative and use forward slashes, so the tree is portable to
@@ -75,7 +112,8 @@ public sealed class IndexWriterTests : IDisposable
             [
                 new ServiceIndexEntry(new ServiceName("Acme.Payments"), Path.Combine(ServiceRoot("Acme.Payments"), "index.md")),
                 new ServiceIndexEntry(new ServiceName("Acme.Orders"), Path.Combine(ServiceRoot("Acme.Orders"), "index.md")),
-            ]);
+            ],
+            Options());
 
         Assert.Equal(Path.Combine(_root, "index.md"), path);
         Assert.Equal(
@@ -92,7 +130,8 @@ public sealed class IndexWriterTests : IDisposable
     {
         var path = IndexWriter.WriteRootIndex(
             _root,
-            [new ServiceIndexEntry(new ServiceName("Acme.Orders"), Path.Combine(ServiceRoot("Acme.Orders"), "index.md"))]);
+            [new ServiceIndexEntry(new ServiceName("Acme.Orders"), Path.Combine(ServiceRoot("Acme.Orders"), "index.md"))],
+            Options());
 
         var link = Assert.Single(Links(File.ReadAllText(path)));
 
@@ -104,7 +143,7 @@ public sealed class IndexWriterTests : IDisposable
     [Fact]
     public void WriteServiceIndex_ServiceWithNoGeneratedFiles_StillWritesAnIndexWithNoLinks()
     {
-        var path = IndexWriter.WriteServiceIndex(ServiceRoot("Acme.Empty"), new ServiceName("Acme.Empty"), []);
+        var path = IndexWriter.WriteServiceIndex(ServiceRoot("Acme.Empty"), new ServiceName("Acme.Empty"), [], Options());
 
         Assert.True(File.Exists(path));
         Assert.Empty(Links(File.ReadAllText(path)));
@@ -122,7 +161,8 @@ public sealed class IndexWriterTests : IDisposable
             [
                 new ServiceIndexEntry(new ServiceName("Acme.Orders"), Path.Combine(ServiceRoot("Acme.Orders"), "index.md")),
                 new ServiceIndexEntry(new ServiceName("Acme.Payments"), Path.Combine(ServiceRoot("Acme.Payments"), "index.md")),
-            ]);
+            ],
+            Options());
 
         return Verifier.Verify(File.ReadAllText(path), "md").UseDirectory("snapshots");
     }
