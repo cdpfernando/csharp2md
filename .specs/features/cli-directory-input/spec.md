@@ -109,16 +109,16 @@ Every ambiguity is resolved or recorded here - nothing is left silently unclear.
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | CLI-01 | P1: explicit directory | Execute | Implementing |
-| CLI-02 | P1: current directory | Execute | Pending |
-| CLI-03 | P1: missing direct directory | Execute | Pending |
-| CLI-04 | P1: mutually exclusive inputs | Execute | Pending |
-| CLI-05 | P1: default direct output | Execute | Pending |
-| CLI-06 | P1: default manifest output | Execute | Pending |
-| CLI-07 | P1: explicit output override | Execute | Pending |
-| CLI-08 | P1: preserved manifest mode | Execute | Pending |
-| CLI-09 | Edge case: file as direct input | Execute | Pending |
-| CLI-10 | Edge case: unnamed input root | Execute | Pending |
-| CLI-11 | Edge case: invalid manifest | Execute | Pending |
+| CLI-02 | P1: current directory | Execute | Implementing |
+| CLI-03 | P1: missing direct directory | Execute | Implementing |
+| CLI-04 | P1: mutually exclusive inputs | Execute | Implementing |
+| CLI-05 | P1: default direct output | Execute | Implementing |
+| CLI-06 | P1: default manifest output | Execute | Implementing |
+| CLI-07 | P1: explicit output override | Execute | Implementing |
+| CLI-08 | P1: preserved manifest mode | Execute | Implementing |
+| CLI-09 | Edge case: file as direct input | Execute | Implementing |
+| CLI-10 | Edge case: unnamed input root | Execute | Implementing |
+| CLI-11 | Edge case: invalid manifest | Execute | Implementing |
 | CLI-12 | P1: create ownership marker | Execute | Implementing |
 | CLI-13 | P1: regenerate marked output | Execute | Implementing |
 | CLI-14 | P1: refuse unmarked output | Execute | Implementing |

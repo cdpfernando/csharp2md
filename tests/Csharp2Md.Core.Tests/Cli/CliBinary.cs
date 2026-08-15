@@ -3,6 +3,8 @@ namespace Csharp2Md.Core.Tests.Cli;
 /// <summary>Locates and builds the CLI so end-to-end tests can invoke the real tool.</summary>
 internal static class CliBinary
 {
+    private static readonly Lazy<Task> Build = new(BuildAsync);
+
     // Matches whatever configuration this very test assembly was built under (bin/<Config>/net10.0/).
     public static readonly string Configuration =
         Path.GetFileName(Path.GetDirectoryName(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar)))!;
@@ -25,7 +27,9 @@ internal static class CliBinary
     /// the CLI. Building it explicitly (incremental, a no-op when current) keeps these tests
     /// self-contained under the Full gate.
     /// </summary>
-    public static async Task EnsureBuiltAsync()
+    public static Task EnsureBuiltAsync() => Build.Value;
+
+    private static async Task BuildAsync()
     {
         var build = await ProcessRunner.RunAsync(
             "dotnet", $"build \"{ProjectPath}\" -c {Configuration}", TestPaths.RepoRoot, CancellationToken.None);

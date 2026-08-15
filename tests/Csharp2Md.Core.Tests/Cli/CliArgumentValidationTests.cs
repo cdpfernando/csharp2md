@@ -1,3 +1,5 @@
+using Csharp2Md.Core.Manifests;
+using Csharp2Md.Core.Output;
 using Csharp2Md.Core.Tests.Pipeline;
 
 namespace Csharp2Md.Core.Tests.Cli;
@@ -5,80 +7,265 @@ namespace Csharp2Md.Core.Tests.Cli;
 [Trait("Category", "Integration")]
 public sealed class CliArgumentValidationTests : IAsyncLifetime
 {
-    // Matches whatever configuration this very test assembly was built under (bin/<Config>/net10.0/).
-    private static readonly string Configuration =
-        Path.GetFileName(Path.GetDirectoryName(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar)))!;
-
-    private static readonly string CliProjectPath = Path.Combine(TestPaths.RepoRoot, "src", "Csharp2Md.Cli");
-
-    private static readonly string CliDllPath = Path.Combine(
-        CliProjectPath, "bin", Configuration, "net10.0", "Csharp2Md.Cli.dll");
-
-    // `dotnet test` from the repo root only builds test projects and their own references — it does
-    // not build sibling non-test projects like Csharp2Md.Cli. Build it explicitly (incremental/no-op
-    // if already current) so this test class is self-contained under the Full gate (`dotnet test`).
-    public async Task InitializeAsync()
-    {
-        var buildResult = await ProcessRunner.RunAsync(
-            "dotnet", $"build \"{CliProjectPath}\" -c {Configuration}", TestPaths.RepoRoot, CancellationToken.None);
-        Assert.True(buildResult.ExitCode == 0, $"dotnet build failed:\n{buildResult.StandardOutput}\n{buildResult.StandardError}");
-    }
+    public Task InitializeAsync() => CliBinary.EnsureBuiltAsync();
 
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
-    public async Task Run_WithNoArguments_PrintsUsageAndExitsNonZero()
+    public async Task Run_WithNoArguments_AnalyzesCurrentDirectoryAndUsesSiblingOutput()
     {
-        var result = await ProcessRunner.RunAsync("dotnet", $"\"{CliDllPath}\"", TestPaths.RepoRoot, CancellationToken.None);
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-current-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "src");
+            var expectedOutput = Path.Combine(workspace, "src_md");
 
-        Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("--manifest", result.StandardOutput, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("--output", result.StandardOutput, StringComparison.OrdinalIgnoreCase);
+            var result = await RunAsync(string.Empty, input);
+
+            Assert.Equal(0, result.ExitCode);
+            AssertGenerated(expectedOutput, "src");
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
     }
 
     [Fact]
-    public async Task Run_MissingOutputOption_ExitsNonZero()
+    public async Task Run_WithExplicitDirectory_UsesInputNamedSiblingOutput()
     {
-        var manifestPath = TestPaths.SyntheticSolution(Path.Combine("Acme.Orders", "Acme.Orders.slnx"));
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-directory-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "src");
+            var expectedOutput = Path.Combine(workspace, "src_md");
 
-        var result = await ProcessRunner.RunAsync(
-            "dotnet", $"\"{CliDllPath}\" --manifest \"{manifestPath}\"", TestPaths.RepoRoot, CancellationToken.None);
+            var result = await RunAsync($"\"{input}\"", workspace);
 
-        Assert.NotEqual(0, result.ExitCode);
+            Assert.Equal(0, result.ExitCode);
+            AssertGenerated(expectedOutput, "src");
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
     }
 
     [Fact]
-    public async Task Run_MissingManifestOption_ExitsNonZero()
+    public async Task Run_WithManifestOnly_UsesManifestDirectoryNamedSiblingOutput()
     {
-        var result = await ProcessRunner.RunAsync(
-            "dotnet", $"\"{CliDllPath}\" --output \".\"", TestPaths.RepoRoot, CancellationToken.None);
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-manifest-default-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "service");
+            var manifestDirectory = Directory.CreateDirectory(Path.Combine(workspace, "config")).FullName;
+            var manifestPath = FixtureManifest.Write(
+                manifestDirectory, new Manifest([new ManifestEntry(input)]));
+            var expectedOutput = Path.Combine(workspace, "config_md");
 
-        Assert.NotEqual(0, result.ExitCode);
+            var result = await RunAsync($"--manifest \"{manifestPath}\"", workspace);
+
+            Assert.Equal(0, result.ExitCode);
+            AssertGenerated(expectedOutput, "service");
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
     }
 
     [Fact]
-    public async Task Run_WithValidArguments_ExitsZeroAndReportsProjectCount()
+    public async Task Run_WithExplicitOutput_WritesToExactDirectoryWithoutAppendingInputName()
     {
-        // --manifest takes a manifest.json (P1-16), not a solution path directly — the automatic
-        // .sln heuristic (P1-02) picks up Acme.Orders.slnx, which loads 3 real projects (Acme.Orders,
-        // Acme.Shared.Contracts, Acme.Broken); the 4th reference, Acme.DoesNotExist, is skipped by
-        // SkipUnrecognizedProjects (P1-06) rather than counted.
-        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-args-").FullName;
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-output-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "src");
+            var output = Path.Combine(workspace, "docs");
+
+            var result = await RunAsync($"\"{input}\" --output \"{output}\"", workspace);
+
+            Assert.Equal(0, result.ExitCode);
+            AssertGenerated(output, "src");
+            Assert.False(Directory.Exists(Path.Combine(output, "src_md")));
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_WithDirectoryAndManifest_PrintsUsageAndWritesNoOutput()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-conflict-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "src");
+            var manifestPath = FixtureManifest.Write(
+                Path.Combine(workspace, "config"), new Manifest([new ManifestEntry(input)]));
+            var output = Path.Combine(workspace, "output");
+
+            var result = await RunAsync(
+                $"\"{input}\" --manifest \"{manifestPath}\" --output \"{output}\"", workspace);
+
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.Contains("Usage:", result.StandardError, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(output));
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_WithMissingDirectory_IdentifiesItAndWritesNoOutput()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-missing-").FullName;
+        try
+        {
+            var missing = Path.Combine(workspace, "missing");
+            var expectedOutput = Path.Combine(workspace, "missing_md");
+
+            var result = await RunAsync($"\"{missing}\"", workspace);
+
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.Contains(missing, result.StandardError, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(expectedOutput));
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_WithFileAsDirectory_IdentifiesItAndWritesNoOutput()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-file-").FullName;
+        try
+        {
+            var file = Path.Combine(workspace, "input.txt");
+            File.WriteAllText(file, "not a directory");
+            var expectedOutput = Path.Combine(workspace, "input.txt_md");
+
+            var result = await RunAsync($"\"{file}\"", workspace);
+
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.Contains(file, result.StandardError, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(expectedOutput));
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_WithUnmarkedOutput_RefusesAndPreservesExistingContent()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-unmarked-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "src");
+            var output = Directory.CreateDirectory(Path.Combine(workspace, "docs")).FullName;
+            var existing = Path.Combine(output, "keep.txt");
+            File.WriteAllText(existing, "keep me");
+
+            var result = await RunAsync($"\"{input}\" --output \"{output}\"", workspace);
+
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.Contains("--force", result.StandardError, StringComparison.Ordinal);
+            Assert.Equal("keep me", File.ReadAllText(existing));
+            Assert.Equal([existing], Directory.GetFileSystemEntries(output));
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_WithForce_ReplacesUnmarkedOutputWithoutPrompting()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-force-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "src");
+            var output = Directory.CreateDirectory(Path.Combine(workspace, "docs")).FullName;
+            var existing = Path.Combine(output, "remove.txt");
+            File.WriteAllText(existing, "remove me");
+
+            var result = await RunAsync(
+                $"\"{input}\" --output \"{output}\" --force", workspace);
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.False(File.Exists(existing));
+            AssertGenerated(output, "src");
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_WithForcedOutputEqualToInput_RefusesAndPreservesSource()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-same-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "src");
+            var source = Path.Combine(input, "Program.cs");
+
+            var result = await RunAsync(
+                $"\"{input}\" --output \"{input}\" --force", workspace);
+
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.True(File.Exists(source));
+            Assert.Contains("cannot equal or contain", result.StandardError, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_WithForcedOutputAsInputAncestor_RefusesAndPreservesSource()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-ancestor-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "src");
+            var source = Path.Combine(input, "Program.cs");
+
+            var result = await RunAsync(
+                $"\"{input}\" --output \"{workspace}\" --force", workspace);
+
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.True(File.Exists(source));
+            Assert.Contains("cannot equal or contain", result.StandardError, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_WithValidManifestAndExplicitOutput_ExitsZeroAndReportsProjectCount()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-manifest-").FullName;
         try
         {
             var manifestPath = FixtureManifest.WriteRoots(workspace, "Acme.Orders");
             var outputPath = Path.Combine(workspace, "output");
 
-            var result = await ProcessRunner.RunAsync(
-                "dotnet",
-                $"\"{CliDllPath}\" --manifest \"{manifestPath}\" --output \"{outputPath}\"",
-                TestPaths.RepoRoot,
-                CancellationToken.None);
+            var result = await RunAsync(
+                $"--manifest \"{manifestPath}\" --output \"{outputPath}\"", TestPaths.RepoRoot);
 
-            // Acme.Broken (referenced by Acme.Orders.slnx) is genuinely unrestorable, so the run
-            // reports it needing attention rather than a clean summary — still exits 0 per P3-05.
-            // Pinned to "need attention" specifically (not just "3 project(s)", which the clean-run
-            // branch would also match) so this test actually exercises the degraded case it claims to.
             Assert.Equal(0, result.ExitCode);
             Assert.Contains("1 of 3 project(s) need attention", result.StandardOutput);
         }
@@ -86,5 +273,26 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
         {
             Directory.Delete(workspace, recursive: true);
         }
+    }
+
+    private static Task<ProcessResult> RunAsync(string arguments, string workingDirectory) =>
+        ProcessRunner.RunAsync(
+            CliBinary.ExecutablePath, arguments, workingDirectory, CancellationToken.None);
+
+    private static string CreateProject(string workspace, string directoryName)
+    {
+        var directory = Directory.CreateDirectory(Path.Combine(workspace, directoryName)).FullName;
+        File.WriteAllText(
+            Path.Combine(directory, directoryName + ".csproj"),
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>");
+        File.WriteAllText(Path.Combine(directory, "Program.cs"), "public static class Program { public static void Main() { } }");
+        return directory;
+    }
+
+    private static void AssertGenerated(string output, string serviceName)
+    {
+        Assert.True(File.Exists(Path.Combine(output, ".csharp2md-output")));
+        Assert.True(File.Exists(Path.Combine(output, IndexWriter.FileName)));
+        Assert.True(File.Exists(Path.Combine(output, serviceName, "Program.cs.md")));
     }
 }

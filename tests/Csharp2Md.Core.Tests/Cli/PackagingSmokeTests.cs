@@ -35,17 +35,15 @@ public sealed class PackagingSmokeTests : IAsyncLifetime
             CancellationToken.None);
         Assert.True(installResult.ExitCode == 0, $"dotnet tool install failed:\n{installResult.StandardOutput}\n{installResult.StandardError}");
 
-        // --manifest takes a manifest.json (P1-16), not a solution path directly — the automatic
-        // .sln heuristic (P1-02) picks up Acme.Orders.slnx, which loads 3 real projects (Acme.Orders,
-        // Acme.Shared.Contracts, Acme.Broken); the 4th reference, Acme.DoesNotExist, is skipped by
-        // SkipUnrecognizedProjects (P1-06) rather than counted.
+        // Direct-directory mode uses the automatic .sln heuristic (P1-02), which picks up
+        // Acme.Orders.slnx and loads 3 real projects. Acme.DoesNotExist is skipped rather than counted.
         var outputDirectory = Directory.CreateTempSubdirectory("csharp2md-smoke-").FullName;
         var runDirectory = Directory.CreateTempSubdirectory("csharp2md-smoke-cwd-").FullName;
-        var manifestPath = FixtureManifest.WriteRoots(runDirectory, "Acme.Orders");
+        var inputDirectory = TestPaths.SyntheticSolution("Acme.Orders");
 
         var runResult = await ProcessRunner.RunAsync(
             ToolCommand,
-            $"--manifest \"{manifestPath}\" --output \"{outputDirectory}\"",
+            $"\"{inputDirectory}\" --output \"{outputDirectory}\"",
             runDirectory, // outside the repo entirely — proves the packed tool is self-contained
             CancellationToken.None);
 
