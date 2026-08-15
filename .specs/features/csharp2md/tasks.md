@@ -1106,12 +1106,28 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`
 
 **Done when**:
-- [ ] Lists every project marked degraded or possible-missing-restore, with a `dotnet restore` suggestion for each (P1-10)
-- [ ] Projects classified unsupported-for-compilation are **not** reported as failures (P1-09 consistency)
-- [ ] A fully healthy run prints a clean summary with no false warnings
-- [ ] Unit tests cover: degraded only, missing-restore only, both, and clean
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥5 tests pass (no silent deletions)
+- [x] Lists every project marked degraded or possible-missing-restore, with a `dotnet restore` suggestion for each (P1-10)
+- [x] Projects classified unsupported-for-compilation are **not** reported as failures (P1-09 consistency) — neither listed nor counted as needing attention
+- [x] A fully healthy run prints a clean summary with no false warnings
+- [x] Unit tests cover: degraded only, missing-restore only, both, and clean
+- [x] Gate check passes: `dotnet test --filter Category!=Integration`
+- [x] Test count: 6 tests in `Pipeline/RunReporterTests.cs` (quick suite 245 → 251; no silent deletions)
+
+> Shape is `static string Summarize(LoadReport)` — it builds the summary, it does not print it.
+> design.md's component line says "→ console", but a reporter that writes to `Console` can only be
+> tested by capturing console state, which is shared and order-dependent across a parallel test run.
+> The CLI (T26) does the single `Console.Write`. No `TextWriter` overload was added: nothing needs
+> a second sink.
+>
+> **Spec-precision gap, decided: P1-10 does not define the summary's wording.** The exact text is
+> asserted line-for-line here rather than loosely matched, so the format is pinned by tests and the
+> e2e assertion in T26 has something stable to check. Clean runs print
+> `Run summary: N project(s) loaded, none degraded or missing a restore.`, which also reads correctly
+> when a manifest resolved zero services (P1-17's path) without a special case for it.
+>
+> `Describe` throws on a status the summary never lists, rather than falling through to a default —
+> same rule as T14's classifier, for the same reason: an invented label in an operator-facing summary
+> is worse than a loud failure. It is unreachable by construction (guarded by `NeedsAttention`).
 
 **Tests**: unit
 **Gate**: quick
