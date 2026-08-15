@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 2,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "spec_precision_gap::when an ac defines an edge s direction and type but omits its classification field decide the value in the spec rather than in code state each derived record field explicitly so the implementer never has to infer one",
+      "text": "When an AC defines an edge's direction and type but omits its classification field, decide the value in the spec rather than in code - state each derived-record field explicitly so the implementer never has to infer one.",
+      "signal": "spec_precision_gap",
+      "scope": "spec-authoring",
+      "status": "candidate",
+      "features": [
+        "csharp2md"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "P2-14 / src/Csharp2Md.Core/Graph/GraphBuilder.cs:109 (spec-authoring)"
+      ],
+      "created": "2026-08-15T05:29:47Z",
+      "last_seen": "2026-08-15T05:29:47Z"
+    }
+  ]
+}

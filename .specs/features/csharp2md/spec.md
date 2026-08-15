@@ -141,51 +141,51 @@ Every ambiguity is resolved or recorded here — nothing is left silently unclea
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| P1-01 | P1: Browse a codebase as Markdown | Execute (T6) | Implementing |
-| P1-02 | P1: Browse a codebase as Markdown | Execute (T6) | Implementing |
-| P1-03 | P1: Browse a codebase as Markdown | Execute (T6) | Implementing |
-| P1-04 | P1: Browse a codebase as Markdown | Execute (T6) | Implementing |
-| P1-05 | P1: Browse a codebase as Markdown | Execute (T3) | Implementing |
-| P1-06 | P1: Browse a codebase as Markdown | Execute (T3) | Implementing |
-| P1-07 | P1: Browse a codebase as Markdown | Execute (T3) | Implementing |
-| P1-08 | P1: Browse a codebase as Markdown | Execute (T3) | Implementing |
-| P1-09 | P1: Browse a codebase as Markdown | Execute (T3) | Implementing |
-| P1-10 | P1: Browse a codebase as Markdown | Design | Pending |
-| P1-11 | P1: Browse a codebase as Markdown | Design | Pending |
-| P1-12 | P1: Browse a codebase as Markdown | Design | Pending |
-| P1-13 | P1: Browse a codebase as Markdown | Design | Pending |
-| P1-14 | P1: Browse a codebase as Markdown | Design | Pending |
-| P1-15 | P1: Browse a codebase as Markdown | Design | Pending |
-| P1-16 | P1: Browse a codebase as Markdown | Execute (T5 partial; CLI exit-code wiring is T26) | Implementing |
-| P1-17 | P1: Browse a codebase as Markdown | Execute (T6) | Implementing |
-| P1-18 | P1: Browse a codebase as Markdown | Execute (T6) | Implementing |
-| P1-19 | P1: Browse a codebase as Markdown | Design | Pending |
-| P2-01 | P2: See service dependencies | Design | Pending |
-| P2-02 | P2: See service dependencies | Design | Pending |
-| P2-03 | P2: See service dependencies | Design | Pending |
-| P2-04 | P2: See service dependencies | Design | Pending |
-| P2-05 | P2: See service dependencies | Design | Pending |
-| P2-06 | P2: See service dependencies | Execute (T8) | Implementing |
-| P2-07 | P2: See service dependencies | Execute (T9) | Implementing |
-| P2-08 | P2: See service dependencies | Execute (T9) | Implementing |
-| P2-09 | P2: See service dependencies | Execute (T9) | Implementing |
-| P2-10 | P2: See service dependencies | Design | Pending |
-| P2-11 | P2: See service dependencies | Design | Pending |
-| P2-12 | P2: See service dependencies | Design | Pending |
-| P2-13 | P2: See service dependencies | Design | Pending |
-| P2-14 | P2: See service dependencies | Design | Pending |
-| P2-15 | P2: See service dependencies | Design | Pending |
-| P3-01 | P3: Install and run as a dotnet global tool | Execute (T4) | Implementing |
-| P3-02 | P3: Install and run as a dotnet global tool | Execute (T4) | Implementing |
-| P3-03 | P3: Install and run as a dotnet global tool | Execute (T4) | Implementing |
-| P3-04 | P3: Install and run as a dotnet global tool | Execute (T4) | Implementing |
-| P3-05 | P3: Install and run as a dotnet global tool | Design | Pending |
+| P1-01 | P1: Browse a codebase as Markdown | Execute (T6) | Verified |
+| P1-02 | P1: Browse a codebase as Markdown | Execute (T6) | Verified |
+| P1-03 | P1: Browse a codebase as Markdown | Execute (T6) | Verified |
+| P1-04 | P1: Browse a codebase as Markdown | Execute (T6) | Verified |
+| P1-05 | P1: Browse a codebase as Markdown | Execute (T3) | Verified |
+| P1-06 | P1: Browse a codebase as Markdown | Execute (T3) | Verified |
+| P1-07 | P1: Browse a codebase as Markdown | Execute (T3) | Verified |
+| P1-08 | P1: Browse a codebase as Markdown | Execute (T3) | Verified |
+| P1-09 | P1: Browse a codebase as Markdown | Execute (T3) | Verified |
+| P1-10 | P1: Browse a codebase as Markdown | Execute (T25) | Verified |
+| P1-11 | P1: Browse a codebase as Markdown | Execute (T11, T13) | Verified |
+| P1-12 | P1: Browse a codebase as Markdown | Execute (T11) | Verified |
+| P1-13 | P1: Browse a codebase as Markdown | Execute (T22) | Verified |
+| P1-14 | P1: Browse a codebase as Markdown | Execute (T22) | Verified |
+| P1-15 | P1: Browse a codebase as Markdown | Execute (T13) | Verified |
+| P1-16 | P1: Browse a codebase as Markdown | Execute (T5, T26) | Verified |
+| P1-17 | P1: Browse a codebase as Markdown | Execute (T6) | Verified |
+| P1-18 | P1: Browse a codebase as Markdown | Execute (T6) | Verified |
+| P1-19 | P1: Browse a codebase as Markdown | Execute (T24) | Verified |
+| P2-01 | P2: See service dependencies | Execute (T15) | Verified |
+| P2-02 | P2: See service dependencies | Execute (T16) | Verified |
+| P2-03 | P2: See service dependencies | Execute (T17) | Verified |
+| P2-04 | P2: See service dependencies | Execute (T18) | Verified |
+| P2-05 | P2: See service dependencies | Execute (T18) | Verified |
+| P2-06 | P2: See service dependencies | Execute (T8) | Verified |
+| P2-07 | P2: See service dependencies | Execute (T9) | Verified |
+| P2-08 | P2: See service dependencies | Execute (T9) | Verified |
+| P2-09 | P2: See service dependencies | Execute (T9) | Verified |
+| P2-10 | P2: See service dependencies | Execute (T23) | Verified |
+| P2-11 | P2: See service dependencies | Execute (T20) | Verified |
+| P2-12 | P2: See service dependencies | Execute (T10, T14, T20) | Verified |
+| P2-13 | P2: See service dependencies | Execute (T21) | Verified |
+| P2-14 | P2: See service dependencies | Execute (T19) | Verified ⚠️ (spec-precision gap on resolution kind — see validation.md) |
+| P2-15 | P2: See service dependencies | Execute (T19) | Verified |
+| P3-01 | P3: Install and run as a dotnet global tool | Execute (T4) | Verified |
+| P3-02 | P3: Install and run as a dotnet global tool | Execute (T4) | Verified |
+| P3-03 | P3: Install and run as a dotnet global tool | Execute (T4) | Verified |
+| P3-04 | P3: Install and run as a dotnet global tool | Execute (T4) | Verified |
+| P3-05 | P3: Install and run as a dotnet global tool | Execute (T26) | Verified |
 
 **ID format:** `P[story-number]-[NN]` (e.g., `P1-01`, `P2-06`).
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 39 total (19 + 15 + 5), 0 mapped to tasks, 39 unmapped ⚠️ (Tasks phase not yet run)
+**Coverage:** 39 total (19 + 15 + 5), 39 mapped to tasks, 0 unmapped. Independent Verifier PASS (`.specs/features/csharp2md/validation.md`): 39/39 acceptance criteria evidence-backed, discrimination sensor 6/6 mutations killed. One spec-precision gap flagged and resolved with documented reasoning (P2-14 — see validation.md).
 
 ---
 
