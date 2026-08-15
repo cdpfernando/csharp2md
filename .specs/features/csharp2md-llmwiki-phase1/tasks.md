@@ -343,12 +343,12 @@ T20 -> T21
 - Verify first (see Knowledge Verification): `BaseListSyntax`/`SimpleBaseTypeSyntax`, `InterfaceDeclarationSyntax`, `.Modifiers`, extension-method detection via the `this` parameter
 
 **Done when**:
-- [ ] Every one of the eleven values has at least one test asserting it
-- [ ] Rule order is asserted: declaration-kind rules beat name and base-type rules
-- [ ] A type matching two rules produces the first in table order plus a warning naming both
-- [ ] Classification uses no semantic model — the test constructs trees with `CSharpSyntaxTree.ParseText` and no compilation
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] Every one of the eleven values has at least one test asserting it
+- [x] Rule order is asserted: declaration-kind rules beat name and base-type rules
+- [x] A type matching two rules produces the first in table order plus a warning naming both
+- [x] Classification uses no semantic model — the test constructs trees with `CSharpSyntaxTree.ParseText` and no compilation
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
 
 **Tests**: unit
 **Gate**: quick
