@@ -74,7 +74,8 @@ public sealed class AnalysisPipeline
         string manifestPath,
         string outputRoot,
         CancellationToken cancellationToken = default,
-        bool forceOutput = false)
+        bool forceOutput = false,
+        TopicOptions? topicOptions = null)
     {
         ArgumentNullException.ThrowIfNull(outputRoot);
 
@@ -88,7 +89,7 @@ public sealed class AnalysisPipeline
 
         var inputRoot = Path.GetDirectoryName(Path.GetFullPath(manifestPath))!;
         return await RunAsync(
-            manifest.Manifest!, inputRoot, outputRoot, cancellationToken, forceOutput);
+            manifest.Manifest!, inputRoot, outputRoot, cancellationToken, forceOutput, topicOptions);
     }
 
     public async Task<PipelineRunResult> RunAsync(
@@ -96,11 +97,17 @@ public sealed class AnalysisPipeline
         string inputRoot,
         string outputRoot,
         CancellationToken cancellationToken = default,
-        bool forceOutput = false)
+        bool forceOutput = false,
+        TopicOptions? topicOptions = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(inputRoot);
         ArgumentNullException.ThrowIfNull(outputRoot);
+
+        // WIKI-06/WIKI-14..16: callers that already validated --topic/--domain pass the result
+        // through; every other caller (every pre-existing test, T13's own integration tests) gets
+        // the zero-config default so frontmatter derivation never needs a caller-supplied value.
+        var options = topicOptions ?? TopicOptions.Default(inputRoot);
 
         var discovery = ServiceDiscoverer.Discover(manifest);
         var warnings = new List<string>(discovery.Warnings);
@@ -120,7 +127,8 @@ public sealed class AnalysisPipeline
             cancellationToken.ThrowIfCancellationRequested();
 
             var indexPath = await AnalyzeAsync(
-                service, catalog, config.Index, outputRoot, signals, loadResults, cancellationToken);
+                service, catalog, config.Index, outputRoot, options, signals, loadResults, warnings,
+                cancellationToken);
 
             serviceIndexes.Add(new ServiceIndexEntry(service.Name, indexPath));
         }
@@ -174,8 +182,10 @@ public sealed class AnalysisPipeline
         ServiceCatalog catalog,
         ConfigIndex configIndex,
         string outputRoot,
+        TopicOptions options,
         List<DependencySignal> signals,
         List<ProjectLoadResult> loadResults,
+        List<string> warnings,
         CancellationToken cancellationToken)
     {
         var serviceOutputRoot = TopicLayout.ServiceRoot(outputRoot, service.Name);
@@ -217,7 +227,8 @@ public sealed class AnalysisPipeline
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 await AnalyzeDocumentAsync(
-                    document, service, project, configIndex, writer, writtenPaths, signals, cancellationToken);
+                    document, service, project, configIndex, writer, options, writtenPaths, signals, warnings,
+                    cancellationToken);
             }
         }
 
@@ -230,8 +241,10 @@ public sealed class AnalysisPipeline
         Project project,
         ConfigIndex configIndex,
         OutputWriter writer,
+        TopicOptions options,
         List<string> writtenPaths,
         List<DependencySignal> signals,
+        List<string> warnings,
         CancellationToken cancellationToken)
     {
         if (document.FilePath is null || !document.SupportsSyntaxTree)
@@ -266,6 +279,17 @@ public sealed class AnalysisPipeline
         var renderContext = new RenderContext(relativePath, syntaxTree, semanticModel);
         var rendered = DependencySectionRenderer.Apply(
             SemanticEnricher.Enrich(_renderer.Render(renderContext), renderContext), documentSignals);
+
+        // WIKI-06/WIKI-09/WIKI-13: derived from the tree already materialized above for the
+        // detectors — no second parse, no re-read of the file writer.Write is about to produce.
+        // project.Name is the SDK-style project's default root namespace absent an explicit
+        // <RootNamespace> override, matching every fixture project (AnalysisPipeline.cs already
+        // relies on the same property at RelativePathFor).
+        var sourcePath = $"{service.Name.Value}/{relativePath}";
+        var frontmatter = FrontmatterBuilder.Build(
+            syntaxTree, sourcePath, project.Name, options, out var frontmatterWarnings);
+        warnings.AddRange(frontmatterWarnings);
+        rendered = rendered with { Frontmatter = frontmatter };
 
         // Written and dropped immediately: only the written path survives, for the index (AD-001).
         if (writer.Write(rendered) is { } path)

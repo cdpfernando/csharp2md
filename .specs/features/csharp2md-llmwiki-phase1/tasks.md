@@ -499,12 +499,12 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] Derivation reads the tree already in scope — no second parse, no re-read of a written file
-- [ ] An integration test asserts every generated document under `raw/codebase/` carries a parseable block
-- [ ] An integration test asserts `Acme.Payments` documents — degraded, no restore — carry the same classifications a healthy project yields
-- [ ] Document count under `raw/codebase/` still equals the source document count
-- [ ] Gate check passes: `dotnet test`
-- [ ] Test count: no reduction from the running baseline
+- [x] Derivation reads the tree already in scope — no second parse, no re-read of a written file
+- [x] An integration test asserts every generated document under `raw/codebase/` carries a parseable block
+- [x] An integration test asserts `Acme.Payments` documents — degraded, no restore — carry the same classifications a healthy project yields
+- [x] Document count under `raw/codebase/` still equals the source document count
+- [x] Gate check passes: `dotnet test`
+- [x] Test count: no reduction from the running baseline
 
 **Tests**: integration
 **Gate**: full
