@@ -863,12 +863,31 @@ T25 → T26
 - Skill: `dotnet-skills:serialization`, `dotnet-skills:snapshot-testing`
 
 **Done when**:
-- [ ] Every edge serialized with source, target, communication type, and resolution (P2-11)
-- [ ] All five communication-type values round-trip correctly, `direct-reference` included (P2-12)
-- [ ] Source-generated `JsonSerializerContext`; no reflection-based serialization
-- [ ] Verify snapshot of the emitted JSON, plus explicit asserts on required fields
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥5 tests pass (no silent deletions)
+- [x] Every edge serialized with source, target, communication type, and resolution (P2-11) — plus `evidence`, per design.md's DependencyJsonWriter line
+- [x] All five communication-type values round-trip correctly, `direct-reference` included (P2-12)
+- [x] Source-generated `JsonSerializerContext`; no reflection-based serialization
+- [x] Verify snapshot of the emitted JSON, plus explicit asserts on required fields
+- [x] Gate check passes: `dotnet test --filter Category!=Integration`
+- [x] Test count: 15 tests in `Output/DependencyJsonWriterTests.cs` (suite 192 → 207 quick; no silent deletions)
+
+> Enum values are written as **spec.md's own spellings** (`sincrono-bloqueante`, `direct-reference`,
+> `hard-coded`, …), not as C# identifiers and not as ordinals — `dependencies.json` is the tool's
+> contract with whoever reads it, and an ordinal silently changes meaning the day a value is
+> inserted into the enum. Achieved with `JsonStringEnumConverter<T>(JsonNamingPolicy.KebabCaseLower)`
+> subclasses applied per property, so T10's enums stay untouched (out of this task's `Where`) and
+> source generation still applies.
+>
+> `Deserialize` exists because the Done-when says values must **round-trip**, which needs a reader;
+> it is the only production API here that no v1 caller uses yet. Evidence strings are split on the
+> **last** colon so a Windows drive letter stays part of the path (tested).
+>
+> Field name is `communicationType`, matching P2-11's wording ("communication type") rather than the
+> shorter `communication` the domain record uses.
+>
+> **Observed, not fixed (out of scope, T10's file):** `DependencyEdge`'s record equality compares
+> `Evidence` by reference because it is an `IReadOnlyList`, so two edges with identical evidence
+> are unequal. The round-trip test compares fields explicitly for this reason. Worth a look if a
+> later task ever relies on `DependencyEdge` equality.
 
 **Tests**: unit
 **Gate**: quick

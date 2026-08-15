@@ -1,0 +1,49 @@
+﻿{
+  "edges": [
+    {
+      "source": "Acme.Orders",
+      "target": "PaymentService",
+      "communicationType": "sincrono-bloqueante",
+      "resolution": "hard-coded",
+      "evidence": [
+        "Acme.Orders/Client.cs:12"
+      ]
+    },
+    {
+      "source": "Acme.Orders",
+      "target": "NotifyService",
+      "communicationType": "assincrono-fire-and-forget",
+      "resolution": "dynamic",
+      "evidence": [
+        "Acme.Orders/Client.cs:12"
+      ]
+    },
+    {
+      "source": "Acme.Orders",
+      "target": "Acme.Payments",
+      "communicationType": "pub-sub-evento",
+      "resolution": "not-applicable",
+      "evidence": [
+        "Acme.Orders/Client.cs:12"
+      ]
+    },
+    {
+      "source": "Acme.Payments",
+      "target": "Ledger",
+      "communicationType": "streaming-bidirecional",
+      "resolution": "unresolved",
+      "evidence": [
+        "Acme.Payments/Client.cs:12"
+      ]
+    },
+    {
+      "source": "Acme.Payments",
+      "target": "Acme.Shared.Contracts",
+      "communicationType": "direct-reference",
+      "resolution": "not-applicable",
+      "evidence": [
+        "Acme.Payments/Client.cs:12"
+      ]
+    }
+  ]
+}
