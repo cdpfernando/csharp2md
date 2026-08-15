@@ -578,12 +578,22 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-api-design`, `dotnet-skills:csharp-type-design-performance`
 
 **Done when**:
-- [ ] Two interfaces defined, splitting document-level from project-level detection (AD-004)
-- [ ] `DocumentDetectionContext` exposes a **nullable** `SemanticModel` so detectors degrade with the renderer
-- [ ] `CommunicationClassifier` is a static pure function implementing every row of the design's classification table
-- [ ] Unit tests map 1:1 to each classification-table row
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥6 tests pass (no silent deletions)
+- [x] Two interfaces defined, splitting document-level from project-level detection (AD-004)
+- [x] `DocumentDetectionContext` exposes a **nullable** `SemanticModel` so detectors degrade with the renderer
+- [x] `CommunicationClassifier` is a static pure function implementing every row of the design's classification table
+- [x] Unit tests map 1:1 to each classification-table row
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: 11 tests across `Detection/CommunicationClassifierTests.cs` + `Detection/DetectorContractTests.cs` (suite 108 → 119; no silent deletions)
+
+> `Classify(DependencyKind kind, CallShape shape)` — design.md names the table but not the signature.
+> `CallShape` enumerates exactly the discriminators the table itself uses (`ResultConsumed`,
+> `ResultDiscarded`, `Unary`, `Streaming`, `NotApplicable`), so the six rows map to six switch arms
+> with nothing invented. A `(kind, shape)` pair no row covers **throws** rather than falling through
+> to a default: a fabricated communication type would land in `dependencies.json` looking authoritative.
+>
+> The two context records live beside their interfaces rather than in files of their own.
+> `ProjectDetectionContext` carries the `ServiceCatalog` (T18 matches `PackageId`s against it);
+> `DocumentDetectionContext` deliberately does **not** — see the resolution note under T15.
 
 **Tests**: unit
 **Gate**: quick
