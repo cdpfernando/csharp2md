@@ -163,6 +163,27 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Run_WithFilesystemRootAndNoOutput_RequiresExplicitOutputWithoutWriting()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-root-").FullName;
+        try
+        {
+            var filesystemRoot = Path.GetPathRoot(workspace)!;
+            var rootArgument = Path.Combine(filesystemRoot, ".");
+
+            var result = await RunAsync($"\"{rootArgument}\"", workspace);
+
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.Contains("--output", result.StandardError, StringComparison.Ordinal);
+            Assert.Empty(Directory.GetFileSystemEntries(workspace));
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Run_WithUnmarkedOutput_RefusesAndPreservesExistingContent()
     {
         var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-unmarked-").FullName;

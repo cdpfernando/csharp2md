@@ -110,6 +110,19 @@ public sealed class AnalysisPipelineInvariantTests : IDisposable
     }
 
     [Fact]
+    public async Task RunAsync_ZeroEntryManifest_ReturnsTypedFailureAndWritesNoOutput()
+    {
+        var manifestPath = FixtureManifest.Write(_workspace, new Manifest([]));
+        var outputRoot = Path.Combine(_workspace, "output");
+
+        var result = await new AnalysisPipeline().RunAsync(manifestPath, outputRoot, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ManifestErrorCode.ZeroEntries, result.ManifestError!.Value.Code);
+        Assert.False(Directory.Exists(outputRoot));
+    }
+
+    [Fact]
     public async Task RunAsync_InMemorySingleRootManifest_AnalyzesDirectoryWithoutManifestFile()
     {
         var serviceRoot = TestPaths.SyntheticSolution(SyntheticFixtureRun.SharedContracts);
