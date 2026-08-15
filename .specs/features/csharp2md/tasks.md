@@ -763,13 +763,33 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`
 
 **Done when**:
-- [ ] Project reference to another manifest service → `direct-reference` edge (P2-04)
-- [ ] Package reference whose `PackageId` matches another manifest service's `PackageId` → `direct-reference` edge (P2-04)
-- [ ] Package reference with **no** matching manifest service produces **no** edge — explicitly tested with a well-known public package (P2-05)
-- [ ] Implements `IProjectDependencyDetector`, not the document-level contract
-- [ ] Unit tests map 1:1 to P2-04 and P2-05, including the public-library exclusion
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥6 tests pass (no silent deletions)
+- [x] Project reference to another manifest service → `direct-reference` edge (P2-04)
+- [x] Package reference whose `PackageId` matches another manifest service's `PackageId` → `direct-reference` edge (P2-04)
+- [x] Package reference with **no** matching manifest service produces **no** edge — explicitly tested with a well-known public package (P2-05)
+- [x] Implements `IProjectDependencyDetector`, not the document-level contract
+- [x] Unit tests map 1:1 to P2-04 and P2-05, including the public-library exclusion
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: 9 tests in `Detection/DirectReferenceDetectorTests.cs` (suite 153 → 162; no silent deletions)
+
+> **This detector *does* populate `TargetService`, unlike T15/T16** — and the difference is the
+> point. P2-04 states the matching rule outright (the referenced project file belongs to another
+> manifest service, or the referenced package id equals another service's declared `PackageId`), so
+> the target is derived from a specified rule rather than guessed. Where the spec supplies a rule the
+> detector correlates; where it supplies none it records the raw target and leaves correlation alone.
+>
+> Reads the `.csproj` as plain XML with `LoadOptions.SetLineInfo`, matching `ProjectIdentityReader`'s
+> no-MSBuild approach, so evidence points at the exact project-file line declaring the reference.
+> A malformed or unreadable project file yields no edges instead of throwing — load health is
+> already `SolutionLoader`'s job to report.
+>
+> Two rules the Done-when list implies but does not spell out: a reference whose target service is
+> the **source service itself** produces no edge (internal structure, not a service dependency —
+> tested), and project-path matching is case-insensitive on full paths so `..\` relative includes
+> resolve correctly.
+>
+> `Resolution` is `NotApplicable`: nothing was resolved through config, since a compile-time
+> reference names its target directly. This is the one signal kind where `ResolutionKind`'s
+> `NotApplicable` member earns its place.
 
 **Tests**: unit
 **Gate**: quick
