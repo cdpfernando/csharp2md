@@ -1,0 +1,12 @@
+﻿graph LR
+    svc0["Acme.Orders"]
+    svc1["PaymentService"]
+    svc2["NotifyService"]
+    svc3["Acme.Payments"]
+    svc4["Ledger"]
+    svc5["Acme.Shared.Contracts"]
+    svc0 -->|sincrono-bloqueante| svc1
+    svc0 -->|assincrono-fire-and-forget| svc2
+    svc0 -->|pub-sub-evento| svc3
+    svc3 -->|streaming-bidirecional| svc4
+    svc3 -->|direct-reference| svc5

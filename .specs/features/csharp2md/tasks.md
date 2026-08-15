@@ -909,11 +909,25 @@ T25 → T26
 - Skill: `dotnet-skills:snapshot-testing`
 
 **Done when**:
-- [ ] Diagram derived from the graph object, **every** edge labeled with its communication type (P2-13)
-- [ ] Service names containing Mermaid-significant characters are escaped so the diagram stays valid
-- [ ] Verify snapshot covers a graph exercising all five communication types
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥4 tests pass (no silent deletions)
+- [x] Diagram derived from the graph object, **every** edge labeled with its communication type (P2-13)
+- [x] Service names containing Mermaid-significant characters are escaped so the diagram stays valid
+- [x] Verify snapshot covers a graph exercising all five communication types
+- [x] Gate check passes: `dotnet test --filter Category!=Integration`
+- [x] Test count: 13 tests in `Output/MermaidWriterTests.cs` (suite 207 → 220 quick; no silent deletions)
+
+> Node identifiers are **generated** (`svc0`, `svc1`, …) rather than derived from service names.
+> Under AD-005 a target can be a raw address or a topic name (`http://payments:8080/api`), whose
+> dots, colons and slashes Mermaid will not accept as an identifier. The readable name lives in the
+> quoted label, where it only has to survive escaping. Declaration order follows the edge list the
+> `GraphBuilder` already sorted, so the diagram is byte-stable across runs.
+>
+> Escaping covers `"` (would close the label early) and `#` (opens a Mermaid entity), `#` first so
+> the `"` replacement is not re-encoded; newlines are flattened. Both are asserted, including a
+> negative assertion that the raw quoted text is gone.
+>
+> Labels come from `JsonNamingPolicy.KebabCaseLower` — the **same policy** T20 serializes with —
+> rather than a second hand-written table, so the diagram and `dependencies.json` cannot drift into
+> two vocabularies. Diagram file is `dependencies.mmd` (spec.md names no filename).
 
 **Tests**: unit
 **Gate**: quick
