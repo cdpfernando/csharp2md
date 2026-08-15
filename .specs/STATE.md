@@ -34,20 +34,29 @@
 - **Date**: 2026-08-14
 - **Status**: active
 
+### AD-005
+- **Decision**: `GraphBuilder` (T19) resolves an HTTP/gRPC `DependencySignal`'s target by wrapping the already-resolved `RawTarget` (a literal address, an env-var/discovery name, or the raw unresolved logical name) directly as `DependencyEdge.Target : ServiceName` — it does **not** cross-match that value against `ServiceCatalog` to find the owning `ServiceDescriptor`.
+- **Reason**: Neither spec.md nor design.md defines a name/address → catalog matching rule, and none is mechanically possible today — no data model stores a service's own network address, so a `HardCoded` URL has nothing to match against. The T2 fixture deliberately uses non-matching names (appsettings key `"PaymentService"` vs. catalog service `"Acme.Payments"`) to force this decision rather than let it be guessed. This mirrors the existing P2-15 rule for unpaired messaging signals (topic name stands in as target) — not a new pattern, just its extension to HTTP/gRPC. It is sufficient to pass P2's actual Independent Test in spec.md, which asks for four edges with correct types/classifications, not catalog-matched targets.
+- **Trade-off**: `dependencies.json` and the Mermaid diagram show, for `HardCoded`/`Dynamic` edges, whatever raw value was resolved (a URL, an env-var name, a Docker service name) rather than necessarily a real manifest service name — honest but less immediately readable as a service graph. User confirmed deferring a real matching strategy to a later iteration ("depois pensamos em uma estratégia de match", 2026-08-14).
+- **Scope**: `GraphBuilder` (T19) and any future correlation logic for HTTP/gRPC signal targets.
+- **Date**: 2026-08-14
+- **Status**: active
+
 ## Handoff
 
 **Feature**: csharp2md (v1)
-**Phase/Task**: Execute — Phase 0 (T1-T4) and Phase 1 (T5-T9) complete. Next: Phase 2 (T10-T13), start with T10.
-**Completed**: T1-T9, all gates green (`dotnet build -c Release`, `dotnet format --verify-no-changes`, `dotnet test` — 55 tests passing, 0 slopwatch findings). Highest-risk item (BuildHost packaging) closed in T4.
-**In-progress**: None — T9 finished cleanly, no partial work.
-**Next step**: T10 (domain model) — but `ServiceName`, `PackageId`, and `ResolutionKind` were already pulled forward into T6/T9 (forward-dependency fixes; see notes on those tasks in tasks.md). T10 should only add the remaining types: `DependencyKind`, `CommunicationType`, `MessagingRole`, `SourceLocation`, `DependencySignal`, `DependencyEdge` — skip redefining the three that already exist.
+**Phase/Task**: Execute — Phase 0-3 (T1-T18) complete. Next: Phase 4 (T19-T22), start with T19.
+**Completed**: T1-T18, all gates green (`dotnet build -c Release`, `dotnet format --verify-no-changes`, `dotnet test` — 194 tests passing, up from 55 after Phase 1; 0 slopwatch findings across every phase). Batch 2 (T10-T18) additionally ran CRAP analysis at end of Phase 3 — found and fixed 3 real coverage gaps in T11's own `MarkdownRenderer`/`XmlDocProse` code before reporting — plus assertion-quality and anti-pattern checks (clean). Highest-risk item (BuildHost packaging) closed in T4; rendering-fidelity risk (span-coverage invariant) closed in T11.
+**In-progress**: None.
+**Next step**: T19 (GraphBuilder) — apply **AD-005**: wrap `RawTarget` as `ServiceName` directly for HTTP/gRPC edges, no catalog cross-matching. Batch 3 = Phase 4 (T19-T22) + Phase 5 (T23-T26), 8 tasks.
 **Blockers**: None.
-**Uncommitted files**: Everything — **no commit has been made in this repo at all** (0 commits, fresh `git init` state). CLAUDE.md requires asking the user before every commit; none has been requested yet for T1-T9.
-**Branch**: `master` (per gitStatus at session start).
+**Uncommitted files**: none from T1-T18 — all committed this session. 11 commits total on `master`: 2 bundled by phase from a prior session (`28a41fc` Phase 0, `82a5fe6` Phase 1 — T1-T9, not split per-task) + 9 atomic commits from this session (`430a2e4`..`43e06e7`, T10-T18, one per task, matching the skill's granularity). Still untracked and correctly out of scope for any task: `.agents/`, `.claude/`, `.cursor/`, `.windsurf/`, `CLAUDE.md`, `research/`, `2026-08-14-msbuildworkspace-robustez-dotnet-tool-packaging.md`, `src/Csharp2Md.Cli/Properties/launchSettings.json` (editor/tooling artifacts, not named in any task's "Where" field).
+**Branch**: `master`.
 
-**Known gaps flagged during Phase 0+1 (not blockers, but decisions someone will need before the tasks that touch them)**:
-- T9: `ServiceNameResolver` classifies (`HardCoded`/`Dynamic`/`Unresolved`) but does not resolve a logical name to a specific `ServiceDescriptor` — design.md's sketch implied it should, but neither spec.md nor design.md defines how a resolved name/address maps back to a catalog entry (my own T2 fixture uses non-matching names on purpose: appsettings key `"PaymentService"` vs. catalog service `"Acme.Payments"`). T15/T16 (HttpClientDetector/GrpcClientDetector) will need this decision.
-- T2 fixture: no gRPC *client* call exists anywhere (only Payments *exposing* a gRPC service) — spec.md's P2 Independent Test narrative expects one; T2's actual approved Done-when checklist didn't ask for one. Flag if T16/T26 need it.
-- Real `src/`/`tests/` projects (not just the fixture) still show SourceLink "no remote"/"no commits" warnings as `Kind == Failure` when self-analyzed by `SolutionLoader` — resolves once the repo has its first commit + a remote (fixture already patched around this via its own `Directory.Build.props`; the main projects weren't, since patching them would mean shipping with SourceLink permanently disabled).
+**Known gaps flagged during Phase 0-3 (not blockers, but decisions someone will need before the tasks that touch them)**:
+- T2 fixture: no gRPC *client* call exists anywhere (only Payments *exposing* a gRPC service) — spec.md's P2 Independent Test narrative expects one; T2's approved Done-when checklist didn't ask for one. T16 (GrpcClientDetector) shipped without needing a fixture client call (semantic-only detection, tested via synthetic sources); flag still open for **T26**'s e2e test, which does need the fixture to exercise a real gRPC client call end-to-end.
+- Real `src/`/`tests/` projects still show SourceLink "no remote" warnings during self-analysis (now that commits exist, "no commits" should be resolved; "no remote" persists — no remote configured yet).
+- design.md's "detected-dependency section" (P2-10) is not yet emitted — correctly deferred to **T23** (`DependencySectionRenderer`), not a gap in T11.
+- `DependencyEdge`/`DependencyGraph` getters are the only remaining 0%-coverage members as of Batch 2 — resolves once T19 consumes them.
 
-See tasks.md's per-task "Done when" checklists (all checked through T9) and the `>` notes under T3/T5/T6/T7/T8/T9 for the full list of documented deviations from design.md's original sketches (all deliberate, all reasoned, all cross-referenced into design.md itself).
+See tasks.md's per-task "Done when" checklists (all checked through T18) and the `>` notes under T3/T5/T6/T7/T8/T9/T10-T18 for the full list of documented deviations from design.md's original sketches (all deliberate, all reasoned, all cross-referenced into design.md itself).
