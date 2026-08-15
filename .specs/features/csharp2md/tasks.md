@@ -949,12 +949,25 @@ T25 → T26
 - Skill: `dotnet-skills:snapshot-testing`
 
 **Done when**:
-- [ ] One `index.md` per service linking every generated file for that service (P1-13)
-- [ ] One root `index.md` linking every per-service index (P1-14)
-- [ ] All links relative, so output stays portable on GitHub, in an IDE, or fed to an LLM
-- [ ] Verify snapshots for both index shapes
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥5 tests pass (no silent deletions)
+- [x] One `index.md` per service linking every generated file for that service (P1-13)
+- [x] One root `index.md` linking every per-service index (P1-14)
+- [x] All links relative, so output stays portable on GitHub, in an IDE, or fed to an LLM
+- [x] Verify snapshots for both index shapes
+- [x] Gate check passes: `dotnet test --filter Category!=Integration`
+- [x] Test count: 9 tests in `Output/IndexWriterTests.cs` (suite 220 → 229 quick; no silent deletions)
+
+> The per-service index is written **at the service's own output root**, which is the location
+> T11's `MarkdownRenderer.IndexLink` already points every document's backlink at (`../` per path
+> depth). This pins the output layout the pipeline must use: one folder per service beneath the run
+> output root, so an `OutputWriter` is constructed per service rooted at `<output>/<service>`.
+>
+> Link style follows spec.md's own example `[Foo.cs](./Foo.cs.md)`: link text is the **source** file
+> path, the href keeps `.md`. Separators are normalized to `/` and every link is prefixed `./` —
+> a Windows-style backslash link is dead on GitHub, which the portability assumption rules out.
+> Entries are sorted (ordinal) so both indexes are byte-stable across runs.
+>
+> A service whose documents were all excluded still gets an index file, so the root index can never
+> link at a file that does not exist.
 
 **Tests**: unit
 **Gate**: quick
