@@ -811,13 +811,37 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`, `dotnet-skills:csharp-type-design-performance`
 
 **Done when**:
-- [ ] Publish of topic `T` in service A pairs with subscribe of `T` in service B → one edge `A → B`, directed publisher-to-subscriber (P2-14)
-- [ ] Unpaired publish or subscribe retained as an edge targeting the topic name, resolution `Unresolved` — **never dropped** (P2-15)
-- [ ] Non-messaging signals pass through with target and classification intact
-- [ ] Evidence locations aggregated per edge
-- [ ] Unit tests cover: matched pair, unpaired publish, unpaired subscribe, multiple publishers of one topic
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥8 tests pass (no silent deletions)
+- [x] Publish of topic `T` in service A pairs with subscribe of `T` in service B → one edge `A → B`, directed publisher-to-subscriber (P2-14)
+- [x] Unpaired publish or subscribe retained as an edge targeting the topic name, resolution `Unresolved` — **never dropped** (P2-15)
+- [x] Non-messaging signals pass through with target and classification intact — **per AD-005**: `RawTarget` wrapped directly as `ServiceName`, no `ServiceCatalog` cross-matching
+- [x] Evidence locations aggregated per edge
+- [x] Unit tests cover: matched pair, unpaired publish, unpaired subscribe, multiple publishers of one topic
+- [x] Gate check passes: `dotnet test --filter Category!=Integration`
+- [x] Test count: 14 tests in `Graph/GraphBuilderTests.cs` (suite 180 → 193 quick; no silent deletions). The 14th was added at the Phase 4 CRAP gate, which found the role-less-messaging-signal arm uncovered — a real P2-15 ("never dropped") path, now asserted. Phase 4 finishes at 100% sequence coverage and CRAP 0.00 across all four components.
+
+> **AD-005 applied**: a non-messaging signal's target is its already-resolved `RawTarget` wrapped as
+> `ServiceName`, never cross-matched against `ServiceCatalog`. Because that leaves the catalog with
+> nothing to do here, the `catalog` parameter in design.md's `Build(signals, catalog)` sketch is
+> **omitted** rather than accepted and ignored — a parameter no code reads is dead API surface
+> implying a correlation step this component does not perform. Signature is
+> `static DependencyGraph Build(IReadOnlyList<DependencySignal>)`. A signal that already carries a
+> `TargetService` (T18's direct references) still wins over `RawTarget`.
+>
+> **Spec-precision gap, decided: a *correlated* pub/sub edge's resolution is `NotApplicable`.**
+> P2-14 does not state one. P2-07/08/09 classify how a *logical name resolved against config*, and a
+> correlated edge never went through config — it was matched on topic name, the same reason T18 uses
+> `NotApplicable` for a compile-time reference. Specifically **not** `Unresolved`, which P2-15
+> reserves for a signal that found no counterpart. Asserted, not left implicit.
+>
+> Two rules P2-14 implies but does not spell out: pairing requires the counterpart to be in
+> **another** service, so a service that both publishes and subscribes to one topic produces no
+> self-edge and both halves stay unpaired (tested); and only the publish half emits the correlated
+> edge, since the subscribe half sees the same pairing from the other side and would duplicate it.
+>
+> Edges that describe the same relationship (same source, target, communication type, and
+> resolution) merge into one carrying every evidence location, and the edge list is ordered by
+> source → target → communication → resolution so T20/T21's artifacts are byte-stable across runs
+> rather than dependent on document visit order.
 
 **Tests**: unit
 **Gate**: quick
