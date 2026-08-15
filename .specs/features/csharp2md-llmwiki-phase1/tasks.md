@@ -153,10 +153,10 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] `manifest.Services.Count` is no longer dereferenced before the null check
-- [ ] A test covers `{"services": null}` and one covers a JSON object with no `services` key at all; both assert `ZeroEntries`, not an exception
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: 303 baseline + 2 new, none removed
+- [x] `manifest.Services.Count` is no longer dereferenced before the null check
+- [x] A test covers `{"services": null}` and one covers a JSON object with no `services` key at all; both assert `ZeroEntries`, not an exception
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: 303 baseline + 2 new, none removed
 
 **Tests**: unit
 **Gate**: quick

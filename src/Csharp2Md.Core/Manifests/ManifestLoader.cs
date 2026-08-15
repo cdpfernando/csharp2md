@@ -25,7 +25,7 @@ public static class ManifestLoader
                 new ManifestError(ManifestErrorCode.MalformedJson, $"Manifest is not valid JSON: {ex.Message}"));
         }
 
-        if (manifest is null || manifest.Services.Count == 0)
+        if (manifest is null || manifest.Services is not { Count: > 0 })
         {
             return ManifestLoadResult.Failed(
                 new ManifestError(ManifestErrorCode.ZeroEntries, "Manifest contains zero service entries."));
