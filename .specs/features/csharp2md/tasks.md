@@ -1041,13 +1041,50 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`, `dotnet-skills:csharp-concurrency-patterns`
 
 **Done when**:
-- [ ] Stage 1 fully completes before any detector runs (internal-package matching and name resolution require the complete catalog)
-- [ ] **Sequential-workspace invariant asserted by test**: never more than one `MSBuildWorkspace` alive at a time; each is disposed before the next opens (P1-19)
-- [ ] Rendered documents written and discarded per document — no whole-codebase model retained (AD-001)
-- [ ] `CancellationToken` accepted and honored throughout
-- [ ] Integration test runs the full pipeline against the fixture and asserts the generated artifact set
-- [ ] Gate check passes: `dotnet test`
-- [ ] Test count: ≥5 tests pass (no silent deletions)
+- [x] Stage 1 fully completes before any detector runs (internal-package matching and name resolution require the complete catalog) — asserted by a direct-reference edge to `Acme.Shared.Contracts`, deliberately the **last** manifest entry, produced while the **first** service is analyzed
+- [x] **Sequential-workspace invariant asserted by test**: never more than one `MSBuildWorkspace` alive at a time; each is disposed before the next opens (P1-19) — exact `open/close` event sequence over a real two-service run
+- [x] Rendered documents written and discarded per document — no whole-codebase model retained (AD-001) — asserted by observing service A's `.md` already on disk at the moment service B's workspace opens
+- [x] `CancellationToken` accepted and honored throughout — pre-cancelled token throws and loads zero services
+- [x] Integration test runs the full pipeline against the fixture and asserts the generated artifact set
+- [x] Gate check passes: `dotnet test`
+- [x] Test count: 14 tests across `Pipeline/AnalysisPipelineTests.cs` + `Pipeline/AnalysisPipelineInvariantTests.cs` (suite 259 → 273; no silent deletions)
+
+> **The loader is injected as a `SolutionLoadFunc` delegate, not called directly.** P1-19 is
+> unobservable from outside otherwise: `SolutionLoader` owns its workspace inside `LoadAsync`
+> (`using var workspace`, single call site — structural, verified in T3), so "one workspace at a
+> time" is exactly "no two `LoadAsync` calls overlap", and only a seam can witness that. The
+> parameterless constructor wires the real `SolutionLoader`, so production has no substitution.
+> An interface was not introduced because that would mean editing T3's file, outside this task.
+>
+> **Synthesizing a solution for a service that has no solution file happens here, not in
+> `ServiceDiscoverer`.** design.md assigns it to T6, but T6 shipped without it (`SolutionPath` is
+> `null` for `LooseProjects` and `ManifestOverride` boundaries), and T6 is outside this task's
+> `Where`. The pipeline is the first component that actually needs a solution path and is the one
+> that can own the temp file's lifetime, so it writes a `.slnx` with absolute project paths into a
+> temp directory and deletes it after the load. P1-05 therefore holds uniformly: one
+> `OpenSolutionAsync` per service, no `OpenProjectAsync` anywhere. Absolute paths in a synthesized
+> `.slnx` were **verified empirically** against the fixture, not assumed.
+>
+> **Stage 1 drops project paths that do not exist on disk, with a warning.** The fixture's
+> `Acme.Orders.slnx` deliberately references `Acme.DoesNotExist` (added in T3 for P1-06), and
+> `ProjectIdentityReader` (T7) only catches `XmlException` — a missing file throws
+> `FileNotFoundException` straight out of `XDocument.Load`. Filtering in Stage 1 is P1-06's own rule
+> ("skipped rather than aborting") applied before Roslyn is involved, and keeps `ProjectPaths` a
+> single coherent list. **Observed, not fixed (out of scope, T7's file):** `ProjectIdentityReader`
+> is unguarded against a missing project file.
+>
+> Two rules the Done-when list implies but does not spell out, both forced by the fixture:
+> a project pulled into the workspace **transitively** (by a project reference) is skipped unless it
+> is one of the service's own `ProjectPaths` — otherwise a shared library's documents would be
+> rendered once per service that references it; and a document whose path **escapes** the service
+> root (`Acme.Orders.slnx` reaches into sibling directories) is nested under its owning project's
+> name rather than written with a `..` path, which would place output outside the run's output
+> directory entirely. Both are asserted.
+>
+> Manifest loading runs inside the pipeline rather than in the CLI, matching design.md's own Stage-1
+> diagram, and returns `PipelineRunResult.Failed(ManifestError)` **before** `PrepareRun` — so P1-16's
+> "without writing any output" is a property of the pipeline, not of the caller. The CLI (T26) maps
+> that failure to an exit code.
 
 **Tests**: integration
 **Gate**: full

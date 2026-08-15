@@ -1,0 +1,150 @@
+using Csharp2Md.Core.Loading;
+using Csharp2Md.Core.Manifests;
+using Csharp2Md.Core.Pipeline;
+
+namespace Csharp2Md.Core.Tests.Pipeline;
+
+/// <summary>
+/// Asserts the pipeline's structural invariants: one workspace at a time (P1-19), streaming writes
+/// (AD-001), cancellation, and the no-output-on-invalid-manifest rule (P1-16).
+/// </summary>
+[Trait("Category", "Integration")]
+public sealed class AnalysisPipelineInvariantTests : IDisposable
+{
+    private readonly string _workspace = Directory.CreateTempSubdirectory("csharp2md-invariant-").FullName;
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_workspace))
+        {
+            Directory.Delete(_workspace, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunAsync_NeverHasTwoServiceWorkspacesOpenAtOnce()
+    {
+        var events = new List<string>();
+        var loader = new SolutionLoader();
+
+        // SolutionLoader owns its MSBuildWorkspace for exactly the duration of the call
+        // (`using var workspace` inside LoadAsync, single call site), so a load that closes before
+        // the next one opens is a workspace that is disposed before the next is created (P1-19).
+        var pipeline = new AnalysisPipeline(async (solutionPath, cancellationToken) =>
+        {
+            var service = Path.GetFileNameWithoutExtension(solutionPath);
+            events.Add($"open:{service}");
+            try
+            {
+                return await loader.LoadAsync(solutionPath, cancellationToken);
+            }
+            finally
+            {
+                events.Add($"close:{service}");
+            }
+        });
+
+        var manifestPath = FixtureManifest.WriteOverrides(
+            _workspace, SyntheticFixtureRun.Orders, SyntheticFixtureRun.SharedContracts);
+
+        await pipeline.RunAsync(manifestPath, Path.Combine(_workspace, "output"), CancellationToken.None);
+
+        Assert.Equal(
+            ["open:Acme.Orders", "close:Acme.Orders", "open:Acme.Shared.Contracts", "close:Acme.Shared.Contracts"],
+            events);
+    }
+
+    [Fact]
+    public async Task RunAsync_WritesEachServicesDocumentsBeforeOpeningTheNextWorkspace()
+    {
+        var outputRoot = Path.Combine(_workspace, "output");
+        var loader = new SolutionLoader();
+        var ordersDocumentWhenNextServiceOpened = new List<bool>();
+
+        // AD-001: documents are written and discarded as the run streams, not accumulated into a
+        // whole-codebase model and flushed at the end.
+        var pipeline = new AnalysisPipeline((solutionPath, cancellationToken) =>
+        {
+            if (Path.GetFileNameWithoutExtension(solutionPath) == SyntheticFixtureRun.SharedContracts)
+            {
+                ordersDocumentWhenNextServiceOpened.Add(
+                    File.Exists(Path.Combine(outputRoot, SyntheticFixtureRun.Orders, "OrderService.cs.md")));
+            }
+
+            return loader.LoadAsync(solutionPath, cancellationToken);
+        });
+
+        var manifestPath = FixtureManifest.WriteOverrides(
+            _workspace, SyntheticFixtureRun.Orders, SyntheticFixtureRun.SharedContracts);
+
+        await pipeline.RunAsync(manifestPath, outputRoot, CancellationToken.None);
+
+        Assert.Equal([true], ordersDocumentWhenNextServiceOpened);
+    }
+
+    [Fact]
+    public async Task RunAsync_InvalidManifest_ReturnsTypedFailureAndWritesNoOutput()
+    {
+        var manifestPath = Path.Combine(_workspace, "manifest.json");
+        File.WriteAllText(manifestPath, "{ not json");
+        var outputRoot = Path.Combine(_workspace, "output");
+
+        var result = await new AnalysisPipeline().RunAsync(manifestPath, outputRoot, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ManifestErrorCode.MalformedJson, result.ManifestError!.Value.Code);
+        Assert.False(Directory.Exists(outputRoot));
+    }
+
+    [Fact]
+    public async Task RunAsync_MissingManifest_ReturnsTypedFailureAndWritesNoOutput()
+    {
+        var outputRoot = Path.Combine(_workspace, "output");
+
+        var result = await new AnalysisPipeline()
+            .RunAsync(Path.Combine(_workspace, "absent.json"), outputRoot, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ManifestErrorCode.FileMissing, result.ManifestError!.Value.Code);
+        Assert.False(Directory.Exists(outputRoot));
+    }
+
+    [Fact]
+    public async Task RunAsync_CancelledToken_StopsBeforeLoadingAnyService()
+    {
+        var loads = 0;
+        var pipeline = new AnalysisPipeline((_, _) =>
+        {
+            loads++;
+            return Task.FromResult(new LoadedService(null!, new LoadReport([])));
+        });
+
+        var manifestPath = FixtureManifest.WriteOverrides(_workspace, SyntheticFixtureRun.SharedContracts);
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => pipeline.RunAsync(manifestPath, Path.Combine(_workspace, "output"), cancellation.Token));
+
+        Assert.Equal(0, loads);
+    }
+
+    [Fact]
+    public async Task RunAsync_DocumentOutsideTheServiceRoot_StaysInsideTheOutputTree()
+    {
+        // Acme.Orders resolves to its .slnx (P1-02), which T3 extended to bundle projects living in
+        // sibling directories — their documents have no path *inside* the service root.
+        var outputRoot = Path.Combine(_workspace, "output");
+        var manifestPath = FixtureManifest.WriteRoots(_workspace, SyntheticFixtureRun.Orders);
+
+        var result = await new AnalysisPipeline().RunAsync(manifestPath, outputRoot, CancellationToken.None);
+
+        var generated = Directory.EnumerateFiles(outputRoot, "*.md", SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(outputRoot, path).Replace('\\', '/'))
+            .ToList();
+
+        Assert.Contains("Acme.Orders/Acme.Shared.Contracts/Events.cs.md", generated);
+        Assert.DoesNotContain(generated, path => path.Contains("..", StringComparison.Ordinal));
+        Assert.Contains(result.Warnings, warning => warning.Contains("Acme.DoesNotExist", StringComparison.Ordinal));
+    }
+}
