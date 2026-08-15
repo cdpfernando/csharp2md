@@ -1,3 +1,5 @@
+using Csharp2Md.Core.Tests.Pipeline;
+
 namespace Csharp2Md.Core.Tests.Cli;
 
 [Trait("Category", "Integration")]
@@ -57,15 +59,32 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
     [Fact]
     public async Task Run_WithValidArguments_ExitsZeroAndReportsProjectCount()
     {
-        var manifestPath = TestPaths.SyntheticSolution(Path.Combine("Acme.Orders", "Acme.Orders.slnx"));
+        // --manifest takes a manifest.json (P1-16), not a solution path directly — the automatic
+        // .sln heuristic (P1-02) picks up Acme.Orders.slnx, which loads 3 real projects (Acme.Orders,
+        // Acme.Shared.Contracts, Acme.Broken); the 4th reference, Acme.DoesNotExist, is skipped by
+        // SkipUnrecognizedProjects (P1-06) rather than counted.
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-args-").FullName;
+        try
+        {
+            var manifestPath = FixtureManifest.WriteRoots(workspace, "Acme.Orders");
+            var outputPath = Path.Combine(workspace, "output");
 
-        var result = await ProcessRunner.RunAsync(
-            "dotnet",
-            $"\"{CliDllPath}\" --manifest \"{manifestPath}\" --output \".\"",
-            TestPaths.RepoRoot,
-            CancellationToken.None);
+            var result = await ProcessRunner.RunAsync(
+                "dotnet",
+                $"\"{CliDllPath}\" --manifest \"{manifestPath}\" --output \"{outputPath}\"",
+                TestPaths.RepoRoot,
+                CancellationToken.None);
 
-        Assert.Equal(0, result.ExitCode);
-        Assert.Contains("Loaded 3 project(s).", result.StandardOutput);
+            // Acme.Broken (referenced by Acme.Orders.slnx) is genuinely unrestorable, so the run
+            // reports it needing attention rather than a clean summary — still exits 0 per P3-05.
+            // Pinned to "need attention" specifically (not just "3 project(s)", which the clean-run
+            // branch would also match) so this test actually exercises the degraded case it claims to.
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains("1 of 3 project(s) need attention", result.StandardOutput);
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
     }
 }

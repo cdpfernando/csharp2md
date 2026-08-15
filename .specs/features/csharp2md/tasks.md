@@ -1149,14 +1149,20 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`, `dotnet-skills:slopwatch`, `dotnet-test:assertion-quality`, `dotnet-test:test-gap-analysis`
 
 **Done when**:
-- [ ] Valid `--manifest` + `--output` runs the full pipeline and exits `0` (P3-05)
-- [ ] **Exits `0` even when projects were degraded** — a degraded-but-completed run is a success (P3-05)
-- [ ] Invalid manifest exits non-zero with a specific message and writes no output (P1-16)
-- [ ] BuildHost unable to resolve `dotnet` produces an actionable message, not a raw exception
-- [ ] E2E test runs the tool against the fixture and asserts the full artifact set: mirrored `.md` tree, per-service and root `index.md`, `dependencies.json`, Mermaid diagram, and the console summary
-- [ ] E2E test asserts the fixture's known dependency set matches `dependencies.json` exactly (the P1 and P2 Independent Tests, made executable)
-- [ ] Gate check passes: `dotnet build -c Release` → `dotnet format --verify-no-changes` → `dotnet test`
-- [ ] Test count: ≥8 tests pass (no silent deletions)
+- [x] Valid `--manifest` + `--output` runs the full pipeline and exits `0` (P3-05)
+- [x] **Exits `0` even when projects were degraded** — a degraded-but-completed run is a success (P3-05) — asserted against `Acme.Broken`'s genuinely-unrestorable project
+- [x] Invalid manifest exits non-zero with a specific message and writes no output (P1-16)
+- [x] BuildHost unable to resolve `dotnet` produces an actionable message, not a raw exception — reproduced for real by overriding `PATH`/`DOTNET_ROOT` to a directory with no `dotnet`, per `ProcessRunner`'s environment-override contract; asserted stderr contains the actionable message and neither `"Unhandled exception"` nor a raw stack trace frame
+- [x] E2E test runs the tool against the fixture and asserts the full artifact set: mirrored `.md` tree, per-service and root `index.md`, `dependencies.json`, Mermaid diagram, and the console summary
+- [x] E2E test asserts the fixture's known dependency set matches `dependencies.json` exactly (the P1 and P2 Independent Tests, made executable) — 6 known edges asserted by exact (source, target, communication, resolution) tuple: HTTP/hard-coded, gRPC/unresolved, messaging/correlated, messaging/unpaired (P2-15), and both direct-reference edges
+- [x] Gate check passes: `dotnet build -c Release` → `dotnet format --verify-no-changes` → `dotnet test`
+- [x] Test count: 24 tests across `Cli/EndToEndTests.cs` (new, 4 tests) + `Cli/CliArgumentValidationTests.cs` (4) + `Cli/PackagingSmokeTests.cs` (1) + pre-existing Cli tests (suite 279 → 283; no silent deletions)
+
+> **Fixed 2 pre-existing tests broken by T24's own wiring, not by this task's new code.** `CliArgumentValidationTests.Run_WithValidArguments_ExitsZeroAndReportsProjectCount` and `PackagingSmokeTests.PackedTool_RunFromOutsideRepo_...` were written in T4 (Phase 0), before `AnalysisPipeline`/`ManifestLoader` existed, and passed a raw `.slnx` path as `--manifest`. Once T24 wired the real pipeline (this task's own dependency), `--manifest` genuinely means "a `manifest.json`" (P1-16) — the old shortcut now fails with `Manifest is not valid JSON: '<' is an invalid start of a value`, since XML doesn't parse as JSON. Fixed both to build a real `manifest.json` via `FixtureManifest.WriteRoots` (T24's own helper, reused rather than duplicated) targeting `Acme.Orders`'s automatic `.sln` heuristic (P1-02) — same 3-project count (`Acme.Orders`, `Acme.Shared.Contracts`, `Acme.Broken`) as the original assertion, just reached the spec-correct way. Not a "weaken the test" case: this is a genuine contract change from an earlier phase's temporary shortcut to the real one, corroborated by the spec's own CLI invocation shape (spec.md Assumptions: `--manifest <path-to-manifest.json>`).
+>
+> T2's known gRPC-client gap (flagged since Phase 0/1, see STATE.md) is closed here: `fixtures/SyntheticSolution/Acme.Orders/PaymentsGrpcClient.cs` declares `Grpc.Core.ClientBase` in-fixture (same reasoning as `IEventBus` standing in for a broker — the fixture must stay restorable without new external dependencies) and `OrderService.AuthorizePaymentAsync` calls its unary RPC. `GrpcClientDetector` (T16) matches on the namespace-qualified base type, so this exercises the real detection rule. The detected target (`Payments`, the proto service name) matches no config entry, so per **AD-005** the edge is `sincrono-bloqueante` / `unresolved` rather than resolved to `Acme.Payments`.
+>
+> Session note: this task was executed across three attempts due to external usage limits unrelated to the code (a sub-agent session limit, then a monthly spend limit) — see `.specs/STATE.md` Handoff for the full account. T24/T25 (this phase's earlier tasks) completed cleanly on the second attempt; T26 itself was finished directly rather than via a further sub-agent dispatch once the fixture and the two broken pre-existing tests were diagnosed.
 
 **Tests**: integration
 **Gate**: build

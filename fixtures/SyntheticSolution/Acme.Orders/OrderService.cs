@@ -4,8 +4,13 @@ using Microsoft.Extensions.Http;
 
 namespace Acme.Orders;
 
-public sealed class OrderService(IHttpClientFactory httpClientFactory, IEventBus eventBus)
+public sealed class OrderService(
+    IHttpClientFactory httpClientFactory, IEventBus eventBus, PaymentsClient paymentsClient)
 {
+    /// <summary>Unary gRPC call into Acme.Payments' Payments service.</summary>
+    public Task<string> AuthorizePaymentAsync(Guid orderId, decimal amount) =>
+        paymentsClient.AuthorizePayment(orderId.ToString(), amount);
+
     public async Task PlaceOrderAsync(Guid orderId, decimal amount, CancellationToken cancellationToken)
     {
         var paymentClient = httpClientFactory.CreateClient("PaymentService");

@@ -38,12 +38,20 @@ variants; `ConfigIndexer`/`ServiceNameResolver` (T8/T9) index config across
 **all** discovered service roots, so its location doesn't restrict which
 service's calls can resolve against it.
 
-**Known gap vs. spec.md's P2 Independent Test:** that narrative mentions a
-"simulated gRPC call," but T2's approved Done-when checklist only specifies
-Payments *exposing* a gRPC service (server-side), not any project *calling*
-one as a client. No gRPC client invocation exists in this fixture as scoped.
-If `GrpcClientDetector` (T16) or the T26 end-to-end assertion need one, that
-requires an explicit scope decision, not a silent addition here.
+**Closed in T26 (was a known gap vs. spec.md's P2 Independent Test):** that
+narrative names a "simulated gRPC call," but T2's approved Done-when only
+specified Payments *exposing* a gRPC service (server-side), so no gRPC client
+invocation existed here. T26's own Done-when requires making the P2
+Independent Test executable, so the missing client call was added:
+`Acme.Orders/PaymentsGrpcClient.cs` declares `Grpc.Core.ClientBase` and a
+generated-shaped `PaymentsClient`, and `OrderService.AuthorizePaymentAsync`
+calls its unary `AuthorizePayment` RPC. The base type is declared in-fixture
+rather than pulled from `Grpc.AspNetCore` for the same reason `IEventBus`
+stands in for a broker — `Acme.Orders` must stay restorable without new
+external dependencies. `GrpcClientDetector` matches on the namespace-qualified
+base type, so this exercises the real rule, not a weakened one. The detected
+target is `Payments` (the proto service behind the client), which no config
+entry names — so the edge is `sincrono-bloqueante` / `unresolved`, per AD-005.
 
 ## Extended in T3 (SolutionLoader integration tests)
 

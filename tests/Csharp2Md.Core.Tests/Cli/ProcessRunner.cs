@@ -7,7 +7,11 @@ internal sealed record ProcessResult(int ExitCode, string StandardOutput, string
 internal static class ProcessRunner
 {
     public static async Task<ProcessResult> RunAsync(
-        string fileName, string arguments, string workingDirectory, CancellationToken cancellationToken)
+        string fileName,
+        string arguments,
+        string workingDirectory,
+        CancellationToken cancellationToken,
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         var startInfo = new ProcessStartInfo(fileName, arguments)
         {
@@ -16,6 +20,13 @@ internal static class ProcessRunner
             RedirectStandardOutput = true,
             RedirectStandardError = true,
         };
+
+        // Overrides on top of the inherited environment — used to run the tool on a machine that
+        // cannot resolve `dotnet`, which is otherwise impossible to simulate in-process.
+        foreach (var variable in environment ?? new Dictionary<string, string>())
+        {
+            startInfo.Environment[variable.Key] = variable.Value;
+        }
 
         using var process = new Process { StartInfo = startInfo };
         process.Start();
