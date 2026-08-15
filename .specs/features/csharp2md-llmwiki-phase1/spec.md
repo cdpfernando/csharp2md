@@ -273,9 +273,9 @@ The framework stand-ins these documents rely on (`WebApplication`, `IServiceColl
 | WIKI-11 | P1: Repackage as LLMWiki topic | Design | Pending |
 | WIKI-12 | P1: Repackage as LLMWiki topic | Design | Pending |
 | WIKI-13 | P1: Repackage as LLMWiki topic | Design | Pending |
-| WIKI-14 | P1: Repackage as LLMWiki topic | Design | Pending |
-| WIKI-15 | P1: Repackage as LLMWiki topic | Design | Pending |
-| WIKI-16 | P1: Repackage as LLMWiki topic | Design | Pending |
+| WIKI-14 | P1: Repackage as LLMWiki topic | Execute (T2) | Implementing |
+| WIKI-15 | P1: Repackage as LLMWiki topic | Execute (T2) | Implementing |
+| WIKI-16 | P1: Repackage as LLMWiki topic | Execute (T2) | Implementing |
 | WIKI-17 | P1: Repackage as LLMWiki topic | Design | Pending |
 | WIKI-18 | P2: Auditable generation log | Design | Pending |
 | WIKI-19 | P2: Auditable generation log | Design | Pending |

@@ -178,12 +178,12 @@ T20 -> T21
 - Skill: `dotnet-skills:csharp-coding-standards` (use the explicit-property value-object form — the skill's validated primary-constructor snippet does not compile, CS0111)
 
 **Done when**:
-- [ ] `Slugify` lowercases, collapses non-alphanumeric runs to a single `-`, and trims leading/trailing `-`
-- [ ] Default topic is the slug of the input directory name; default domain is `system-design`
-- [ ] A topic failing `^[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)*$` returns an error, never throws
-- [ ] Tests cover: accepted plain slug, accepted `group/name` slug, rejected uppercase, rejected leading `-`, rejected empty, and each default
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] `Slugify` lowercases, collapses non-alphanumeric runs to a single `-`, and trims leading/trailing `-`
+- [x] Default topic is the slug of the input directory name; default domain is `system-design`
+- [x] A topic failing `^[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)*$` returns an error, never throws
+- [x] Tests cover: accepted plain slug, accepted `group/name` slug, rejected uppercase, rejected leading `-`, rejected empty, and each default
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
 
 **Tests**: unit
 **Gate**: quick
