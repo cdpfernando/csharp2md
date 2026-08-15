@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Acme.Payments.csproj" />
+  <Project Path="../Acme.Shared.Contracts/Acme.Shared.Contracts.csproj" />
+</Solution>

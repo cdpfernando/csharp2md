@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option csharp_namespace = "Acme.Payments";
+
+package payments;
+
+service Payments {
+  // Unary: authorize a single payment and get back one response.
+  rpc AuthorizePayment (AuthorizePaymentRequest) returns (AuthorizePaymentReply);
+
+  // Server-streaming: stream status updates for a payment until it settles.
+  rpc StreamPaymentStatus (StreamPaymentStatusRequest) returns (stream PaymentStatusUpdate);
+}
+
+message AuthorizePaymentRequest {
+  string order_id = 1;
+  double amount = 2;
+}
+
+message AuthorizePaymentReply {
+  string payment_id = 1;
+  bool approved = 2;
+}
+
+message StreamPaymentStatusRequest {
+  string payment_id = 1;
+}
+
+message PaymentStatusUpdate {
+  string payment_id = 1;
+  string status = 2;
+}

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Acme.Orders.csproj" />
+  <Project Path="../Acme.Shared.Contracts/Acme.Shared.Contracts.csproj" />
+  <Project Path="../Acme.Broken/Acme.Broken.csproj" />
+  <Project Path="../Acme.DoesNotExist/Acme.DoesNotExist.csproj" />
+</Solution>
