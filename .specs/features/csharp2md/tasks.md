@@ -671,12 +671,35 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`
 
 **Done when**:
-- [ ] Detects generated gRPC client invocations
-- [ ] Unary → `sincrono-bloqueante`; duplex/streaming → `streaming-bidirecional` (P2-02)
-- [ ] Target resolved through `ServiceNameResolver` with the same unresolved-still-recorded behavior
-- [ ] Unit tests cover unary, streaming, and unresolved-target cases
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥5 tests pass (no silent deletions)
+- [x] Detects generated gRPC client invocations
+- [x] Unary → `sincrono-bloqueante`; duplex/streaming → `streaming-bidirecional` (P2-02)
+- [x] Target resolved through `ServiceNameResolver` with the same unresolved-still-recorded behavior
+- [x] Unit tests cover unary, streaming, and unresolved-target cases
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: 11 tests in `Detection/GrpcClientDetectorTests.cs` (suite 133 → 144; no silent deletions)
+
+> Same `TargetService = null` decision as T15, for the same reason and with the same
+> `SPEC_DEVIATION` block on the detector. See the note under T15 for the full rationale.
+>
+> Recognition is **semantic only**: the receiver's type must genuinely derive from
+> `Grpc.Core.ClientBase`, and the call shape comes from the return type (`AsyncUnaryCall` versus
+> `AsyncServerStreamingCall` / `AsyncClientStreamingCall` / `AsyncDuplexStreamingCall`). Unlike
+> T15's `CreateClient` path there is no syntactic fallback, because "a generated gRPC client" has
+> no reliable name-only signature; with a null `SemanticModel` the detector reports nothing rather
+> than guessing. Tested.
+>
+> Server streaming and client streaming both classify as `streaming-bidirecional`, matching the
+> design table's single "gRPC streaming / duplex call" row. A generated **blocking** overload
+> returns the response type directly rather than a call handle and is still unary.
+>
+> Target name is the proto service behind the generated client (`PaymentsClient` → `Payments`),
+> since a generated client carries no other logical name. It is then classified by
+> `ServiceNameResolver` like any other logical name.
+>
+> Tests declare stand-in `Grpc.Core` call types and a generated-client shape inside the test
+> compilation rather than referencing `Grpc.AspNetCore`. The detector matches on
+> namespace-qualified type names, so this exercises the real rule; it also sidesteps the fixture
+> gap T9 flagged (the fixture has no gRPC *client* anywhere, only Payments exposing a service).
 
 **Tests**: unit
 **Gate**: quick
