@@ -371,12 +371,12 @@ T20 -> T21
 - Verify first (see Knowledge Verification): `BaseListSyntax` for the `api-endpoint` rule
 
 **Done when**:
-- [ ] Each of the six rules has a test asserting it fires
-- [ ] `event-driven` fires on bare `Subscribe` as well as `SubscribeAsync`
-- [ ] A document matching several rules yields all matching tags, sorted, with no duplicates
-- [ ] A document matching none yields an empty list, not null
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] Each of the six rules has a test asserting it fires
+- [x] `event-driven` fires on bare `Subscribe` as well as `SubscribeAsync`
+- [x] A document matching several rules yields all matching tags, sorted, with no duplicates
+- [x] A document matching none yields an empty list, not null
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
 
 **Tests**: unit
 **Gate**: quick
