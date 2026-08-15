@@ -261,12 +261,12 @@ T20 -> T21
 - Skill: `dotnet-skills:csharp-type-design-performance`
 
 **Done when**:
-- [ ] `FileType` declares all eleven values from the spec's enum
-- [ ] `Language`, `CreatedBy`, `SourceService`, and `AnalysisStatus` are computed properties, not constructor parameters
-- [ ] `SourceKind` distinguishes `codebase-file` from `codebase-index`
-- [ ] Tests assert the four Phase 1 constants and that `Tags` is never null
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] `FileType` declares all eleven values from the spec's enum
+- [x] `Language`, `CreatedBy`, `SourceService`, and `AnalysisStatus` are computed properties, not constructor parameters
+- [x] `SourceKind` distinguishes `codebase-file` from `codebase-index`
+- [x] Tests assert the four Phase 1 constants and that `Tags` is never null
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
 
 **Tests**: unit
 **Gate**: quick
