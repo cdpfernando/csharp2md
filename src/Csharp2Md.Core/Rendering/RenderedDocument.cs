@@ -25,6 +25,14 @@ public sealed record RenderedDocument(
     string IndexLink,
     IReadOnlyList<RenderedSection> Sections)
 {
+    /// <summary>
+    /// The "Dependências detectadas" section (P2-10), attached by
+    /// <see cref="DependencySectionRenderer"/>. It sits outside <see cref="Sections"/> on purpose:
+    /// it maps to no source bytes, and a zero-span entry in that list would break the span-coverage
+    /// invariant. <c>null</c> when the document has no detected dependencies.
+    /// </summary>
+    public string? DependencySection { get; init; }
+
     public string ToMarkdown()
     {
         var fence = new string('`', Math.Max(3, LongestBacktickRun() + 1));
@@ -32,6 +40,12 @@ public sealed record RenderedDocument(
 
         builder.Append("# ").Append(RelativePath).Append("\n\n");
         builder.Append("Namespace: `").Append(Namespace).Append("` | [Index](").Append(IndexLink).Append(")\n\n");
+
+        // design.md's document structure: heading -> namespace + backlink -> dependencies -> source.
+        if (DependencySection is { } dependencies)
+        {
+            builder.Append(dependencies).Append('\n');
+        }
 
         foreach (var section in Sections)
         {

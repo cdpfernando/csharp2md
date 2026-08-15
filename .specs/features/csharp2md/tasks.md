@@ -989,13 +989,37 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`, `dotnet-skills:snapshot-testing`
 
 **Done when**:
-- [ ] Section lists communication type, target, and resolution for each dependency (P2-10)
-- [ ] Messaging signals use the **topic/message type name** as target, since correlation happens later in Stage 3 (P2-10 as amended)
-- [ ] Documents with no detected dependencies omit the section entirely
-- [ ] Span-coverage invariant from T11 still holds with the section present
-- [ ] Unit tests + Verify snapshot cover HTTP, gRPC, messaging, direct-reference, and the empty case
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥6 tests pass (no silent deletions)
+- [x] Section lists communication type, target, and resolution for each dependency (P2-10)
+- [x] Messaging signals use the **topic/message type name** as target, since correlation happens later in Stage 3 (P2-10 as amended)
+- [x] Documents with no detected dependencies omit the section entirely
+- [x] Span-coverage invariant from T11 still holds with the section present
+- [x] Unit tests + Verify snapshot cover HTTP, gRPC, messaging, direct-reference, and the empty case
+- [x] Gate check passes: `dotnet test --filter Category!=Integration`
+- [x] Test count: 15 tests in `Rendering/DependencySectionRendererTests.cs` (suite 230 → 245 quick; no silent deletions)
+
+> **The section is attached outside `RenderedDocument.Sections`, not as another `RenderedSection`.**
+> A `RenderedSection` owns a span of the source file, and this section maps to **no source bytes at
+> all**; a zero-span entry in that list would break AD-002's span-coverage invariant outright. It
+> travels as a separate `string? DependencySection` property that `ToMarkdown` emits between the
+> index backlink and the preamble — design.md's exact document order. The invariant is re-asserted
+> here over all seven of T11's sources with the section present, reusing `SpanCoverageTests.Sources`.
+>
+> Shape is `Apply(RenderedDocument, IReadOnlyList<DependencySignal>) → RenderedDocument`, the same
+> additive-pure-function form as T12's `SemanticEnricher.Enrich`. Skipping the call degrades to a
+> document with no dependency section rather than breaking anything.
+>
+> **Beyond the `Where` field:** `Rendering/RenderedDocument.cs` (T11's file) gained the
+> `DependencySection` init-only property and the four lines of `ToMarkdown` that emit it. There is
+> no way to place the section in the output without the type that owns Markdown assembly knowing
+> about it; the alternative was string surgery on assembled Markdown. `MarkdownRenderer.cs` itself
+> is untouched.
+>
+> Target is `TargetService?.Value ?? RawTarget`, which needs no messaging special case: a messaging
+> half-edge has no `TargetService` until Stage 3, so the topic name is simply what there is to show
+> (P2-10 as amended), while T18's direct references show the real correlated service.
+>
+> Labels reuse `JsonNamingPolicy.KebabCaseLower`, the same policy T20 and T21 use, so one dependency
+> reads identically in the document, in `dependencies.json`, and in the diagram.
 
 **Tests**: unit
 **Gate**: quick
