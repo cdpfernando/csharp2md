@@ -70,7 +70,10 @@ public sealed class AnalysisPipeline
     }
 
     public async Task<PipelineRunResult> RunAsync(
-        string manifestPath, string outputRoot, CancellationToken cancellationToken = default)
+        string manifestPath,
+        string outputRoot,
+        CancellationToken cancellationToken = default,
+        bool forceOutput = false)
     {
         ArgumentNullException.ThrowIfNull(outputRoot);
 
@@ -89,7 +92,8 @@ public sealed class AnalysisPipeline
         warnings.AddRange(config.Warnings);
 
         // ── Stage 2: Analysis ───────────────────────────────────────────────────────────────
-        new OutputWriter(outputRoot).PrepareRun(); // P1-15: the whole run's output, cleared once.
+        var inputRoot = Path.GetDirectoryName(Path.GetFullPath(manifestPath))!;
+        new OutputWriter(outputRoot).PrepareRun(inputRoot, forceOutput);
 
         var signals = new List<DependencySignal>();
         var loadResults = new List<ProjectLoadResult>();

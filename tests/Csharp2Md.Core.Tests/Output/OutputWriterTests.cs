@@ -77,42 +77,145 @@ public sealed class OutputWriterTests : IDisposable
         Assert.NotNull(new OutputWriter(_root).Write(DocumentAt(relativePath)));
     }
 
-    // P1-15: a rerun must not leave content behind for source that no longer exists.
+    // P1-15 / CLI-12 / CLI-13: a marked rerun must not leave stale generated content behind.
     [Fact]
-    public void PrepareRun_PrePopulatedOutputDirectory_RemovesEveryPriorFile()
+    public void PrepareRun_MarkedOutputDirectory_RemovesPriorContentAndRecreatesMarker()
     {
-        Directory.CreateDirectory(Path.Combine(_root, "Stale", "Deep"));
-        File.WriteAllText(Path.Combine(_root, "Stale", "Deep", "Removed.cs.md"), "from a previous run");
-        File.WriteAllText(Path.Combine(_root, "index.md"), "stale index");
+        var input = Directory.CreateDirectory(Path.Combine(_root, "input")).FullName;
+        var output = Directory.CreateDirectory(Path.Combine(_root, "output")).FullName;
+        Directory.CreateDirectory(Path.Combine(output, "Stale", "Deep"));
+        File.WriteAllText(Path.Combine(output, ".csharp2md-output"), "previous marker");
+        File.WriteAllText(Path.Combine(output, "Stale", "Deep", "Removed.cs.md"), "from a previous run");
+        File.WriteAllText(Path.Combine(output, "index.md"), "stale index");
 
-        new OutputWriter(_root).PrepareRun();
+        new OutputWriter(output).PrepareRun(input);
 
-        Assert.True(Directory.Exists(_root));
-        Assert.Empty(Directory.GetFileSystemEntries(_root));
+        Assert.Equal(
+            [Path.Combine(output, ".csharp2md-output")],
+            Directory.GetFileSystemEntries(output));
     }
 
     [Fact]
-    public void PrepareRun_MissingOutputDirectory_CreatesIt()
+    public void PrepareRun_MissingOutputDirectory_CreatesItWithOwnershipMarker()
     {
+        var input = Directory.CreateDirectory(Path.Combine(_root, "input")).FullName;
         var missing = Path.Combine(_root, "not-yet-there");
 
-        new OutputWriter(missing).PrepareRun();
+        new OutputWriter(missing).PrepareRun(input);
 
         Assert.True(Directory.Exists(missing));
+        Assert.True(File.Exists(Path.Combine(missing, ".csharp2md-output")));
+    }
+
+    [Fact]
+    public void PrepareRun_EmptyOutputDirectory_CreatesOwnershipMarker()
+    {
+        var input = Directory.CreateDirectory(Path.Combine(_root, "input")).FullName;
+        var output = Directory.CreateDirectory(Path.Combine(_root, "output")).FullName;
+
+        new OutputWriter(output).PrepareRun(input);
+
+        Assert.Equal(
+            [Path.Combine(output, ".csharp2md-output")],
+            Directory.GetFileSystemEntries(output));
+    }
+
+    [Fact]
+    public void PrepareRun_NonEmptyUnmarkedOutput_RefusesWithoutChangingContent()
+    {
+        var input = Directory.CreateDirectory(Path.Combine(_root, "input")).FullName;
+        var output = Directory.CreateDirectory(Path.Combine(_root, "output")).FullName;
+        var existing = Path.Combine(output, "keep.txt");
+        File.WriteAllText(existing, "keep me");
+
+        var exception = Assert.Throws<OutputPreparationException>(
+            () => new OutputWriter(output).PrepareRun(input));
+
+        Assert.Contains("--force", exception.Message, StringComparison.Ordinal);
+        Assert.Equal("keep me", File.ReadAllText(existing));
+        Assert.Equal([existing], Directory.GetFileSystemEntries(output));
+    }
+
+    [Fact]
+    public void PrepareRun_NonEmptyUnmarkedOutputWithForce_ReplacesContentAndCreatesMarker()
+    {
+        var input = Directory.CreateDirectory(Path.Combine(_root, "input")).FullName;
+        var output = Directory.CreateDirectory(Path.Combine(_root, "output")).FullName;
+        var existing = Path.Combine(output, "remove.txt");
+        File.WriteAllText(existing, "remove me");
+
+        new OutputWriter(output).PrepareRun(input, force: true);
+
+        Assert.False(File.Exists(existing));
+        Assert.Equal(
+            [Path.Combine(output, ".csharp2md-output")],
+            Directory.GetFileSystemEntries(output));
+    }
+
+    [Fact]
+    public void ValidateSafety_FilesystemRoot_IsRejectedBeforeFileOperations()
+    {
+        var root = Path.GetPathRoot(_root)!;
+
+        var error = OutputWriter.ValidateSafety(root, _root);
+
+        Assert.Contains("filesystem root", error, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void PrepareRun_OutputEqualsInput_RefusesEvenWithForceAndPreservesContent()
+    {
+        var input = Directory.CreateDirectory(Path.Combine(_root, "input")).FullName;
+        var existing = Path.Combine(input, "source.cs");
+        File.WriteAllText(existing, "source");
+
+        Assert.Throws<OutputPreparationException>(
+            () => new OutputWriter(input).PrepareRun(input, force: true));
+
+        Assert.Equal("source", File.ReadAllText(existing));
+    }
+
+    [Fact]
+    public void PrepareRun_OutputIsInputAncestor_RefusesEvenWithForceAndPreservesContent()
+    {
+        var output = Directory.CreateDirectory(Path.Combine(_root, "project")).FullName;
+        var input = Directory.CreateDirectory(Path.Combine(output, "src")).FullName;
+        var existing = Path.Combine(input, "source.cs");
+        File.WriteAllText(existing, "source");
+
+        Assert.Throws<OutputPreparationException>(
+            () => new OutputWriter(output).PrepareRun(input, force: true));
+
+        Assert.Equal("source", File.ReadAllText(existing));
+    }
+
+    [Fact]
+    public void PrepareRun_ForceForEmptyOutput_DoesNotChangeSelectedPath()
+    {
+        var input = Directory.CreateDirectory(Path.Combine(_root, "input")).FullName;
+        var output = Path.Combine(_root, "selected-output");
+
+        new OutputWriter(output).PrepareRun(input, force: true);
+
+        Assert.True(File.Exists(Path.Combine(output, ".csharp2md-output")));
+        Assert.False(Directory.Exists(Path.Combine(output, "input_md")));
     }
 
     [Fact]
     public void PrepareRunThenWrite_OutputReflectsOnlyTheCurrentRun()
     {
-        var writer = new OutputWriter(_root);
-        File.WriteAllText(Path.Combine(_root, "Obsolete.cs.md"), "from a previous run");
+        var input = Directory.CreateDirectory(Path.Combine(_root, "input")).FullName;
+        var output = Directory.CreateDirectory(Path.Combine(_root, "output")).FullName;
+        var writer = new OutputWriter(output);
+        File.WriteAllText(Path.Combine(output, ".csharp2md-output"), "marker");
+        File.WriteAllText(Path.Combine(output, "Obsolete.cs.md"), "from a previous run");
 
-        writer.PrepareRun();
+        writer.PrepareRun(input);
         writer.Write(DocumentAt("Orders/OrderService.cs"));
 
-        Assert.False(File.Exists(Path.Combine(_root, "Obsolete.cs.md")));
+        Assert.False(File.Exists(Path.Combine(output, "Obsolete.cs.md")));
         Assert.Equal(
-            [Path.Combine(_root, "Orders", "OrderService.cs.md")],
-            Directory.GetFiles(_root, "*", SearchOption.AllDirectories));
+            [Path.Combine(output, ".csharp2md-output"), Path.Combine(output, "Orders", "OrderService.cs.md")],
+            Directory.GetFiles(output, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal));
     }
 }
