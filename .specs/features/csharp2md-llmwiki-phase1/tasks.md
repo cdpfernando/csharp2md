@@ -399,12 +399,24 @@ T20 -> T21
 - Verify first: nothing new — T10 composes T7–T9 and introduces no further Roslyn surface
 
 **Done when**:
-- [ ] `Build` takes a syntax tree, source path, root namespace, and `TopicOptions`, and never accepts a `SemanticModel`
-- [ ] A test parses a file whose base types are unresolvable and asserts the same result a resolvable equivalent produces — the WIKI-13 guarantee
-- [ ] A test with a deliberately malformed type header asserts `file_type: class` plus a warning, pinning the incomplete-tree degradation from design.md Risks as intended behavior
-- [ ] `source_path` is forward-slash separated on every platform
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] `Build` takes a syntax tree, source path, root namespace, and `TopicOptions`, and never accepts a `SemanticModel`
+- [x] A test parses a file whose base types are unresolvable and asserts the same result a resolvable equivalent produces — the WIKI-13 guarantee
+- [x] A test with a deliberately malformed type header asserts `file_type: class` plus a warning, pinning the incomplete-tree degradation from design.md Risks as intended behavior
+- [x] `source_path` is forward-slash separated on every platform
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
+
+> Note: to satisfy the malformed-header Done-when bullet using only already-proven Roslyn surface
+> (no new detection logic beyond T7-T9), `Build` emits an advisory warning whenever `file_type`
+> resolves to `Class` via "no rule matched" (not ambiguity) with a real title type present — reusing
+> no new node types, only a `FileType` comparison. Verified empirically (a `CSharpSyntaxTree.ParseText`
+> probe, not guessed) that a corrupted base-type reference (`Some#Controller` truncated by the parser
+> to `Some`) leaves the type's identifier intact, so no existing T7 tier-4 warning fires; this is the
+> only path left that can surface the degradation. Trade-off: the same warning also fires for
+> legitimately-unclassifiable `class` results with no malformation at all (e.g. the real
+> `PaymentsClient.cs`/`Events.cs` fixture files), since syntax alone cannot distinguish the two cases.
+> Flagged as a spec-precision gap for whichever batch implements T13/T19: tasks.md does not say
+> whether those fixture documents are expected to carry this warning.
 
 **Tests**: unit
 **Gate**: quick
