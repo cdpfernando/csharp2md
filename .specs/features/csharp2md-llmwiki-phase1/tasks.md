@@ -288,11 +288,11 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] Schema lists every required field and the full `file_type` enum
-- [ ] A test derives the expected property and enum sets from the `Frontmatter` record and `FileType` via reflection and fails on any divergence
-- [ ] The test names the drifting field, so a failure is actionable without opening the schema
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] Schema lists every required field and the full `file_type` enum
+- [x] A test derives the expected property and enum sets from the `Frontmatter` record and `FileType` via reflection and fails on any divergence
+- [x] The test names the drifting field, so a failure is actionable without opening the schema
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
 
 **Tests**: unit
 **Gate**: quick
