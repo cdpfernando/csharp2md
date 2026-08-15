@@ -315,12 +315,12 @@ T20 -> T21
 - Verify first (see Knowledge Verification): `FileScopedNamespaceDeclarationSyntax` alongside `NamespaceDeclarationSyntax` — the fixture uses both styles
 
 **Done when**:
-- [ ] Each of the four tiers has a test built from a parsed syntax tree
-- [ ] Tier 2 is proven by a document declaring a foreign-namespace type before the project's own — the `PaymentsGrpcClient.cs` shape
-- [ ] Tier 3 is proven by two same-namespace types where the file name matches neither — the `Events.cs` shape
-- [ ] Tier 4 emits a warning and is proven by a document declaring no type
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] Each of the four tiers has a test built from a parsed syntax tree
+- [x] Tier 2 is proven by a document declaring a foreign-namespace type before the project's own — the `PaymentsGrpcClient.cs` shape
+- [x] Tier 3 is proven by two same-namespace types where the file name matches neither — the `Events.cs` shape
+- [x] Tier 4 emits a warning and is proven by a document declaring no type
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
 
 **Tests**: unit
 **Gate**: quick
