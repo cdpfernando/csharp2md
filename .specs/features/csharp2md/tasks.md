@@ -535,12 +535,28 @@ T25 → T26
 - Skill: `dotnet-skills:csharp-coding-standards`, `dotnet-msbuild:check-bin-obj-clash`
 
 **Done when**:
-- [ ] Output path mirrors the document's relative path within its service source tree (P1-11)
-- [ ] Excludes `obj/`, `bin/`, `*.g.cs`, `*.designer.cs`
-- [ ] `PrepareRun` deletes prior generated content so output always reflects the current run (P1-15)
-- [ ] Unit tests cover path mirroring, each exclusion rule, and full-overwrite behavior on a pre-populated directory
-- [ ] Gate check passes: `dotnet test --filter Category!=Integration`
-- [ ] Test count: ≥7 tests pass (no silent deletions)
+- [x] Output path mirrors the document's relative path within its service source tree (P1-11)
+- [x] Excludes `obj/`, `bin/`, `*.g.cs`, `*.designer.cs`
+- [x] `PrepareRun` deletes prior generated content so output always reflects the current run (P1-15)
+- [x] Unit tests cover path mirroring, each exclusion rule, and full-overwrite behavior on a pre-populated directory
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: 17 tests in `Output/OutputWriterTests.cs` (suite 91 → 108; no silent deletions)
+
+> `outputRoot` moved from design.md's `PrepareRun(string outputRoot)` parameter to the constructor,
+> so `Write(RenderedDocument doc)` keeps design.md's exact signature and both methods agree on one
+> root by construction rather than by the caller passing the same string twice. `PrepareRun` deletes
+> everything under that root, so the instance must be rooted at the **run's** output directory and
+> `PrepareRun` called once before any service is processed.
+>
+> `Write` returns `string?` rather than `string`: `null` means the document was excluded and nothing
+> was written, which the index builder needs to distinguish from a written path. Exclusion is also
+> exposed as `static bool IsExcluded(string)` so the rule is testable without touching the disk.
+>
+> Exclusion matches `obj`/`bin` as whole **path segments** (case-insensitive) and only in directory
+> position, not the file name. Tested explicitly against `Objects/Registry.cs`, `Binder/Setup.cs`,
+> and `Orders/Designer.cs`, which a naive `Contains`/`EndsWith` rule would wrongly exclude.
+>
+> Output file naming is `Foo.cs` → `Foo.cs.md`, matching spec.md's own link example `[Foo.cs](./Foo.cs.md)`.
 
 **Tests**: unit
 **Gate**: quick
