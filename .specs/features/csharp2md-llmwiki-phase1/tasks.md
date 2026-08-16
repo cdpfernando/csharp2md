@@ -652,14 +652,30 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] Timestamp comes from an injected `TimeProvider`, never `DateTimeOffset.UtcNow` directly
-- [ ] All five statistics present: documents, edges, services, validation failures, output topic path
-- [ ] Empty `## Graph Resolution` and `## Calibration Notes` sections present
-- [ ] A run with validation failures lists each failing path and error
-- [ ] The log is written even on a run that exits `1`
-- [ ] Tests use a fixed `TimeProvider` and assert exact timestamp formatting
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] Timestamp comes from an injected `TimeProvider`, never `DateTimeOffset.UtcNow` directly
+- [x] All five statistics present: documents, edges, services, validation failures, output topic path
+- [x] Empty `## Graph Resolution` and `## Calibration Notes` sections present
+- [x] A run with validation failures lists each failing path and error
+- [x] The log is written even on a run that exits `1`
+- [x] Tests use a fixed `TimeProvider` and assert exact timestamp formatting
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
+
+> Note: design.md's `RunLogData` sketch carries a precomputed `TimestampUtc : DateTimeOffset` field,
+> which would make a `TimeProvider` parameter on `Write` redundant (the timestamp would already be a
+> plain value by the time `Write` sees it, pushing the "never call `UtcNow` directly" obligation onto
+> whichever future caller builds `RunLogData` — outside this task's `Where` scope). Implemented
+> instead as `Write(string outputRoot, RunLogData data, TimeProvider timeProvider)`, with `RunLogData`
+> carrying no timestamp field at all: `Write` calls `timeProvider.GetUtcNow()` itself. This keeps the
+> Done-when's `TimeProvider` requirement enforceable and testable entirely within `RunLogWriter.cs`,
+> matching how `FrontmatterYamlTests`/`TopicScaffoldWriterTests` test their writers as pure functions
+> of their inputs.
+>
+> Same wiring gap as T16's note: nothing in T16/T17/T18 calls `RunLogWriter.Write` during a real run.
+> "The log is written even on a run that exits 1" is proven at the writer level (calling `Write` with
+> a non-empty `Failures` list still writes the file unconditionally — nothing branches on
+> `Failures.Count`); the end-to-end version of that guarantee needs the same future wiring task T16's
+> note flags.
 
 **Tests**: unit
 **Gate**: quick
