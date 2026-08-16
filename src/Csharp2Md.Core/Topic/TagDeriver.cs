@@ -37,8 +37,7 @@ internal static class TagDeriver
             tags.Add("bootstrapping");
         }
 
-        if (invocations.Any(invocation =>
-            DependencyInjectionMethods.Contains(InvokedMethodName(invocation), StringComparer.Ordinal)))
+        if (identifiers.Any(name => DependencyInjectionMethods.Contains(name, StringComparer.Ordinal)))
         {
             tags.Add("dependency-injection");
         }
@@ -78,14 +77,6 @@ internal static class TagDeriver
                 || (ReceiverName(access) == "WebApplication" && access.Name.Identifier.ValueText == "CreateBuilder")));
 
     private static string ReceiverName(MemberAccessExpressionSyntax access) => SimpleName(access.Expression.ToString());
-
-    private static string? InvokedMethodName(InvocationExpressionSyntax invocation) => invocation.Expression switch
-    {
-        MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
-        IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-        GenericNameSyntax generic => generic.Identifier.ValueText,
-        _ => null,
-    };
 
     // Matches the string-based simple-name convention MessagingDetector.SimpleName already uses:
     // take the segment after the last namespace separator.

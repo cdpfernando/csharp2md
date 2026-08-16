@@ -752,13 +752,33 @@ T20 -> T21
 - Skill: `dotnet-test:assertion-quality`
 
 **Done when**:
-- [ ] Expectations encode the spec's Fixture Expectations table: title, tier, file_type, and tags per document
-- [ ] A test asserts the union of derived `file_type` values covers all eleven enum members
-- [ ] A test asserts the union of derived tags covers all six rules
-- [ ] A test asserts all four title tiers are exercised, including tier 4 via `Properties/AssemblyInfo.cs`
-- [ ] A failure names the document and the differing field
-- [ ] Gate check passes: `dotnet test`
-- [ ] Test count: no reduction from the running baseline
+- [x] Expectations encode the spec's Fixture Expectations table: title, tier, file_type, and tags per document
+- [x] A test asserts the union of derived `file_type` values covers all eleven enum members
+- [x] A test asserts the union of derived tags covers all six rules
+- [x] A test asserts all four title tiers are exercised, including tier 4 via `Properties/AssemblyInfo.cs`
+- [x] A failure names the document and the differing field
+- [x] Gate check passes: `dotnet test`
+- [x] Test count: no reduction from the running baseline
+
+> Deviation from this task's stated `Where` (`FixtureExpectationsTests.cs` only): the committed
+> expectations table, transcribed verbatim from spec.md, initially failed one row —
+> `Acme.Orders/Hosting/ServiceCollectionExtensions.cs` expected `dependency-injection` in `tags` but
+> derived `[]`. `TagDeriver`'s dependency-injection rule (T9, already committed) only scanned
+> `InvocationExpressionSyntax` call sites via `InvokedMethodName`, so it fired for `services.AddScoped<T>()`
+> but not for a file that *declares* `AddScoped`/`AddSingleton`/`AddTransient` as extension methods —
+> exactly what `ServiceCollectionExtensions.cs` does, per that file's own header comment ("...what puts
+> `dependency-injection` in its tags"). The other five tag rules in spec.md's table are all phrased as
+> plain identifier-name patterns (matching the `event-driven` and `persistence` rules' existing
+> identifier-token scan, not an invocation-shape scan) and are keyed to a name appearing anywhere in the
+> source, not specifically to a call site — `bootstrapping` is the one exception, and it deliberately
+> stays invocation-shaped (`WebHost.Create*`, `WebApplication.CreateBuilder`) because spec.md phrases it
+> that way explicitly. Fixed `src/Csharp2Md.Core/Topic/TagDeriver.cs`'s dependency-injection rule to scan
+> `identifiers` (the same token list the `event-driven`/`persistence` rules already use) instead of
+> `invocations`, and removed the now-orphaned `InvokedMethodName` helper (the only caller). Pre-existing
+> defect, not new: same category as T1/T15/T18's inline fixes. `TagDeriverTests`'s existing
+> `Derive_DependencyInjectionMethods_FiresDependencyInjection` (an invocation-shaped case) still passes
+> unmodified, since the invoked method's identifier token is present in `identifiers` regardless of scan
+> strategy.
 
 **Tests**: integration
 **Gate**: full
