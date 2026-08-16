@@ -27,12 +27,21 @@ public sealed record PipelineRunResult(
     ManifestError? ManifestError,
     LoadReport LoadReport,
     DependencyGraph Graph,
-    IReadOnlyList<string> Warnings)
+    IReadOnlyList<string> Warnings,
+    IReadOnlyList<FrontmatterFailure> FrontmatterFailures)
 {
     public bool IsSuccess => ManifestError is null;
 
+    /// <summary>
+    /// WIKI-12: the exit code this run warrants — <c>1</c> when the manifest itself failed (nothing
+    /// written) or one or more documents failed frontmatter validation (everything else still
+    /// written); <c>0</c> otherwise. A degraded project load (AD-005) is neither condition, so it
+    /// stays <c>0</c> with warnings — the two failure modes are never conflated.
+    /// </summary>
+    public int ExitCode => !IsSuccess || FrontmatterFailures.Count > 0 ? 1 : 0;
+
     public static PipelineRunResult Failed(ManifestError error) =>
-        new(error, new LoadReport([]), new DependencyGraph([]), []);
+        new(error, new LoadReport([]), new DependencyGraph([]), [], []);
 }
 
 /// <summary>
@@ -121,6 +130,7 @@ public sealed class AnalysisPipeline
         var signals = new List<DependencySignal>();
         var loadResults = new List<ProjectLoadResult>();
         var serviceIndexes = new List<ServiceIndexEntry>();
+        var frontmatterFailures = new List<FrontmatterFailure>();
 
         foreach (var service in catalog.Services)
         {
@@ -128,7 +138,7 @@ public sealed class AnalysisPipeline
 
             var indexPath = await AnalyzeAsync(
                 service, catalog, config.Index, outputRoot, options, signals, loadResults, warnings,
-                cancellationToken);
+                frontmatterFailures, cancellationToken);
 
             serviceIndexes.Add(new ServiceIndexEntry(service.Name, indexPath));
         }
@@ -142,7 +152,7 @@ public sealed class AnalysisPipeline
         MermaidWriter.Write(graph, rawRoot);
         IndexWriter.WriteRootIndex(TopicLayout.CodebaseRoot(outputRoot), serviceIndexes, options);
 
-        return new PipelineRunResult(null, new LoadReport(loadResults), graph, warnings);
+        return new PipelineRunResult(null, new LoadReport(loadResults), graph, warnings, frontmatterFailures);
     }
 
     /// <summary>
@@ -186,6 +196,7 @@ public sealed class AnalysisPipeline
         List<DependencySignal> signals,
         List<ProjectLoadResult> loadResults,
         List<string> warnings,
+        List<FrontmatterFailure> frontmatterFailures,
         CancellationToken cancellationToken)
     {
         var serviceOutputRoot = TopicLayout.ServiceRoot(outputRoot, service.Name);
@@ -228,7 +239,7 @@ public sealed class AnalysisPipeline
                 cancellationToken.ThrowIfCancellationRequested();
                 await AnalyzeDocumentAsync(
                     document, service, project, configIndex, writer, options, writtenPaths, signals, warnings,
-                    cancellationToken);
+                    frontmatterFailures, cancellationToken);
             }
         }
 
@@ -245,6 +256,7 @@ public sealed class AnalysisPipeline
         List<string> writtenPaths,
         List<DependencySignal> signals,
         List<string> warnings,
+        List<FrontmatterFailure> frontmatterFailures,
         CancellationToken cancellationToken)
     {
         if (document.FilePath is null || !document.SupportsSyntaxTree)
@@ -290,6 +302,14 @@ public sealed class AnalysisPipeline
             syntaxTree, sourcePath, project.Name, options, out var frontmatterWarnings);
         warnings.AddRange(frontmatterWarnings);
         rendered = rendered with { Frontmatter = frontmatter };
+
+        // WIKI-12: a validation failure never aborts the run — it is collected here and the loop
+        // continues to the next document exactly as if nothing happened; the document is still
+        // written, matching design.md's "the rest of the topic is still generated" contract.
+        if (FrontmatterYaml.Validate(FrontmatterYaml.Render(frontmatter), sourcePath) is { } failure)
+        {
+            frontmatterFailures.Add(failure);
+        }
 
         // Written and dropped immediately: only the written path survives, for the index (AD-001).
         if (writer.Write(rendered) is { } path)

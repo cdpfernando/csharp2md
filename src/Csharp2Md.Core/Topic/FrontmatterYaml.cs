@@ -110,7 +110,16 @@ internal static class FrontmatterYaml
         return null;
     }
 
-    private static string Field(string key, string value) => $"{key}: {ValueSerializer.Serialize(value).TrimEnd('\n')}";
+    private static string Field(string key, string value) => $"{key}: {SerializeScalar(value)}";
+
+    // Verified empirically (not assumed): ValueSerializer.Serialize("") returns "--- \"\"\n" rather
+    // than "\"\"\n" — YamlDotNet prefixes a genuinely empty scalar with an explicit "---"
+    // document-start marker to disambiguate it from an empty stream. Left unhandled, that corrupts
+    // the field into a literal "--- \"\"" string instead of round-tripping to empty, which would
+    // silently defeat WIKI-12's required-non-empty check for any field that legitimately ends up
+    // empty (domain has no non-empty validation of its own — only topic's slug pattern does).
+    private static string SerializeScalar(string value) =>
+        value.Length == 0 ? "\"\"" : ValueSerializer.Serialize(value).TrimEnd('\n');
 
     private static string ToKebabCase(string pascalCase) =>
         string.Concat(pascalCase.Select((c, i) => i > 0 && char.IsUpper(c) ? $"-{c}" : c.ToString())).ToLowerInvariant();

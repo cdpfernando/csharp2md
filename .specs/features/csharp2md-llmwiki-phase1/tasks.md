@@ -559,12 +559,34 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] A failing document does not stop the run — remaining documents are still written
-- [ ] Failures surface on `PipelineRunResult`, each naming the file path and the specific error
-- [ ] An integration test forces a failure and asserts exit code `1` with every other artifact present
-- [ ] A degraded-load run still exits `0` — the two conditions stay distinct
-- [ ] Gate check passes: `dotnet test`
-- [ ] Test count: no reduction from the running baseline
+- [x] A failing document does not stop the run — remaining documents are still written
+- [x] Failures surface on `PipelineRunResult`, each naming the file path and the specific error
+- [x] An integration test forces a failure and asserts exit code `1` with every other artifact present
+- [x] A degraded-load run still exits `0` — the two conditions stay distinct
+- [x] Gate check passes: `dotnet test`
+- [x] Test count: no reduction from the running baseline
+
+> Note: `PipelineRunResult` gains `FrontmatterFailures` and a computed `ExitCode` property (`1` when
+> `!IsSuccess` or `FrontmatterFailures.Count > 0`, else `0`) so "exit code 1" is assertable at the
+> Pipeline layer without touching `Program.cs` — the CLI still only reads `IsSuccess`/`ManifestError`
+> today, and wiring `ExitCode`/`FrontmatterFailures` into the CLI's actual `return` and stderr output
+> is T18's job (it already touches `Program.cs` for `--topic`/`--domain` and the summary counts).
+>
+> Deviation from this task's stated `Where` (`AnalysisPipeline.cs` only): forcing a real, spec-derived
+> validation failure requires an empty required field reachable through genuine pipeline input, and
+> `domain` is the only such field (`topic` is regex-validated by T2; every other field is either a
+> derived non-empty value or a Phase 1 constant). Empirically verified (not assumed) that
+> `TopicOptions.Create(topic, domain: "", inputRoot)` alone did **not** force a failure: YamlDotNet's
+> `SerializerBuilder().Build().Serialize("")` returns `"--- \"\"\n"` (an explicit `---` document-start
+> marker prefixing the empty scalar) rather than `"\"\"\n"`, so `FrontmatterYaml.Field`'s
+> `.TrimEnd('\n')` produced the single line `domain: --- ""`, which parses back as the *non-empty*
+> literal string `--- ""` rather than an empty value — silently defeating the exact check WIKI-12
+> requires, for the one field with no other emptiness guard. Fixed the narrow case in
+> `FrontmatterYaml.Field` (`src/Csharp2Md.Core/Topic/FrontmatterYaml.cs`, T11's file): an empty input
+> is quoted directly as `""` instead of routed through the serializer. This is a pre-existing defect,
+> not a new one introduced by T15 — same category as T1's `ManifestLoader` fix earlier in this
+> feature — fixed inline because T15's own required test cannot exist without it. All of T11's
+> existing `FrontmatterYamlTests` still pass unmodified.
 
 **Tests**: integration
 **Gate**: full
