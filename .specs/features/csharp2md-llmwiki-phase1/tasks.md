@@ -850,10 +850,10 @@ T20 -> T21
 - Skill: `dotnet-skills:project-structure`
 
 **Done when**:
-- [ ] `<Version>2.0.0</Version>` set, and `dotnet pack` produces `csharp2md.2.0.0.nupkg`
-- [ ] `PackagingSmokeTests` still passes against the packed tool
-- [ ] Gate check passes: `dotnet build -c Release`, `dotnet format --verify-no-changes`, `dotnet test`
-- [ ] Test count: no reduction from the running baseline
+- [x] `<Version>2.0.0</Version>` set, and `dotnet pack` produces `csharp2md.2.0.0.nupkg`
+- [x] `PackagingSmokeTests` still passes against the packed tool
+- [x] Gate check passes: `dotnet build -c Release`, `dotnet format --verify-no-changes`, `dotnet test`
+- [x] Test count: no reduction from the running baseline
 
 **Tests**: integration
 **Gate**: build
