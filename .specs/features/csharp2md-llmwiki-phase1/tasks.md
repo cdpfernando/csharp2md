@@ -608,12 +608,29 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] `topic.yaml` carries `slug` (the resolved topic), `title`, and a description naming csharp2md as generator
-- [ ] `topic.yaml` parses as YAML
-- [ ] `CLAUDE.md` documents the generator and version, the frontmatter schema, the directory conventions, and that Phase 2 resolves `source_service` and `analysis_status`
-- [ ] Tests assert both files' required content, not merely their existence
-- [ ] Gate check passes: `dotnet test --filter "Category!=Integration"`
-- [ ] Test count: no reduction from the running baseline
+- [x] `topic.yaml` carries `slug` (the resolved topic), `title`, and a description naming csharp2md as generator
+- [x] `topic.yaml` parses as YAML
+- [x] `CLAUDE.md` documents the generator and version, the frontmatter schema, the directory conventions, and that Phase 2 resolves `source_service` and `analysis_status`
+- [x] Tests assert both files' required content, not merely their existence
+- [x] Gate check passes: `dotnet test --filter "Category!=Integration"`
+- [x] Test count: no reduction from the running baseline
+
+> Note: `title` has no defined transformation from `slug` anywhere in spec.md, so `Write` uses
+> `options.Topic` verbatim for both — flagged as a spec-precision gap, same category as T10's and
+> T14's notes.
+>
+> Wiring gap flagged for whoever picks up Phase 6 (T19/T20): this task's own `Where` field scopes it
+> to `TopicScaffoldWriter.cs` only, matching T11's precedent (a standalone, unit-tested writer built
+> before any task wires it into a real run). Nothing in T16, T17, or T18's Done-when checklists calls
+> for `AnalysisPipeline.cs` or `Program.cs` to actually invoke `TopicScaffoldWriter.Write` /
+> `RunLogWriter.Write` during a run — T18's Done-when covers `--topic`/`--domain` options and the
+> WIKI-17 console summary only. Yet T20 (byte-identical determinism across runs) and spec.md's P1
+> Independent Test both require `raw/topic.yaml`, `raw/CLAUDE.md`, and `raw/log.md` to exist after a
+> real run — which cannot hold until *something* calls both writers, most naturally from `Program.cs`
+> after `AnalysisPipeline.RunAsync` returns (it already builds `TopicOptions` there once T18 lands,
+> and `PipelineRunResult` carries everything `RunLogData` needs except document/service counts, which
+> are not currently exposed by `PipelineRunResult` either). Left unresolved here rather than guessed
+> at, since it requires touching files outside every one of T16/T17/T18's stated scope.
 
 **Tests**: unit
 **Gate**: quick
