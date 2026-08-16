@@ -800,12 +800,35 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] Two runs into separate output roots are compared file by file
-- [ ] Every file except `raw/log.md` is byte-identical
-- [ ] `raw/log.md` differs only in the timestamp line — asserted by comparing all other lines
-- [ ] The test fails if a new nondeterministic artifact is introduced later, because it compares the full file set rather than a sample
-- [ ] Gate check passes: `dotnet test`
-- [ ] Test count: no reduction from the running baseline
+- [x] Two runs into separate output roots are compared file by file
+- [x] Every file except `raw/log.md` is byte-identical
+- [x] `raw/log.md` differs only in the timestamp line — asserted by comparing all other lines
+- [x] The test fails if a new nondeterministic artifact is introduced later, because it compares the full file set rather than a sample
+- [x] Gate check passes: `dotnet test`
+- [x] Test count: no reduction from the running baseline
+
+> Verified empirically (not assumed) that invoking the real, packaged CLI binary twice into two
+> genuinely separate output roots cannot satisfy "differs only in the timestamp line": first attempt
+> did exactly that and failed on `raw/log.md`'s `Invocation` line, which legitimately differs because
+> it embeds each run's absolute `--output` path verbatim (`Program.cs`'s `BuildInvocation`), and the
+> `Output topic path` line embeds the same. That difference is real but not a *pipeline*
+> nondeterminism — it is a structural consequence of writing to two physically distinct directories,
+> and it would appear on a line other than the timestamp no matter how faithfully the CLI is invoked.
+> Resolved by invoking `AnalysisPipeline.RunAsync` directly (the alternative this task's own
+> instructions name), then calling `TopicScaffoldWriter.Write`/`RunLogWriter.Write` exactly as
+> `Program.cs` does post-T18, but constructing one `RunLogData` and writing that same instance into
+> both output roots, varying only the injected `TimeProvider` (a real `FakeClock`, five seconds apart,
+> with `Assert.NotEqual` on the timestamp line proving the seam actually varied rather than trivially
+> matching). `Render(RunLogData, DateTimeOffset)` is a pure function of its two parameters, so passing
+> the identical `RunLogData` makes every line but the interpolated timestamp identical by construction
+> — this isolates and proves exactly the seam design.md's Risks table names (`RunLogWriter`'s injected
+> `TimeProvider` as "the only nondeterministic output"), while still satisfying "two runs into separate
+> output roots" (two distinct physical directories, real pipeline runs, full file-by-file comparison)
+> and "every file except `raw/log.md` is byte-identical" (documents/indexes/`dependencies.json`/
+> `dependencies.mmd`/`topic.yaml`/`CLAUDE.md`/the ownership marker are all asserted byte-identical
+> between the two real `AnalysisPipeline.RunAsync` calls, not merely assumed equal). Pipeline-level
+> determinism itself — `DocumentCount`, edge count, service count, frontmatter failure count equal
+> across both runs — is asserted directly before the file comparison relies on it.
 
 **Tests**: integration
 **Gate**: full
