@@ -697,12 +697,40 @@ T20 -> T21
 - Skill: NONE
 
 **Done when**:
-- [ ] Both options appear in `--help` with descriptions
-- [ ] An invalid `--topic` exits `1` before any output directory is touched — asserted by checking the directory does not exist afterwards
-- [ ] Omitting both yields the derived slug and `system-design`
-- [ ] Summary reports documents written, validation failures, and the output topic path
-- [ ] Gate check passes: `dotnet test`
-- [ ] Test count: no reduction from the running baseline
+- [x] Both options appear in `--help` with descriptions
+- [x] An invalid `--topic` exits `1` before any output directory is touched — asserted by checking the directory does not exist afterwards
+- [x] Omitting both yields the derived slug and `system-design`
+- [x] Summary reports documents written, validation failures, and the output topic path
+- [x] Gate check passes: `dotnet test`
+- [x] Test count: no reduction from the running baseline
+
+> Batch 3 was interrupted by an external usage limit after T17; this task was finished directly in
+> the orchestrating session rather than by a fresh batch worker (git history is unaffected — same
+> cycle, same gates). Three deviations beyond this task's literal `Where: Program.cs`, all
+> necessary to satisfy this task's own Done-when and to close the wiring gap T16/T17 flagged for
+> "whoever picks up Phase 6":
+> 1. **`PipelineRunResult` gained `DocumentCount`/`ServiceCount`** (`AnalysisPipeline.cs`) — the
+>    Done-when's "summary reports documents written" has no other source; `AnalyzeAsync` now returns
+>    `(IndexPath, DocumentCount)` instead of just the path. Same precedent as T15 extending
+>    `PipelineRunResult` with `FrontmatterFailures`.
+> 2. **`TopicScaffoldWriter.Write` and `RunLogWriter.Write` are now called from `Program.cs`** after
+>    a successful manifest run — resolving the wiring gap T16 and T17 both flagged explicitly (no
+>    task's `Where` field named `Program.cs`/`AnalysisPipeline.cs` for this, and spec.md's P1
+>    Independent Test requires `raw/topic.yaml`, `raw/CLAUDE.md`, and `raw/log.md` to exist after a
+>    real run — verified manually against the fixture: all three now land under `raw/`). Without
+>    this, T19 (fixture proof) and T20 (determinism) in the next batch would have failed on missing
+>    files with no task scoped to fix it.
+> 3. **`Program.cs` now returns `result.ExitCode` instead of a hardcoded `0`** — WIKI-12 was only
+>    ever proven at the pipeline layer (`FrontmatterValidationTests.cs`, T15); the CLI ignored
+>    `PipelineRunResult.ExitCode` entirely, so a real run never actually exited `1` on a frontmatter
+>    validation failure. Pre-existing defect, same category as T1's `ManifestLoader` fix and T15's
+>    `FrontmatterYaml.Field` fix — fixed inline with a dedicated CLI-level test
+>    (`Run_WithFrontmatterValidationFailure_ExitsOneAndStillWritesLog`) since it was otherwise
+>    completely untested at this boundary.
+>
+> `title`/`OutputTopicPath` in `raw/log.md` use the CLI's `outputRoot` made absolute
+> (`Path.GetFullPath`) — spec.md says "the absolute output topic path" without defining "topic path"
+> more precisely than the run's output root; no other candidate value exists at the CLI boundary.
 
 **Tests**: integration
 **Gate**: full

@@ -28,7 +28,9 @@ public sealed record PipelineRunResult(
     LoadReport LoadReport,
     DependencyGraph Graph,
     IReadOnlyList<string> Warnings,
-    IReadOnlyList<FrontmatterFailure> FrontmatterFailures)
+    IReadOnlyList<FrontmatterFailure> FrontmatterFailures,
+    int DocumentCount,
+    int ServiceCount)
 {
     public bool IsSuccess => ManifestError is null;
 
@@ -41,7 +43,7 @@ public sealed record PipelineRunResult(
     public int ExitCode => !IsSuccess || FrontmatterFailures.Count > 0 ? 1 : 0;
 
     public static PipelineRunResult Failed(ManifestError error) =>
-        new(error, new LoadReport([]), new DependencyGraph([]), [], []);
+        new(error, new LoadReport([]), new DependencyGraph([]), [], [], 0, 0);
 }
 
 /// <summary>
@@ -131,16 +133,18 @@ public sealed class AnalysisPipeline
         var loadResults = new List<ProjectLoadResult>();
         var serviceIndexes = new List<ServiceIndexEntry>();
         var frontmatterFailures = new List<FrontmatterFailure>();
+        var documentCount = 0;
 
         foreach (var service in catalog.Services)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var indexPath = await AnalyzeAsync(
+            var (indexPath, serviceDocumentCount) = await AnalyzeAsync(
                 service, catalog, config.Index, outputRoot, options, signals, loadResults, warnings,
                 frontmatterFailures, cancellationToken);
 
             serviceIndexes.Add(new ServiceIndexEntry(service.Name, indexPath));
+            documentCount += serviceDocumentCount;
         }
 
         // ── Stage 3: Aggregate ──────────────────────────────────────────────────────────────
@@ -152,7 +156,9 @@ public sealed class AnalysisPipeline
         MermaidWriter.Write(graph, rawRoot);
         IndexWriter.WriteRootIndex(TopicLayout.CodebaseRoot(outputRoot), serviceIndexes, options);
 
-        return new PipelineRunResult(null, new LoadReport(loadResults), graph, warnings, frontmatterFailures);
+        return new PipelineRunResult(
+            null, new LoadReport(loadResults), graph, warnings, frontmatterFailures,
+            documentCount, catalog.Services.Count);
     }
 
     /// <summary>
@@ -186,8 +192,8 @@ public sealed class AnalysisPipeline
         return new ServiceCatalog(services);
     }
 
-    /// <summary>Analyzes one service and returns the path of its written <c>index.md</c>.</summary>
-    private async Task<string> AnalyzeAsync(
+    /// <summary>Analyzes one service and returns the path of its written <c>index.md</c> and the count of source documents written.</summary>
+    private async Task<(string IndexPath, int DocumentCount)> AnalyzeAsync(
         ServiceDescriptor service,
         ServiceCatalog catalog,
         ConfigIndex configIndex,
@@ -243,7 +249,8 @@ public sealed class AnalysisPipeline
             }
         }
 
-        return IndexWriter.WriteServiceIndex(serviceOutputRoot, service.Name, writtenPaths, options); // P1-13
+        var indexPath = IndexWriter.WriteServiceIndex(serviceOutputRoot, service.Name, writtenPaths, options); // P1-13
+        return (indexPath, writtenPaths.Count);
     }
 
     private async Task AnalyzeDocumentAsync(

@@ -298,6 +298,121 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
         }
     }
 
+    [Fact]
+    public async Task Run_WithHelp_ListsTopicAndDomainOptions()
+    {
+        var result = await ProcessRunner.RunAsync(
+            CliBinary.ExecutablePath, "--help", TestPaths.RepoRoot, CancellationToken.None);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("--topic", result.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("Slug identifying the generated topic", result.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("--domain", result.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("Slug identifying the topic's domain", result.StandardOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Run_WithInvalidTopic_ExitsOneBeforeTouchingOutputDirectory()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-topic-invalid-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "src");
+            var output = Path.Combine(workspace, "docs");
+
+            var result = await RunAsync($"\"{input}\" --output \"{output}\" --topic \"Not A Slug!\"", workspace);
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Contains("Not A Slug!", result.StandardError, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(output));
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_WithoutTopicOrDomain_DerivesSlugFromInputDirectoryAndDefaultsDomain()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-topic-default-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "src");
+            var output = Path.Combine(workspace, "docs");
+
+            var result = await RunAsync($"\"{input}\" --output \"{output}\"", workspace);
+
+            Assert.Equal(0, result.ExitCode);
+            var topicYaml = File.ReadAllText(Path.Combine(TopicLayout.RawRoot(output), "topic.yaml"));
+            Assert.Contains("slug: src", topicYaml, StringComparison.Ordinal);
+
+            var documentPath = Path.Combine(
+                TopicLayout.ServiceRoot(output, new ServiceName("src")), "Program.cs.md");
+            Assert.Contains("domain: system-design", File.ReadAllText(documentPath), StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Run_OnSuccess_ReportsDocumentCountFailureCountAndOutputTopicPath()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-summary-").FullName;
+        try
+        {
+            var input = CreateProject(workspace, "src");
+            var output = Path.Combine(workspace, "docs");
+
+            var result = await RunAsync($"\"{input}\" --output \"{output}\" --topic acme-shop", workspace);
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains("Wrote 1 document(s)", result.StandardOutput, StringComparison.Ordinal);
+            Assert.Contains("Frontmatter validation failures: 0", result.StandardOutput, StringComparison.Ordinal);
+            Assert.Contains(
+                $"Output topic path: {Path.GetFullPath(output)}", result.StandardOutput, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
+    // WIKI-12 at the CLI boundary: Program.cs previously returned a hardcoded 0 regardless of
+    // PipelineRunResult.ExitCode, so a frontmatter validation failure was only ever proven at the
+    // pipeline layer (FrontmatterValidationTests.cs) and never actually surfaced as a non-zero exit
+    // from the real binary. Fixed as part of wiring --topic/--domain through (T18) since Program.cs
+    // is exactly this task's file; forcing mechanism matches FrontmatterValidationTests.cs's
+    // precedent — TopicOptions.Create validates only the topic slug (WIKI-14), not domain, so an
+    // empty --domain reaches FrontmatterYaml.Validate as a genuinely empty required field.
+    [Fact]
+    public async Task Run_WithFrontmatterValidationFailure_ExitsOneAndStillWritesLog()
+    {
+        var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-frontmatter-fail-").FullName;
+        try
+        {
+            var manifestPath = FixtureManifest.WriteRoots(workspace, "Acme.Orders");
+            var outputPath = Path.Combine(workspace, "output");
+
+            var result = await RunAsync(
+                $"--manifest \"{manifestPath}\" --output \"{outputPath}\" --domain \"\"", TestPaths.RepoRoot);
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.DoesNotContain(
+                "Frontmatter validation failures: 0", result.StandardOutput, StringComparison.Ordinal);
+
+            var logPath = Path.Combine(TopicLayout.RawRoot(outputPath), "log.md");
+            Assert.True(File.Exists(logPath));
+            Assert.Contains("domain", File.ReadAllText(logPath), StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(workspace, recursive: true);
+        }
+    }
+
     private static Task<ProcessResult> RunAsync(string arguments, string workingDirectory) =>
         ProcessRunner.RunAsync(
             CliBinary.ExecutablePath, arguments, workingDirectory, CancellationToken.None);
