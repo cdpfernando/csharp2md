@@ -194,10 +194,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Probe evidence states whether opening/evaluating a workspace runs forbidden targets or extensions.
-- [ ] Analyzer references are absent before compilation and no marker analyzer or generator executes.
-- [ ] Separate target compilations retain distinct target identities.
-- [ ] At least three new integration cases pass; full gate passes with no count decrease.
+- [x] Probe evidence states whether opening/evaluating a workspace runs forbidden targets or extensions.
+- [x] Analyzer references are absent before compilation and no marker analyzer or generator executes.
+- [x] Separate target compilations retain distinct target identities.
+- [x] At least three new integration cases pass; full gate passes with no count decrease.
+
+**Completed evidence (2026-08-17)**: opening a Roslyn 5.6 `MSBuildWorkspace` executed the custom `BeforeTargets=\"Compile\"` marker target but did not load marker extensions. Sanitizing with `Project.WithAnalyzerReferences([])` before `GetCompilationAsync` prevented analyzer/generator loading, retained scoped failure syntax, and preserved distinct net9/net10 identities. `dotnet test csharp2md.slnx` passed 441 tests with 0 failed and 0 skipped. This evidence rejects the workspace adapter under the approved no-target contract.
 
 **Tests**: integration
 **Gate**: full

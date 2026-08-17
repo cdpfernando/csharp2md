@@ -346,11 +346,11 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-27 | P2: Semantic enrichment | T2 import-path-only preprocessing viability proven; production closes in T22 | Implementing |
 | FACT-28 | P2: Semantic enrichment | T2 `ArgumentList` and T3 evaluator lifecycle proven; production closes in T22 | Implementing |
 | FACT-29 | P2: Semantic enrichment | T2 inert extension inventory proven; production closes in T22 | Implementing |
-| FACT-30 | P2: Semantic enrichment | Specify | Pending |
+| FACT-30 | P2: Semantic enrichment | T4 disabled/sanitized compilation viability proven; T5/T24 close generator modes | Implementing |
 | FACT-31 | P2: Semantic enrichment | Specify | Pending |
 | FACT-32 | P2: Semantic enrichment | Specify | Pending |
-| FACT-33 | P2: Semantic enrichment | Specify | Pending |
-| FACT-34 | P2: Semantic enrichment | Specify | Pending |
+| FACT-33 | P2: Semantic enrichment | T4 post-sanitation binding and target identity proven; production closes in T23/T26 | Implementing |
+| FACT-34 | P2: Semantic enrichment | T4 scoped compilation fallback viability proven; production closes in T22-T29 | Implementing |
 | FACT-35 | P2: Semantic enrichment | Specify | Pending |
 | FACT-36 | P2: Semantic enrichment | Specify | Pending |
 | FACT-37 | P2: Components and relations | Specify | Pending |
@@ -380,7 +380,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-61 | P3: Migration and release | Specify | Pending |
 | FACT-62 | P2: Semantic enrichment | T3 per-service timeout viability proven; production closes in T22/T29 | Implementing |
 | FACT-63 | P2: Semantic enrichment | T3 complete tree termination proven; production closes in T22/T29 | Implementing |
-| FACT-64 | P2: Semantic enrichment | Specify | Pending |
+| FACT-64 | P2: Semantic enrichment | T4 analyzer-reference replacement before compilation proven; production closes in T23 | Implementing |
 | FACT-65 | P2: Semantic enrichment | Specify | Pending |
 | FACT-66 | P2: Components and relations | Specify | Pending |
 | FACT-67 | P2: Components and relations | Specify | Pending |
