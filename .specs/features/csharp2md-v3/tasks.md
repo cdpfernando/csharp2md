@@ -322,10 +322,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Factual records contain no Roslyn, filesystem, YAML, Markdown, or CLI types.
-- [ ] Resolution algebra implements exact, partial, syntactic, unresolved, and not-applicable document aggregation exactly as specified.
-- [ ] Runtime relations represent a nullable target and unresolved reason; configuration resolution is a distinct type.
-- [ ] At least twelve new unit cases cover every resolution combination and fact-family invariant; quick gate passes.
+- [x] Factual records contain no Roslyn, filesystem, YAML, Markdown, or CLI types.
+- [x] Resolution algebra implements exact, partial, syntactic, unresolved, and not-applicable document aggregation exactly as specified.
+- [x] Runtime relations represent a nullable target and unresolved reason; configuration resolution is a distinct type.
+- [x] At least twelve new unit cases cover every resolution combination and fact-family invariant; quick gate passes.
+
+**Completed evidence (2026-08-17)**: immutable headers and specialized solution, project, target, document, section, symbol, component, relation, and coverage records depend only on factual-domain values. The document-resolution algebra covers every specified homogeneous, not-applicable, and mixed-quality outcome. Runtime relations preserve nullable targets/reasons, error-symbol participation remains explicit, and configuration resolution is a separate enum. The quick gate passed 443 tests with 0 failed and 0 skipped.
 
 **Tests**: unit
 **Gate**: quick
