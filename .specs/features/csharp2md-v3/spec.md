@@ -325,13 +325,13 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-06 | P1: Safe syntax-only default | T6 typed request validation; engine/CLI enforcement closes in T20/T21 | Implementing |
 | FACT-07 | P1: Safe syntax-only default | T6 analysis default; engine enforcement closes in T20 | Implementing |
 | FACT-08 | P1: Factual fragments | T6 external analysis request/result contract | Implementing |
-| FACT-09 | P1: Factual fragments | T7 identity values; metadata/model families close in T8/T9 | Implementing |
+| FACT-09 | P1: Factual fragments | T7 identity and T8 metadata values implemented; model families close in T9 | Implementing |
 | FACT-10 | P1: Factual fragments | T7 stable identity grammar implemented; extraction/enrichment closes in T15/T26 | Implementing |
 | FACT-11 | P1: Factual fragments | Specify | Pending |
 | FACT-12 | P1: Factual fragments | Specify | Pending |
 | FACT-13 | P1: Factual fragments | Specify | Pending |
-| FACT-14 | P1: Factual fragments | Specify | Pending |
-| FACT-15 | P1: Factual fragments | Specify | Pending |
+| FACT-14 | P1: Factual fragments | T8 evidence constraints implemented; fragment/file validation closes in T11 | Implementing |
+| FACT-15 | P1: Factual fragments | T8 detector provenance shape implemented; detector/validator enforcement closes in T10/T11 | Implementing |
 | FACT-16 | P1: Factual fragments | Specify | Pending |
 | FACT-17 | P1: Factual fragments | Specify | Pending |
 | FACT-18 | P1: Deterministic output | Specify | Pending |
@@ -385,7 +385,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-66 | P2: Components and relations | Specify | Pending |
 | FACT-67 | P2: Components and relations | Specify | Pending |
 | FACT-68 | P2: Components and relations | Specify | Pending |
-| FACT-69 | P2: Diagnostics and coverage | Specify | Pending |
+| FACT-69 | P2: Diagnostics and coverage | T8 diagnostic references shaped; model/merge/projection closes in T9/T27/T28 | Implementing |
 | FACT-70 | P3: Migration and release | Specify | Pending |
 
 **ID format:** `FACT-[NN]`.

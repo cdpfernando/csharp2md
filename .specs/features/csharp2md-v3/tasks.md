@@ -296,10 +296,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Evidence is relative, ordered, in-range-capable, and tied to a document ID.
-- [ ] Provenance distinguishes engine and optional detector ID/version; diagnostics are deterministic and scope-addressable.
-- [ ] At least eight new unit cases cover valid and invalid ranges, absolute paths, empty versions, and canonical ordering.
-- [ ] Quick gate passes with no discovered-test decrease.
+- [x] Evidence is relative, ordered, in-range-capable, and tied to a document ID.
+- [x] Provenance distinguishes engine and optional detector ID/version; diagnostics are deterministic and scope-addressable.
+- [x] At least eight new unit cases cover valid and invalid ranges, absolute paths, empty versions, and canonical ordering.
+- [x] Quick gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: immutable evidence validates normalized relative paths, one-based ordered ranges, document identity, and canonical comparison. Provenance enforces engine identity/version and paired optional detector identity/version. Structured diagnostics derive stable IDs from scope, stage, code, message, and sorted data while canonically ordering data/evidence. The quick gate passed 417 tests with 0 failed and 0 skipped.
 
 **Tests**: unit
 **Gate**: quick
