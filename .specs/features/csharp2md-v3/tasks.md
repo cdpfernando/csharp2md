@@ -168,10 +168,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Timeout is scoped to one service and cancellation remains caller cancellation.
-- [ ] Both timeout and cancellation cases prove the child and descendant processes are gone before control returns.
-- [ ] At least two new integration cases pass without leaving marker processes or files.
-- [ ] Full gate passes and the discovered count is at least the prior count plus two.
+- [x] Timeout is scoped to one service and cancellation remains caller cancellation.
+- [x] Both timeout and cancellation cases prove the child and descendant processes are gone before control returns.
+- [x] At least two new integration cases pass without leaving marker processes or files.
+- [x] Full gate passes and the discovered count is at least the prior count plus two.
+
+**Completed evidence (2026-08-17)**: timeout and caller-cancellation probes terminate recorded parent/descendant PIDs before return and leave no completion marker; `dotnet test csharp2md.slnx` passed 437 tests with 0 failed and 0 skipped.
 
 **Tests**: integration
 **Gate**: full

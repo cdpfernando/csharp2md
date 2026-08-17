@@ -344,7 +344,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-25 | P1: Deterministic output | Specify | Pending |
 | FACT-26 | P2: Semantic enrichment | T2 target-free evaluation viability proven; production closes in T22 | Implementing |
 | FACT-27 | P2: Semantic enrichment | T2 import-path-only preprocessing viability proven; production closes in T22 | Implementing |
-| FACT-28 | P2: Semantic enrichment | T2 `ArgumentList` invocation proven; production closes in T22 | Implementing |
+| FACT-28 | P2: Semantic enrichment | T2 `ArgumentList` and T3 evaluator lifecycle proven; production closes in T22 | Implementing |
 | FACT-29 | P2: Semantic enrichment | T2 inert extension inventory proven; production closes in T22 | Implementing |
 | FACT-30 | P2: Semantic enrichment | Specify | Pending |
 | FACT-31 | P2: Semantic enrichment | Specify | Pending |
@@ -378,8 +378,8 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-59 | P3: Migration and release | Specify | Pending |
 | FACT-60 | P3: Migration and release | Specify | Pending |
 | FACT-61 | P3: Migration and release | Specify | Pending |
-| FACT-62 | P2: Semantic enrichment | Specify | Pending |
-| FACT-63 | P2: Semantic enrichment | Specify | Pending |
+| FACT-62 | P2: Semantic enrichment | T3 per-service timeout viability proven; production closes in T22/T29 | Implementing |
+| FACT-63 | P2: Semantic enrichment | T3 complete tree termination proven; production closes in T22/T29 | Implementing |
 | FACT-64 | P2: Semantic enrichment | Specify | Pending |
 | FACT-65 | P2: Semantic enrichment | Specify | Pending |
 | FACT-66 | P2: Components and relations | Specify | Pending |
