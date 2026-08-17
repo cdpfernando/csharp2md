@@ -220,10 +220,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Explicit opt-in executes generators while diagnostic analyzers remain absent; disabled mode loads neither.
-- [ ] Elapsed time, peak working set, process count, and output volume are recorded without introducing an SLA.
-- [ ] `design.md` and the decision log are amended only if the evidence selects or changes a project-level constraint.
-- [ ] At least two new integration cases and the phase Build gate pass; if no safe backend exists, execution stops with evidence.
+- [x] Explicit opt-in executes generators while diagnostic analyzers remain absent; disabled mode loads neither.
+- [x] Elapsed time, peak working set, process count, and output volume are recorded without introducing an SLA.
+- [x] `design.md` and the decision log are amended only if the evidence selects or changes a project-level constraint.
+- [x] At least two new integration cases and the phase Build gate pass; if no safe backend exists, execution stops with evidence.
+
+**Completed evidence (2026-08-17)**: four integration probes cover disabled, untrusted opt-in rejection, trusted generator-only execution, and repository-source measurement. The design selects evaluated per-TFM compilation because T4 proved workspace target execution. `.specs/STATE.md` remains unchanged under the explicit batch-worker instruction; the orchestrator owns the corresponding decision-log update. Release build and formatting verification passed, then `dotnet test csharp2md.slnx` passed 445 tests with 0 failed and 0 skipped.
 
 **Tests**: integration
 **Gate**: build
