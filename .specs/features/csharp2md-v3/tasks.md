@@ -1,0 +1,1337 @@
+# csharp2md v3: Factual Model and Semantic Analysis Tasks
+
+## Execution Protocol (MANDATORY -- do not skip)
+
+Implement these tasks with the `tlc-spec-driven` skill: **activate it by name and follow its Execute flow and Critical Rules.** The skill owns the per-task test gate, atomic commit, requirement traceability, adequacy review, independent Verifier, discrimination sensor, and lessons distillation.
+
+**If the skill cannot be activated, STOP and tell the user.** Do not implement this plan without it.
+
+---
+
+**Design**: `.specs/features/csharp2md-v3/design.md`
+**Status**: Approved (user, 2026-08-17)
+**Branch**: `feat/csharp2md-v3` at the verified Phase 1 head; never push, open/update a PR, merge, tag, or publish without separate user authorization.
+
+---
+
+## Test Coverage Matrix
+
+> Generated from codebase, project guidelines, and spec - confirm before Execute. Guidelines found: `AGENTS.md`, `Directory.Build.props`, `Directory.Packages.props`, and the v3 specification/testing strategy. No CI workflow, contributor guide, or numerical coverage threshold is present, so the strong default applies for depth.
+
+| Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
+| --- | --- | --- | --- | --- |
+| Factual domain, identities, validation, and composition | unit | All branches; 1:1 to FACT-08..17 and FACT-50; every listed invalid state and identity edge case | `tests/Csharp2Md.Core.Tests/Facts/**/*Tests.cs` | `dotnet test csharp2md.slnx --filter "Category!=Integration"` |
+| Syntax extraction and Markdown projection | unit | Every language shape in FACT-57; exact source-span partition and byte reconstruction; annotations outside source spans | `tests/Csharp2Md.Core.Tests/Analysis/Syntax/**/*Tests.cs`, `tests/Csharp2Md.Core.Tests/Projection/Markdown/**/*Tests.cs` | `dotnet test csharp2md.slnx --filter "Category!=Integration"` |
+| MSBuild, Roslyn, process, and generator adapters | integration | Healthy + every specified failure mode; no-target, no-extension, timeout, process-tree, per-TFM, and analyzer-sanitation boundaries | `tests/Csharp2Md.Core.Tests/Analysis/Semantics/**/*Tests.cs` with `[Trait("Category", "Integration")]` | `dotnet test csharp2md.slnx` |
+| Detectors, indexes, and component classification | unit | 1:1 to FACT-37..49 and FACT-66..68; positive, negative, and lookalike cases per detector rule | `tests/Csharp2Md.Core.Tests/Detection/**/*Tests.cs` | `dotnet test csharp2md.slnx --filter "Category!=Integration"` |
+| Fact storage and canonical aggregate output | integration | Artifact set, atomic persistence, hashes, schema sync, referential integrity, canonical ordering, failure paths, and bounded aggregation | `tests/Csharp2Md.Core.Tests/Facts/Storage/**/*Tests.cs`, `tests/Csharp2Md.Core.Tests/Projection/Aggregates/**/*Tests.cs` | `dotnet test csharp2md.slnx` |
+| Analysis engine and migration cuts | integration | Full runs through `AnalysisEngine`; sequential scope lifecycle, syntax fallback, scoped degradation, coverage, diagnostics, and no weakened Phase 1 behavior | `tests/Csharp2Md.Core.Tests/Analysis/**/*Tests.cs` with `[Trait("Category", "Integration")]` | `dotnet test csharp2md.slnx` |
+| CLI and package | integration | Happy path plus every invalid option/trust/output/failure path, real exit codes, packaged execution, and version contract | `tests/Csharp2Md.Core.Tests/Cli/**/*Tests.cs` | `dotnet test csharp2md.slnx` |
+| Published JSON/frontmatter contracts | unit + snapshot | Record/schema synchronization, exact representative shapes, schema version, and canonical serialized bytes | `tests/Csharp2Md.Core.Tests/Facts/Schemas/**/*Tests.cs`, `tests/Csharp2Md.Core.Tests/Topic/**/*Tests.cs` | `dotnet test csharp2md.slnx --filter "Category!=Integration"` |
+| Fixtures and specification artifacts | none | Build gate for inert files; behavior is asserted by the consuming adapter, detector, engine, or CLI task | `fixtures/`, `.specs/features/csharp2md-v3/` | build gate only |
+
+Provenance: xUnit 2.9.3 on VSTest was detected from `tests/Csharp2Md.Core.Tests/Csharp2Md.Core.Tests.csproj`, `Directory.Packages.props`, and `global.json` (SDK 10 with no native-MTP runner selection). Tests mirror source folders, integration tests use `[Trait("Category", "Integration")]`, Verify snapshots live under adjacent `snapshots/` directories, nullable analysis and warnings-as-errors are enabled, and the current verified baseline is **428 passing tests, 0 failing**. Existing samples included span coverage, pipeline invariants, cross-run determinism, CLI end-to-end behavior, semantic loading, detector behavior, and schema synchronization.
+
+## Gate Check Commands
+
+> Generated from the repository and the mandatory `dotnet-test:run-tests` skill - confirm before Execute.
+
+| Gate Level | When to Use | Command |
+| --- | --- | --- |
+| Quick | After tasks whose production surface and tests are unit-only | `dotnet test csharp2md.slnx --filter "Category!=Integration"` |
+| Full | After adapter, storage, engine, output, CLI, fixture, or migration tasks | `dotnet test csharp2md.slnx` |
+| Build | After each phase and for release/configuration tasks | `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx` |
+
+Every task records the discovered test count in `tasks.md` before its commit. The count must be at least the preceding committed count plus the task's minimum named new cases; existing tests may be replaced only when their behavioral assertion is mapped in the migration ledger and preserved at equal or stronger depth.
+
+## Knowledge Verification (binding)
+
+Roslyn and MSBuild calls follow the repository's retrieval-led chain: existing code -> project docs and AD-003 -> installed XML/API documentation -> official Microsoft/Roslyn documentation -> explicitly flagged uncertainty. No Roslyn member signature may be invented. Increment 0 resolves the production semantic adapter before later semantic tasks begin.
+
+Authoring uses `dotnet-skills:modern-csharp-coding-standards`; public-contract work also uses `dotnet-skills:api-design` and `dotnet-skills:csharp-nullable-reference-types`. Test execution uses `dotnet-test:run-tests`; snapshot tasks use `dotnet-skills:snapshot-testing`. The pre-Verifier release task uses `dotnet-test:test-gap-analysis`, `dotnet-test:assertion-quality`, `dotnet-test:test-anti-patterns`, and `dotnet-skills:dotnet-slopwatch`.
+
+---
+
+## Execution Plan
+
+Phases and tasks run strictly in order. A later phase cannot start until the preceding phase's build gate and atomic commits are complete.
+
+### Phase 0: Semantic viability gate
+
+```
+T1 -> T2 -> T3 -> T4 -> T5
+```
+
+### Phase 1: Factual kernel
+
+```
+T5 -> T6 -> T7 -> T8 -> T9 -> T10 -> T11 -> T12
+```
+
+### Phase 2: Safe syntax-only vertical cut
+
+```
+T12 -> T13 -> T14 -> T15 -> T16 -> T17 -> T18 -> T19 -> T20 -> T21
+```
+
+### Phase 3: Trusted semantic enrichment
+
+```
+T21 -> T22 -> T23 -> T24 -> T25 -> T26 -> T27 -> T28 -> T29
+```
+
+### Phase 4: Reusable analysis infrastructure
+
+```
+T29 -> T30 -> T31 -> T32 -> T33
+```
+
+### Phase 5: Priority factual detectors
+
+```
+T33 -> T34 -> T35 -> T36 -> T37 -> T38 -> T39
+```
+
+### Phase 6: Aggregation, migration, and release closure
+
+```
+T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
+```
+
+---
+
+## Task Breakdown
+
+### T1: Create the Phase 1 behavior-migration ledger
+
+**What**: Inventory all 428 baseline tests and map each asserted behavior to a v3 requirement, its replacement test surface, or an explicit retained invariant.
+**Where**: `.specs/features/csharp2md-v3/test-migration.md`
+**Depends on**: None
+**Reuses**: Existing test names, the v3 requirement mapping, and the design's migration policy.
+**Requirement**: FACT-55
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-test:assertion-quality`
+
+**Done when**:
+
+- [x] Every baseline test is listed exactly once with a v3 disposition and requirement or retained-invariant reference.
+- [x] The ledger rejects deletion without an equal-or-stronger replacement assertion.
+- [x] Baseline gate records 428 passing tests and no unexpected working-tree changes.
+
+**Completed evidence (2026-08-17)**: `test-migration.md` contains 428 distinct ledger rows; `dotnet test csharp2md.slnx` passed 428 tests with 0 failed and 0 skipped before and after the documentation-only change.
+
+**Tests**: none - specification artifact; existing baseline is executed
+**Gate**: full
+**Commit**: `docs(v3): map baseline behavior to factual requirements`
+
+### T2: Prove target-free MSBuild property and item evaluation
+
+**What**: Add an isolated evaluation probe that uses property/item queries for healthy, multi-target, imported, missing-SDK, incomplete-restore, and invalid-reference projects and proves no custom target executes.
+**Where**: `tests/Csharp2Md.Core.Tests/Analysis/Viability/`
+**Depends on**: T1
+**Reuses**: `ProcessRunner`, synthetic fixtures, AD-003, and official MSBuild query contracts.
+**Requirement**: FACT-26, FACT-27, FACT-28, FACT-29
+
+**Tools**:
+
+- MCP: official web documentation
+- Skills: `tlc-spec-driven`, `dotnet-test:run-tests`
+
+**Done when**:
+
+- [ ] Arguments are passed through `ProcessStartInfo.ArgumentList` with no target, restore, build, publish, or target-result switch.
+- [ ] Multi-target values stay separate and preprocessing retains import paths only.
+- [ ] At least six new integration cases prove successful and degraded query outcomes plus absence of the target marker.
+- [ ] Full gate passes and the discovered count is at least the prior baseline plus six.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `test(v3): prove target-free msbuild evaluation`
+
+### T3: Prove timeout and complete process-tree termination
+
+**What**: Add a child-spawning evaluator probe that enforces a per-service timeout and verifies timeout or cancellation terminates the complete descendant tree.
+**Where**: `tests/Csharp2Md.Core.Tests/Analysis/Viability/ProcessTreeProbeTests.cs`
+**Depends on**: T2
+**Reuses**: `ProcessRunner` and `Process.Kill(entireProcessTree: true)` official contract.
+**Requirement**: FACT-28, FACT-62, FACT-63
+
+**Tools**:
+
+- MCP: official web documentation
+- Skills: `tlc-spec-driven`, `dotnet-test:run-tests`
+
+**Done when**:
+
+- [ ] Timeout is scoped to one service and cancellation remains caller cancellation.
+- [ ] Both timeout and cancellation cases prove the child and descendant processes are gone before control returns.
+- [ ] At least two new integration cases pass without leaving marker processes or files.
+- [ ] Full gate passes and the discovered count is at least the prior count plus two.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `test(v3): prove evaluator process-tree termination`
+
+### T4: Prove Roslyn compilation sanitation before binding
+
+**What**: Probe the Roslyn 5.6 workspace and compilation paths with marker analyzers and generators, replacing analyzer references before the first compilation request and recording whether the workspace path meets the security contract.
+**Where**: `tests/Csharp2Md.Core.Tests/Analysis/Viability/RoslynSanitationProbeTests.cs`
+**Depends on**: T3
+**Reuses**: Installed Roslyn XML documentation, AD-003, and existing `SolutionLoader` fixtures without reusing its unsafe call order.
+**Requirement**: FACT-30, FACT-33, FACT-34, FACT-64
+
+**Tools**:
+
+- MCP: official Microsoft and Roslyn documentation
+- Skills: `tlc-spec-driven`, `dotnet-test:run-tests`
+
+**Done when**:
+
+- [ ] Probe evidence states whether opening/evaluating a workspace runs forbidden targets or extensions.
+- [ ] Analyzer references are absent before compilation and no marker analyzer or generator executes.
+- [ ] Separate target compilations retain distinct target identities.
+- [ ] At least three new integration cases pass; full gate passes with no count decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `test(v3): prove sanitized roslyn compilation`
+
+### T5: Select and record the semantic compilation strategy
+
+**What**: Prove generator-only opt-in behavior, measure the viability cases, and amend the design with the evidence-backed workspace, evaluated-compilation, or stop-and-revise decision.
+**Where**: `tests/Csharp2Md.Core.Tests/Analysis/Viability/GeneratorIsolationProbeTests.cs`
+**Depends on**: T4
+**Reuses**: T2-T4 probes and the design's Increment-0 decision gate.
+**Requirement**: FACT-26, FACT-30, FACT-31, FACT-64
+
+**Tools**:
+
+- MCP: official Microsoft and Roslyn documentation
+- Skills: `tlc-spec-driven`, `dotnet-test:run-tests`
+
+**Done when**:
+
+- [ ] Explicit opt-in executes generators while diagnostic analyzers remain absent; disabled mode loads neither.
+- [ ] Elapsed time, peak working set, process count, and output volume are recorded without introducing an SLA.
+- [ ] `design.md` and the decision log are amended only if the evidence selects or changes a project-level constraint.
+- [ ] At least two new integration cases and the phase Build gate pass; if no safe backend exists, execution stops with evidence.
+
+**Tests**: integration
+**Gate**: build
+**Commit**: `docs(v3): select the proven semantic backend`
+
+### T6: Define analysis request, result, mode, and trust contracts
+
+**What**: Create the sole external `AnalysisRequest` and `AnalysisResult` surface with defaults and validation for trust, generator opt-in, and positive service timeout.
+**Where**: `src/Csharp2Md.Core/Analysis/Contracts/`
+**Depends on**: T5
+**Reuses**: `TopicOptions`, manifest/directory input semantics, and existing typed CLI failure patterns.
+**Requirement**: FACT-01, FACT-04, FACT-05, FACT-06, FACT-07, FACT-08
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:api-design`, `dotnet-skills:csharp-nullable-reference-types`
+
+**Done when**:
+
+- [ ] Omitted options produce syntax-only, untrusted, and ten-minute-per-service defaults.
+- [ ] Every illegal combination returns a typed validation failure before any side-effecting collaborator can run.
+- [ ] At least eight new unit cases cover defaults, valid combinations, and every invalid option edge.
+- [ ] Quick gate passes and the discovered count is at least the prior count plus eight.
+
+**Tests**: unit
+**Gate**: quick
+**Commit**: `feat(v3): define analysis request and result contracts`
+
+### T7: Create stable factual identity value types
+
+**What**: Implement dedicated canonical IDs for projects, targets, documents, symbols, components, relations, diagnostics, detectors, and persisted artifact references.
+**Where**: `src/Csharp2Md.Core/Facts/Identity/`
+**Depends on**: T6
+**Reuses**: `ProjectIdentityReader` normalization behavior and repository value-type conventions.
+**Requirement**: FACT-09, FACT-10
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`, `dotnet-skills:type-design-performance`
+
+**Done when**:
+
+- [ ] IDs reject absolute and non-normalized paths and never include the analysis root or span start.
+- [ ] Resolved and syntactic symbol ID grammars follow the normative rules and remain stable after unrelated preceding edits.
+- [ ] At least twelve new unit cases cover relocation, separators, case policy, long IDs, collisions, fallback signatures, and invalid inputs.
+- [ ] Quick gate passes with no discovered-test decrease.
+
+**Tests**: unit
+**Gate**: quick
+**Commit**: `feat(facts): add stable identity value types`
+
+### T8: Define evidence, provenance, and diagnostic values
+
+**What**: Add immutable versioned provenance, relative line-range evidence, structured diagnostic, stage, severity, and scope values.
+**Where**: `src/Csharp2Md.Core/Facts/Metadata/`
+**Depends on**: T7
+**Reuses**: `SourceLocation` intent while replacing its unvalidated shape.
+**Requirement**: FACT-09, FACT-14, FACT-15, FACT-69
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`, `dotnet-skills:csharp-nullable-reference-types`
+
+**Done when**:
+
+- [ ] Evidence is relative, ordered, in-range-capable, and tied to a document ID.
+- [ ] Provenance distinguishes engine and optional detector ID/version; diagnostics are deterministic and scope-addressable.
+- [ ] At least eight new unit cases cover valid and invalid ranges, absolute paths, empty versions, and canonical ordering.
+- [ ] Quick gate passes with no discovered-test decrease.
+
+**Tests**: unit
+**Gate**: quick
+**Commit**: `feat(facts): add evidence provenance and diagnostics`
+
+### T9: Define factual families and resolution algebra
+
+**What**: Create immutable solution, project, target, document, section, symbol, component, relation, and coverage facts plus the `FactResolution` aggregation rules.
+**Where**: `src/Csharp2Md.Core/Facts/Model/`
+**Depends on**: T8
+**Reuses**: Existing manifest, graph, render-section, and load-report concepts without retaining Roslyn or presentation types.
+**Requirement**: FACT-09, FACT-13, FACT-17, FACT-50, FACT-69
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`, `dotnet-skills:type-design-performance`
+
+**Done when**:
+
+- [ ] Factual records contain no Roslyn, filesystem, YAML, Markdown, or CLI types.
+- [ ] Resolution algebra implements exact, partial, syntactic, unresolved, and not-applicable document aggregation exactly as specified.
+- [ ] Runtime relations represent a nullable target and unresolved reason; configuration resolution is a distinct type.
+- [ ] At least twelve new unit cases cover every resolution combination and fact-family invariant; quick gate passes.
+
+**Tests**: unit
+**Gate**: quick
+**Commit**: `feat(facts): define factual model and resolution algebra`
+
+### T10: Define versioned factual detector contracts
+
+**What**: Add project- and document-granularity detector contracts, descriptors, contexts, and results that return facts and diagnostics without side effects.
+**Where**: `src/Csharp2Md.Core/Detection/Contracts/`
+**Depends on**: T9
+**Reuses**: AD-004's compiled-interface boundary and existing detector granularity split.
+**Requirement**: FACT-15, FACT-49
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:api-design`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Every descriptor requires stable ID, version, supported levels, and supported fact kinds.
+- [ ] Detector results cannot smuggle presentation or persistence side effects.
+- [ ] At least six new unit cases cover descriptor validation, granularity, supported levels, and canonical result ordering.
+- [ ] Quick gate passes with no discovered-test decrease.
+
+**Tests**: unit
+**Gate**: quick
+**Commit**: `feat(detection): define factual detector contracts`
+
+### T11: Validate fragment and relation invariants
+
+**What**: Implement pure fragment and bounded aggregate validation for identity, evidence, reference, resolution, provenance, relation-kind, and unresolved-target rules.
+**Where**: `src/Csharp2Md.Core/Facts/Validation/`
+**Depends on**: T10
+**Reuses**: Existing frontmatter validation result style and factual constructors.
+**Requirement**: FACT-11, FACT-12, FACT-13, FACT-14, FACT-15, FACT-16, FACT-17
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Every FACT-12..17 rejection rule produces a deterministic diagnostic naming the fact and rule.
+- [ ] Invalid facts/fragments cannot be represented as validated values or passed to storage/projection.
+- [ ] At least fourteen new unit cases cover each invalid rule and corresponding valid lookalike.
+- [ ] Quick gate passes and the discovered count is at least the prior count plus fourteen.
+
+**Tests**: unit
+**Gate**: quick
+**Commit**: `feat(facts): validate factual invariants`
+
+### T12: Add canonical factual JSON contracts
+
+**What**: Create source-generated JSON contexts and schema-sync tests for every factual family using explicit ordering, schema version 2, UTF-8/LF, and no timestamps or absolute paths.
+**Where**: `src/Csharp2Md.Core/Facts/Serialization/`
+**Depends on**: T11
+**Reuses**: `ManifestJsonContext` and frontmatter schema synchronization patterns.
+**Requirement**: FACT-09, FACT-19, FACT-56, FACT-70
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:serialization`, `dotnet-skills:snapshot-testing`
+
+**Done when**:
+
+- [ ] Every supported fact category round-trips through source-generated serialization.
+- [ ] Schemas and record fields/enums fail tests when they drift; representative bytes are approved from spec-defined expectations.
+- [ ] At least eight new unit/snapshot cases cover families, ordering, line endings, absent timestamps, and schema version.
+- [ ] Phase Build gate passes with no discovered-test decrease.
+
+**Tests**: unit + snapshot
+**Gate**: build
+**Commit**: `feat(facts): serialize schema-version-two fragments`
+
+### T13: Build inert source and project inventory
+
+**What**: Discover services, solutions, projects, eligible source/configuration files, declared imports, and analyzer/generator paths without constructing or invoking any executable analysis adapter.
+**Where**: `src/Csharp2Md.Core/Analysis/Inventory/`
+**Depends on**: T12
+**Reuses**: `ManifestLoader`, `ServiceDiscoverer`, `ProjectIdentityReader`, XML/configuration parsing, and exclusion rules.
+**Requirement**: FACT-02, FACT-03, FACT-29, FACT-53
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] A recording adapter proves syntax inventory creates no process, workspace, compilation, analyzer, generator, or plugin.
+- [ ] Broken/unrestored projects still inventory every eligible source file and declared extension path.
+- [ ] Catalog ordering and all paths are canonical and root-relative.
+- [ ] At least eight new integration cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(analysis): add inert project inventory`
+
+### T14: Extract source-faithful section facts
+
+**What**: Move the contiguous Roslyn syntax partition into a syntax extractor that produces document and source-section facts retaining every source byte exactly once.
+**Where**: `src/Csharp2Md.Core/Analysis/Syntax/SourceSectionExtractor.cs`
+**Depends on**: T13
+**Reuses**: `MarkdownRenderer` span partition and `XmlDocProse` behavior.
+**Requirement**: FACT-03, FACT-21, FACT-57
+
+**Tools**:
+
+- MCP: official Roslyn documentation for any unproven syntax API
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Section spans are contiguous from zero to source length and concatenate to the original source exactly.
+- [ ] Usings, namespaces, directives, regions, comments, top-level statements, nested types, and trailing trivia are retained.
+- [ ] At least twelve new unit/theory cases cover the language and byte-fidelity matrix.
+- [ ] Quick gate passes with no discovered-test decrease.
+
+**Tests**: unit
+**Gate**: quick
+**Commit**: `feat(syntax): extract source-faithful section facts`
+
+### T15: Extract syntactic declarations and stable symbols
+
+**What**: Emit declaration and syntactic symbol facts for namespaces, types, members, signatures, XML prose, and syntactic relation candidates without semantic binding.
+**Where**: `src/Csharp2Md.Core/Analysis/Syntax/SyntaxFactExtractor.cs`
+**Depends on**: T14
+**Reuses**: Existing renderer/detector syntax walks and the T7 canonical signature grammar.
+**Requirement**: FACT-03, FACT-10, FACT-21, FACT-57
+
+**Tools**:
+
+- MCP: official Roslyn documentation for every syntax member without repository precedent
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Overloads, generics, records, interfaces, overrides, conditional compilation, and error-bearing source have spec-defined syntactic facts.
+- [ ] IDs survive root relocation and unrelated insertion before declarations.
+- [ ] At least fourteen new unit/theory cases cover positive shapes and lookalikes.
+- [ ] Quick gate passes with no discovered-test decrease.
+
+**Tests**: unit
+**Gate**: quick
+**Commit**: `feat(syntax): extract declaration and symbol facts`
+
+### T16: Persist validated fragments atomically
+
+**What**: Implement path-safe artifact mapping, canonical serialization, content hashing, output-local temporary writes, atomic rename, and stable artifact references for validated fragments.
+**Where**: `src/Csharp2Md.Core/Facts/Storage/`
+**Depends on**: T15
+**Reuses**: `OutputWriter` safety concepts and T12 canonical serializers.
+**Requirement**: FACT-11, FACT-18, FACT-19, FACT-23
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:serialization`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Only validated fragments can be written and returned references resolve inside `raw/facts/`.
+- [ ] Long IDs and hash collisions map deterministically without portable-path violations.
+- [ ] Hashes cover exact written bytes and failed writes leave no claimed or partial artifact.
+- [ ] At least eight new integration cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(storage): persist validated fact fragments atomically`
+
+### T17: Project Markdown exclusively from document facts
+
+**What**: Add a pure Markdown projector that accepts only a validated document fragment and reconstructs structural code sections plus factual annotations outside source spans.
+**Where**: `src/Csharp2Md.Core/Projection/Markdown/MarkdownProjector.cs`
+**Depends on**: T16
+**Reuses**: Existing Markdown titles/fences and XML prose rendering, not its syntax-tree input shape.
+**Requirement**: FACT-20, FACT-21, FACT-56
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:snapshot-testing`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] The projector has no Roslyn, detector, compilation, semantic-model, or filesystem input.
+- [ ] Every section payload remains verbatim and annotations cannot consume or alter source spans.
+- [ ] At least eight unit/snapshot cases cover representative documents, fences, prose, empty files, and annotations.
+- [ ] Quick gate passes with no discovered-test decrease.
+
+**Tests**: unit + snapshot
+**Gate**: quick
+**Commit**: `feat(projection): render markdown from validated facts`
+
+### T18: Emit schema-version-two frontmatter
+
+**What**: Replace the v2 frontmatter model and YAML projection with the compact document-local v2 schema and a resolvable `facts_ref`.
+**Where**: `src/Csharp2Md.Core/Projection/Markdown/FrontmatterV2.cs`
+**Depends on**: T17
+**Reuses**: `FrontmatterYaml` escaping and existing schema-sync tests.
+**Requirement**: FACT-22, FACT-56, FACT-70
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:snapshot-testing`, `dotnet-skills:serialization`
+
+**Done when**:
+
+- [ ] Only the specified schema-version-2 fields are emitted; topic, domain, generator version, timestamps, and absolute paths are absent.
+- [ ] `facts_ref` resolves to the exact stored document fragment and classifications/diagnostics are summarized deterministically.
+- [ ] At least six new unit/snapshot cases and the schema-sync test pass.
+- [ ] Quick gate passes with no discovered-test decrease.
+
+**Tests**: unit + snapshot
+**Gate**: quick
+**Commit**: `feat(projection): emit frontmatter schema version two`
+
+### T19: Write canonical aggregate and manifest skeletons
+
+**What**: Create canonical output preparation plus deterministic empty/summary outputs for the factual manifest, solutions, projects, symbols, relation partitions, diagnostics, coverage, indexes, Mermaid, topic scaffold, and audit log.
+**Where**: `src/Csharp2Md.Core/Projection/Aggregates/`
+**Depends on**: T18
+**Reuses**: `OutputWriter`, `TopicLayout`, `IndexWriter`, `MermaidWriter`, `TopicScaffoldWriter`, and `RunLogWriter` safety/time seams.
+**Requirement**: FACT-18, FACT-23, FACT-25, FACT-51, FACT-52, FACT-54
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:snapshot-testing`, `dotnet-skills:serialization`
+
+**Done when**:
+
+- [ ] The exact v3 tree is written, the manifest is last, and `raw/dependencies.json` is absent.
+- [ ] Machine files are UTF-8/LF, canonical, timestamp-free, and reference only existing fragments/hashes.
+- [ ] Only `raw/log.md` receives a timestamp and it is not a machine-fact source.
+- [ ] At least ten integration/snapshot cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration + snapshot
+**Gate**: full
+**Commit**: `feat(output): add canonical factual aggregates`
+
+### T20: Orchestrate the syntax-only analysis transaction
+
+**What**: Implement `AnalysisEngine.AnalyzeAsync` for request validation, output safety, inert inventory, sequential extraction, validation, persistence, Markdown projection, bounded summaries, aggregation, and result reporting.
+**Where**: `src/Csharp2Md.Core/Analysis/AnalysisEngine.cs`
+**Depends on**: T19
+**Reuses**: T6 contracts and T13-T19 modules; output preparation occurs once.
+**Requirement**: FACT-01, FACT-02, FACT-03, FACT-08, FACT-11, FACT-18, FACT-20, FACT-24, FACT-36, FACT-53
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`, `dotnet-skills:csharp-concurrency-patterns`
+
+**Done when**:
+
+- [ ] Default and explicit syntax-only runs invoke zero executable adapters and emit facts/Markdown for broken projects.
+- [ ] Scopes process in canonical sequential order and prior fragment/Roslyn objects are released before the next service.
+- [ ] Structural invalidity returns exit 1; valid syntax fallback returns exit 0 with complete coverage.
+- [ ] At least ten new integration cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(analysis): orchestrate syntax-only factual pipeline`
+
+### T21: Route the CLI through the v3 engine
+
+**What**: Add v3 analysis/trust/generator/timeout options, validate them before output preparation, invoke only `AnalysisEngine`, and remove the v2 pipeline from the production CLI path.
+**Where**: `src/Csharp2Md.Cli/Program.cs`
+**Depends on**: T20
+**Reuses**: Existing System.CommandLine patterns, manifest/directory inputs, error formatting, and exit-code tests.
+**Requirement**: FACT-01, FACT-02, FACT-04, FACT-05, FACT-06, FACT-07, FACT-08, FACT-25
+
+**Tools**:
+
+- MCP: official System.CommandLine documentation only if an unproven API is needed
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Zero-option CLI uses syntax-only/untrusted and produces v3 output without starting semantic infrastructure.
+- [ ] Invalid trust, generator, and timeout combinations exit 1 and preserve a sentinel output byte-for-byte.
+- [ ] CLI returns the engine exit code and no production call reaches `AnalysisPipeline`.
+- [ ] At least eight new CLI integration cases and the phase Build gate pass.
+
+**Tests**: integration
+**Gate**: build
+**Commit**: `feat(cli): route analysis through the v3 engine`
+
+### T22: Implement controlled MSBuild evaluation
+
+**What**: Convert the proven property/item probe into the production evaluation adapter with one outer query, one query per target framework, inert import/extension inventory, timeout, and process-tree cleanup.
+**Where**: `src/Csharp2Md.Core/Analysis/Semantics/MSBuild/`
+**Depends on**: T21
+**Reuses**: T2-T3 proven command construction and process ownership.
+**Requirement**: FACT-26, FACT-27, FACT-28, FACT-29, FACT-32, FACT-62, FACT-63
+
+**Tools**:
+
+- MCP: official Microsoft documentation
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`, `dotnet-skills:csharp-concurrency-patterns`
+
+**Done when**:
+
+- [ ] Production arguments are identical in security properties to the proven probe and never invoke restore or targets.
+- [ ] Results include every FACT-32 evaluated property/item and separate TFM scopes; expanded XML is discarded.
+- [ ] Failures/timeouts return scoped degraded data after descendant termination.
+- [ ] At least ten integration cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(semantics): evaluate trusted projects safely`
+
+### T23: Implement the proven sanitized compilation adapter
+
+**What**: Build target-scoped compilations and semantic models using the Increment-0-selected strategy, excluding analyzer references before any compilation request.
+**Where**: `src/Csharp2Md.Core/Analysis/Semantics/Roslyn/SemanticCompilationAdapter.cs`
+**Depends on**: T22
+**Reuses**: T4 evidence and AD-003's Roslyn 5.6 constraints.
+**Requirement**: FACT-30, FACT-33, FACT-34, FACT-64
+
+**Tools**:
+
+- MCP: installed Roslyn XML docs and official Microsoft/Roslyn docs
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`, `dotnet-skills:csharp-nullable-reference-types`
+
+**Done when**:
+
+- [ ] No compilation/model is requested before analyzer sanitation and target scopes never merge.
+- [ ] Null/unsupported compilation/model and error symbols return ordinary degraded results.
+- [ ] Marker analyzer/generator assemblies remain unexecuted.
+- [ ] At least eight integration cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(semantics): add sanitized compilation adapter`
+
+### T24: Execute source generators only after explicit consent
+
+**What**: Implement the generator-only adapter selected by Increment 0, recording loaded extensions, generated documents, and generator diagnostics while never running diagnostic analyzers.
+**Where**: `src/Csharp2Md.Core/Analysis/Semantics/Roslyn/SourceGeneratorAdapter.cs`
+**Depends on**: T23
+**Reuses**: T5 generator isolation probe and T23 sanitized compilations.
+**Requirement**: FACT-29, FACT-30, FACT-31, FACT-34
+
+**Tools**:
+
+- MCP: installed Roslyn XML docs and official Roslyn documentation
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Disabled mode never constructs/loads the adapter; enabled trusted mode runs only generators.
+- [ ] Generated documents receive stable scope identities and failures retain pre-generator facts.
+- [ ] Loaded extensions and diagnostics are deterministic and evidence-backed.
+- [ ] At least six integration cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(semantics): add explicit generator execution adapter`
+
+### T25: Enrich project and target facts
+
+**What**: Convert evaluated results into project/target facts containing declared SDK, imports, output type, TFMs, assembly/root namespace, compile items, references, constants, language version, nullable mode, and compiled extensions.
+**Where**: `src/Csharp2Md.Core/Analysis/Semantics/ProjectFactEnricher.cs`
+**Depends on**: T24
+**Reuses**: T22 results, factual identities, evidence, provenance, and diagnostics.
+**Requirement**: FACT-32, FACT-34, FACT-40, FACT-65
+
+**Tools**:
+
+- MCP: official Microsoft documentation for evaluated properties/items
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Every FACT-32 field is populated only from evidence available at its target scope.
+- [ ] Missing/failed evaluation retains syntactic project facts and records requested/effective mode, restore false, and isolation none.
+- [ ] Multi-target facts cannot be collapsed into one exact result.
+- [ ] At least eight unit/integration cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(semantics): enrich project and target facts`
+
+### T26: Enrich symbol facts semantically
+
+**What**: Add resolved symbol identities, bases, interfaces, implementations, overrides, attributes, and relevant type references without promoting error symbols to exact facts.
+**Where**: `src/Csharp2Md.Core/Analysis/Semantics/SymbolFactEnricher.cs`
+**Depends on**: T25
+**Reuses**: T15 syntactic facts, T23 semantic models, and `GetDocumentationCommentId()` with canonical fallback.
+**Requirement**: FACT-10, FACT-13, FACT-33, FACT-34, FACT-57
+
+**Tools**:
+
+- MCP: installed Roslyn XML docs and official Microsoft/Roslyn docs
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`, `dotnet-skills:csharp-nullable-reference-types`
+
+**Done when**:
+
+- [ ] Overloads, generics, records, interfaces, implementations, overrides, attributes, and type references match spec-defined expected symbols.
+- [ ] Null documentation IDs use canonical signatures; error symbols remain syntactic/unresolved.
+- [ ] Binding failure affects only its document/fact scope and retains syntax evidence.
+- [ ] At least twelve unit/integration cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(semantics): enrich symbol facts`
+
+### T27: Merge enrichment without erasing lower-resolution evidence
+
+**What**: Implement immutable fact merging, exact-claim conflict rejection, higher-resolution claim replacement, diagnostic/evidence deduplication, and document resolution recomputation.
+**Where**: `src/Csharp2Md.Core/Facts/Composition/FactMerger.cs`
+**Depends on**: T26
+**Reuses**: T9 resolution algebra and T11 validation diagnostics.
+**Requirement**: FACT-13, FACT-34, FACT-36, FACT-50, FACT-65, FACT-69
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Semantic absence/failure can only retain/add/downgrade with diagnostics; it never removes syntax facts.
+- [ ] Conflicting exact claims fail structurally rather than using last-write-wins.
+- [ ] Mixed resolutions and diagnostic references recompute exactly per the normative table.
+- [ ] At least ten new unit cases pass; quick gate records no discovered-test decrease.
+
+**Tests**: unit
+**Gate**: quick
+**Commit**: `feat(facts): merge semantic enrichment safely`
+
+### T28: Project honest diagnostics and coverage
+
+**What**: Aggregate deterministic diagnostics and coverage for every inventoried project, target, document, detector, fact level, attempt state, resolution, and diagnostic reference.
+**Where**: `src/Csharp2Md.Core/Projection/Aggregates/CoverageProjector.cs`
+**Depends on**: T27
+**Reuses**: T19 aggregate outputs, analysis diagnostics, and coverage facts.
+**Requirement**: FACT-35, FACT-36, FACT-40, FACT-50, FACT-51, FACT-52, FACT-53, FACT-54, FACT-65, FACT-69
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:snapshot-testing`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Not-applicable, unattempted, syntactic, unresolved, partial, exact, and failed scopes remain distinguishable.
+- [ ] Every degradation diagnostic is scoped and referenced by affected fragments/coverage without absolute paths or stack traces.
+- [ ] The audit log summarizes but does not define machine facts.
+- [ ] At least ten integration/snapshot cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration + snapshot
+**Gate**: full
+**Commit**: `feat(output): project diagnostics and coverage`
+
+### T29: Integrate trusted semantic execution into the engine
+
+**What**: Route trusted semantic requests through evaluation, compilation, optional generators, enrichment, merging, fallback, and coverage while preserving deterministic sequential service/target/document processing.
+**Where**: `src/Csharp2Md.Core/Analysis/AnalysisEngine.cs`
+**Depends on**: T28
+**Reuses**: T20 syntax transaction and T22-T28 semantic modules.
+**Requirement**: FACT-26, FACT-30, FACT-31, FACT-32, FACT-33, FACT-34, FACT-35, FACT-36, FACT-62, FACT-63, FACT-64, FACT-65
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:csharp-concurrency-patterns`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Healthy semantic runs enrich facts; every specified evaluation/workspace/compilation/model/generator/detector failure degrades only its scope.
+- [ ] Timeout kills one service's tree and falls back with exit 0; caller cancellation propagates.
+- [ ] At most one semantic scope is alive at once and syntax facts exist for every inventoried source.
+- [ ] At least twelve integration cases and the phase Build gate pass with no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: build
+**Commit**: `feat(analysis): integrate trusted semantic enrichment`
+
+### T30: Build reusable solution symbol and relation indexes
+
+**What**: Construct target-aware symbol, project-reference, type-reference, and relation indexes once per solution for detector and classification queries.
+**Where**: `src/Csharp2Md.Core/Analysis/Indexes/`
+**Depends on**: T29
+**Reuses**: Stable fact IDs, semantic symbol facts, and project/target facts.
+**Requirement**: FACT-37
+
+**Tools**:
+
+- MCP: installed Roslyn XML docs and official documentation for symbol keys used
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`, `dotnet-skills:type-design-performance`
+
+**Done when**:
+
+- [ ] Indexes build once per solution/target set and detectors cannot initiate repeated solution-wide searches.
+- [ ] Canonical ordering and target identity prevent cross-TFM symbol conflation.
+- [ ] At least six unit/integration cases prove reuse, lookup correctness, ordering, and bounded retained summaries.
+- [ ] Full gate passes with no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(analysis): add reusable semantic indexes`
+
+### T31: Classify executable and test project roots
+
+**What**: Classify confirmed executable roots as web API, worker, or CLI in priority order and classify test and non-test library projects without business inference.
+**Where**: `src/Csharp2Md.Core/Analysis/Classification/ProjectClassifier.cs`
+**Depends on**: T30
+**Reuses**: Evaluated project facts and reusable indexes.
+**Requirement**: FACT-38, FACT-39, FACT-40, FACT-41, FACT-66
+
+**Tools**:
+
+- MCP: official framework documentation for classification evidence when needed
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Web API precedes worker and worker precedes generic executable/CLI classification.
+- [ ] Test support and non-test library outcomes require confirmed technical evidence only.
+- [ ] At least ten unit cases cover every class, priority collision, negative, and lookalike.
+- [ ] Quick gate passes with no discovered-test decrease.
+
+**Tests**: unit
+**Gate**: quick
+**Commit**: `feat(classification): classify technical project roots`
+
+### T32: Assign library component ownership
+
+**What**: Classify libraries as private to one executable root, shared across several roots, or standalone when unconsumed using compile-time reachability only.
+**Where**: `src/Csharp2Md.Core/Analysis/Classification/LibraryOwnershipClassifier.cs`
+**Depends on**: T31
+**Reuses**: T30 project-reference index and T31 technical root facts.
+**Requirement**: FACT-42, FACT-67, FACT-68
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Exactly-one, multiple, zero, transitive, cyclic, and test-only consumers have deterministic spec-defined outcomes.
+- [ ] Runtime logical destinations never influence compile-time ownership.
+- [ ] At least eight unit cases cover the reachability matrix and ordering.
+- [ ] Quick gate passes with no discovered-test decrease.
+
+**Tests**: unit
+**Gate**: quick
+**Commit**: `feat(classification): assign library component ownership`
+
+### T33: Isolate factual detector execution
+
+**What**: Implement `DetectorHost` level routing, descriptor enforcement, canonical result collection, and per-invocation exception isolation that discards incomplete facts.
+**Where**: `src/Csharp2Md.Core/Detection/DetectorHost.cs`
+**Depends on**: T32
+**Reuses**: T10 contracts, T30 indexes, and structured diagnostics.
+**Requirement**: FACT-35, FACT-49
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Only supported levels/fact kinds run and every result receives descriptor provenance.
+- [ ] A throwing detector loses only that invocation's incomplete facts and adds one scoped diagnostic.
+- [ ] Other detectors/scopes continue in canonical order.
+- [ ] At least eight unit cases and the phase Build gate pass with no discovered-test decrease.
+
+**Tests**: unit
+**Gate**: build
+**Commit**: `feat(detection): isolate factual detector execution`
+
+### T34: Detect ASP.NET Core facts
+
+**What**: Emit evidence-backed facts for controllers, actions, Minimal APIs, routes, authorization, policies, filters, health checks, and entrypoints, preserving irreducible route expressions as partial.
+**Where**: `src/Csharp2Md.Core/Detection/AspNetCore/`
+**Depends on**: T33
+**Reuses**: T30 indexes, semantic symbol/operation contexts, and existing fixture controller/filter/program shapes.
+**Requirement**: FACT-43, FACT-58
+
+**Tools**:
+
+- MCP: official ASP.NET Core and Roslyn documentation
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Every specified ASP.NET fact carries detector version, navigable evidence, source identity, and correct resolution.
+- [ ] Constant and irreducible route expressions remain distinguishable; no route or framework role is invented from names.
+- [ ] At least eighteen positive, negative, and lookalike unit/integration cases cover every listed rule.
+- [ ] Full gate passes with no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(detection): extract aspnet core facts`
+
+### T35: Detect dependency-injection facts
+
+**What**: Emit all confirmed DI registrations with lifetime, implementation/factory, open generic, multiple implementation, key, and navigable local expansion evidence.
+**Where**: `src/Csharp2Md.Core/Detection/DependencyInjection/`
+**Depends on**: T34
+**Reuses**: T30 indexes and existing service-collection extension fixture patterns.
+**Requirement**: FACT-44, FACT-58
+
+**Tools**:
+
+- MCP: official Microsoft DI and Roslyn documentation
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Distinct registrations are never collapsed and local expansion methods link to their definition evidence.
+- [ ] Factories, keys, open generics, and multiple implementations retain exact/partial evidence appropriately.
+- [ ] Name-only lookalikes and unrelated extension calls emit nothing.
+- [ ] At least sixteen positive, negative, and lookalike cases pass; full gate records no count decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(detection): extract dependency injection facts`
+
+### T36: Detect HTTP client relations
+
+**What**: Replace heuristic HTTP signals with `IOperation`-confirmed named/typed-client relation facts carrying method, route expression, base URL, headers, timeout, logical destination evidence, and honest target resolution.
+**Where**: `src/Csharp2Md.Core/Detection/Http/`
+**Depends on**: T35
+**Reuses**: Existing `HttpClientDetector` behavioral cases, configuration indexing, and T30 indexes.
+**Requirement**: FACT-45, FACT-47, FACT-58
+
+**Tools**:
+
+- MCP: official Roslyn `IOperation` and Microsoft HTTP client documentation
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Confirmed calls preserve named/typed identity, request method/expression, configuration evidence, and navigation.
+- [ ] Unproved targets remain null with resolution and non-empty reason; logical names/URLs never become service IDs.
+- [ ] Null/error semantic contexts degrade honestly and syntactic/name lookalikes do not emit confirmed relations.
+- [ ] At least sixteen positive, negative, and lookalike cases pass; full gate records no count decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(detection): extract http relation facts`
+
+### T37: Detect gRPC relations
+
+**What**: Replace heuristic gRPC signals with confirmed generated-client/type and invocation evidence, preserving unresolved destinations without fictional service identities.
+**Where**: `src/Csharp2Md.Core/Detection/Grpc/`
+**Depends on**: T36
+**Reuses**: Existing gRPC detector behavior and fixture client, T30 indexes, and relation validation.
+**Requirement**: FACT-46, FACT-47, FACT-58
+
+**Tools**:
+
+- MCP: official gRPC .NET and Roslyn documentation
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Confirmed calls emit source, optional target, method/type evidence, provenance, and correct resolution.
+- [ ] Name-only client lookalikes emit nothing; unproved logical destinations remain null with reasons.
+- [ ] At least ten positive, negative, lookalike, and degraded cases pass.
+- [ ] Full gate passes with no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(detection): extract grpc relation facts`
+
+### T38: Detect messaging and event relations
+
+**What**: Replace heuristic messaging signals with confirmed producer/consumer framework or type evidence, correlating targets only when identity is proved and retaining unpaired observations honestly.
+**Where**: `src/Csharp2Md.Core/Detection/Messaging/`
+**Depends on**: T37
+**Reuses**: Existing messaging detector behavior, shared-contract fixtures, and T30 indexes.
+**Requirement**: FACT-46, FACT-47, FACT-58
+
+**Tools**:
+
+- MCP: official framework and Roslyn documentation for implemented messaging patterns
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Producers/consumers require confirmed framework/type evidence and retain contract/topic evidence separately from service identity.
+- [ ] Correlated, unpaired, unresolved, negative, and name-lookalike cases have spec-defined outcomes.
+- [ ] At least twelve positive, negative, lookalike, and degradation cases pass.
+- [ ] Full gate passes with no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `feat(detection): extract messaging relation facts`
+
+### T39: Detect direct and project references as compile-time facts
+
+**What**: Emit confirmed type/direct and project/package references exclusively in the compile-time partition and reject any runtime classification of those sources.
+**Where**: `src/Csharp2Md.Core/Detection/CompileTime/`
+**Depends on**: T38
+**Reuses**: Existing direct-reference behavior, evaluated references, T30 indexes, and FACT-16 validation.
+**Requirement**: FACT-46, FACT-48, FACT-58
+
+**Tools**:
+
+- MCP: installed Roslyn XML docs and official documentation for referenced-symbol APIs
+- Skills: `tlc-spec-driven`, `dotnet-skills:modern-csharp-coding-standards`
+
+**Done when**:
+
+- [ ] Project and package references appear only in compile-time facts; local type references are semantically confirmed.
+- [ ] Runtime partitions contain none of these references and name-only lookalikes emit nothing.
+- [ ] At least ten positive, negative, lookalike, and invalid-kind cases pass.
+- [ ] Phase Build gate passes with no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: build
+**Commit**: `feat(detection): emit compile-time reference facts`
+
+### T40: Project relation partitions and component graphs
+
+**What**: Stream validated relation summaries into compile-time, inheritance, DI, HTTP, gRPC, and event partitions plus component indexes and Mermaid without rehydrating a whole factual solution.
+**Where**: `src/Csharp2Md.Core/Projection/Aggregates/RelationProjector.cs`
+**Depends on**: T39
+**Reuses**: T19 canonical output, T30 indexes, T31-T32 component facts, and T34-T39 relation facts.
+**Requirement**: FACT-18, FACT-25, FACT-37, FACT-38, FACT-39, FACT-40, FACT-41, FACT-42, FACT-43, FACT-44, FACT-45, FACT-46, FACT-47, FACT-48, FACT-49, FACT-66, FACT-67, FACT-68
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:snapshot-testing`, `dotnet-skills:type-design-performance`
+
+**Done when**:
+
+- [ ] Every relation is in exactly one legal partition with valid evidence/provenance and honest nullable targets.
+- [ ] Mermaid and component/index output derive only from validated summaries and never promote logical names to identities.
+- [ ] Aggregation reads one partition/summary stream at a time in canonical order.
+- [ ] At least twelve integration/snapshot cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration + snapshot
+**Gate**: full
+**Commit**: `feat(output): project factual relations and components`
+
+### T41: Complete the Phase 1 behavior migration
+
+**What**: Resolve every migration-ledger row by retaining, relocating, or replacing its assertion at equal or stronger depth, then remove superseded v2-only tests and production paths.
+**Where**: `.specs/features/csharp2md-v3/test-migration.md`
+**Depends on**: T40
+**Reuses**: T1 ledger and all completed v3 interfaces.
+**Requirement**: FACT-25, FACT-55
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-test:assertion-quality`, `dotnet-test:test-anti-patterns`
+
+**Done when**:
+
+- [ ] Every one of the 428 baseline rows is marked preserved with its executable replacement evidence.
+- [ ] No production reference remains to `AnalysisPipeline`, `SolutionLoader` orchestration, direct semantic Markdown enrichment, old detector interfaces/signals/graph builder, or `DependencyJsonWriter`.
+- [ ] Removed tests have equal-or-stronger v3 assertions and the discovered count does not fall below the task-entry count.
+- [ ] Full gate passes.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `refactor(v3)!: remove superseded analysis paths`
+
+### T42: Complete the language-shape factual matrix
+
+**What**: Add or close fixture and assertion gaps for overloads, generics, records, interfaces, overrides, conditional compilation, error symbols, ID stability, and source-span fidelity.
+**Where**: `tests/Csharp2Md.Core.Tests/Analysis/LanguageMatrixTests.cs`
+**Depends on**: T41
+**Reuses**: T14-T15 and T26 test helpers plus existing render sources.
+**Requirement**: FACT-10, FACT-13, FACT-21, FACT-57
+
+**Tools**:
+
+- MCP: official Roslyn docs for any newly exercised member
+- Skills: `tlc-spec-driven`, `dotnet-test:test-gap-analysis`
+
+**Done when**:
+
+- [ ] Every FACT-57 language shape has explicit expected syntax and semantic facts.
+- [ ] Root relocation and unrelated preceding edits preserve IDs while evidence locations move correctly.
+- [ ] Error symbols never become exact and every source byte remains covered once.
+- [ ] At least ten new theory cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `test(v3): cover language and identity edge cases`
+
+### T43: Close every detector lookalike gap
+
+**What**: Audit all detector requirements and add missing positive, negative, and lookalike cases with spec-defined expected facts, evidence, provenance, and resolution.
+**Where**: `tests/Csharp2Md.Core.Tests/Detection/DetectorMatrixTests.cs`
+**Depends on**: T42
+**Reuses**: T34-T39 detector fixtures and the requirement-to-test mapping.
+**Requirement**: FACT-43, FACT-44, FACT-45, FACT-46, FACT-47, FACT-48, FACT-49, FACT-58
+
+**Tools**:
+
+- MCP: official framework/Roslyn docs for any gap
+- Skills: `tlc-spec-driven`, `dotnet-test:test-gap-analysis`, `dotnet-test:assertion-quality`
+
+**Done when**:
+
+- [ ] Every detector rule has at least one positive, negative, and confusing lookalike assertion.
+- [ ] Assertions verify outcome values, evidence/provenance, resolution, and absence of fictional targets—not implementation call structure.
+- [ ] The audit table contains no uncovered rule and all added cases pass.
+- [ ] Full gate passes with no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `test(v3): close detector discrimination gaps`
+
+### T44: Prove trust, extension, and fallback boundaries end to end
+
+**What**: Add real-engine and real-CLI adversarial tests for zero executable syntax calls, trust-before-output, generator opt-in, analyzer exclusion, scoped failures, timeout cleanup, and recoverable exit 0 versus structural exit 1.
+**Where**: `tests/Csharp2Md.Core.Tests/Cli/V3SecurityBoundaryTests.cs`
+**Depends on**: T43
+**Reuses**: Recording/failing adapters, sentinel-output pattern, marker extensions/processes, and packaged CLI helpers.
+**Requirement**: FACT-02, FACT-04, FACT-05, FACT-06, FACT-30, FACT-31, FACT-34, FACT-35, FACT-36, FACT-59, FACT-62, FACT-63, FACT-64, FACT-65
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-test:test-gap-analysis`, `dotnet-test:assertion-quality`
+
+**Done when**:
+
+- [ ] Every FACT-59 security/fallback boundary is asserted at the deepest observable interface available.
+- [ ] Invalid requests preserve sentinel output; degraded valid runs retain syntax facts/coverage and exit 0; structural invalidity exits 1.
+- [ ] Process and extension markers prove absence/presence, not merely returned flags.
+- [ ] At least twelve new integration/e2e cases pass; full gate records no count decrease.
+
+**Tests**: integration
+**Gate**: full
+**Commit**: `test(v3): prove analysis security boundaries`
+
+### T45: Prove cross-root canonical output and snapshots
+
+**What**: Run identical fixtures from unrelated absolute roots and compare the complete byte trees except `raw/log.md`, validating all hashes/references and representative fact/frontmatter/Markdown snapshots.
+**Where**: `tests/Csharp2Md.Core.Tests/Analysis/V3DeterminismTests.cs`
+**Depends on**: T44
+**Reuses**: Existing determinism comparison, Verify setup, T12 serializers, and T19/T40 outputs.
+**Requirement**: FACT-19, FACT-20, FACT-22, FACT-23, FACT-24, FACT-25, FACT-56, FACT-59
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:snapshot-testing`, `dotnet-test:assertion-quality`
+
+**Done when**:
+
+- [ ] File sets and bytes match across roots except the log; no absolute root appears in machine artifacts.
+- [ ] Every manifest reference resolves and every hash matches exact artifact bytes.
+- [ ] Source reconstruction and representative snapshots assert spec-defined content, not blind captures.
+- [ ] At least six integration/snapshot cases pass; full gate records no discovered-test decrease.
+
+**Tests**: integration + snapshot
+**Gate**: full
+**Commit**: `test(v3): prove canonical cross-root output`
+
+### T46: Mark package and schemas as v3
+
+**What**: Set package version `3.0.0`, ensure factual and frontmatter schema version 2, and update packaging/smoke assertions for the incompatible artifact contract.
+**Where**: `Directory.Build.props`
+**Depends on**: T45
+**Reuses**: Existing package smoke and schema synchronization tests.
+**Requirement**: FACT-60, FACT-70
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-skills:package-management`
+
+**Done when**:
+
+- [ ] Packaged metadata reports exactly 3.0.0 and the real packaged CLI emits schema version 2.
+- [ ] No v2 compatibility artifact or `dependencies.json` appears.
+- [ ] At least three updated/new packaging and schema assertions pass without weakening existing checks.
+- [ ] Build gate passes with no discovered-test decrease.
+
+**Tests**: integration
+**Gate**: build
+**Commit**: `chore(release)!: mark factual output version 3.0.0`
+
+### T47: Close documentation and pre-Verifier quality gates
+
+**What**: Update user-facing v3 usage/output/trust documentation, run the required code/test quality audits, close every blocking gap, and record final task traceability before the independent Verifier.
+**Where**: `README.md`
+**Depends on**: T46
+**Reuses**: Approved spec/design, generated CLI help, migration ledger, and final output fixtures.
+**Requirement**: FACT-55, FACT-59, FACT-61
+
+**Tools**:
+
+- MCP: NONE
+- Skills: `tlc-spec-driven`, `dotnet-test:test-gap-analysis`, `dotnet-test:assertion-quality`, `dotnet-test:test-anti-patterns`, `dotnet-skills:dotnet-slopwatch`
+
+**Done when**:
+
+- [ ] English and Portuguese documentation describe syntax-only default, explicit trust/generator consent, v3 layout, diagnostics/coverage, and incompatible migration accurately.
+- [ ] Test-gap, assertion-quality, anti-pattern, and Slopwatch audits have no unresolved Critical/High or feature-blocking findings.
+- [ ] All 70 spec requirements map to completed tasks and executable evidence; no task or test count regressed silently.
+- [ ] Final Build gate passes; then a fresh author-not-verifier agent runs the mandatory validation and discrimination sensor.
+
+**Tests**: integration
+**Gate**: build
+**Commit**: `docs(v3): document factual analysis contract`
+
+---
+
+## Phase Execution Map
+
+Phases and tasks execute strictly sequentially:
+
+```
+Phase 0 -> Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6
+
+T1 -> T2 -> T3 -> T4 -> T5 -> T6 -> T7 -> T8 -> T9 -> T10 -> T11 -> T12
+   -> T13 -> T14 -> T15 -> T16 -> T17 -> T18 -> T19 -> T20 -> T21
+   -> T22 -> T23 -> T24 -> T25 -> T26 -> T27 -> T28 -> T29
+   -> T30 -> T31 -> T32 -> T33 -> T34 -> T35 -> T36 -> T37 -> T38 -> T39
+   -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
+```
+
+**Proposed batch packing** (~7 tasks, whole phases, sequential):
+
+| Batch | Phase | Tasks | Count |
+| --- | --- | --- | --- |
+| 1 | Phase 0 | T1-T5 | 5 |
+| 2 | Phase 1 | T6-T12 | 7 |
+| 3 | Phase 2 | T13-T21 | 9 |
+| 4 | Phase 3 | T22-T29 | 8 |
+| 5 | Phase 4 | T30-T33 | 4 |
+| 6 | Phase 5 | T34-T39 | 6 |
+| 7 | Phase 6 | T40-T47 | 8 |
+
+Forty-seven tasks produce seven sequential batches. No phase is split across workers. The mandatory Verifier is dispatched separately after T47; it writes `validation.md`, runs the discrimination sensor in isolated scratch state, and can create up to three bounded fix/re-verify iterations.
+
+---
+
+## Task Granularity Check
+
+| Tasks | Scope | Status |
+| --- | --- | --- |
+| T1 | One migration ledger | PASS - granular |
+| T2-T5 | One viability question/probe per task | PASS - granular |
+| T6-T12 | One contract, value family, validator, or serializer module per task | PASS - granular |
+| T13-T15 | One inventory/extraction responsibility per task | PASS - granular |
+| T16-T19 | One storage or projection component per task | PASS - granular |
+| T20-T21 | One engine integration and one CLI cut | PASS - granular |
+| T22-T29 | One semantic adapter/enricher/composer/projector/integration per task | PASS - granular |
+| T30-T33 | One reusable index/classifier/host per task | PASS - granular |
+| T34-T39 | One detector family per task | PASS - granular |
+| T40 | One relation/component aggregate projector | PASS - granular |
+| T41-T47 | One migration, matrix, boundary, determinism, release, or documentation closure per task | PASS - granular |
+
+Every code task names one primary component or cohesive directory; its spec-derived tests are part of the same commit, never a deferred test task. T41-T45 modify tests as their primary deliverable to close independently verifiable coverage matrices after production behavior exists.
+
+---
+
+## Diagram-Definition Cross-Check
+
+| Task | Depends On (task body) | Diagram Shows | Status |
+| --- | --- | --- | --- |
+| T1 | None | start at T1 | PASS |
+| T2-T47 | Immediately preceding task T(N-1) | T1 -> T2 -> ... -> T47 | PASS |
+
+The detailed phase diagrams and the full execution map contain the same single dependency chain. No dependency points to a later task or phase.
+
+---
+
+## Test Co-location Validation
+
+| Tasks | Code Layer Created/Modified | Matrix Requires | Task Says | Status |
+| --- | --- | --- | --- | --- |
+| T1 | Specification artifact | none + baseline run | none + full gate | PASS |
+| T2-T5 | Semantic viability adapters/probes | integration | integration | PASS |
+| T6-T12 | Contracts/factual domain/validation/schema | unit or unit + snapshot | unit or unit + snapshot | PASS |
+| T13 | Inventory | integration | integration | PASS |
+| T14-T15 | Syntax extraction | unit | unit | PASS |
+| T16 | Fact storage | integration | integration | PASS |
+| T17-T18 | Markdown/frontmatter projection | unit + snapshot | unit + snapshot | PASS |
+| T19-T21 | Aggregate output/engine/CLI | integration | integration | PASS |
+| T22-T26 | Semantic adapters/enrichers | integration | integration | PASS |
+| T27 | Fact composition | unit | unit | PASS |
+| T28-T30 | Aggregate/engine/index integration | integration | integration | PASS |
+| T31-T33 | Classifiers and detector host | unit | unit | PASS |
+| T34-T40 | Detectors and relation projection | integration | integration | PASS |
+| T41-T47 | Migration/release behavior | integration or integration + snapshot | integration or integration + snapshot | PASS |
+
+No production-code task uses `Tests: none`, and no test obligation is deferred beyond the task that introduces its behavior.
+
+---
+
+## Requirement Coverage
+
+| Requirements | Tasks |
+| --- | --- |
+| FACT-01..07 | T6, T20, T21 |
+| FACT-08..11 | T6-T9, T11, T16, T20 |
+| FACT-12..17 | T7-T11, T27 |
+| FACT-18..25 | T12, T16-T21, T40, T41, T45 |
+| FACT-26..36 | T2-T5, T22-T29, T44 |
+| FACT-37..42 | T30-T32, T40 |
+| FACT-43..49 | T10, T33-T40, T43 |
+| FACT-50..54 | T9, T19, T27-T28 |
+| FACT-55..61 | T1, T12, T17-T18, T41-T47, mandatory Verifier |
+| FACT-62..65 | T3-T5, T22-T29, T44 |
+| FACT-66..69 | T8-T9, T27-T28, T31-T32, T40 |
+| FACT-70 | T12, T18, T46 |
+
+All 70 requirements have at least one implementation task and one explicit test/evidence path. FACT-61 closes only after T47's Build gate and the mandatory independent Verifier both pass.
