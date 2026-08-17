@@ -327,13 +327,13 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-08 | P1: Factual fragments | T6 external analysis request/result contract | Implementing |
 | FACT-09 | P1: Factual fragments | T7-T9 identity, metadata, and factual families implemented | Implementing |
 | FACT-10 | P1: Factual fragments | T7 stable identity grammar implemented; extraction/enrichment closes in T15/T26 | Implementing |
-| FACT-11 | P1: Factual fragments | Specify | Pending |
-| FACT-12 | P1: Factual fragments | Specify | Pending |
-| FACT-13 | P1: Factual fragments | T9 error-symbol state represented; rejection closes in T11 | Implementing |
-| FACT-14 | P1: Factual fragments | T8 evidence constraints implemented; fragment/file validation closes in T11 | Implementing |
-| FACT-15 | P1: Factual fragments | T8-T10 detector provenance shape/contracts implemented; validator enforcement closes in T11 | Implementing |
-| FACT-16 | P1: Factual fragments | Specify | Pending |
-| FACT-17 | P1: Factual fragments | T9 nullable target/reason represented; rejection closes in T11 | Implementing |
+| FACT-11 | P1: Factual fragments | T11 validated-fragment boundary implemented; persistence/projection closes in T16/T17 | Implementing |
+| FACT-12 | P1: Factual fragments | T11 duplicate/reference rejection implemented; engine exit behavior closes in T20 | Implementing |
+| FACT-13 | P1: Factual fragments | T9 state and T11 exact error-symbol rejection implemented | Implementing |
+| FACT-14 | P1: Factual fragments | T8 constraints and T11 document/path/range validation implemented | Implementing |
+| FACT-15 | P1: Factual fragments | T8-T10 provenance contracts and T11 runtime enforcement implemented | Implementing |
+| FACT-16 | P1: Factual fragments | T11 compile-time-only project/package reference validation implemented | Implementing |
+| FACT-17 | P1: Factual fragments | T9 nullable representation and T11 unresolved-reason validation implemented | Implementing |
 | FACT-18 | P1: Deterministic output | Specify | Pending |
 | FACT-19 | P1: Deterministic output | Specify | Pending |
 | FACT-20 | P1: Deterministic output | Specify | Pending |

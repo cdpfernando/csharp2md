@@ -374,10 +374,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Every FACT-12..17 rejection rule produces a deterministic diagnostic naming the fact and rule.
-- [ ] Invalid facts/fragments cannot be represented as validated values or passed to storage/projection.
-- [ ] At least fourteen new unit cases cover each invalid rule and corresponding valid lookalike.
-- [ ] Quick gate passes and the discovered count is at least the prior count plus fourteen.
+- [x] Every FACT-12..17 rejection rule produces a deterministic diagnostic naming the fact and rule.
+- [x] Invalid facts/fragments cannot be represented as validated values or passed to storage/projection.
+- [x] At least fourteen new unit cases cover each invalid rule and corresponding valid lookalike.
+- [x] Quick gate passes and the discovered count is at least the prior count plus fourteen.
+
+**Completed evidence (2026-08-17)**: pure fragment validation checks duplicate identities, bounded missing references, exact error-symbol facts, document/path/range evidence, runtime provenance/evidence, compile-time-only reference kinds, and unresolved targets. Each rule yields a deterministic `C2M-FV-*` diagnostic naming the fact and rule; invalid results expose no `ValidatedFactFragment`. Twenty-two new discovered cases include every invalid rule and valid lookalike. The quick gate passed 474 tests with 0 failed and 0 skipped.
 
 **Tests**: unit
 **Gate**: quick
