@@ -348,10 +348,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Every descriptor requires stable ID, version, supported levels, and supported fact kinds.
-- [ ] Detector results cannot smuggle presentation or persistence side effects.
-- [ ] At least six new unit cases cover descriptor validation, granularity, supported levels, and canonical result ordering.
-- [ ] Quick gate passes with no discovered-test decrease.
+- [x] Every descriptor requires stable ID, version, supported levels, and supported fact kinds.
+- [x] Detector results cannot smuggle presentation or persistence side effects.
+- [x] At least six new unit cases cover descriptor validation, granularity, supported levels, and canonical result ordering.
+- [x] Quick gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: internal project/document detector interfaces retain AD-004 granularity without enlarging the external API. Descriptors require stable detector identity, independent version, non-empty supported levels, and fact kinds. Contexts/results expose factual-domain values only, and result facts/diagnostics are immutable and canonical. The quick gate passed 452 tests with 0 failed and 0 skipped.
 
 **Tests**: unit
 **Gate**: quick

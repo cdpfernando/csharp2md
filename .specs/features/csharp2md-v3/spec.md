@@ -331,7 +331,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-12 | P1: Factual fragments | Specify | Pending |
 | FACT-13 | P1: Factual fragments | T9 error-symbol state represented; rejection closes in T11 | Implementing |
 | FACT-14 | P1: Factual fragments | T8 evidence constraints implemented; fragment/file validation closes in T11 | Implementing |
-| FACT-15 | P1: Factual fragments | T8 detector provenance shape implemented; detector/validator enforcement closes in T10/T11 | Implementing |
+| FACT-15 | P1: Factual fragments | T8-T10 detector provenance shape/contracts implemented; validator enforcement closes in T11 | Implementing |
 | FACT-16 | P1: Factual fragments | Specify | Pending |
 | FACT-17 | P1: Factual fragments | T9 nullable target/reason represented; rejection closes in T11 | Implementing |
 | FACT-18 | P1: Deterministic output | Specify | Pending |
@@ -365,7 +365,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-46 | P2: Components and relations | Specify | Pending |
 | FACT-47 | P2: Components and relations | Specify | Pending |
 | FACT-48 | P2: Components and relations | Specify | Pending |
-| FACT-49 | P2: Components and relations | Specify | Pending |
+| FACT-49 | P2: Components and relations | T10 versioned detector contracts implemented; host enforcement closes in T33 | Implementing |
 | FACT-50 | P2: Diagnostics and coverage | T9 resolution algebra implemented; merge/projection closes in T27/T28 | Implementing |
 | FACT-51 | P2: Diagnostics and coverage | Specify | Pending |
 | FACT-52 | P2: Diagnostics and coverage | Specify | Pending |
