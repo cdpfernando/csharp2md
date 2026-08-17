@@ -142,10 +142,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Arguments are passed through `ProcessStartInfo.ArgumentList` with no target, restore, build, publish, or target-result switch.
-- [ ] Multi-target values stay separate and preprocessing retains import paths only.
-- [ ] At least six new integration cases prove successful and degraded query outcomes plus absence of the target marker.
-- [ ] Full gate passes and the discovered count is at least the prior baseline plus six.
+- [x] Arguments are passed through `ProcessStartInfo.ArgumentList` with no target, restore, build, publish, or target-result switch.
+- [x] Multi-target values stay separate and preprocessing retains import paths only.
+- [x] At least six new integration cases prove successful and degraded query outcomes plus absence of the target marker.
+- [x] Full gate passes and the discovered count is at least the prior baseline plus six.
+
+**Completed evidence (2026-08-17)**: seven integration probes cover healthy, multi-target, imported, missing-SDK, incomplete-restore, invalid-reference, and inert extension inventory cases; `dotnet test csharp2md.slnx` passed 435 tests with 0 failed and 0 skipped.
 
 **Tests**: integration
 **Gate**: full
