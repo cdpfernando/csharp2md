@@ -270,10 +270,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] IDs reject absolute and non-normalized paths and never include the analysis root or span start.
-- [ ] Resolved and syntactic symbol ID grammars follow the normative rules and remain stable after unrelated preceding edits.
-- [ ] At least twelve new unit cases cover relocation, separators, case policy, long IDs, collisions, fallback signatures, and invalid inputs.
-- [ ] Quick gate passes with no discovered-test decrease.
+- [x] IDs reject absolute and non-normalized paths and never include the analysis root or span start.
+- [x] Resolved and syntactic symbol ID grammars follow the normative rules and remain stable after unrelated preceding edits.
+- [x] At least twelve new unit cases cover relocation, separators, case policy, long IDs, collisions, fallback signatures, and invalid inputs.
+- [x] Quick gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: dedicated ID value types implement the ordered `id1` grammar, uppercase UTF-8 percent escapes, ordinal case/Unicode behavior, location-free semantic and syntactic symbol signatures, one-based relation occurrences, reverse-DNS detector IDs, and SHA-256 artifact references with explicit collision detection. The quick gate passed 396 tests with 0 failed and 0 skipped, up from 366 at T6.
 
 **Tests**: unit
 **Gate**: quick

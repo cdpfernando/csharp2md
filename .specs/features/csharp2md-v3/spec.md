@@ -325,8 +325,8 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-06 | P1: Safe syntax-only default | T6 typed request validation; engine/CLI enforcement closes in T20/T21 | Implementing |
 | FACT-07 | P1: Safe syntax-only default | T6 analysis default; engine enforcement closes in T20 | Implementing |
 | FACT-08 | P1: Factual fragments | T6 external analysis request/result contract | Implementing |
-| FACT-09 | P1: Factual fragments | Specify | Pending |
-| FACT-10 | P1: Factual fragments | Specify | Pending |
+| FACT-09 | P1: Factual fragments | T7 identity values; metadata/model families close in T8/T9 | Implementing |
+| FACT-10 | P1: Factual fragments | T7 stable identity grammar implemented; extraction/enrichment closes in T15/T26 | Implementing |
 | FACT-11 | P1: Factual fragments | Specify | Pending |
 | FACT-12 | P1: Factual fragments | Specify | Pending |
 | FACT-13 | P1: Factual fragments | Specify | Pending |
