@@ -317,14 +317,14 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| FACT-01 | P1: Safe syntax-only default | Specify | Pending |
+| FACT-01 | P1: Safe syntax-only default | T6 analysis contracts; engine/CLI enforcement closes in T20/T21 | Implementing |
 | FACT-02 | P1: Safe syntax-only default | Specify | Pending |
 | FACT-03 | P1: Safe syntax-only default | Specify | Pending |
-| FACT-04 | P1: Safe syntax-only default | Specify | Pending |
-| FACT-05 | P1: Safe syntax-only default | Specify | Pending |
-| FACT-06 | P1: Safe syntax-only default | Specify | Pending |
-| FACT-07 | P1: Safe syntax-only default | Specify | Pending |
-| FACT-08 | P1: Factual fragments | Specify | Pending |
+| FACT-04 | P1: Safe syntax-only default | T6 typed request validation; engine/CLI enforcement closes in T20/T21 | Implementing |
+| FACT-05 | P1: Safe syntax-only default | T6 typed request validation; engine/CLI enforcement closes in T20/T21 | Implementing |
+| FACT-06 | P1: Safe syntax-only default | T6 typed request validation; engine/CLI enforcement closes in T20/T21 | Implementing |
+| FACT-07 | P1: Safe syntax-only default | T6 analysis default; engine enforcement closes in T20 | Implementing |
+| FACT-08 | P1: Factual fragments | T6 external analysis request/result contract | Implementing |
 | FACT-09 | P1: Factual fragments | Specify | Pending |
 | FACT-10 | P1: Factual fragments | Specify | Pending |
 | FACT-11 | P1: Factual fragments | Specify | Pending |

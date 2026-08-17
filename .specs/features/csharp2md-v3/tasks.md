@@ -246,10 +246,10 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Omitted options produce syntax-only, untrusted, and ten-minute-per-service defaults.
-- [ ] Every illegal combination returns a typed validation failure before any side-effecting collaborator can run.
-- [ ] At least eight new unit cases cover defaults, valid combinations, and every invalid option edge.
-- [ ] Quick gate passes and the discovered count is at least the prior count plus eight.
+- [x] Omitted options produce syntax-only, untrusted, and ten-minute-per-service defaults.
+- [x] Every illegal combination returns a typed validation failure before any side-effecting collaborator can run.
+- [x] At least eight new unit cases cover defaults, valid combinations, and every invalid option edge.
+- [x] Quick gate passes and the discovered count is at least the prior count plus eight.
 
 **Tests**: unit
 **Gate**: quick
