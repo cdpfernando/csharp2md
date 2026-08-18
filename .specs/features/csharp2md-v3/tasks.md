@@ -946,10 +946,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Only supported levels/fact kinds run and every result receives descriptor provenance.
-- [ ] A throwing detector loses only that invocation's incomplete facts and adds one scoped diagnostic.
-- [ ] Other detectors/scopes continue in canonical order.
-- [ ] At least eight unit cases and the phase Build gate pass with no discovered-test decrease.
+- [x] Only supported levels/fact kinds run and every result receives descriptor provenance.
+- [x] A throwing detector loses only that invocation's incomplete facts and adds one scoped diagnostic.
+- [x] Other detectors/scopes continue in canonical order.
+- [x] At least eight unit cases and the phase Build gate pass with no discovered-test decrease.
+
+**Completed evidence (2026-08-18)**: `DetectorHost` routes project/document detectors through index-bearing factual contexts in canonical descriptor order, enforces declared levels and fact kinds, stamps successful facts and diagnostics with descriptor identity/version, and converts each exception into one scoped diagnostic while discarding only that invocation. Ten unit cases cover both levels, provenance, contract violation, exception isolation, detector/scope continuation, duplicate same-level registration, and valid shared identity across granularities. The phase Build gate passed: Release build with 0 warnings/errors, format verification clean, and 825 tests with 0 failed and 0 skipped.
 
 **Tests**: unit
 **Gate**: build

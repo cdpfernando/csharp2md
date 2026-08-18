@@ -351,7 +351,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-32 | P2: Semantic enrichment | Specify | Pending |
 | FACT-33 | P2: Semantic enrichment | T4 post-sanitation binding and target identity proven; production closes in T23/T26 | Implementing |
 | FACT-34 | P2: Semantic enrichment | T4 scoped compilation fallback viability proven; production closes in T22-T29 | Implementing |
-| FACT-35 | P2: Semantic enrichment | Specify | Pending |
+| FACT-35 | P2: Semantic enrichment | T33 per-invocation detector isolation implemented; concrete detector integration closes in T34-T39 | Implementing |
 | FACT-36 | P2: Semantic enrichment | Specify | Pending |
 | FACT-37 | P2: Components and relations | T30 reusable target-aware indexes implemented; detector and aggregate integration closes in T33/T40 | Implementing |
 | FACT-38 | P2: Components and relations | T31 confirmed web API classification implemented; component projection closes in T40 | Implementing |
@@ -365,7 +365,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-46 | P2: Components and relations | Specify | Pending |
 | FACT-47 | P2: Components and relations | Specify | Pending |
 | FACT-48 | P2: Components and relations | Specify | Pending |
-| FACT-49 | P2: Components and relations | T10 versioned detector contracts implemented; host enforcement closes in T33 | Implementing |
+| FACT-49 | P2: Components and relations | T10 versioned contracts and T33 host enforcement implemented; concrete detectors close in T34-T39 | Implementing |
 | FACT-50 | P2: Diagnostics and coverage | T9 resolution algebra implemented; merge/projection closes in T27/T28 | Implementing |
 | FACT-51 | P2: Diagnostics and coverage | Specify | Pending |
 | FACT-52 | P2: Diagnostics and coverage | Specify | Pending |
