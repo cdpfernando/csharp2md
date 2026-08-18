@@ -1050,10 +1050,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Confirmed calls emit source, optional target, method/type evidence, provenance, and correct resolution.
-- [ ] Name-only client lookalikes emit nothing; unproved logical destinations remain null with reasons.
-- [ ] At least ten positive, negative, lookalike, and degraded cases pass.
-- [ ] Full gate passes with no discovered-test decrease.
+- [x] Confirmed calls emit source, optional target, method/type evidence, provenance, and correct resolution.
+- [x] Name-only client lookalikes emit nothing; unproved logical destinations remain null with reasons.
+- [x] At least ten positive, negative, lookalike, and degraded cases pass.
+- [x] Full gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-18)**: `GrpcRelationDetector` replaces the heuristic v2 `GrpcClientDetector` with a single `IOperation`-confirmed `grpc-call` relation kind under partition `Grpc` (always `TargetId: null` with an explicit `UnresolvedReason` per FACT-47). A call is confirmed only when its receiver's type derives (walking `BaseType`) from a type literally named `ClientBase` in the namespace `Grpc.Core` — matching the real generated-client shape (`FooClient : Grpc.Core.ClientBase<FooClient>`) without depending on the `Grpc.Core` package, same non-dependency approach the v2 detector and its fixture (`fixtures/SyntheticSolution/Acme.Orders/PaymentsGrpcClient.cs`) already used. Each confirmed call carries `service` (the client type's name with a trailing `Client` suffix stripped, or kept whole when absent — "type evidence" per FACT-46, never promoted to a resolved target), `method` (the RPC method name), and `call_shape` (`streaming` when the method's declared return type is one of `Grpc.Core`'s `AsyncServerStreamingCall`/`AsyncClientStreamingCall`/`AsyncDuplexStreamingCall`, `unary` otherwise — including a blocking overload that returns the response type directly). `WithHost` (client configuration, not an RPC) is excluded. Because every check confirms the receiver's actual base-type chain and containing namespace via the semantic model, a same-named `FooClient : ClientBase` where `ClientBase` is a different, unrelated type in a different namespace (FACT-46's "not from an unconfirmed name alone") correctly emits nothing. Twelve discovered unit/theory cases (`GrpcRelationDetectorTests`) cover unary (both call-handle and direct-blocking-return shapes), server/client/duplex streaming, the client-suffix-stripping and no-suffix service-name rules, the configuration-call exclusion, a non-client receiver, the namespace-qualified lookalike, and the no-semantic-document case. The full gate passed: Release build 0 warnings/errors, `dotnet format --verify-no-changes` clean, and 908 tests with 0 failed and 0 skipped (up from 896 at T36, a 12-test increase).
 
 **Tests**: integration
 **Gate**: full
