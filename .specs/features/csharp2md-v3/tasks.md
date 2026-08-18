@@ -660,10 +660,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Production arguments are identical in security properties to the proven probe and never invoke restore or targets.
-- [ ] Results include every FACT-32 evaluated property/item and separate TFM scopes; expanded XML is discarded.
-- [ ] Failures/timeouts return scoped degraded data after descendant termination.
-- [ ] At least ten integration cases pass; full gate records no discovered-test decrease.
+- [x] Production arguments are identical in security properties to the proven probe and never invoke restore or targets.
+- [x] Results include every FACT-32 evaluated property/item and separate TFM scopes; expanded XML is discarded.
+- [x] Failures/timeouts return scoped degraded data after descendant termination.
+- [x] At least ten integration cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `DotnetMsBuildEvaluator` requires a trusted-semantic request before process creation, issues one target-free outer query plus one query per canonical TFM through `ProcessStartInfo.ArgumentList`, inventories evaluated analyzer/generator paths without loading them, parses import paths from a deleted preprocess file, and owns timeout/cancellation process-tree cleanup. Twelve new integration cases cover healthy fields, independent TFMs, forbidden target/restore absence, import cleanup, inert extensions, missing SDK, incomplete restore, invalid reference, trust-before-process, argument construction, timeout, and caller cancellation. The full gate passed 693 tests with 0 failed and 0 skipped.
 
 **Tests**: integration
 **Gate**: full
