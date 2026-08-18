@@ -712,10 +712,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Disabled mode never constructs/loads the adapter; enabled trusted mode runs only generators.
-- [ ] Generated documents receive stable scope identities and failures retain pre-generator facts.
-- [ ] Loaded extensions and diagnostics are deterministic and evidence-backed.
-- [ ] At least six integration cases pass; full gate records no discovered-test decrease.
+- [x] Disabled mode never constructs/loads the adapter; enabled trusted mode runs only generators.
+- [x] Generated documents receive stable scope identities and failures retain pre-generator facts.
+- [x] Loaded extensions and diagnostics are deterministic and evidence-backed.
+- [x] At least six integration cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: generator execution now requires an explicitly constructed trusted-semantic opt-in request. `SourceGeneratorAdapter` loads only source/incremental generator implementations in a collectible context, never instantiates diagnostic analyzers, applies the compilation's parse options, emits stable generated-document identities, and records deterministic loaded extensions, source-backed diagnostics, load failures, and generator failures while retaining the pre-generator compilation. Seven new marker-backed integration cases passed; the full gate passed 710 tests with 0 failed and 0 skipped.
 
 **Tests**: integration
 **Gate**: full
