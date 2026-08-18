@@ -50,13 +50,37 @@ public sealed record ProjectFactJson(
     [property: JsonPropertyOrder(2)] string Name,
     [property: JsonPropertyOrder(3)] string RelativePath,
     [property: JsonPropertyOrder(4)] ImmutableArray<string> TargetIds,
-    [property: JsonPropertyOrder(5)] ImmutableArray<string> DocumentIds);
+    [property: JsonPropertyOrder(5)] ImmutableArray<string> DocumentIds,
+    [property: JsonPropertyOrder(6)] ProjectEvaluationJson? Evaluation = null);
+
+public sealed record ProjectEvaluationJson(
+    [property: JsonPropertyOrder(0)] string DeclaredSdk,
+    [property: JsonPropertyOrder(1)] ImmutableArray<string> EvaluatedImports,
+    [property: JsonPropertyOrder(2)] ImmutableArray<string> TargetFrameworks,
+    [property: JsonPropertyOrder(3)] string RequestedAnalysis,
+    [property: JsonPropertyOrder(4)] string EffectiveResolution,
+    [property: JsonPropertyOrder(5)] bool RestorePerformed,
+    [property: JsonPropertyOrder(6)] string Isolation);
 
 public sealed record TargetFactJson(
     [property: JsonPropertyOrder(0)] FactHeaderJson Header,
     [property: JsonPropertyOrder(1)] string TargetId,
     [property: JsonPropertyOrder(2)] string ProjectId,
-    [property: JsonPropertyOrder(3)] string TargetFramework);
+    [property: JsonPropertyOrder(3)] string TargetFramework,
+    [property: JsonPropertyOrder(4)] TargetEvaluationJson? Evaluation = null);
+
+public sealed record TargetEvaluationJson(
+    [property: JsonPropertyOrder(0)] string OutputType,
+    [property: JsonPropertyOrder(1)] string AssemblyName,
+    [property: JsonPropertyOrder(2)] string RootNamespace,
+    [property: JsonPropertyOrder(3)] ImmutableArray<string> CompileItems,
+    [property: JsonPropertyOrder(4)] ImmutableArray<string> ProjectReferences,
+    [property: JsonPropertyOrder(5)] ImmutableArray<string> PackageReferences,
+    [property: JsonPropertyOrder(6)] ImmutableArray<string> References,
+    [property: JsonPropertyOrder(7)] ImmutableArray<string> Constants,
+    [property: JsonPropertyOrder(8)] string LanguageVersion,
+    [property: JsonPropertyOrder(9)] string NullableMode,
+    [property: JsonPropertyOrder(10)] ImmutableArray<string> CompiledExtensions);
 
 public sealed record DocumentFactJson(
     [property: JsonPropertyOrder(0)] FactHeaderJson Header,

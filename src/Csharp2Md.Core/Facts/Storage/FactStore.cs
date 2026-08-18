@@ -140,10 +140,30 @@ internal static class FactualJsonMapper
     private static ProjectFactJson Map(ProjectFact fact) =>
         new(Map(fact.Header), fact.ProjectId.Value, fact.Name, fact.RelativePath,
             fact.TargetIds.Select(static id => id.Value).ToImmutableArray(),
-            fact.DocumentIds.Select(static id => id.Value).ToImmutableArray());
+            fact.DocumentIds.Select(static id => id.Value).ToImmutableArray(),
+            fact.Evaluation is null ? null : new ProjectEvaluationJson(
+                fact.Evaluation.DeclaredSdk,
+                fact.Evaluation.EvaluatedImports,
+                fact.Evaluation.TargetFrameworks,
+                fact.Evaluation.RequestedAnalysis,
+                Wire(fact.Evaluation.EffectiveResolution),
+                fact.Evaluation.RestorePerformed,
+                fact.Evaluation.Isolation));
 
     private static TargetFactJson Map(TargetFact fact) =>
-        new(Map(fact.Header), fact.TargetId.Value, fact.ProjectId.Value, fact.TargetFramework);
+        new(Map(fact.Header), fact.TargetId.Value, fact.ProjectId.Value, fact.TargetFramework,
+            fact.Evaluation is null ? null : new TargetEvaluationJson(
+                fact.Evaluation.OutputType,
+                fact.Evaluation.AssemblyName,
+                fact.Evaluation.RootNamespace,
+                fact.Evaluation.CompileItems,
+                fact.Evaluation.ProjectReferences,
+                fact.Evaluation.PackageReferences,
+                fact.Evaluation.References,
+                fact.Evaluation.Constants,
+                fact.Evaluation.LanguageVersion,
+                fact.Evaluation.NullableMode,
+                fact.Evaluation.CompiledExtensions));
 
     private static DocumentFactJson Map(DocumentFact fact) =>
         new(Map(fact.Header), fact.DocumentId.Value, fact.ProjectId.Value, fact.RelativePath,

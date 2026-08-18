@@ -10,13 +10,37 @@ public sealed record ProjectFact(
     string Name,
     string RelativePath,
     ImmutableArray<TargetFactId> TargetIds,
-    ImmutableArray<DocumentFactId> DocumentIds) : IFact;
+    ImmutableArray<DocumentFactId> DocumentIds,
+    ProjectEvaluationDetails? Evaluation = null) : IFact;
+
+public sealed record ProjectEvaluationDetails(
+    string DeclaredSdk,
+    ImmutableArray<string> EvaluatedImports,
+    ImmutableArray<string> TargetFrameworks,
+    string RequestedAnalysis,
+    FactResolution EffectiveResolution,
+    bool RestorePerformed,
+    string Isolation);
 
 public sealed record TargetFact(
     FactHeader Header,
     TargetFactId TargetId,
     ProjectFactId ProjectId,
-    string TargetFramework) : IFact;
+    string TargetFramework,
+    TargetEvaluationDetails? Evaluation = null) : IFact;
+
+public sealed record TargetEvaluationDetails(
+    string OutputType,
+    string AssemblyName,
+    string RootNamespace,
+    ImmutableArray<string> CompileItems,
+    ImmutableArray<string> ProjectReferences,
+    ImmutableArray<string> PackageReferences,
+    ImmutableArray<string> References,
+    ImmutableArray<string> Constants,
+    string LanguageVersion,
+    string NullableMode,
+    ImmutableArray<string> CompiledExtensions);
 
 public sealed record DocumentFact(
     FactHeader Header,

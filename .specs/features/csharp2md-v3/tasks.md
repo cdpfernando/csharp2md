@@ -738,10 +738,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Every FACT-32 field is populated only from evidence available at its target scope.
-- [ ] Missing/failed evaluation retains syntactic project facts and records requested/effective mode, restore false, and isolation none.
-- [ ] Multi-target facts cannot be collapsed into one exact result.
-- [ ] At least eight unit/integration cases pass; full gate records no discovered-test decrease.
+- [x] Every FACT-32 field is populated only from evidence available at its target scope.
+- [x] Missing/failed evaluation retains syntactic project facts and records requested/effective mode, restore false, and isolation none.
+- [x] Multi-target facts cannot be collapsed into one exact result.
+- [x] At least eight unit/integration cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: Added target-scoped project/target enrichment and schema-v2 wire contracts for every FACT-32 field, with canonical collections, diagnostic references, and explicit requested/effective resolution plus restore/isolation metadata on fallback. Eight integration cases cover healthy, failed, mixed, and distinct multi-target evaluation, canonicalization, diagnostic deduplication, serialization, and identity rejection. Full gate: 718/718 passed, 0 failed, 0 skipped (no discovered-test decrease).
 
 **Tests**: integration
 **Gate**: full

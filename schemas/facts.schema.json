@@ -44,8 +44,10 @@
       "required": ["id", "kind", "resolution", "provenance", "evidence", "diagnostic_ids"]
     },
     "solution_fact": { "type": "object", "required": ["header", "name", "project_ids"] },
-    "project_fact": { "type": "object", "required": ["header", "project_id", "name", "relative_path", "target_ids", "document_ids"] },
-    "target_fact": { "type": "object", "required": ["header", "target_id", "project_id", "target_framework"] },
+    "project_fact": { "type": "object", "required": ["header", "project_id", "name", "relative_path", "target_ids", "document_ids"], "properties": { "evaluation": { "$ref": "#/$defs/project_evaluation" } } },
+    "project_evaluation": { "type": "object", "required": ["declared_sdk", "evaluated_imports", "target_frameworks", "requested_analysis", "effective_resolution", "restore_performed", "isolation"] },
+    "target_fact": { "type": "object", "required": ["header", "target_id", "project_id", "target_framework"], "properties": { "evaluation": { "$ref": "#/$defs/target_evaluation" } } },
+    "target_evaluation": { "type": "object", "required": ["output_type", "assembly_name", "root_namespace", "compile_items", "project_references", "package_references", "references", "constants", "language_version", "nullable_mode", "compiled_extensions"] },
     "document_fact": { "type": "object", "required": ["header", "document_id", "project_id", "relative_path", "section_ids", "symbol_ids"] },
     "source_section_fact": { "type": "object", "required": ["header", "document_id", "section_kind", "occurrence_ordinal", "start_offset", "length", "source"] },
     "symbol_fact": { "type": "object", "required": ["header", "symbol_id", "document_id", "symbol_kind", "contains_error_symbol", "base_and_interface_ids", "attributes", "relevant_type_references"] },
