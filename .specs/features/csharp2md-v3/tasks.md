@@ -790,10 +790,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Semantic absence/failure can only retain/add/downgrade with diagnostics; it never removes syntax facts.
-- [ ] Conflicting exact claims fail structurally rather than using last-write-wins.
-- [ ] Mixed resolutions and diagnostic references recompute exactly per the normative table.
-- [ ] At least ten new unit cases pass; quick gate records no discovered-test decrease.
+- [x] Semantic absence/failure can only retain/add/downgrade with diagnostics; it never removes syntax facts.
+- [x] Conflicting exact claims fail structurally rather than using last-write-wins.
+- [x] Mixed resolutions and diagnostic references recompute exactly per the normative table.
+- [x] At least ten new unit cases pass; quick gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: Added pure immutable fact composition that retains additive syntax facts, replaces only lower-quality claims, unions canonical provenance/evidence/diagnostic references, and emits scoped structural diagnostics for incompatible or conflicting equal-quality claims. Document resolution is recomputed from referenced symbols through the normative algebra, with affected diagnostic references propagated. Fourteen unit cases cover absence, addition, higher/lower resolution, exact conflicts, every document-resolution outcome, diagnostic deduplication, and canonical ordering. Quick gate: 559/559 passed, 0 failed, 0 skipped.
 
 **Tests**: unit
 **Gate**: quick
