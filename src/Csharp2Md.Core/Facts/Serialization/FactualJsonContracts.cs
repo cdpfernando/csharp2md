@@ -127,7 +127,12 @@ public sealed record RelationFactJson(
     [property: JsonPropertyOrder(3)] string? TargetId,
     [property: JsonPropertyOrder(4)] string Partition,
     [property: JsonPropertyOrder(5)] string RelationKind,
-    [property: JsonPropertyOrder(6)] string? UnresolvedReason);
+    [property: JsonPropertyOrder(6)] string? UnresolvedReason,
+    [property: JsonPropertyOrder(7)] ImmutableArray<RelationDetailJson>? Details = null);
+
+public sealed record RelationDetailJson(
+    [property: JsonPropertyOrder(0)] string Key,
+    [property: JsonPropertyOrder(1)] string Value);
 
 public sealed record CoverageFactJson(
     [property: JsonPropertyOrder(0)] string ScopeId,

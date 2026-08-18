@@ -189,7 +189,8 @@ internal static class FactMerger
             && left.TargetId == right.TargetId
             && left.Partition == right.Partition
             && left.RelationKind == right.RelationKind
-            && left.UnresolvedReason == right.UnresolvedReason,
+            && left.UnresolvedReason == right.UnresolvedReason
+            && left.Details.SequenceEqual(right.Details),
         _ => false,
     };
 

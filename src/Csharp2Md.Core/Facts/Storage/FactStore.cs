@@ -188,7 +188,10 @@ internal static class FactualJsonMapper
 
     private static RelationFactJson Map(RelationFact fact) =>
         new(Map(fact.Header), fact.RelationId.Value, fact.SourceId.Value, fact.TargetId?.Value,
-            Wire(fact.Partition), fact.RelationKind, fact.UnresolvedReason);
+            Wire(fact.Partition), fact.RelationKind, fact.UnresolvedReason,
+            fact.Details.IsDefaultOrEmpty
+                ? null
+                : fact.Details.Order().Select(static detail => new RelationDetailJson(detail.Key, detail.Value)).ToImmutableArray());
 
     private static AnalysisDiagnosticJson Map(AnalysisDiagnostic diagnostic) =>
         new(diagnostic.Id.Value, diagnostic.Code, Wire(diagnostic.Severity), Wire(diagnostic.Stage),

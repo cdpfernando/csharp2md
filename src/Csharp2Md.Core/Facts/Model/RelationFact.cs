@@ -19,11 +19,23 @@ public sealed record RelationFact(
     FactId? TargetId,
     RelationPartition Partition,
     string RelationKind,
-    string? UnresolvedReason) : IFact
+    string? UnresolvedReason,
+    ImmutableArray<RelationDetail> Details = default) : IFact
 {
     public bool IsRuntime => Partition is
         RelationPartition.DependencyInjection or
         RelationPartition.Http or
         RelationPartition.Grpc or
         RelationPartition.Events;
+}
+
+public readonly record struct RelationDetail(string Key, string Value) : IComparable<RelationDetail>
+{
+    public int CompareTo(RelationDetail other)
+    {
+        var keyComparison = StringComparer.Ordinal.Compare(Key, other.Key);
+        return keyComparison != 0
+            ? keyComparison
+            : StringComparer.Ordinal.Compare(Value, other.Value);
+    }
 }

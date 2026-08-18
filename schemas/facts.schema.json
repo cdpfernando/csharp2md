@@ -53,7 +53,8 @@
     "symbol_fact": { "type": "object", "required": ["header", "symbol_id", "document_id", "symbol_kind", "contains_error_symbol", "base_and_interface_ids", "attributes", "relevant_type_references"], "properties": { "semantics": { "$ref": "#/$defs/symbol_semantics" } } },
     "symbol_semantics": { "type": "object", "required": ["implemented_member_ids"] },
     "component_fact": { "type": "object", "required": ["header", "component_id", "component_kind", "project_ids"] },
-    "relation_fact": { "type": "object", "required": ["header", "relation_id", "source_id", "partition", "relation_kind"] },
+    "relation_fact": { "type": "object", "required": ["header", "relation_id", "source_id", "partition", "relation_kind"], "properties": { "details": { "type": "array", "items": { "$ref": "#/$defs/relation_detail" } } } },
+    "relation_detail": { "type": "object", "required": ["key", "value"] },
     "analysis_diagnostic": { "type": "object", "required": ["id", "code", "severity", "stage", "scope_id", "message", "data", "evidence"] },
     "coverage_fact": { "type": "object", "required": ["scope_id", "fact_level", "applicability", "attempt", "resolution", "diagnostic_ids"] }
   }
