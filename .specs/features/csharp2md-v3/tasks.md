@@ -556,10 +556,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Only the specified schema-version-2 fields are emitted; topic, domain, generator version, timestamps, and absolute paths are absent.
-- [ ] `facts_ref` resolves to the exact stored document fragment and classifications/diagnostics are summarized deterministically.
-- [ ] At least six new unit/snapshot cases and the schema-sync test pass.
-- [ ] Quick gate passes with no discovered-test decrease.
+- [x] Only the specified schema-version-2 fields are emitted; topic, domain, generator version, timestamps, and absolute paths are absent.
+- [x] `facts_ref` resolves to the exact stored document fragment and classifications/diagnostics are summarized deterministically.
+- [x] At least six new unit/snapshot cases and the schema-sync test pass.
+- [x] Quick gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `FrontmatterV2` emits only schema/document/project/component/classification/analysis/diagnostic/reference fields, requires the stored root to match the document, and canonicalizes component IDs, classifications, and diagnostic summaries. The dedicated published schema forbids extra properties and synchronizes required record fields; a reviewed YAML snapshot fixes field order and representative values. Six new unit/snapshot cases passed; the quick gate passed 545 tests with 0 failed and 0 skipped.
 
 **Tests**: unit + snapshot
 **Gate**: quick
