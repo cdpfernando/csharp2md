@@ -389,9 +389,9 @@ internal sealed class SymbolFactEnricher(
     {
         var diagnosticIds = diagnostics.Select(static diagnostic => diagnostic.Id).ToImmutableArray();
         var retained = symbols.Select(symbol => symbol with
-            {
-                Header = Header(symbol.Header, symbol.Header.Id, FactResolution.Syntactic, diagnosticIds),
-            })
+        {
+            Header = Header(symbol.Header, symbol.Header.Id, FactResolution.Syntactic, diagnosticIds),
+        })
             .ToImmutableArray();
         return new SymbolFactEnrichmentResult(
             document with

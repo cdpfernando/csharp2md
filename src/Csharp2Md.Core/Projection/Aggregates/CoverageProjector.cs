@@ -15,11 +15,17 @@ internal sealed record DetectorCoverageInput(
     FactResolution Resolution,
     ImmutableArray<DiagnosticId> DiagnosticIds);
 
+internal sealed record ScopeCoverageInput(
+    FactId ScopeId,
+    CoverageApplicability Applicability,
+    CoverageAttempt Attempt);
+
 internal sealed record CoverageProjectionRequest(
     AnalysisMode RequestedAnalysis,
     ImmutableArray<IFact> Facts,
     ImmutableArray<AnalysisDiagnostic> Diagnostics,
-    ImmutableArray<DetectorCoverageInput> DetectorScopes);
+    ImmutableArray<DetectorCoverageInput> DetectorScopes,
+    ImmutableArray<ScopeCoverageInput> ScopeOverrides = default);
 
 internal sealed record CoverageProjectionSummary(
     int TotalScopes,
@@ -59,6 +65,8 @@ internal static class CoverageProjector
             .ToDictionary(
                 static group => group.Key,
                 static group => group.Select(static diagnostic => diagnostic.Id).OrderBy(static id => id.Value, StringComparer.Ordinal).ToImmutableArray());
+        var scopeOverrides = (request.ScopeOverrides.IsDefault ? [] : request.ScopeOverrides)
+            .ToDictionary(static entry => entry.ScopeId);
         var coverage = ImmutableArray.CreateBuilder<CoverageFact>();
 
         foreach (var fact in request.Facts
@@ -75,18 +83,23 @@ internal static class CoverageProjector
             };
             var diagnosticIds = fact.Header.DiagnosticIds
                 .Concat(diagnosticIdsByScope.GetValueOrDefault(fact.Header.Id, []));
+            scopeOverrides.TryGetValue(fact.Header.Id, out var scopeOverride);
+            var applicability = scopeOverride?.Applicability
+                ?? (fact.Header.Resolution is FactResolution.NotApplicable
+                    ? CoverageApplicability.NotApplicable
+                    : CoverageApplicability.Applicable);
+            var attempt = scopeOverride?.Attempt
+                ?? (fact.Header.Resolution is FactResolution.NotApplicable
+                    ? CoverageAttempt.NotAttempted
+                    : request.RequestedAnalysis is AnalysisMode.Semantic
+                        ? CoverageAttempt.Attempted
+                        : CoverageAttempt.NotAttempted);
             coverage.Add(new CoverageFact(
                 fact.Header.Id,
                 level,
                 null,
-                fact.Header.Resolution is FactResolution.NotApplicable
-                    ? CoverageApplicability.NotApplicable
-                    : CoverageApplicability.Applicable,
-                fact.Header.Resolution is FactResolution.NotApplicable
-                    ? CoverageAttempt.NotAttempted
-                    : request.RequestedAnalysis is AnalysisMode.Semantic
-                        ? CoverageAttempt.Attempted
-                        : CoverageAttempt.NotAttempted,
+                applicability,
+                attempt,
                 fact.Header.Resolution,
                 CanonicalIds(diagnosticIds)));
         }

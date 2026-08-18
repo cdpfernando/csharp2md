@@ -15,6 +15,7 @@ internal sealed record InventoryService(
 
 internal sealed record InventoryProject(
     string Name,
+    string ProjectPath,
     string RelativePath,
     ImmutableArray<string> SourceFiles,
     ImmutableArray<string> ConfigurationFiles,

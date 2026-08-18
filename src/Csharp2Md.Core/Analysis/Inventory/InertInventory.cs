@@ -186,6 +186,7 @@ internal sealed class InertInventory(IInventoryExecutionObserver? observer = nul
 
         return new InventoryProject(
             Path.GetFileNameWithoutExtension(projectPath),
+            projectPath,
             CanonicalPath(inputRoot, service, projectPath),
             sources,
             configuration,

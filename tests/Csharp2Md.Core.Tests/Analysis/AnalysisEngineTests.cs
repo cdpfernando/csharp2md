@@ -123,7 +123,7 @@ public sealed class AnalysisEngineTests : IDisposable
     }
 
     [Fact]
-    public async Task AnalyzeAsync_TrustedSemanticRequest_DegradesToValidSyntaxFallback()
+    public async Task AnalyzeAsync_TrustedSemanticProjectWithoutTargets_RetainsValidSyntaxFacts()
     {
         CreateProject("App", "class C { }");
         var options = new AnalysisOptions { Mode = AnalysisMode.Semantic, Trust = TrustMode.TrustedSolution };
@@ -132,7 +132,9 @@ public sealed class AnalysisEngineTests : IDisposable
 
         Assert.Equal(0, result.ExitCode);
         Assert.Equal(AnalysisMode.SyntaxOnly, result.EffectiveMode);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Contains("syntax-only migration cut", StringComparison.Ordinal));
+        Assert.True(File.Exists(Path.Combine(_output, "raw", "codebase", "App", "C.cs.md")));
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Contains("no evaluable targets", StringComparison.Ordinal));
+        Assert.Contains("C2M-ENGINE-006", File.ReadAllText(Path.Combine(_output, "raw", "facts", "diagnostics.json")), StringComparison.Ordinal);
     }
 
     [Fact]

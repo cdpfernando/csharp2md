@@ -1,7 +1,11 @@
 using System.Text;
 using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Analysis.Inventory;
+using Csharp2Md.Core.Analysis.Semantics;
+using Csharp2Md.Core.Analysis.Semantics.MSBuild;
+using Csharp2Md.Core.Analysis.Semantics.Roslyn;
 using Csharp2Md.Core.Analysis.Syntax;
+using Csharp2Md.Core.Facts.Composition;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
@@ -27,9 +31,13 @@ public sealed class AnalysisEngine
     private readonly InertInventory _inventory;
     private readonly FragmentValidationFunc _validate;
     private readonly IAnalysisEngineObserver? _observer;
+    private readonly IProjectEvaluationAdapter _evaluator;
+    private readonly ISemanticCompilationAdapter _compilationAdapter;
+    private readonly ISourceGeneratorAdapter _generatorAdapter;
 
     public AnalysisEngine()
-        : this(new InertInventory(), FactValidator.Validate, null)
+        : this(new InertInventory(), FactValidator.Validate, null,
+            new DotnetMsBuildEvaluator(), new SemanticCompilationAdapter(), new SourceGeneratorAdapter())
     {
     }
 
@@ -37,13 +45,28 @@ public sealed class AnalysisEngine
         InertInventory inventory,
         FragmentValidationFunc validate,
         IAnalysisEngineObserver? observer)
+        : this(inventory, validate, observer,
+            new DotnetMsBuildEvaluator(), new SemanticCompilationAdapter(), new SourceGeneratorAdapter())
+    {
+    }
+
+    internal AnalysisEngine(
+        InertInventory inventory,
+        FragmentValidationFunc validate,
+        IAnalysisEngineObserver? observer,
+        IProjectEvaluationAdapter evaluator,
+        ISemanticCompilationAdapter compilationAdapter,
+        ISourceGeneratorAdapter generatorAdapter)
     {
         _inventory = inventory;
         _validate = validate;
         _observer = observer;
+        _evaluator = evaluator;
+        _compilationAdapter = compilationAdapter;
+        _generatorAdapter = generatorAdapter;
     }
 
-    public Task<AnalysisResult> AnalyzeAsync(
+    public async Task<AnalysisResult> AnalyzeAsync(
         AnalysisRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -53,12 +76,9 @@ public sealed class AnalysisEngine
         var inventory = _inventory.Inventory(request);
         if (!inventory.IsSuccess)
         {
-            return Task.FromResult(Result(
-                request,
-                AnalysisMode.SyntaxOnly,
-                1,
+            return Result(request, AnalysisMode.SyntaxOnly, 1,
                 "Inventory failed before output preparation.",
-                inventory.Diagnostics.Select(static diagnostic => diagnostic.Message)));
+                inventory.Diagnostics.Select(static diagnostic => diagnostic.Message));
         }
 
         var inputRoot = Directory.Exists(request.Input)
@@ -70,13 +90,18 @@ public sealed class AnalysisEngine
         }
         catch (OutputPreparationException exception)
         {
-            return Task.FromResult(Result(request, AnalysisMode.SyntaxOnly, 1, exception.Message, [exception.Message]));
+            return Result(request, AnalysisMode.SyntaxOnly, 1, exception.Message, [exception.Message]);
         }
 
         var store = new FactStore(request.OutputRoot);
         var storedFragments = ImmutableArray.CreateBuilder<StoredFactFragment>();
+        var coverageFacts = ImmutableArray.CreateBuilder<IFact>();
+        var coverageOverrides = ImmutableArray.CreateBuilder<ScopeCoverageInput>();
+        var analysisDiagnostics = ImmutableArray.CreateBuilder<AnalysisDiagnostic>();
         var resultDiagnostics = new List<string>(inventory.Diagnostics.Select(static diagnostic => diagnostic.Message));
+        var loadedExtensions = ImmutableArray.CreateBuilder<string>();
         var structuralFailure = false;
+        var semanticSuccess = false;
         var documentCount = 0;
         var projectCount = 0;
 
@@ -90,67 +115,16 @@ public sealed class AnalysisEngine
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     projectCount++;
-                    var projectId = ProjectFactId.Create(project.RelativePath);
-                    var documentIds = ImmutableArray.CreateBuilder<DocumentFactId>();
                     ScopeStarted($"project:{project.RelativePath}");
                     try
                     {
-                        foreach (var relativeSourcePath in project.SourceFiles)
-                        {
-                            cancellationToken.ThrowIfCancellationRequested();
-                            documentCount++;
-                            ScopeStarted($"document:{relativeSourcePath}");
-                            try
-                            {
-                                var source = File.ReadAllText(project.SourcePaths[relativeSourcePath]);
-                                var extraction = SyntaxFactExtractor.Extract(projectId, relativeSourcePath, source);
-                                documentIds.Add(extraction.Document.DocumentId);
-                                IFact[] facts =
-                                [
-                                    extraction.Document,
-                                    .. extraction.Document.Sections,
-                                    .. extraction.Symbols,
-                                ];
-                                var validation = _validate(FactValidationInput.Create(
-                                    facts,
-                                    documents: [DocumentExtent.Create(extraction.Document.DocumentId, relativeSourcePath, LineLengths(source))],
-                                    knownFactIds: [projectId.ToFactId()]));
-                                if (!validation.IsValid)
-                                {
-                                    structuralFailure = true;
-                                    resultDiagnostics.AddRange(validation.ValidationDiagnostics.Select(static diagnostic => diagnostic.Message));
-                                    continue;
-                                }
-
-                                var fragment = validation.Fragment!;
-                                var stored = store.Persist(fragment);
-                                storedFragments.Add(stored);
-                                WriteMarkdown(request.OutputRoot, relativeSourcePath, FrontmatterV2.Create(fragment, stored), MarkdownProjector.Project(fragment));
-                            }
-                            finally
-                            {
-                                ScopeCompleted($"document:{relativeSourcePath}");
-                            }
-                        }
-
-                        var projectFact = new ProjectFact(
-                            FactHeader.Create(projectId.ToFactId(), FactKind.Project, FactResolution.Syntactic, [Provenance]),
-                            projectId,
-                            project.Name,
-                            project.RelativePath,
-                            [],
-                            documentIds.Distinct().OrderBy(static id => id.Value, StringComparer.Ordinal).ToImmutableArray());
-                        var projectValidation = _validate(FactValidationInput.Create(
-                            [projectFact], knownFactIds: documentIds.Select(static id => id.ToFactId())));
-                        if (projectValidation.IsValid)
-                        {
-                            storedFragments.Add(store.Persist(projectValidation.Fragment!));
-                        }
-                        else
-                        {
-                            structuralFailure = true;
-                            resultDiagnostics.AddRange(projectValidation.ValidationDiagnostics.Select(static diagnostic => diagnostic.Message));
-                        }
+                        var projectResult = await AnalyzeProjectAsync(
+                                request, project, store, storedFragments, coverageFacts, coverageOverrides,
+                                analysisDiagnostics, resultDiagnostics, loadedExtensions, cancellationToken)
+                            .ConfigureAwait(false);
+                        documentCount += projectResult.DocumentCount;
+                        structuralFailure |= projectResult.StructuralFailure;
+                        semanticSuccess |= projectResult.SemanticSuccess;
                     }
                     finally
                     {
@@ -164,32 +138,189 @@ public sealed class AnalysisEngine
             }
         }
 
-        var effectiveMode = AnalysisMode.SyntaxOnly;
-        if (request.Options.Mode == AnalysisMode.Semantic)
-        {
-            resultDiagnostics.Add("Trusted semantic analysis is not available in this syntax-only migration cut; syntax facts were retained.");
-        }
-
+        var effectiveMode = request.Options.Mode is AnalysisMode.Semantic && semanticSuccess
+            ? AnalysisMode.Semantic
+            : AnalysisMode.SyntaxOnly;
+        resultDiagnostics.AddRange(analysisDiagnostics.Select(static diagnostic => diagnostic.Message));
+        var honestCoverage = CoverageProjector.Project(new CoverageProjectionRequest(
+            request.Options.Mode, coverageFacts.ToImmutable(), analysisDiagnostics.ToImmutable(), [], coverageOverrides.ToImmutable()));
         var snapshot = new AggregateOutputSnapshot(
-            request.Topic,
-            request.Domain,
-            "3.0.0",
-            request.Options.Mode,
-            effectiveMode,
-            request.Options.Trust,
-            [],
+            request.Topic, request.Domain, "3.0.0", request.Options.Mode, effectiveMode, request.Options.Trust,
+            loadedExtensions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray(),
             new ManifestCoverage(inventory.Services.Length, projectCount, documentCount),
-            storedFragments.ToImmutable());
+            storedFragments.ToImmutable(), honestCoverage);
         new CanonicalAggregateWriter().WritePrepared(request.OutputRoot, snapshot, TimeProvider.System);
 
-        var exitCode = structuralFailure ? 1 : 0;
-        return Task.FromResult(Result(
+        return Result(
             request,
             effectiveMode,
-            exitCode,
+            structuralFailure ? 1 : 0,
             $"Analyzed {projectCount} project(s) and {documentCount} document(s); wrote {storedFragments.Count} factual fragment(s).",
-            resultDiagnostics));
+            resultDiagnostics);
     }
+
+    private async Task<ProjectAnalysisResult> AnalyzeProjectAsync(
+        AnalysisRequest request,
+        InventoryProject project,
+        FactStore store,
+        ImmutableArray<StoredFactFragment>.Builder storedFragments,
+        ImmutableArray<IFact>.Builder coverageFacts,
+        ImmutableArray<ScopeCoverageInput>.Builder coverageOverrides,
+        ImmutableArray<AnalysisDiagnostic>.Builder analysisDiagnostics,
+        List<string> resultDiagnostics,
+        ImmutableArray<string>.Builder loadedExtensions,
+        CancellationToken cancellationToken)
+    {
+        var projectId = ProjectFactId.Create(project.RelativePath);
+        var sources = ImmutableArray.CreateBuilder<SemanticProjectDocument>();
+        foreach (var relativeSourcePath in project.SourceFiles)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var source = File.ReadAllText(project.SourcePaths[relativeSourcePath]);
+            sources.Add(new SemanticProjectDocument(
+                relativeSourcePath,
+                source,
+                SyntaxFactExtractor.Extract(projectId, relativeSourcePath, source)));
+        }
+
+        var syntacticProject = new ProjectFact(
+            FactHeader.Create(projectId.ToFactId(), FactKind.Project, FactResolution.Syntactic, [Provenance]),
+            projectId,
+            project.Name,
+            project.RelativePath,
+            [],
+            sources.Select(static source => source.Extraction.Document.DocumentId).ToImmutableArray());
+        var processed = request.Options.Mode is AnalysisMode.Semantic
+            ? await new TrustedSemanticProjectProcessor(
+                    _evaluator, _compilationAdapter, _generatorAdapter, _observer)
+                .ProcessAsync(project, syntacticProject, sources.ToImmutable(), request.Options, cancellationToken)
+                .ConfigureAwait(false)
+            : SyntaxOnly(syntacticProject, sources.ToImmutable());
+
+        analysisDiagnostics.AddRange(processed.Diagnostics);
+        loadedExtensions.AddRange(processed.LoadedExtensions);
+        var structuralFailure = false;
+        var persistedDocumentIds = ImmutableArray.CreateBuilder<DocumentFactId>();
+        foreach (var document in processed.Documents)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var relativePath = document.Source.RelativePath;
+            ScopeStarted($"document:{relativePath}");
+            try
+            {
+                var extraction = document.Source.Extraction;
+                IFact[] syntacticFacts =
+                [
+                    extraction.Document,
+                    .. extraction.Document.Sections,
+                    .. extraction.Symbols,
+                ];
+                if (syntacticFacts.GroupBy(static fact => fact.Header.Id).Any(static group => group.Skip(1).Any()))
+                {
+                    var syntaxValidation = _validate(FactValidationInput.Create(
+                        syntacticFacts,
+                        documents: [DocumentExtent.Create(
+                            extraction.Document.DocumentId,
+                            relativePath,
+                            LineLengths(document.Source.SourceText))],
+                        knownFactIds: [projectId.ToFactId()]));
+                    analysisDiagnostics.AddRange(syntaxValidation.ValidationDiagnostics);
+                    if (!syntaxValidation.IsValid)
+                    {
+                        structuralFailure = true;
+                        resultDiagnostics.AddRange(syntaxValidation.ValidationDiagnostics.Select(static diagnostic => diagnostic.Message));
+                        continue;
+                    }
+                }
+
+                var linkedIds = document.LinkedSymbolIds.IsEmpty ? extraction.Document.SymbolIds : document.LinkedSymbolIds;
+                var documentFact = extraction.Document with { SymbolIds = linkedIds };
+                var errorIds = document.EnrichedSymbols
+                    .Where(static symbol => symbol.ContainsErrorSymbol)
+                    .Select(static symbol => symbol.SymbolId)
+                    .ToHashSet();
+                var baseline = new IFact[] { documentFact }
+                    .Concat(extraction.Document.Sections)
+                    .Concat(extraction.Symbols.Where(symbol => !errorIds.Contains(symbol.SymbolId)));
+                var merged = FactMerger.Merge(baseline, document.EnrichedSymbols, document.Diagnostics);
+                analysisDiagnostics.AddRange(merged.StructuralDiagnostics);
+                if (!merged.IsValid)
+                {
+                    structuralFailure = true;
+                    resultDiagnostics.AddRange(merged.StructuralDiagnostics.Select(static diagnostic => diagnostic.Message));
+                    continue;
+                }
+
+                var validation = _validate(FactValidationInput.Create(
+                    merged.Facts,
+                    diagnostics: merged.Diagnostics,
+                    documents: [DocumentExtent.Create(documentFact.DocumentId, relativePath, LineLengths(document.Source.SourceText))],
+                    knownFactIds: [projectId.ToFactId()]));
+                analysisDiagnostics.AddRange(validation.ValidationDiagnostics);
+                if (!validation.IsValid)
+                {
+                    structuralFailure = true;
+                    resultDiagnostics.AddRange(validation.ValidationDiagnostics.Select(static diagnostic => diagnostic.Message));
+                    continue;
+                }
+
+                var fragment = validation.Fragment!;
+                var stored = store.Persist(fragment);
+                storedFragments.Add(stored);
+                persistedDocumentIds.Add(documentFact.DocumentId);
+                coverageFacts.Add(fragment.Facts.OfType<DocumentFact>().Single());
+                coverageOverrides.Add(new ScopeCoverageInput(
+                    documentFact.DocumentId.ToFactId(), CoverageApplicability.Applicable,
+                    document.Attempted ? CoverageAttempt.Attempted : CoverageAttempt.NotAttempted));
+                WriteMarkdown(request.OutputRoot, relativePath, FrontmatterV2.Create(fragment, stored), MarkdownProjector.Project(fragment));
+            }
+            finally
+            {
+                ScopeCompleted($"document:{relativePath}");
+            }
+        }
+
+        var projectFact = processed.Project.Project with
+        {
+            DocumentIds = persistedDocumentIds.Distinct().OrderBy(static id => id.Value, StringComparer.Ordinal).ToImmutableArray(),
+        };
+        var projectMerge = FactMerger.Merge([projectFact, .. processed.Project.Targets], diagnostics: processed.Project.Diagnostics);
+        analysisDiagnostics.AddRange(projectMerge.StructuralDiagnostics);
+        if (!projectMerge.IsValid)
+        {
+            structuralFailure = true;
+            resultDiagnostics.AddRange(projectMerge.StructuralDiagnostics.Select(static diagnostic => diagnostic.Message));
+        }
+        else
+        {
+            var validation = _validate(FactValidationInput.Create(
+                projectMerge.Facts,
+                diagnostics: projectMerge.Diagnostics,
+                knownFactIds: persistedDocumentIds.Select(static id => id.ToFactId())));
+            analysisDiagnostics.AddRange(validation.ValidationDiagnostics);
+            if (validation.IsValid)
+            {
+                var fragment = validation.Fragment!;
+                storedFragments.Add(store.Persist(fragment));
+                coverageFacts.AddRange(fragment.Facts.Where(static fact => fact is ProjectFact or TargetFact));
+            }
+            else
+            {
+                structuralFailure = true;
+                resultDiagnostics.AddRange(validation.ValidationDiagnostics.Select(static diagnostic => diagnostic.Message));
+            }
+        }
+
+        return new ProjectAnalysisResult(processed.Documents.Length, structuralFailure, processed.AnySemanticSuccess);
+    }
+
+    private static TrustedSemanticProjectResult SyntaxOnly(
+        ProjectFact project,
+        ImmutableArray<SemanticProjectDocument> sources) =>
+        new(
+            new ProjectFactEnrichmentResult(project, [], []),
+            sources.Select(static source => new SemanticProcessedDocument(source, false, [], [], [])).ToImmutableArray(),
+            [], [], false);
 
     private static AnalysisResult Result(
         AnalysisRequest request,
@@ -234,4 +365,6 @@ public sealed class AnalysisEngine
 
     private void ScopeStarted(string scope) => _observer?.ScopeStarted(scope);
     private void ScopeCompleted(string scope) => _observer?.ScopeCompleted(scope);
+
+    private sealed record ProjectAnalysisResult(int DocumentCount, bool StructuralFailure, bool SemanticSuccess);
 }

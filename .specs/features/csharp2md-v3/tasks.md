@@ -842,10 +842,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Healthy semantic runs enrich facts; every specified evaluation/workspace/compilation/model/generator/detector failure degrades only its scope.
-- [ ] Timeout kills one service's tree and falls back with exit 0; caller cancellation propagates.
-- [ ] At most one semantic scope is alive at once and syntax facts exist for every inventoried source.
-- [ ] At least twelve integration cases and the phase Build gate pass with no discovered-test decrease.
+- [x] Healthy semantic runs enrich facts; every specified evaluation/workspace/compilation/model/generator/detector failure degrades only its scope.
+- [x] Timeout kills one service's tree and falls back with exit 0; caller cancellation propagates.
+- [x] At most one semantic scope is alive at once and syntax facts exist for every inventoried source.
+- [x] At least twelve integration cases and the phase Build gate pass with no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `AnalysisEngine` now routes only trusted semantic requests through the inert evaluator, per-target sanitized compilation, explicit generator opt-in, symbol enrichment, safe fact merging, scoped diagnostics, and honest coverage overrides while retaining syntax facts for every inventoried source. Evaluation/timeout, compilation/workspace, missing-model, generator, and downstream structured-diagnostic failures degrade their affected scope without changing exit code; caller cancellation propagates and semantic target scopes remain sequential. Fourteen new integration cases cover healthy exact output, each available adapter boundary, multi-target partial success, generator opt-in, cancellation, complete source persistence, and not-attempted coverage. The phase Build gate passed 786 tests with 0 failed and 0 skipped.
 
 **Tests**: integration
 **Gate**: build
