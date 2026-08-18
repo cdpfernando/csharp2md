@@ -504,10 +504,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Only validated fragments can be written and returned references resolve inside `raw/facts/`.
-- [ ] Long IDs and hash collisions map deterministically without portable-path violations.
-- [ ] Hashes cover exact written bytes and failed writes leave no claimed or partial artifact.
-- [ ] At least eight new integration cases pass; full gate records no discovered-test decrease.
+- [x] Only validated fragments can be written and returned references resolve inside `raw/facts/`.
+- [x] Long IDs and hash collisions map deterministically without portable-path violations.
+- [x] Hashes cover exact written bytes and failed writes leave no claimed or partial artifact.
+- [x] At least eight new integration cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `FactStore` accepts only `ValidatedFactFragment`, maps it to the source-generated schema-version-2 contract, serializes canonical UTF-8/LF bytes, hashes the exact payload, writes through an output-local temporary file, and renames into the SHA-256 `raw/facts/` artifact path. Fixed-length long-ID paths, deterministic rewrites/order, injected move failure cleanup, and an injected distinct-ID reference collision are covered. Eight new integration cases passed; the full gate passed 637 tests with 0 failed and 0 skipped.
 
 **Tests**: integration
 **Gate**: full
