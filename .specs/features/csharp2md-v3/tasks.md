@@ -530,10 +530,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] The projector has no Roslyn, detector, compilation, semantic-model, or filesystem input.
-- [ ] Every section payload remains verbatim and annotations cannot consume or alter source spans.
-- [ ] At least eight unit/snapshot cases cover representative documents, fences, prose, empty files, and annotations.
-- [ ] Quick gate passes with no discovered-test decrease.
+- [x] The projector has no Roslyn, detector, compilation, semantic-model, or filesystem input.
+- [x] Every section payload remains verbatim and annotations cannot consume or alter source spans.
+- [x] At least eight unit/snapshot cases cover representative documents, fences, prose, empty files, and annotations.
+- [x] Quick gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: the pure `MarkdownProjector` accepts only a validated factual fragment, rejects broken partitions, reconstructs ordered source-section payloads verbatim, selects safe dynamic fences, and renders symbol/diagnostic annotations before all code spans. Eight unit/snapshot cases cover representative structure, empty files, missing trailing newline, embedded fences, annotations, partition failure, deterministic headings, and the reviewed Markdown snapshot. The quick gate passed 539 tests with 0 failed and 0 skipped.
 
 **Tests**: unit + snapshot
 **Gate**: quick
