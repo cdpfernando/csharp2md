@@ -354,10 +354,10 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-35 | P2: Semantic enrichment | Specify | Pending |
 | FACT-36 | P2: Semantic enrichment | Specify | Pending |
 | FACT-37 | P2: Components and relations | T30 reusable target-aware indexes implemented; detector and aggregate integration closes in T33/T40 | Implementing |
-| FACT-38 | P2: Components and relations | Specify | Pending |
-| FACT-39 | P2: Components and relations | Specify | Pending |
-| FACT-40 | P2: Components and relations | Specify | Pending |
-| FACT-41 | P2: Components and relations | Specify | Pending |
+| FACT-38 | P2: Components and relations | T31 confirmed web API classification implemented; component projection closes in T40 | Implementing |
+| FACT-39 | P2: Components and relations | T31 confirmed worker classification implemented; component projection closes in T40 | Implementing |
+| FACT-40 | P2: Components and relations | T31 confirmed CLI classification implemented; component projection closes in T40 | Implementing |
+| FACT-41 | P2: Components and relations | T31 confirmed test-support classification implemented; component projection closes in T40 | Implementing |
 | FACT-42 | P2: Components and relations | Specify | Pending |
 | FACT-43 | P2: Components and relations | Specify | Pending |
 | FACT-44 | P2: Components and relations | Specify | Pending |
@@ -382,7 +382,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-63 | P2: Semantic enrichment | T3 complete tree termination proven; production closes in T22/T29 | Implementing |
 | FACT-64 | P2: Semantic enrichment | T4 sanitation and T5 analyzer-free generator driver proven; production closes in T23/T24 | Implementing |
 | FACT-65 | P2: Semantic enrichment | Specify | Pending |
-| FACT-66 | P2: Components and relations | Specify | Pending |
+| FACT-66 | P2: Components and relations | T31 confirmed library classification implemented; component projection closes in T40 | Implementing |
 | FACT-67 | P2: Components and relations | Specify | Pending |
 | FACT-68 | P2: Components and relations | Specify | Pending |
 | FACT-69 | P2: Diagnostics and coverage | T8-T9 diagnostic references shaped; merge/projection closes in T27/T28 | Implementing |

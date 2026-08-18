@@ -894,10 +894,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Web API precedes worker and worker precedes generic executable/CLI classification.
-- [ ] Test support and non-test library outcomes require confirmed technical evidence only.
-- [ ] At least ten unit cases cover every class, priority collision, negative, and lookalike.
-- [ ] Quick gate passes with no discovered-test decrease.
+- [x] Web API precedes worker and worker precedes generic executable/CLI classification.
+- [x] Test support and non-test library outcomes require confirmed technical evidence only.
+- [x] At least ten unit cases cover every class, priority collision, negative, and lookalike.
+- [x] Quick gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `ProjectClassifier` classifies only exact evaluated targets and confirmed indexed evidence, applying `service/web-api` before `service/worker` before `tool/cli`, with `Microsoft.NET.Test.Sdk` identifying `test-support` and confirmed non-executables becoming `library`. Thirteen discovered unit cases cover every class, priority collisions, WinExe, degraded targets, name/type lookalikes, and outgoing HTTP that is not endpoint evidence. The quick gate passed 572 tests with 0 failed and 0 skipped.
 
 **Tests**: unit
 **Gate**: quick
