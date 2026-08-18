@@ -686,10 +686,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] No compilation/model is requested before analyzer sanitation and target scopes never merge.
-- [ ] Null/unsupported compilation/model and error symbols return ordinary degraded results.
-- [ ] Marker analyzer/generator assemblies remain unexecuted.
-- [ ] At least eight integration cases pass; full gate records no discovered-test decrease.
+- [x] No compilation/model is requested before analyzer sanitation and target scopes never merge.
+- [x] Null/unsupported compilation/model and error symbols return ordinary degraded results.
+- [x] Marker analyzer/generator assemblies remain unexecuted.
+- [x] At least eight integration cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `SemanticCompilationAdapter` constructs direct target-scoped `CSharpCompilation` instances from evaluated sources and references, applies evaluated language/constant/output inputs, and excludes analyzer items before compilation construction. It never creates `MSBuildWorkspace`. Null compilation/model, compiler errors, error symbols, and one-document model failures return scoped degraded data while preserving syntax trees and unaffected bindings. Ten new integration cases passed; the full gate passed 703 tests with 0 failed and 0 skipped.
 
 **Tests**: integration
 **Gate**: full
