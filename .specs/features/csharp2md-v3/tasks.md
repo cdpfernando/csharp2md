@@ -452,10 +452,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Section spans are contiguous from zero to source length and concatenate to the original source exactly.
-- [ ] Usings, namespaces, directives, regions, comments, top-level statements, nested types, and trailing trivia are retained.
-- [ ] At least twelve new unit/theory cases cover the language and byte-fidelity matrix.
-- [ ] Quick gate passes with no discovered-test decrease.
+- [x] Section spans are contiguous from zero to source length and concatenate to the original source exactly.
+- [x] Usings, namespaces, directives, regions, comments, top-level statements, nested types, and trailing trivia are retained.
+- [x] At least twelve new unit/theory cases cover the language and byte-fidelity matrix.
+- [x] Quick gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `SourceSectionExtractor` parses source without semantic binding and emits syntactic document/section facts whose positive spans form the renderer-proven contiguous partition. Twelve theory rows cover empty/source, usings, block/file namespaces, directives, regions, comments, top-level statements, nested types, trailing trivia, Unicode, and error-bearing source; focused extraction adds structural-kind and stable-local-ordinal checks. The quick gate passed 513 tests with 0 failed and 0 skipped.
 
 **Tests**: unit
 **Gate**: quick
