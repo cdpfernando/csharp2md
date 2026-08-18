@@ -361,9 +361,9 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-42 | P2: Components and relations | T32 private library ownership implemented; component projection closes in T40 | Implementing |
 | FACT-43 | P2: Components and relations | T34 confirmed ASP.NET Core detector implemented (controllers, actions, Minimal APIs, health checks, authorization, policies, filters, entrypoints) | Implementing |
 | FACT-44 | P2: Components and relations | T35 confirmed dependency-injection detector implemented (lifetimes, factories, open generics, keyed services, navigable local expansions) | Implementing |
-| FACT-45 | P2: Components and relations | Specify | Pending |
+| FACT-45 | P2: Components and relations | T36 confirmed HTTP relation detector implemented (named/typed clients, verbs, routes, base address, timeout, headers) | Implementing |
 | FACT-46 | P2: Components and relations | Specify | Pending |
-| FACT-47 | P2: Components and relations | Specify | Pending |
+| FACT-47 | P2: Components and relations | T36 HTTP relations always leave `TargetId: null` with `UnresolvedReason` set; T37-T38 apply the same rule to gRPC and messaging | Implementing |
 | FACT-48 | P2: Components and relations | Specify | Pending |
 | FACT-49 | P2: Components and relations | T10 versioned contracts and T33 host enforcement implemented; concrete detectors close in T34-T39 | Implementing |
 | FACT-50 | P2: Diagnostics and coverage | T9 resolution algebra implemented; merge/projection closes in T27/T28 | Implementing |
@@ -374,7 +374,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-55 | P3: Migration and release | T1 migration ledger established; T41/T47 close executable migration | Implementing |
 | FACT-56 | P3: Migration and release | T12 representative factual snapshot implemented; Markdown/frontmatter snapshots close in T17/T18 | Implementing |
 | FACT-57 | P3: Migration and release | Specify | Pending |
-| FACT-58 | P3: Migration and release | T34-T35 (ASP.NET Core, dependency-injection) carry 45 combined positive/negative/lookalike spec-derived cases; T36-T39 close remaining detector families | Implementing |
+| FACT-58 | P3: Migration and release | T34-T36 (ASP.NET Core, dependency-injection, HTTP) carry 71 combined positive/negative/lookalike spec-derived cases; T37-T39 close remaining detector families | Implementing |
 | FACT-59 | P3: Migration and release | Specify | Pending |
 | FACT-60 | P3: Migration and release | Specify | Pending |
 | FACT-61 | P3: Migration and release | Specify | Pending |
