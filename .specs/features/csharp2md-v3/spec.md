@@ -360,7 +360,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-41 | P2: Components and relations | T31 confirmed test-support classification implemented; component projection closes in T40 | Implementing |
 | FACT-42 | P2: Components and relations | T32 private library ownership implemented; component projection closes in T40 | Implementing |
 | FACT-43 | P2: Components and relations | T34 confirmed ASP.NET Core detector implemented (controllers, actions, Minimal APIs, health checks, authorization, policies, filters, entrypoints) | Implementing |
-| FACT-44 | P2: Components and relations | Specify | Pending |
+| FACT-44 | P2: Components and relations | T35 confirmed dependency-injection detector implemented (lifetimes, factories, open generics, keyed services, navigable local expansions) | Implementing |
 | FACT-45 | P2: Components and relations | Specify | Pending |
 | FACT-46 | P2: Components and relations | Specify | Pending |
 | FACT-47 | P2: Components and relations | Specify | Pending |
@@ -374,7 +374,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-55 | P3: Migration and release | T1 migration ledger established; T41/T47 close executable migration | Implementing |
 | FACT-56 | P3: Migration and release | T12 representative factual snapshot implemented; Markdown/frontmatter snapshots close in T17/T18 | Implementing |
 | FACT-57 | P3: Migration and release | Specify | Pending |
-| FACT-58 | P3: Migration and release | T34 ASP.NET Core detector carries 20 positive/negative/lookalike spec-derived cases; T35-T39 close remaining detector families | Implementing |
+| FACT-58 | P3: Migration and release | T34-T35 (ASP.NET Core, dependency-injection) carry 45 combined positive/negative/lookalike spec-derived cases; T36-T39 close remaining detector families | Implementing |
 | FACT-59 | P3: Migration and release | Specify | Pending |
 | FACT-60 | P3: Migration and release | Specify | Pending |
 | FACT-61 | P3: Migration and release | Specify | Pending |
