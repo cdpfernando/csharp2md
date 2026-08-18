@@ -67,7 +67,12 @@ public sealed record SymbolFact(
     bool ContainsErrorSymbol,
     ImmutableArray<SymbolFactId> BaseAndInterfaceIds,
     ImmutableArray<string> Attributes,
-    ImmutableArray<string> RelevantTypeReferences) : IFact;
+    ImmutableArray<string> RelevantTypeReferences,
+    SymbolSemanticDetails? Semantics = null) : IFact;
+
+public sealed record SymbolSemanticDetails(
+    ImmutableArray<SymbolFactId> ImplementedMemberIds,
+    SymbolFactId? OverriddenMemberId);
 
 public sealed record ComponentFact(
     FactHeader Header,

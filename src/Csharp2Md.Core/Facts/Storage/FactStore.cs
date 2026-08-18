@@ -177,7 +177,10 @@ internal static class FactualJsonMapper
     private static SymbolFactJson Map(SymbolFact fact) =>
         new(Map(fact.Header), fact.SymbolId.Value, fact.DocumentId.Value, fact.SymbolKind,
             fact.ContainsErrorSymbol, fact.BaseAndInterfaceIds.Select(static id => id.Value).ToImmutableArray(),
-            fact.Attributes, fact.RelevantTypeReferences);
+            fact.Attributes, fact.RelevantTypeReferences,
+            fact.Semantics is null ? null : new SymbolSemanticJson(
+                fact.Semantics.ImplementedMemberIds.Select(static id => id.Value).ToImmutableArray(),
+                fact.Semantics.OverriddenMemberId?.Value));
 
     private static ComponentFactJson Map(ComponentFact fact) =>
         new(Map(fact.Header), fact.ComponentId.Value, fact.ComponentKind,

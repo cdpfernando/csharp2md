@@ -82,7 +82,7 @@ internal static class SyntaxFactExtractor
         return new SyntaxFactExtraction(completedDocument, canonicalSymbols, canonicalCandidates, prose.ToImmutable());
     }
 
-    private static string DeclarationKind(MemberDeclarationSyntax declaration) => declaration switch
+    internal static string DeclarationKind(MemberDeclarationSyntax declaration) => declaration switch
     {
         BaseNamespaceDeclarationSyntax => "namespace",
         ClassDeclarationSyntax => "class",
@@ -105,7 +105,7 @@ internal static class SyntaxFactExtractor
         _ => "member",
     };
 
-    private static string DeclarationSignature(MemberDeclarationSyntax declaration)
+    internal static string DeclarationSignature(MemberDeclarationSyntax declaration)
     {
         var tokens = new List<string>();
         var parenthesisDepth = 0;

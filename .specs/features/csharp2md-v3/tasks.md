@@ -764,10 +764,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Overloads, generics, records, interfaces, implementations, overrides, attributes, and type references match spec-defined expected symbols.
-- [ ] Null documentation IDs use canonical signatures; error symbols remain syntactic/unresolved.
-- [ ] Binding failure affects only its document/fact scope and retains syntax evidence.
-- [ ] At least twelve unit/integration cases pass; full gate records no discovered-test decrease.
+- [x] Overloads, generics, records, interfaces, implementations, overrides, attributes, and type references match spec-defined expected symbols.
+- [x] Null documentation IDs use canonical signatures; error symbols remain syntactic/unresolved.
+- [x] Binding failure affects only its document/fact scope and retains syntax evidence.
+- [x] At least twelve unit/integration cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: Added target-scoped semantic symbol enrichment using Roslyn-declared symbols, documentation-comment IDs with canonical-signature fallback, resolved local bases/interfaces/implementations/overrides, attributes, and fully qualified relevant types. Error symbols retain syntactic IDs at unresolved resolution, while missing/throwing bindings preserve syntax with fact/document-scoped diagnostics. Fourteen integration cases cover the FACT-57 language matrix, fallback/error behavior, scoped degradation, and schema-v2 serialization. Full gate: 732/732 passed, 0 failed, 0 skipped (14-test increase).
 
 **Tests**: integration
 **Gate**: full

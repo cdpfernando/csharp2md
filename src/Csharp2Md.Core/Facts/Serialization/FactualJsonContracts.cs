@@ -107,7 +107,12 @@ public sealed record SymbolFactJson(
     [property: JsonPropertyOrder(4)] bool ContainsErrorSymbol,
     [property: JsonPropertyOrder(5)] ImmutableArray<string> BaseAndInterfaceIds,
     [property: JsonPropertyOrder(6)] ImmutableArray<string> Attributes,
-    [property: JsonPropertyOrder(7)] ImmutableArray<string> RelevantTypeReferences);
+    [property: JsonPropertyOrder(7)] ImmutableArray<string> RelevantTypeReferences,
+    [property: JsonPropertyOrder(8)] SymbolSemanticJson? Semantics = null);
+
+public sealed record SymbolSemanticJson(
+    [property: JsonPropertyOrder(0)] ImmutableArray<string> ImplementedMemberIds,
+    [property: JsonPropertyOrder(1)] string? OverriddenMemberId);
 
 public sealed record ComponentFactJson(
     [property: JsonPropertyOrder(0)] FactHeaderJson Header,
