@@ -34,6 +34,18 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
         ArgumentNullException.ThrowIfNull(timeProvider);
 
         new OutputWriter(outputRoot).PrepareRun(inputRoot, force);
+        return WritePrepared(outputRoot, snapshot, timeProvider);
+    }
+
+    internal AggregateWriteResult WritePrepared(
+        string outputRoot,
+        AggregateOutputSnapshot snapshot,
+        TimeProvider timeProvider)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(outputRoot);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(timeProvider);
+
         _files ??= new LocalAggregateFileWriter(outputRoot);
         var files = _files;
         files.CreateDirectory("raw/facts/projects");

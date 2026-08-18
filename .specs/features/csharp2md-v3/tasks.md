@@ -608,10 +608,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Default and explicit syntax-only runs invoke zero executable adapters and emit facts/Markdown for broken projects.
-- [ ] Scopes process in canonical sequential order and prior fragment/Roslyn objects are released before the next service.
-- [ ] Structural invalidity returns exit 1; valid syntax fallback returns exit 0 with complete coverage.
-- [ ] At least ten new integration cases pass; full gate records no discovered-test decrease.
+- [x] Default and explicit syntax-only runs invoke zero executable adapters and emit facts/Markdown for broken projects.
+- [x] Scopes process in canonical sequential order and prior fragment/Roslyn objects are released before the next service.
+- [x] Structural invalidity returns exit 1; valid syntax fallback returns exit 0 with complete coverage.
+- [x] At least ten new integration cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `AnalysisEngine.AnalyzeAsync` owns one validated transaction: inert inventory, one canonical sequential service/project/document scope at a time, syntax extraction, structural validation, atomic fragment persistence, fact-only frontmatter/Markdown projection, compact counts, and prepared aggregate commit. The recording inventory observer remains unused, invalid fragments are omitted with exit 1, and trusted semantic requests degrade explicitly to syntax with exit 0 in this safe cut. Ten integration cases cover broken projects, manifests, cancellation, scope non-overlap, preparation, validation failure, coverage, and fallback. The full gate passed 671 tests with 0 failed and 0 skipped.
 
 **Tests**: integration
 **Gate**: full
