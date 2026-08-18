@@ -426,10 +426,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] A recording adapter proves syntax inventory creates no process, workspace, compilation, analyzer, generator, or plugin.
-- [ ] Broken/unrestored projects still inventory every eligible source file and declared extension path.
-- [ ] Catalog ordering and all paths are canonical and root-relative.
-- [ ] At least eight new integration cases pass; full gate records no discovered-test decrease.
+- [x] A recording adapter proves syntax inventory creates no process, workspace, compilation, analyzer, generator, or plugin.
+- [x] Broken/unrestored projects still inventory every eligible source file and declared extension path.
+- [x] Catalog ordering and all paths are canonical and root-relative.
+- [x] At least eight new integration cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `InertInventory` resolves directory or manifest inputs through inert filesystem/XML reads, inventories broken and unrestored projects, source/configuration files, literal and unevaluated imports, and declared analyzer/generator paths. The recording execution observer received zero executable-adapter invocations. Eight new integration cases also prove exclusions plus ordinal root-relative catalog/path ordering. The full gate passed 597 tests with 0 failed and 0 skipped.
 
 **Tests**: integration
 **Gate**: full
