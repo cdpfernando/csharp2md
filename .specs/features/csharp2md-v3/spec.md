@@ -325,7 +325,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-06 | P1: Safe syntax-only default | T6 typed request validation; engine/CLI enforcement closes in T20/T21 | Implementing |
 | FACT-07 | P1: Safe syntax-only default | T6 analysis default; engine enforcement closes in T20 | Implementing |
 | FACT-08 | P1: Factual fragments | T6 external analysis request/result contract | Implementing |
-| FACT-09 | P1: Factual fragments | T7-T9 identity, metadata, and factual families implemented | Implementing |
+| FACT-09 | P1: Factual fragments | T7-T12 factual values, families, validation, and JSON contracts implemented | Implementing |
 | FACT-10 | P1: Factual fragments | T7 stable identity grammar implemented; extraction/enrichment closes in T15/T26 | Implementing |
 | FACT-11 | P1: Factual fragments | T11 validated-fragment boundary implemented; persistence/projection closes in T16/T17 | Implementing |
 | FACT-12 | P1: Factual fragments | T11 duplicate/reference rejection implemented; engine exit behavior closes in T20 | Implementing |
@@ -335,7 +335,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-16 | P1: Factual fragments | T11 compile-time-only project/package reference validation implemented | Implementing |
 | FACT-17 | P1: Factual fragments | T9 nullable representation and T11 unresolved-reason validation implemented | Implementing |
 | FACT-18 | P1: Deterministic output | Specify | Pending |
-| FACT-19 | P1: Deterministic output | Specify | Pending |
+| FACT-19 | P1: Deterministic output | T12 canonical source-generated JSON implemented; persistence/output closes in T16/T19 | Implementing |
 | FACT-20 | P1: Deterministic output | Specify | Pending |
 | FACT-21 | P1: Deterministic output | Specify | Pending |
 | FACT-22 | P1: Deterministic output | Specify | Pending |
@@ -372,7 +372,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-53 | P2: Diagnostics and coverage | Specify | Pending |
 | FACT-54 | P2: Diagnostics and coverage | Specify | Pending |
 | FACT-55 | P3: Migration and release | T1 migration ledger established; T41/T47 close executable migration | Implementing |
-| FACT-56 | P3: Migration and release | Specify | Pending |
+| FACT-56 | P3: Migration and release | T12 representative factual snapshot implemented; Markdown/frontmatter snapshots close in T17/T18 | Implementing |
 | FACT-57 | P3: Migration and release | Specify | Pending |
 | FACT-58 | P3: Migration and release | Specify | Pending |
 | FACT-59 | P3: Migration and release | Specify | Pending |
@@ -386,7 +386,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-67 | P2: Components and relations | Specify | Pending |
 | FACT-68 | P2: Components and relations | Specify | Pending |
 | FACT-69 | P2: Diagnostics and coverage | T8-T9 diagnostic references shaped; merge/projection closes in T27/T28 | Implementing |
-| FACT-70 | P3: Migration and release | Specify | Pending |
+| FACT-70 | P3: Migration and release | T12 factual schema version 2 implemented; frontmatter/package closure in T18/T46 | Implementing |
 
 **ID format:** `FACT-[NN]`.
 

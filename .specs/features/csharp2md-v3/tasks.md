@@ -400,10 +400,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Every supported fact category round-trips through source-generated serialization.
-- [ ] Schemas and record fields/enums fail tests when they drift; representative bytes are approved from spec-defined expectations.
-- [ ] At least eight new unit/snapshot cases cover families, ordering, line endings, absent timestamps, and schema version.
-- [ ] Phase Build gate passes with no discovered-test decrease.
+- [x] Every supported fact category round-trips through source-generated serialization.
+- [x] Schemas and record fields/enums fail tests when they drift; representative bytes are approved from spec-defined expectations.
+- [x] At least eight new unit/snapshot cases cover families, ordering, line endings, absent timestamps, and schema version.
+- [x] Phase Build gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: schema-version-2 wire records cover every factual family, diagnostics, coverage, provenance, and evidence through the source-generated `FactualJsonContext`. Serialization canonicalizes family ordering, emits UTF-8/LF without BOM/timestamps/null fields, round-trips every category, and rejects other schema versions. `facts.schema.json` record/enum synchronization and a spec-authored representative Verify snapshot guard drift. Release build and repository formatting passed, then the full suite passed 589 tests with 0 failed and 0 skipped.
 
 **Tests**: unit + snapshot
 **Gate**: build
