@@ -1,0 +1,19 @@
+{
+  "schema_version": 2,
+  "tool_version": "3.0.0",
+  "analysis": {
+    "requested": "syntax-only",
+    "effective": "syntax-only"
+  },
+  "trust": "untrusted",
+  "restore_performed": false,
+  "isolation": "none",
+  "extensions": [],
+  "coverage": {
+    "services": 1,
+    "projects": 1,
+    "documents": 2
+  },
+  "fragments": [],
+  "hashes": []
+}

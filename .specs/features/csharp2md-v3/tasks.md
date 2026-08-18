@@ -582,10 +582,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] The exact v3 tree is written, the manifest is last, and `raw/dependencies.json` is absent.
-- [ ] Machine files are UTF-8/LF, canonical, timestamp-free, and reference only existing fragments/hashes.
-- [ ] Only `raw/log.md` receives a timestamp and it is not a machine-fact source.
-- [ ] At least ten integration/snapshot cases pass; full gate records no discovered-test decrease.
+- [x] The exact v3 tree is written, the manifest is last, and `raw/dependencies.json` is absent.
+- [x] Machine files are UTF-8/LF, canonical, timestamp-free, and reference only existing fragments/hashes.
+- [x] Only `raw/log.md` receives a timestamp and it is not a machine-fact source.
+- [x] At least ten integration/snapshot cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `CanonicalAggregateWriter` prepares the owned output once, creates every v3 fact/index/partition/scaffold path, emits source-generated canonical UTF-8/LF JSON and deterministic YAML/Markdown, validates fragment existence/hash/length, omits v2 `dependencies.json`, and writes the manifest last. Only `raw/log.md` receives `TimeProvider` time. Ten integration/snapshot cases cover the exact tree, ordering, safety, determinism, security/coverage manifest fields, invalid references, stale replacement, and reviewed manifest bytes. The full gate passed 661 tests with 0 failed and 0 skipped.
 
 **Tests**: integration + snapshot
 **Gate**: full
