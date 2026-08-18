@@ -868,10 +868,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Indexes build once per solution/target set and detectors cannot initiate repeated solution-wide searches.
-- [ ] Canonical ordering and target identity prevent cross-TFM symbol conflation.
-- [ ] At least six unit/integration cases prove reuse, lookup correctness, ordering, and bounded retained summaries.
-- [ ] Full gate passes with no discovered-test decrease.
+- [x] Indexes build once per solution/target set and detectors cannot initiate repeated solution-wide searches.
+- [x] Canonical ordering and target identity prevent cross-TFM symbol conflation.
+- [x] At least six unit/integration cases prove reuse, lookup correctness, ordering, and bounded retained summaries.
+- [x] Full gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `SolutionAnalysisIndex` materializes one immutable target-keyed snapshot per solution input and exposes reusable symbol, type-reference, project-reference, and relation lookups without retaining Roslyn objects. Seven integration cases prove single enumeration/reuse, cross-TFM isolation, canonical lookup ordering, resolved and unresolved project references, relation scoping, and project-wide relation queries. The full gate passed 793 tests with 0 failed and 0 skipped, a 7-test increase.
 
 **Tests**: integration
 **Gate**: full

@@ -353,7 +353,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-34 | P2: Semantic enrichment | T4 scoped compilation fallback viability proven; production closes in T22-T29 | Implementing |
 | FACT-35 | P2: Semantic enrichment | Specify | Pending |
 | FACT-36 | P2: Semantic enrichment | Specify | Pending |
-| FACT-37 | P2: Components and relations | Specify | Pending |
+| FACT-37 | P2: Components and relations | T30 reusable target-aware indexes implemented; detector and aggregate integration closes in T33/T40 | Implementing |
 | FACT-38 | P2: Components and relations | Specify | Pending |
 | FACT-39 | P2: Components and relations | Specify | Pending |
 | FACT-40 | P2: Components and relations | Specify | Pending |
