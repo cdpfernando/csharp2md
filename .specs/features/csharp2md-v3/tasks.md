@@ -816,10 +816,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Not-applicable, unattempted, syntactic, unresolved, partial, exact, and failed scopes remain distinguishable.
-- [ ] Every degradation diagnostic is scoped and referenced by affected fragments/coverage without absolute paths or stack traces.
-- [ ] The audit log summarizes but does not define machine facts.
-- [ ] At least ten integration/snapshot cases pass; full gate records no discovered-test decrease.
+- [x] Not-applicable, unattempted, syntactic, unresolved, partial, exact, and failed scopes remain distinguishable.
+- [x] Every degradation diagnostic is scoped and referenced by affected fragments/coverage without absolute paths or stack traces.
+- [x] The audit log summarizes but does not define machine facts.
+- [x] At least ten integration/snapshot cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: Added canonical coverage projection for inventoried hierarchy and detector scopes, preserving applicability, attempt, resolution, and diagnostic references while projecting sanitized structured diagnostics for every stage. Aggregate output now writes authoritative diagnostics/coverage documents and limits the audit log to deterministic summary counts plus its allowed timestamp. Twenty-six integration/theory/snapshot cases cover all resolution and attempt states, failures, stages, redaction, ordering, conflicts, structured output, and a spec-derived approved snapshot. Full gate: 772/772 passed, 0 failed, 0 skipped (26-test increase from T27's total suite).
 
 **Tests**: integration + snapshot
 **Gate**: full

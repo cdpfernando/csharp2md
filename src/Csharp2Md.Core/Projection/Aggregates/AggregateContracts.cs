@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Csharp2Md.Core.Analysis.Contracts;
+using Csharp2Md.Core.Facts.Serialization;
 using Csharp2Md.Core.Facts.Storage;
 
 namespace Csharp2Md.Core.Projection.Aggregates;
@@ -8,6 +9,16 @@ internal sealed record AggregateEnvelope(
     [property: JsonPropertyOrder(0)] int SchemaVersion,
     [property: JsonPropertyOrder(1)] string Kind,
     [property: JsonPropertyOrder(2)] ImmutableArray<string> Entries);
+
+internal sealed record DiagnosticAggregate(
+    [property: JsonPropertyOrder(0)] int SchemaVersion,
+    [property: JsonPropertyOrder(1)] string Kind,
+    [property: JsonPropertyOrder(2)] ImmutableArray<AnalysisDiagnosticJson> Entries);
+
+internal sealed record CoverageAggregate(
+    [property: JsonPropertyOrder(0)] int SchemaVersion,
+    [property: JsonPropertyOrder(1)] string Kind,
+    [property: JsonPropertyOrder(2)] ImmutableArray<CoverageFactJson> Entries);
 
 internal sealed record ManifestAnalysis(
     [property: JsonPropertyOrder(0)] string Requested,
@@ -45,7 +56,7 @@ internal sealed record AggregateOutputSnapshot(
     TrustMode Trust,
     ImmutableArray<string> Extensions,
     ManifestCoverage Coverage,
-    ImmutableArray<StoredFactFragment> Fragments);
+    ImmutableArray<StoredFactFragment> Fragments,
+    CoverageProjectionResult? HonestCoverage = null);
 
 internal sealed record AggregateWriteResult(string RawRoot, string ManifestPath);
-

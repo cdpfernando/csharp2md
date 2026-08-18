@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Csharp2Md.Core.Facts.Model;
+using Csharp2Md.Core.Facts.Serialization;
 using Csharp2Md.Core.Facts.Storage;
 using Csharp2Md.Core.Output;
 
@@ -60,8 +62,12 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
             files.Write($"raw/facts/relations/{partition}.json", Json(new AggregateEnvelope(2, partition, [])));
         }
 
-        files.Write("raw/facts/diagnostics.json", Json(new AggregateEnvelope(2, "diagnostics", [])));
-        files.Write("raw/facts/coverage.json", Json(new AggregateEnvelope(2, "coverage", [])));
+        var honestCoverage = snapshot.HonestCoverage ?? CoverageProjectionResult.Empty;
+        files.Write("raw/facts/diagnostics.json", Json(new DiagnosticAggregate(2, "diagnostics", honestCoverage.Diagnostics)));
+        files.Write("raw/facts/coverage.json", Json(new CoverageAggregate(
+            2,
+            "coverage",
+            honestCoverage.Coverage.Select(Map).ToImmutableArray())));
         files.Write("raw/dependencies.mmd", Utf8("flowchart LR\n"));
         files.Write("raw/topic.yaml", Utf8(TopicYaml(snapshot)));
         files.Write("raw/CLAUDE.md", Utf8("# Generated codebase topic\n\nStart with `facts/manifest.json`.\n"));
@@ -116,6 +122,8 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
     }
 
     private static byte[] Json(AggregateEnvelope value) => Serialize(value, AggregateJsonContext.Default.AggregateEnvelope);
+    private static byte[] Json(DiagnosticAggregate value) => Serialize(value, AggregateJsonContext.Default.DiagnosticAggregate);
+    private static byte[] Json(CoverageAggregate value) => Serialize(value, AggregateJsonContext.Default.CoverageAggregate);
     private static byte[] Json(FactualManifest value) => Serialize(value, AggregateJsonContext.Default.FactualManifest);
 
     private static byte[] Serialize<T>(T value, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo)
@@ -130,10 +138,26 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
     private static string Log(AggregateOutputSnapshot snapshot, DateTimeOffset now) =>
         $"# csharp2md audit log\n\n- generated_at: {now:O}\n- requested_analysis: {Wire(snapshot.RequestedAnalysis)}\n"
         + $"- effective_analysis: {Wire(snapshot.EffectiveAnalysis)}\n- trust: {Wire(snapshot.Trust)}\n"
-        + "- restore_performed: false\n- isolation: none\n";
+        + "- restore_performed: false\n- isolation: none\n"
+        + $"- diagnostics: {snapshot.HonestCoverage?.Summary.DiagnosticCount ?? 0}\n"
+        + $"- coverage_scopes: {snapshot.HonestCoverage?.Summary.TotalScopes ?? 0}\n"
+        + $"- degraded_scopes: {snapshot.HonestCoverage?.Summary.DegradedScopes ?? 0}\n";
+
+    private static CoverageFactJson Map(CoverageFact coverage) => new(
+        coverage.ScopeId.Value,
+        Wire(coverage.FactLevel),
+        coverage.DetectorId?.Value,
+        Wire(coverage.Applicability),
+        Wire(coverage.Attempt),
+        Wire(coverage.Resolution),
+        coverage.DiagnosticIds.Select(static id => id.Value).ToImmutableArray());
 
     private static byte[] Utf8(string value) => new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(value.Replace("\r\n", "\n", StringComparison.Ordinal));
-    private static string Wire<T>(T value) where T : struct, Enum => value.ToString().ToLowerInvariant().Replace("syntaxonly", "syntax-only", StringComparison.Ordinal);
+    private static string Wire<T>(T value) where T : struct, Enum =>
+        value.ToString().ToLowerInvariant()
+            .Replace("syntaxonly", "syntax-only", StringComparison.Ordinal)
+            .Replace("notapplicable", "not-applicable", StringComparison.Ordinal)
+            .Replace("notattempted", "not-attempted", StringComparison.Ordinal);
 
     private sealed class LocalAggregateFileWriter(string root) : IAggregateFileWriter
     {
