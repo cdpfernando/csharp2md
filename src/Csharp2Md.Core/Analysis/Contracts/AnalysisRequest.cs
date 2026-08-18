@@ -9,20 +9,32 @@ public sealed record AnalysisRequest
     public string OutputRoot { get; }
     public bool ForceOutput { get; }
     public AnalysisOptions Options { get; }
+    public string Topic { get; }
+    public string Domain { get; }
 
-    private AnalysisRequest(string input, string outputRoot, bool forceOutput, AnalysisOptions options)
+    private AnalysisRequest(
+        string input,
+        string outputRoot,
+        bool forceOutput,
+        AnalysisOptions options,
+        string topic,
+        string domain)
     {
         Input = input;
         OutputRoot = outputRoot;
         ForceOutput = forceOutput;
         Options = options;
+        Topic = topic;
+        Domain = domain;
     }
 
     public static AnalysisRequestResult Create(
         string input,
         string outputRoot,
         bool forceOutput = false,
-        AnalysisOptions? options = null)
+        AnalysisOptions? options = null,
+        string? topic = null,
+        string domain = "system-design")
     {
         if (string.IsNullOrWhiteSpace(input))
         {
@@ -37,7 +49,13 @@ public sealed record AnalysisRequest
         var resolvedOptions = options ?? AnalysisOptions.Default;
         return resolvedOptions.Validate() is { } error
             ? AnalysisRequestResult.Failed(error, AnalysisOptions.MessageFor(error))
-            : AnalysisRequestResult.Success(new AnalysisRequest(input, outputRoot, forceOutput, resolvedOptions));
+            : AnalysisRequestResult.Success(new AnalysisRequest(
+                input,
+                outputRoot,
+                forceOutput,
+                resolvedOptions,
+                topic ?? Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(input))),
+                domain));
     }
 }
 

@@ -102,7 +102,7 @@ public sealed class AnalysisEngine
                             ScopeStarted($"document:{relativeSourcePath}");
                             try
                             {
-                                var source = File.ReadAllText(Path.Combine(inputRoot, relativeSourcePath.Replace('/', Path.DirectorySeparatorChar)));
+                                var source = File.ReadAllText(project.SourcePaths[relativeSourcePath]);
                                 var extraction = SyntaxFactExtractor.Extract(projectId, relativeSourcePath, source);
                                 documentIds.Add(extraction.Document.DocumentId);
                                 IFact[] facts =
@@ -171,8 +171,8 @@ public sealed class AnalysisEngine
         }
 
         var snapshot = new AggregateOutputSnapshot(
-            Path.GetFileName(inputRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)),
-            "system-design",
+            request.Topic,
+            request.Domain,
             "3.0.0",
             request.Options.Mode,
             effectiveMode,

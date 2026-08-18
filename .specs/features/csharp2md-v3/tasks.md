@@ -634,10 +634,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Zero-option CLI uses syntax-only/untrusted and produces v3 output without starting semantic infrastructure.
-- [ ] Invalid trust, generator, and timeout combinations exit 1 and preserve a sentinel output byte-for-byte.
-- [ ] CLI returns the engine exit code and no production call reaches `AnalysisPipeline`.
-- [ ] At least eight new CLI integration cases and the phase Build gate pass.
+- [x] Zero-option CLI uses syntax-only/untrusted and produces v3 output without starting semantic infrastructure.
+- [x] Invalid trust, generator, and timeout combinations exit 1 and preserve a sentinel output byte-for-byte.
+- [x] CLI returns the engine exit code and no production call reaches `AnalysisPipeline`.
+- [x] At least eight new CLI integration cases and the phase Build gate pass.
+
+**Completed evidence (2026-08-17)**: The production CLI now validates analysis, trust, generator, and positive timeout options before output preparation, creates one `AnalysisRequest`, invokes only `AnalysisEngine`, reports its diagnostics/summary, and returns its exit code. Ten new integration cases cover zero-option inert defaults, explicit syntax, sentinel preservation for invalid combinations and values, semantic syntax fallback, and structural exit-code propagation. Existing CLI/end-to-end/package assertions now exercise the v3 artifact contract, including external manifest roots with canonical fact paths. The phase Build gate passed: Release build with 0 warnings/errors, format verification clean, and 681 tests with 0 failed and 0 skipped.
 
 **Tests**: integration
 **Gate**: build

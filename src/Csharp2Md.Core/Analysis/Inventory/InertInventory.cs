@@ -107,36 +107,42 @@ internal sealed class InertInventory(IInventoryExecutionObserver? observer = nul
             .Select(Path.GetFullPath)
             .Distinct(PathComparer)
             .OrderBy(static path => path, StringComparer.Ordinal)
-            .Select(path => InventoryProject(inputRoot, path, diagnostics))
+            .Select(path => InventoryProject(inputRoot, service, path, diagnostics))
             .ToImmutableArray();
 
         return new InventoryService(
             service.Name.Value,
-            RelativePath(inputRoot, service.RootPath),
-            service.SolutionPath is null ? null : RelativePath(inputRoot, service.SolutionPath),
+            CanonicalPath(inputRoot, service, service.RootPath),
+            service.SolutionPath is null ? null : CanonicalPath(inputRoot, service, service.SolutionPath),
             projects);
     }
 
     private static InventoryProject InventoryProject(
         string inputRoot,
+        ServiceDescriptor service,
         string projectPath,
         List<InventoryDiagnostic> diagnostics)
     {
         var projectDirectory = Path.GetDirectoryName(projectPath) ?? inputRoot;
-        var sources = Directory.Exists(projectDirectory)
+        var sourcePaths = Directory.Exists(projectDirectory)
             ? Directory.EnumerateFiles(projectDirectory, "*.cs", SearchOption.AllDirectories)
                 .Where(path => !OutputWriter.IsExcluded(Path.GetRelativePath(projectDirectory, path)))
-                .Select(path => RelativePath(inputRoot, path))
-                .Distinct(StringComparer.Ordinal)
+                .Select(Path.GetFullPath)
+                .Distinct(PathComparer)
                 .Order(StringComparer.Ordinal)
                 .ToImmutableArray()
-            : [];
+            : ImmutableArray<string>.Empty;
+        var sourceMap = sourcePaths.ToImmutableDictionary(
+            path => CanonicalPath(inputRoot, service, path),
+            static path => path,
+            StringComparer.Ordinal);
+        var sources = sourceMap.Keys.Order(StringComparer.Ordinal).ToImmutableArray();
 
         var configuration = Directory.Exists(projectDirectory)
             ? ConfigurationPatterns
                 .SelectMany(pattern => Directory.EnumerateFiles(projectDirectory, pattern, SearchOption.AllDirectories))
                 .Where(path => !OutputWriter.IsExcluded(Path.GetRelativePath(projectDirectory, path)))
-                .Select(path => RelativePath(inputRoot, path))
+                .Select(path => CanonicalPath(inputRoot, service, path))
                 .Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal)
                 .ToImmutableArray()
@@ -151,40 +157,42 @@ internal sealed class InertInventory(IInventoryExecutionObserver? observer = nul
             diagnostics.Add(new InventoryDiagnostic(
                 "inventory.project-missing",
                 InventoryDiagnosticSeverity.Warning,
-                $"Project file not found: {RelativePath(inputRoot, projectPath)}"));
+                $"Project file not found: {CanonicalPath(inputRoot, service, projectPath)}"));
         }
         else
         {
             try
             {
                 var document = XDocument.Load(projectPath, LoadOptions.None);
-                imports = ReadPaths(document.Descendants("Import").Attributes("Project"), projectDirectory, inputRoot);
-                analyzers = ReadPaths(document.Descendants("Analyzer").Attributes("Include"), projectDirectory, inputRoot);
+                imports = ReadPaths(document.Descendants("Import").Attributes("Project"), projectDirectory, inputRoot, service);
+                analyzers = ReadPaths(document.Descendants("Analyzer").Attributes("Include"), projectDirectory, inputRoot, service);
                 generators = ReadPaths(
                     document.Descendants("Generator").Attributes("Include")
                         .Concat(document.Descendants("ProjectReference")
                             .Where(IsAnalyzerProjectReference)
                             .Attributes("Include")),
                     projectDirectory,
-                    inputRoot);
+                    inputRoot,
+                    service);
             }
             catch (Exception exception) when (exception is XmlException or IOException)
             {
                 diagnostics.Add(new InventoryDiagnostic(
                     "inventory.project-xml",
                     InventoryDiagnosticSeverity.Warning,
-                    $"Could not parse {RelativePath(inputRoot, projectPath)}: {exception.Message}"));
+                    $"Could not parse {CanonicalPath(inputRoot, service, projectPath)}: {exception.Message}"));
             }
         }
 
         return new InventoryProject(
             Path.GetFileNameWithoutExtension(projectPath),
-            RelativePath(inputRoot, projectPath),
+            CanonicalPath(inputRoot, service, projectPath),
             sources,
             configuration,
             imports,
             analyzers,
-            generators);
+            generators,
+            sourceMap);
     }
 
     private static bool IsAnalyzerProjectReference(XElement element) =>
@@ -194,13 +202,14 @@ internal sealed class InertInventory(IInventoryExecutionObserver? observer = nul
     private static ImmutableArray<string> ReadPaths(
         IEnumerable<XAttribute> attributes,
         string projectDirectory,
-        string inputRoot) =>
+        string inputRoot,
+        ServiceDescriptor service) =>
         attributes
             .Select(static attribute => attribute.Value.Trim())
             .Where(static path => path.Length > 0)
             .Select(path => ContainsMsBuildExpression(path)
                 ? Normalize(path)
-                : RelativePath(inputRoot, ResolvePath(projectDirectory, path)))
+                : CanonicalPath(inputRoot, service, ResolvePath(projectDirectory, path)))
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToImmutableArray();
@@ -215,6 +224,32 @@ internal sealed class InertInventory(IInventoryExecutionObserver? observer = nul
     {
         var relative = Path.GetRelativePath(root, Path.GetFullPath(path));
         return Normalize(relative);
+    }
+
+    private static string CanonicalPath(string inputRoot, ServiceDescriptor service, string path)
+    {
+        if (PathComparer.Equals(Path.GetFullPath(path), Path.GetFullPath(service.RootPath)))
+        {
+            return service.Name.Value;
+        }
+
+        var relative = RelativePath(inputRoot, path);
+        if (!Path.IsPathRooted(relative)
+            && !relative.Split('/').Contains("..", StringComparer.Ordinal))
+        {
+            return relative;
+        }
+
+        var serviceRelative = RelativePath(service.RootPath, path);
+        var safeServiceRelative = string.Join(
+            '/',
+            serviceRelative.Split('/').Where(static segment => segment is not "" and not "." and not ".."));
+        if (safeServiceRelative.Length == 0)
+        {
+            safeServiceRelative = Path.GetFileName(Path.GetFullPath(path));
+        }
+
+        return Normalize(Path.Combine(service.Name.Value, safeServiceRelative));
     }
 
     private static string Normalize(string path) => path.Replace('\\', '/');

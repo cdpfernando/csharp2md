@@ -35,8 +35,8 @@ public sealed class PackagingSmokeTests : IAsyncLifetime
             CancellationToken.None);
         Assert.True(installResult.ExitCode == 0, $"dotnet tool install failed:\n{installResult.StandardOutput}\n{installResult.StandardError}");
 
-        // Direct-directory mode uses the automatic .sln heuristic (P1-02), which picks up
-        // Acme.Orders.slnx and loads 3 real projects. Acme.DoesNotExist is skipped rather than counted.
+        // Direct-directory mode uses the automatic .sln heuristic and inventories all four
+        // declared projects without invoking restore or the Roslyn BuildHost.
         var outputDirectory = Directory.CreateTempSubdirectory("csharp2md-smoke-").FullName;
         var runDirectory = Directory.CreateTempSubdirectory("csharp2md-smoke-cwd-").FullName;
         var inputDirectory = TestPaths.SyntheticSolution("Acme.Orders");
@@ -47,14 +47,10 @@ public sealed class PackagingSmokeTests : IAsyncLifetime
             runDirectory, // outside the repo entirely — proves the packed tool is self-contained
             CancellationToken.None);
 
-        // Acme.Broken (referenced by Acme.Orders.slnx) is genuinely unrestorable, so the run
-        // reports it needing attention rather than a clean summary — still exits 0 per P3-05.
-        // Pinned to "need attention" specifically (not just "3 project(s)", which the clean-run
-        // branch would also match) so this test actually exercises the degraded case it claims to.
         Assert.True(
             runResult.ExitCode == 0,
             $"packed tool run failed (exit {runResult.ExitCode}):\n{runResult.StandardOutput}\n{runResult.StandardError}");
-        Assert.Contains("1 of 3 project(s) need attention", runResult.StandardOutput);
+        Assert.Contains("Analyzed 4 project(s)", runResult.StandardOutput, StringComparison.Ordinal);
     }
 
     private static async Task UninstallIfPresentAsync() =>

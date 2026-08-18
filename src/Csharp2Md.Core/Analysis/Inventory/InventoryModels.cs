@@ -20,7 +20,8 @@ internal sealed record InventoryProject(
     ImmutableArray<string> ConfigurationFiles,
     ImmutableArray<string> DeclaredImports,
     ImmutableArray<string> AnalyzerPaths,
-    ImmutableArray<string> GeneratorPaths);
+    ImmutableArray<string> GeneratorPaths,
+    ImmutableDictionary<string, string> SourcePaths);
 
 internal enum InventoryDiagnosticSeverity { Warning, Error }
 
@@ -33,4 +34,3 @@ internal interface IInventoryExecutionObserver
 {
     void ExecutableAdapterInvoked(string adapterKind);
 }
-
