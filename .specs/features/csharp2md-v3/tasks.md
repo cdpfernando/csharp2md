@@ -478,10 +478,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Overloads, generics, records, interfaces, overrides, conditional compilation, and error-bearing source have spec-defined syntactic facts.
-- [ ] IDs survive root relocation and unrelated insertion before declarations.
-- [ ] At least fourteen new unit/theory cases cover positive shapes and lookalikes.
-- [ ] Quick gate passes with no discovered-test decrease.
+- [x] Overloads, generics, records, interfaces, overrides, conditional compilation, and error-bearing source have spec-defined syntactic facts.
+- [x] IDs survive root relocation and unrelated insertion before declarations.
+- [x] At least fourteen new unit/theory cases cover positive shapes and lookalikes.
+- [x] Quick gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-17)**: `SyntaxFactExtractor` emits canonically ordered syntactic symbol facts, document symbol references, XML prose, referenced types, attributes, and unresolved base/interface candidates without semantic binding. Location-free identities use trivia-free declaration headers plus lexical containment and ignore bodies, roots, and preceding declaration offsets. Fourteen shape rows plus four focused cases cover overloads, generics, records, interfaces, overrides, members, conditional compilation, errors, stability, relations, and valid lookalikes. The quick gate passed 531 tests with 0 failed and 0 skipped. Previously unproven Roslyn `DescendantTokens`, `Ancestors`, `WithoutTrivia`, and `NormalizeWhitespace` contracts were verified against official Microsoft API documentation before use.
 
 **Tests**: unit
 **Gate**: quick
