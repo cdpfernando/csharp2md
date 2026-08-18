@@ -920,10 +920,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Exactly-one, multiple, zero, transitive, cyclic, and test-only consumers have deterministic spec-defined outcomes.
-- [ ] Runtime logical destinations never influence compile-time ownership.
-- [ ] At least eight unit cases cover the reachability matrix and ordering.
-- [ ] Quick gate passes with no discovered-test decrease.
+- [x] Exactly-one, multiple, zero, transitive, cyclic, and test-only consumers have deterministic spec-defined outcomes.
+- [x] Runtime logical destinations never influence compile-time ownership.
+- [x] At least eight unit cases cover the reachability matrix and ordering.
+- [x] Quick gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-18)**: `LibraryOwnershipClassifier` computes deterministic executable-root reachability from resolved target-aware project references only, assigning libraries as private, shared dependency, or standalone with canonical owner identities. Nine unit cases cover direct, transitive, multiple, zero, cyclic, test-only, unresolved, runtime-lookalike, and ordering outcomes. The quick gate passed 581 tests with 0 failed and 0 skipped, a 9-test increase.
 
 **Tests**: unit
 **Gate**: quick

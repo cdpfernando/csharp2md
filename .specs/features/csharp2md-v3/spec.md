@@ -358,7 +358,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-39 | P2: Components and relations | T31 confirmed worker classification implemented; component projection closes in T40 | Implementing |
 | FACT-40 | P2: Components and relations | T31 confirmed CLI classification implemented; component projection closes in T40 | Implementing |
 | FACT-41 | P2: Components and relations | T31 confirmed test-support classification implemented; component projection closes in T40 | Implementing |
-| FACT-42 | P2: Components and relations | Specify | Pending |
+| FACT-42 | P2: Components and relations | T32 private library ownership implemented; component projection closes in T40 | Implementing |
 | FACT-43 | P2: Components and relations | Specify | Pending |
 | FACT-44 | P2: Components and relations | Specify | Pending |
 | FACT-45 | P2: Components and relations | Specify | Pending |
@@ -383,8 +383,8 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-64 | P2: Semantic enrichment | T4 sanitation and T5 analyzer-free generator driver proven; production closes in T23/T24 | Implementing |
 | FACT-65 | P2: Semantic enrichment | Specify | Pending |
 | FACT-66 | P2: Components and relations | T31 confirmed library classification implemented; component projection closes in T40 | Implementing |
-| FACT-67 | P2: Components and relations | Specify | Pending |
-| FACT-68 | P2: Components and relations | Specify | Pending |
+| FACT-67 | P2: Components and relations | T32 shared-dependency ownership implemented; component projection closes in T40 | Implementing |
+| FACT-68 | P2: Components and relations | T32 standalone library ownership implemented; component projection closes in T40 | Implementing |
 | FACT-69 | P2: Diagnostics and coverage | T8-T9 diagnostic references shaped; merge/projection closes in T27/T28 | Implementing |
 | FACT-70 | P3: Migration and release | T12 factual schema version 2 implemented; frontmatter/package closure in T18/T46 | Implementing |
 
