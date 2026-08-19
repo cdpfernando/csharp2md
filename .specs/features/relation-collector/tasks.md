@@ -515,10 +515,17 @@ removed type (already verified during Design — no matches).
 - Skill: `dotnet-skills:slopwatch` (confirm no orphaned references left behind after deletion)
 
 **Done when**:
-- [ ] Both files and both test files are deleted
-- [ ] `DetectorHost`/`DetectorHostTests` and the 4 remaining detectors still build and their own tests still pass unmodified
-- [ ] `dotnet build csharp2md.slnx -c Release` has zero unused-`using`/dangling-reference warnings from the deletion
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` → `dotnet format csharp2md.slnx --verify-no-changes` → `dotnet test csharp2md.slnx`
+- [x] Both files and both test files are deleted
+- [x] `DetectorHost`/`DetectorHostTests` and the 4 remaining detectors still build and their own tests still pass unmodified
+- [x] `dotnet build csharp2md.slnx -c Release` has zero unused-`using`/dangling-reference warnings from the deletion
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` → `dotnet format csharp2md.slnx --verify-no-changes` → `dotnet test csharp2md.slnx`
+
+> Note: `dotnet slopwatch analyze` found 5 pre-existing `Task.Delay`-in-test warnings, all in files this
+> task never touches (`ProcessTreeProbeTests.cs`, `TrustedSemanticAnalysisEngineTests.cs`,
+> `DotnetMsBuildEvaluatorTests.cs`, `V3SecurityBoundaryTests.cs`) - zero findings tied to the deletion.
+> The one full-suite failure (`DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml`)
+> is the same pre-existing temp-file-cleanup race disclosed at the start of this batch - passes in isolation,
+> unrelated to `Detection/Messaging`/`Detection/Http`.
 
 **Tests**: none (deletion; covered by the Build gate)
 **Gate**: build
