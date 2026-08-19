@@ -32,6 +32,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: tests/Csharp2Md.Core.Tests/Analysis/MigrationLedgerTests.cs:49-64 (test-migration)
 - last seen: 2026-08-19T13:10:30Z
 
+### L-004 - When an AC requires deterministic ordering by a key, the covering test must include at least two distinct key values, not one value repeated, or the ordering claim is unfalsifiable.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
+- features: markdown-cleanup
+- evidence: MDCLN-11 (testing)
+- last seen: 2026-08-19T14:19:30Z
+
+### L-005 - Every named enum value called out in a spec's edge cases needs its own fixture; testing only a subset of an enum's values leaves the untested values unverified even when the code path is generic.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
+- features: markdown-cleanup
+- evidence: spec.md Edge Cases (NotApplicable symbol counting) (testing)
+- last seen: 2026-08-19T14:19:30Z
+
+### L-006 - When two independent formatting rules can interact (a computed fence length and a hardcoded fence), add one test that combines both trigger conditions instead of testing each rule in isolation.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `testing` · harmful: 0
+- features: markdown-cleanup
+- evidence: spec.md Edge Cases (yaml fence independent of source backtick-run length) (testing)
+- last seen: 2026-08-19T14:19:30Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

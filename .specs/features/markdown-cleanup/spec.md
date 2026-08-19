@@ -95,7 +95,7 @@ Every ambiguity is resolved or recorded here — nothing is left silently unclea
 | MDCLN-08 | P1 | Execute | Verified |
 | MDCLN-09 | P1 | Execute | Verified |
 | MDCLN-10 | P1 | Execute | Verified |
-| MDCLN-11 | P1 | Execute | Verified |
+| MDCLN-11 | P1 | Execute | Verified — closed 3 evidence gaps flagged by the independent Verifier (diagnostics ordinal ordering, `notapplicable` symbol count, YAML fence independence from source backtick length) |
 
 **ID format:** `MDCLN-NN`, numbered in the same order as the P1 acceptance criteria above (MDCLN-01 = AC1, ... MDCLN-11 = AC11).
 

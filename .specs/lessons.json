@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 4,
+  "next_id": 7,
   "lessons": [
     {
       "id": "L-001",
@@ -58,6 +58,60 @@
       ],
       "created": "2026-08-19T13:10:30Z",
       "last_seen": "2026-08-19T13:10:30Z"
+    },
+    {
+      "id": "L-004",
+      "key": "ac_gap::when an ac requires deterministic ordering by a key the covering test must include at least two distinct key values not one value repeated or the ordering claim is unfalsifiable",
+      "text": "When an AC requires deterministic ordering by a key, the covering test must include at least two distinct key values, not one value repeated, or the ordering claim is unfalsifiable.",
+      "signal": "ac_gap",
+      "scope": "testing",
+      "status": "candidate",
+      "features": [
+        "markdown-cleanup"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "MDCLN-11 (testing)"
+      ],
+      "created": "2026-08-19T14:19:30Z",
+      "last_seen": "2026-08-19T14:19:30Z"
+    },
+    {
+      "id": "L-005",
+      "key": "ac_gap::every named enum value called out in a spec s edge cases needs its own fixture testing only a subset of an enum s values leaves the untested values unverified even when the code path is generic",
+      "text": "Every named enum value called out in a spec's edge cases needs its own fixture; testing only a subset of an enum's values leaves the untested values unverified even when the code path is generic.",
+      "signal": "ac_gap",
+      "scope": "testing",
+      "status": "candidate",
+      "features": [
+        "markdown-cleanup"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md Edge Cases (NotApplicable symbol counting) (testing)"
+      ],
+      "created": "2026-08-19T14:19:30Z",
+      "last_seen": "2026-08-19T14:19:30Z"
+    },
+    {
+      "id": "L-006",
+      "key": "ac_gap::when two independent formatting rules can interact a computed fence length and a hardcoded fence add one test that combines both trigger conditions instead of testing each rule in isolation",
+      "text": "When two independent formatting rules can interact (a computed fence length and a hardcoded fence), add one test that combines both trigger conditions instead of testing each rule in isolation.",
+      "signal": "ac_gap",
+      "scope": "testing",
+      "status": "candidate",
+      "features": [
+        "markdown-cleanup"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md Edge Cases (yaml fence independent of source backtick-run length) (testing)"
+      ],
+      "created": "2026-08-19T14:19:30Z",
+      "last_seen": "2026-08-19T14:19:30Z"
     }
   ]
 }

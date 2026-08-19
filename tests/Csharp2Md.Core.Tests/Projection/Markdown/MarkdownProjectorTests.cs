@@ -152,6 +152,51 @@ public sealed class MarkdownProjectorTests
     }
 
     [Fact]
+    public void Project_AnalysisBlock_DiagnosticsAreOrderedByCodeOrdinalNotEncounterOrder()
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/C.cs", "class C { }");
+        var documentId = extraction.Document.DocumentId;
+        var diagnostics = new[]
+        {
+            MakeDiagnostic(documentId, DiagnosticSeverity.Warning, "encountered first", "C2M-BIND-900"),
+            MakeDiagnostic(documentId, DiagnosticSeverity.Warning, "encountered second", "C2M-BIND-001"),
+        };
+        var fragment = new ValidatedFactFragment(
+            [extraction.Document, .. extraction.Document.Sections, .. extraction.Symbols],
+            [.. diagnostics]);
+
+        var markdown = MarkdownProjector.Project(fragment);
+
+        Assert.Contains("diagnostics:\n  C2M-BIND-001: 1\n  C2M-BIND-900: 1\n```", markdown, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Project_AnalysisBlock_NotApplicableSymbolIsCountedNotDropped()
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/C.cs", "class C { }");
+        var documentId = extraction.Document.DocumentId;
+        var notApplicable = MakeSymbol(documentId, "class", FactResolution.NotApplicable, "not-applicable");
+        var fragment = new ValidatedFactFragment(
+            [extraction.Document, .. extraction.Document.Sections, .. extraction.Symbols, notApplicable],
+            []);
+
+        var markdown = MarkdownProjector.Project(fragment);
+
+        Assert.Contains("symbols:\n  syntactic: 1\n  notapplicable: 1\n", markdown, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Project_AnalysisBlock_FenceStaysPlainRegardlessOfSourceBacktickRun()
+    {
+        const string source = "class C { string S = \"```\"; }";
+
+        var markdown = MarkdownProjector.Project(Fragment(source));
+
+        Assert.Contains("## Analysis\n\n```yaml\n", markdown, StringComparison.Ordinal);
+        Assert.Contains("````csharp", markdown, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Project_NoSymbolsRelationsOrDiagnostics_OmitsAnalysisSection()
     {
         var markdown = MarkdownProjector.Project(Fragment(string.Empty));
@@ -237,6 +282,7 @@ public sealed class MarkdownProjectorTests
             resolution == FactResolution.Unresolved ? "no target proved" : null);
     }
 
-    private static AnalysisDiagnostic MakeDiagnostic(DocumentFactId documentId, DiagnosticSeverity severity, string message) =>
-        AnalysisDiagnostic.Create("C2M-BIND-002", severity, DiagnosticStage.Detector, documentId.ToFactId(), message);
+    private static AnalysisDiagnostic MakeDiagnostic(
+        DocumentFactId documentId, DiagnosticSeverity severity, string message, string code = "C2M-BIND-002") =>
+        AnalysisDiagnostic.Create(code, severity, DiagnosticStage.Detector, documentId.ToFactId(), message);
 }
