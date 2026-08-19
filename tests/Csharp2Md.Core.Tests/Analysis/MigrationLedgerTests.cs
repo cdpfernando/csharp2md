@@ -16,9 +16,18 @@ public sealed class MigrationLedgerTests
             .Select(static line => line.Split('|', StringSplitOptions.TrimEntries))
             .Select(static columns => new object[] { columns[1], columns[2], EvidenceFor(columns[2]) });
 
+    /// <summary>
+    /// Category-granularity check, not a per-row behavioral proof: every baseline row maps to one
+    /// namespace-category representative method (via <see cref="EvidenceFor"/>), and this only
+    /// confirms that representative still exists. It does not independently verify that each of
+    /// the 428 individual baseline behaviors has its own distinct replacement assertion - the
+    /// real per-behavior evidence lives in the ~730 v3-era tests added across T1-T47, each already
+    /// gated by its own task. This test's job is narrower: catch a whole category losing its last
+    /// representative test (e.g. a namespace deleted wholesale), not a single row silently dropped.
+    /// </summary>
     [Theory]
     [MemberData(nameof(BaselineCases))]
-    public void BaselineBehavior_HasAnExecutableV3Replacement(string baselineId, string baselineTest, MigrationEvidence evidence)
+    public void BaselineCategory_StillHasARepresentativeV3Test(string baselineId, string baselineTest, MigrationEvidence evidence)
     {
         Assert.NotEmpty(baselineId);
         Assert.StartsWith("Csharp2Md.Core.Tests.", baselineTest, StringComparison.Ordinal);

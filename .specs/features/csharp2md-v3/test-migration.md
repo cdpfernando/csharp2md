@@ -443,13 +443,13 @@ Baseline evidence: `dotnet test csharp2md.slnx` on 2026-08-17 reported 428 passe
 
 - Inventory rows: 428.
 - Distinct ledger identities: 428.
-- Deleted or skipped baseline tests: 0. Removed v2-only test files are replaced by the 428 executable cases in `MigrationLedgerTests.BaselineBehavior_HasAnExecutableV3Replacement`; each case resolves its category to a named v3 assertion.
+- Deleted or skipped baseline tests: 0. Removed v2-only test files are replaced by the ~730 v3-era tests added across T1-T47 (each gated by its own task); `MigrationLedgerTests.BaselineCategory_StillHasARepresentativeV3Test` runs 428 ledger-backed theory cases as a category-level smoke check (12 namespace categories, one representative method per category) that catches a whole category losing its last representative, not a per-row behavioral proof for all 428 individually.
 - Replacement rule: deletion is rejected unless the same change cites an executable v3 assertion with equal or stronger outcome, negative-path, state, and structural depth.
 - Closure owner: T41 records the final replacement evidence for every row; T47 and the independent Verifier confirm no discovered-test or assertion-strength regression.
 
 ## T41 executable replacement evidence
 
-Every inventory row is preserved. `MigrationLedgerTests.BaselineBehavior_HasAnExecutableV3Replacement` executes once per row and resolves the row's test family to the named v3 assertion below. The cited assertions run independently in the same suite; the ledger test prevents a removed or renamed replacement from silently leaving a baseline row without executable evidence.
+Every inventory row cites the table below, grouped by test family (namespace category), not resolved individually. `MigrationLedgerTests.BaselineCategory_StillHasARepresentativeV3Test` executes once per row and confirms that row's family still has its one named representative v3 assertion — a category-existence check, not independent per-row evidence. The actual per-behavior replacement for each of the 428 baseline tests lives across the ~730 v3-era tests added by T1-T47, each already gated by its own task's Test Adequacy Review; this table names one representative per family as a navigable pointer into that coverage, not an exhaustive row-by-row mapping. (Corrected 2026-08-19 after the independent Verifier's discrimination sensor found the original wording overstated this mechanism's discriminating power — see `validation.md`.)
 
 | Baseline test family | v3 assertion |
 | --- | --- |
