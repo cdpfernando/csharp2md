@@ -261,13 +261,13 @@ Neither explicit type argument nor object-creation argument present → no candi
 - Skill: NONE
 
 **Done when**:
-- [ ] `_eventBus.PublishAsync(new PaymentProcessed(...))` (no explicit `<T>`) → `publishes`, `target_text=PaymentProcessed` (the fixture case)
-- [ ] `_bus.Publish<OrderPlaced>(new OrderPlaced(...))` (explicit `<T>`) → `publishes`, `target_text=OrderPlaced`
-- [ ] `_eventBus.Subscribe<OrderPlaced>(HandleOrderPlacedAsync)` (the fixture case) → both `subscribes` (target_text=OrderPlaced) and `handles` (`OwnerId` = `HandleOrderPlacedAsync`'s own `SymbolFactId`, target_text=OrderPlaced)
-- [ ] `_bus.Subscribe<OrderPlaced>(msg => { })` (inline lambda) → `subscribes` only, no `handles` (spec.md Edge Case)
-- [ ] `_bus.PublishAsync(existingVariable)` (no explicit `<T>`, not an object-creation argument) → no candidate emitted
-- [ ] All candidates carry `Syntactic` confidence and a real evidence span
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] `_eventBus.PublishAsync(new PaymentProcessed(...))` (no explicit `<T>`) → `publishes`, `target_text=PaymentProcessed` (the fixture case)
+- [x] `_bus.Publish<OrderPlaced>(new OrderPlaced(...))` (explicit `<T>`) → `publishes`, `target_text=OrderPlaced`
+- [x] `_eventBus.Subscribe<OrderPlaced>(HandleOrderPlacedAsync)` (the fixture case) → both `subscribes` (target_text=OrderPlaced) and `handles` (`OwnerId` = `HandleOrderPlacedAsync`'s own `SymbolFactId`, target_text=OrderPlaced)
+- [x] `_bus.Subscribe<OrderPlaced>(msg => { })` (inline lambda) → `subscribes` only, no `handles` (spec.md Edge Case)
+- [x] `_bus.PublishAsync(existingVariable)` (no explicit `<T>`, not an object-creation argument) → no candidate emitted
+- [x] All candidates carry `Syntactic` confidence and a real evidence span
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick

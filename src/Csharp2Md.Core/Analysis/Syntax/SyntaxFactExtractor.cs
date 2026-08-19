@@ -35,6 +35,8 @@ internal static class SyntaxFactExtractor
         var symbols = new List<SymbolFact>();
         var candidates = new List<SyntacticRelationCandidate>();
         var prose = ImmutableDictionary.CreateBuilder<SymbolFactId, ImmutableArray<string>>();
+        var ownerByDeclaration = new Dictionary<MemberDeclarationSyntax, SymbolFactId>();
+        var methodSymbolsByName = new Dictionary<string, SymbolFactId>(StringComparer.Ordinal);
 
         foreach (var declaration in root.DescendantNodes().OfType<MemberDeclarationSyntax>())
         {
@@ -56,6 +58,11 @@ internal static class SyntaxFactExtractor
                 AttributeNames(declaration),
                 ReferencedTypes(declaration));
             symbols.Add(fact);
+            ownerByDeclaration[declaration] = symbolId;
+            if (declaration is MethodDeclarationSyntax method)
+            {
+                methodSymbolsByName.TryAdd(method.Identifier.ValueText, symbolId);
+            }
 
             var documentation = XmlDocProse.Extract(declaration).ToImmutableArray();
             if (!documentation.IsEmpty)
@@ -88,6 +95,16 @@ internal static class SyntaxFactExtractor
                         span.EndLinePosition.Character + 1);
                 }));
             }
+        }
+
+        foreach (var invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            var ownerId = invocation.Ancestors().OfType<MemberDeclarationSyntax>().FirstOrDefault() is { } enclosing
+                && ownerByDeclaration.TryGetValue(enclosing, out var enclosingSymbolId)
+                ? enclosingSymbolId.ToFactId()
+                : document.DocumentId.ToFactId();
+
+            candidates.AddRange(ClassifyMessagingInvocation(invocation, root.SyntaxTree, ownerId, methodSymbolsByName));
         }
 
         var canonicalSymbols = symbols
@@ -258,6 +275,86 @@ internal static class SyntaxFactExtractor
 
     private static string NormalizeNode(SyntaxNode node) =>
         node.WithoutTrivia().NormalizeWhitespace(indentation: " ", eol: " ", elasticTrivia: false).ToFullString();
+
+    private static readonly ImmutableHashSet<string> PublishMemberNames =
+        ImmutableHashSet.Create(StringComparer.Ordinal, "Publish", "PublishAsync");
+
+    private static readonly ImmutableHashSet<string> SubscribeMemberNames =
+        ImmutableHashSet.Create(StringComparer.Ordinal, "Subscribe", "SubscribeAsync");
+
+    /// <summary>
+    /// Recognizes <c>Publish</c>/<c>PublishAsync</c> and <c>Subscribe</c>/<c>SubscribeAsync</c>
+    /// invocation shapes by member name and argument shape alone (no <see cref="SemanticModel"/>),
+    /// per the Assumptions table in spec.md: an explicit generic type argument is read directly when
+    /// present; otherwise (publish only) the first argument's object-creation-expression type name is
+    /// used; if neither syntactic form yields a name, no relation is emitted for that call. A
+    /// <c>Subscribe&lt;T&gt;</c> whose single argument is a bare identifier naming an existing method
+    /// in this document additionally yields a <c>handles</c> candidate owned by that method.
+    /// </summary>
+    private static IEnumerable<SyntacticRelationCandidate> ClassifyMessagingInvocation(
+        InvocationExpressionSyntax invocation,
+        SyntaxTree tree,
+        FactId ownerId,
+        IReadOnlyDictionary<string, SymbolFactId> methodSymbolsByName)
+    {
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        {
+            yield break;
+        }
+
+        var memberName = memberAccess.Name.Identifier.ValueText;
+        var explicitTypeArgument = memberAccess.Name is GenericNameSyntax { TypeArgumentList.Arguments: [var typeArgument] }
+            ? typeArgument
+            : null;
+
+        if (PublishMemberNames.Contains(memberName))
+        {
+            string? targetSimpleName = explicitTypeArgument is not null
+                ? SimpleTypeName(explicitTypeArgument)
+                : invocation.ArgumentList.Arguments is [{ Expression: ObjectCreationExpressionSyntax creation }, ..]
+                    ? SimpleTypeName(creation.Type)
+                    : null;
+
+            if (targetSimpleName is not null)
+            {
+                yield return MakeCandidate(ownerId, "publishes", targetSimpleName, FactResolution.Syntactic, invocation, tree);
+            }
+
+            yield break;
+        }
+
+        if (SubscribeMemberNames.Contains(memberName) && explicitTypeArgument is not null)
+        {
+            var targetSimpleName = SimpleTypeName(explicitTypeArgument);
+            yield return MakeCandidate(ownerId, "subscribes", targetSimpleName, FactResolution.Syntactic, invocation, tree);
+
+            if (invocation.ArgumentList.Arguments is [{ Expression: IdentifierNameSyntax handlerIdentifier }, ..]
+                && methodSymbolsByName.TryGetValue(handlerIdentifier.Identifier.ValueText, out var handlerSymbolId))
+            {
+                yield return MakeCandidate(handlerSymbolId.ToFactId(), "handles", targetSimpleName, FactResolution.Syntactic, invocation, tree);
+            }
+        }
+    }
+
+    private static SyntacticRelationCandidate MakeCandidate(
+        FactId ownerId,
+        string relationKind,
+        string observedTarget,
+        FactResolution resolution,
+        SyntaxNode node,
+        SyntaxTree tree)
+    {
+        var span = tree.GetLineSpan(node.Span);
+        return new SyntacticRelationCandidate(
+            ownerId,
+            relationKind,
+            observedTarget,
+            resolution,
+            span.StartLinePosition.Line + 1,
+            span.StartLinePosition.Character + 1,
+            span.EndLinePosition.Line + 1,
+            span.EndLinePosition.Character + 1);
+    }
 
     /// <summary>
     /// Every base-list entry on an interface/struct/record-struct declaration is necessarily an

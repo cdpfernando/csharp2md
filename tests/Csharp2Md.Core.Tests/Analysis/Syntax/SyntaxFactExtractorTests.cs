@@ -185,6 +185,119 @@ public sealed class SyntaxFactExtractorTests
     }
 
     [Fact]
+    public void Extract_PublishAsyncWithObjectCreationArgumentAndNoExplicitTypeArgument_EmitsPublishes()
+    {
+        const string source = """
+            class Bus
+            {
+                void Run(IEventBus eventBus) => eventBus.PublishAsync(new PaymentProcessed());
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Bus.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "publishes");
+        Assert.Equal("PaymentProcessed", candidate.ObservedTarget);
+        Assert.Equal(FactResolution.Syntactic, candidate.ShapeConfidence);
+    }
+
+    [Fact]
+    public void Extract_PublishWithExplicitTypeArgument_EmitsPublishesFromTypeArgumentRegardlessOfArgumentShape()
+    {
+        const string source = """
+            class Bus
+            {
+                void Run(IEventBus bus) => bus.Publish<OrderPlaced>(new OrderPlaced());
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Bus.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "publishes");
+        Assert.Equal("OrderPlaced", candidate.ObservedTarget);
+        Assert.Equal(FactResolution.Syntactic, candidate.ShapeConfidence);
+    }
+
+    [Fact]
+    public void Extract_SubscribeWithNamedHandlerMethod_EmitsSubscribesAndHandlesOwnedByHandler()
+    {
+        const string source = """
+            class Worker
+            {
+                Worker(IEventBus eventBus) => eventBus.Subscribe<OrderPlaced>(HandleOrderPlacedAsync);
+                void HandleOrderPlacedAsync(OrderPlaced orderPlaced) { }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Worker.cs", source);
+        var handlerSymbol = Assert.Single(extraction.Symbols, static symbol => symbol.SymbolKind == "method");
+
+        var subscribes = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "subscribes");
+        Assert.Equal("OrderPlaced", subscribes.ObservedTarget);
+        Assert.Equal(FactResolution.Syntactic, subscribes.ShapeConfidence);
+
+        var handles = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "handles");
+        Assert.Equal("OrderPlaced", handles.ObservedTarget);
+        Assert.Equal(handlerSymbol.SymbolId.ToFactId(), handles.OwnerId);
+    }
+
+    [Fact]
+    public void Extract_SubscribeWithInlineLambdaHandler_EmitsSubscribesOnlyNoHandles()
+    {
+        const string source = """
+            class Worker
+            {
+                Worker(IEventBus bus) => bus.Subscribe<OrderPlaced>(msg => { });
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Worker.cs", source);
+
+        Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "subscribes");
+        Assert.DoesNotContain(extraction.RelationCandidates, static candidate => candidate.RelationKind == "handles");
+    }
+
+    [Fact]
+    public void Extract_PublishAsyncWithNoExplicitTypeArgumentAndNonObjectCreationArgument_EmitsNoCandidate()
+    {
+        const string source = """
+            class Bus
+            {
+                void Run(IEventBus bus, PaymentProcessed existingVariable) => bus.PublishAsync(existingVariable);
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Bus.cs", source);
+
+        Assert.DoesNotContain(extraction.RelationCandidates, static candidate => candidate.RelationKind is "publishes" or "subscribes" or "handles");
+    }
+
+    [Fact]
+    public void Extract_MessagingCandidates_CarrySyntacticConfidenceAndARealEvidenceSpan()
+    {
+        const string source = """
+            class Worker
+            {
+                Worker(IEventBus eventBus) => eventBus.Subscribe<OrderPlaced>(HandleOrderPlacedAsync);
+                void HandleOrderPlacedAsync(OrderPlaced orderPlaced) { }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Worker.cs", source);
+        var messagingCandidates = extraction.RelationCandidates
+            .Where(static candidate => candidate.RelationKind is "subscribes" or "handles")
+            .ToArray();
+
+        Assert.NotEmpty(messagingCandidates);
+        Assert.All(messagingCandidates, static candidate =>
+        {
+            Assert.Equal(FactResolution.Syntactic, candidate.ShapeConfidence);
+            Assert.True(candidate.StartLine > 0 && candidate.StartColumn > 0);
+            Assert.True(candidate.EndLine > 0 && candidate.EndColumn > 0);
+        });
+    }
+
+    [Fact]
     public void Extract_ErrorBearingDeclarationRemainsSyntacticAndMarked()
     {
         var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Broken.cs", "class Broken<T { void Run( }");
