@@ -3,6 +3,8 @@ using Csharp2Md.Core.Analysis.Syntax;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Model;
 using Csharp2Md.Core.Facts.Validation;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Csharp2Md.Core.Tests.Analysis.Relations;
 
@@ -121,4 +123,113 @@ public sealed class RelationCollectorTests
     private static SyntacticRelationCandidate Candidate(
         string relationKind, string observedTarget, FactResolution resolution, int startLine = 1) =>
         new(OwnerId, relationKind, observedTarget, resolution, startLine, 1, startLine, 10);
+
+    // T13: RelationCollector.Refine - semantic refinement sharing RelationFactId with CreateFacts.
+
+    [Fact]
+    public void Refine_PublishAsyncThroughVariable_ProducesPublishesFactWithInferredTargetTextThatCreateFactsCannot()
+    {
+        const string source = """
+            using Acme.Contracts;
+
+            namespace App;
+
+            public sealed class Worker(IEventBus bus)
+            {
+                public async System.Threading.Tasks.Task RunAsync()
+                {
+                    var message = new PaymentProcessed(System.Guid.NewGuid());
+                    await bus.PublishAsync(message);
+                }
+            }
+            """;
+        var (extraction, model) = Compile(source);
+
+        // spec.md's Assumptions table: no explicit <T> and the argument isn't an object-creation
+        // expression, so the syntax-only pass yields no "publishes" candidate for this call at all.
+        Assert.DoesNotContain(extraction.RelationCandidates, candidate => candidate.RelationKind == "publishes");
+        var baseline = RelationCollector.CreateFacts(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates);
+        Assert.DoesNotContain(baseline, fact => fact.RelationKind == "publishes");
+
+        var refined = RelationCollector.Refine(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
+
+        var publish = Assert.Single(refined, fact => fact.RelationKind == "publishes");
+        Assert.Contains(publish.Details, detail => detail is { Key: "target_text", Value: "PaymentProcessed" });
+    }
+
+    [Fact]
+    public void Refine_AndCreateFacts_MintIdenticalRelationFactIdsForTheSameCandidateList()
+    {
+        const string source = """
+            namespace App;
+
+            public class Base { }
+            public interface IMarker { }
+
+            public sealed class Worker : Base, IMarker
+            {
+            }
+            """;
+        var (extraction, model) = Compile(source);
+
+        var baseline = RelationCollector.CreateFacts(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates);
+        var refined = RelationCollector.Refine(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
+
+        Assert.Equal(2, baseline.Length);
+        Assert.Equal(2, refined.Length);
+        Assert.All(refined, refinedFact =>
+            Assert.Contains(baseline, baselineFact => baselineFact.RelationId == refinedFact.RelationId));
+        Assert.All(refined, refinedFact => Assert.Equal(FactResolution.Syntactic, refinedFact.Header.Resolution));
+    }
+
+    [Fact]
+    public void Refine_UnresolvedBaseListEntry_ProducesNoEnrichmentAndDoesNotThrow()
+    {
+        const string source = """
+            namespace App;
+
+            public sealed class Worker : UndeclaredBase
+            {
+            }
+            """;
+        var (extraction, model) = Compile(source);
+
+        var refined = RelationCollector.Refine(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
+
+        Assert.Empty(refined);
+    }
+
+    private static (SyntaxFactExtraction Extraction, SemanticModel Model) Compile(string workerSource, string relativePath = "Worker.cs")
+    {
+        var stubsTree = CSharpSyntaxTree.ParseText(FrameworkStubs, path: "FrameworkStubs.cs");
+        var tree = CSharpSyntaxTree.ParseText(workerSource, path: relativePath);
+        var compilation = CSharpCompilation.Create(
+            "RelationCollectorRefineTests",
+            [stubsTree, tree],
+            Csharp2Md.Core.Tests.TestCompilation.PlatformReferences,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        var model = compilation.GetSemanticModel(tree);
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, relativePath, workerSource);
+        return (extraction, model);
+    }
+
+    private const string FrameworkStubs = """
+        using System;
+        using System.Threading;
+        using System.Threading.Tasks;
+
+        namespace Acme.Contracts
+        {
+            public sealed record OrderPlaced(Guid OrderId);
+
+            public sealed record PaymentProcessed(Guid PaymentId);
+
+            public interface IEventBus
+            {
+                Task PublishAsync<TEvent>(TEvent message, CancellationToken cancellationToken = default);
+                void Publish<TEvent>(TEvent message);
+                void Subscribe<TEvent>(Func<TEvent, CancellationToken, Task> handler);
+            }
+        }
+        """;
 }

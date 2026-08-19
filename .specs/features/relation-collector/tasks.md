@@ -450,10 +450,10 @@ RELC-09's no-regression requirement). Produces enrichment facts with **identical
 - Skill: NONE
 
 **Done when**:
-- [ ] `var message = new PaymentProcessed(...); await _bus.PublishAsync(message);` (semantic-only resolvable target, today's `MessagingRelationDetectorTests.cs` case) → `Refine` produces a `publishes` fact with `target_text=PaymentProcessed`, even though `CreateFacts` alone found no object-creation argument to read
-- [ ] A dedicated test asserts `CreateFacts` and `Refine`, run over the identical candidate list, mint identical `RelationFactId`s for every kind (the reproducibility risk from design.md)
-- [ ] An error/candidate symbol at the invocation site produces no enrichment (or an enrichment that doesn't outrank the baseline) rather than throwing
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] `var message = new PaymentProcessed(...); await _bus.PublishAsync(message);` (semantic-only resolvable target, today's `MessagingRelationDetectorTests.cs` case) → `Refine` produces a `publishes` fact with `target_text=PaymentProcessed`, even though `CreateFacts` alone found no object-creation argument to read
+- [x] A dedicated test asserts `CreateFacts` and `Refine`, run over the identical candidate list, mint identical `RelationFactId`s for every kind (the reproducibility risk from design.md)
+- [x] An error/candidate symbol at the invocation site produces no enrichment (or an enrichment that doesn't outrank the baseline) rather than throwing
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick
