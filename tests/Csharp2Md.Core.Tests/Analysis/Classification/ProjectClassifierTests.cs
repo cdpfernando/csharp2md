@@ -182,7 +182,16 @@ public sealed class ProjectClassifierTests
             false,
             [],
             [],
-            typeReferences);
+            typeReferences,
+            Semantics: null,
+            Name: "Program",
+            FullyQualifiedName: "global::App.Program",
+            Namespace: "App",
+            ContainingType: null,
+            ContainingSymbolId: null,
+            Signature: "class Program",
+            Arity: 0,
+            ParameterTypes: []);
     }
 
     private static RelationFact Relation(string relationKind)

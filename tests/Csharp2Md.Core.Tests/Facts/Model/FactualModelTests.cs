@@ -102,7 +102,16 @@ public sealed class FactualModelTests
             ContainsErrorSymbol: true,
             [],
             [],
-            []);
+            [],
+            Semantics: null,
+            Name: "Feature",
+            FullyQualifiedName: "global::Feature",
+            Namespace: null,
+            ContainingType: null,
+            ContainingSymbolId: null,
+            Signature: "class Feature",
+            Arity: 0,
+            ParameterTypes: []);
 
         Assert.True(fact.ContainsErrorSymbol);
         Assert.Equal(FactResolution.Unresolved, fact.Header.Resolution);

@@ -122,5 +122,14 @@ public sealed class FactualDetectorContractTests
         false,
         [],
         [],
-        []);
+        [],
+        Semantics: null,
+        Name: "C",
+        FullyQualifiedName: "global::C",
+        Namespace: null,
+        ContainingType: null,
+        ContainingSymbolId: null,
+        Signature: "class C",
+        Arity: 0,
+        ParameterTypes: []);
 }

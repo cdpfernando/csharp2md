@@ -170,7 +170,16 @@ public sealed class SolutionAnalysisIndexTests
             false,
             [],
             [],
-            typeReferences.Order(StringComparer.Ordinal).ToImmutableArray());
+            typeReferences.Order(StringComparer.Ordinal).ToImmutableArray(),
+            Semantics: null,
+            Name: "Handler",
+            FullyQualifiedName: "global::Handler",
+            Namespace: null,
+            ContainingType: null,
+            ContainingSymbolId: null,
+            Signature: "class Handler",
+            Arity: 0,
+            ParameterTypes: []);
     }
 
     private static RelationFact Relation(

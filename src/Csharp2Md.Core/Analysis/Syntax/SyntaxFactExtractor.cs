@@ -1,4 +1,5 @@
 using Csharp2Md.Core.Analysis.Relations;
+using Csharp2Md.Core.Analysis.Semantics;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
@@ -51,6 +52,9 @@ internal static class SyntaxFactExtractor
             var kind = DeclarationKind(declaration);
             var signature = DeclarationSignature(declaration);
             var symbolId = SymbolFactId.CreateSyntactic(projectId, relativePath, kind, signature);
+            var name = DeclarationName(declaration);
+            var enclosingNamespace = EnclosingNamespace(declaration);
+            var enclosingTypeNames = EnclosingTypeNames(declaration);
             var fact = new SymbolFact(
                 Header(symbolId.ToFactId()),
                 symbolId,
@@ -59,7 +63,18 @@ internal static class SyntaxFactExtractor
                 declaration.ContainsDiagnostics,
                 [],
                 AttributeNames(declaration),
-                ReferencedTypes(declaration));
+                ReferencedTypes(declaration),
+                Semantics: null,
+                name,
+                TypeNameNormalizer.Normalize(QualifiedName(enclosingNamespace, enclosingTypeNames, name)),
+                enclosingNamespace,
+                enclosingTypeNames.IsEmpty
+                    ? null
+                    : TypeNameNormalizer.Normalize(QualifiedName(enclosingNamespace, enclosingTypeNames, null)),
+                EnclosingDeclarationId(declaration, ownerByDeclaration),
+                signature,
+                DeclarationArity(declaration),
+                DeclarationParameterTypes(declaration));
             symbols.Add(fact);
             ownerByDeclaration[declaration] = symbolId;
             declarationsBySymbolId[symbolId] = declaration;
@@ -312,6 +327,90 @@ internal static class SyntaxFactExtractor
         ConversionOperatorDeclarationSyntax conversion => conversion.Type.ToString(),
         _ => declaration.Kind().ToString(),
     };
+
+    /// <summary>
+    /// The dotted namespace a declaration sits in, from its ancestor namespace declarations
+    /// (outer-first), or <c>null</c> when it sits in the global namespace.
+    /// </summary>
+    private static string? EnclosingNamespace(MemberDeclarationSyntax declaration)
+    {
+        var names = declaration.Ancestors()
+            .OfType<BaseNamespaceDeclarationSyntax>()
+            .Reverse()
+            .Select(static ancestor => ancestor.Name.ToString());
+        var joined = string.Join('.', names);
+        return joined.Length == 0 ? null : joined;
+    }
+
+    /// <summary>
+    /// The names of the type declarations a declaration is nested inside, outer-first - the chain a
+    /// member's <c>ContainingType</c> is built from.
+    /// </summary>
+    private static ImmutableArray<string> EnclosingTypeNames(MemberDeclarationSyntax declaration) =>
+        declaration.Ancestors()
+            .OfType<BaseTypeDeclarationSyntax>()
+            .Reverse()
+            .Select(DeclarationName)
+            .ToImmutableArray();
+
+    private static string QualifiedName(
+        string? enclosingNamespace,
+        ImmutableArray<string> enclosingTypeNames,
+        string? name)
+    {
+        IEnumerable<string> segments = enclosingTypeNames;
+        if (enclosingNamespace is not null)
+        {
+            segments = segments.Prepend(enclosingNamespace);
+        }
+
+        if (name is not null)
+        {
+            segments = segments.Append(name);
+        }
+
+        return string.Join('.', segments);
+    }
+
+    /// <summary>
+    /// The nearest enclosing declaration's own <see cref="SymbolFactId"/>, or <c>null</c> for a
+    /// declaration with no enclosing declaration at all. Reuses the same <c>ownerByDeclaration</c>
+    /// map the relation-candidate pass builds; pre-order traversal guarantees an ancestor is already
+    /// in it by the time its descendants are visited.
+    /// </summary>
+    private static SymbolFactId? EnclosingDeclarationId(
+        MemberDeclarationSyntax declaration,
+        IReadOnlyDictionary<MemberDeclarationSyntax, SymbolFactId> ownerByDeclaration) =>
+        declaration.Ancestors()
+            .OfType<MemberDeclarationSyntax>()
+            .FirstOrDefault(static ancestor => ancestor is not GlobalStatementSyntax) is { } enclosing
+            && ownerByDeclaration.TryGetValue(enclosing, out var symbolId)
+                ? symbolId
+                : null;
+
+    private static int DeclarationArity(MemberDeclarationSyntax declaration) => declaration switch
+    {
+        TypeDeclarationSyntax type => type.TypeParameterList?.Parameters.Count ?? 0,
+        DelegateDeclarationSyntax @delegate => @delegate.TypeParameterList?.Parameters.Count ?? 0,
+        MethodDeclarationSyntax method => method.TypeParameterList?.Parameters.Count ?? 0,
+        _ => 0,
+    };
+
+    private static ImmutableArray<string> DeclarationParameterTypes(MemberDeclarationSyntax declaration)
+    {
+        var parameters = declaration switch
+        {
+            BaseMethodDeclarationSyntax method => method.ParameterList.Parameters,
+            DelegateDeclarationSyntax @delegate => @delegate.ParameterList.Parameters,
+            _ => default,
+        };
+
+        return parameters
+            .Select(static parameter => parameter.Type)
+            .OfType<TypeSyntax>()
+            .Select(static type => TypeNameNormalizer.Normalize(NormalizeNode(type)))
+            .ToImmutableArray();
+    }
 
     private static ImmutableArray<string> AttributeNames(MemberDeclarationSyntax declaration) =>
         declaration.AttributeLists

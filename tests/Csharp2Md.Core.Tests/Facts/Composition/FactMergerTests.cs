@@ -260,7 +260,16 @@ public sealed class FactMergerTests
         ContainsErrorSymbol: resolution is FactResolution.Unresolved,
         [],
         attributes.IsDefault ? [] : attributes,
-        []);
+        [],
+        Semantics: null,
+        Name: "C",
+        FullyQualifiedName: "global::C",
+        Namespace: null,
+        ContainingType: null,
+        ContainingSymbolId: null,
+        Signature: "class C",
+        Arity: 0,
+        ParameterTypes: []);
 
     private static FactHeader Header(FactId id, FactKind kind, FactResolution resolution, FactProvenance provenance) =>
         FactHeader.Create(id, kind, resolution, [provenance]);

@@ -536,6 +536,188 @@ public sealed class SyntaxFactExtractorTests
         Assert.All(extraction.Symbols, static symbol => Assert.DoesNotContain("  ", symbol.SymbolId.Value, StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Extract_EveryDeclaration_HasNameAndSignaturePopulated()
+    {
+        const string source = """
+            namespace A;
+            class Outer
+            {
+                class Inner { void Run() { } }
+                int Field;
+                string Property { get; }
+                event Action Changed;
+                Outer() { }
+            }
+            enum State { One }
+            delegate void Work(int value);
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Outer.cs", source);
+
+        Assert.NotEmpty(extraction.Symbols);
+        Assert.All(extraction.Symbols, static symbol =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(symbol.Name));
+            Assert.False(string.IsNullOrWhiteSpace(symbol.Signature));
+            Assert.False(string.IsNullOrWhiteSpace(symbol.FullyQualifiedName));
+        });
+    }
+
+    [Fact]
+    public void Extract_NestedTypeMember_ReportsOuterNamespaceAndTheNestedTypesOwnQualifiedName()
+    {
+        const string source = """
+            namespace Acme.Payments;
+            class Outer
+            {
+                class Inner
+                {
+                    void Run() { }
+                }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Outer.cs", source);
+        var run = Assert.Single(extraction.Symbols, static symbol => symbol.Name == "Run");
+        var inner = Assert.Single(extraction.Symbols, static symbol => symbol.Name == "Inner");
+
+        Assert.Equal("Acme.Payments", run.Namespace);
+        Assert.Equal("global::Acme.Payments.Outer.Inner", run.ContainingType);
+        Assert.Equal("global::Acme.Payments.Outer.Inner.Run", run.FullyQualifiedName);
+        Assert.Equal("global::Acme.Payments.Outer.Inner", inner.FullyQualifiedName);
+        Assert.Equal("global::Acme.Payments.Outer", inner.ContainingType);
+    }
+
+    [Theory]
+    [InlineData("class Box<T> { }", "Box", 1)]
+    [InlineData("class Pair<TKey, TValue> { }", "Pair", 2)]
+    [InlineData("class Plain { }", "Plain", 0)]
+    [InlineData("class C { T Echo<T>(T value) => value; }", "Echo", 1)]
+    [InlineData("class C { void Run() { } }", "Run", 0)]
+    [InlineData("delegate void Work<T>(T value);", "Work", 1)]
+    public void Extract_GenericTypeOrMethod_ReportsItsDeclaredTypeParameterCountAsArity(
+        string source,
+        string name,
+        int expectedArity)
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Arity.cs", source);
+
+        var symbol = Assert.Single(extraction.Symbols, symbol => symbol.Name == name);
+        Assert.Equal(expectedArity, symbol.Arity);
+    }
+
+    [Fact]
+    public void Extract_MethodParameters_AreNormalizedSoKeywordAndQualifiedSpellingsMatch()
+    {
+        const string source = """
+            class C
+            {
+                void Keyword(string name, int count) { }
+                void Qualified(System.String name, System.Int32 count) { }
+                void None() { }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/C.cs", source);
+        var keyword = Assert.Single(extraction.Symbols, static symbol => symbol.Name == "Keyword");
+        var qualified = Assert.Single(extraction.Symbols, static symbol => symbol.Name == "Qualified");
+        var none = Assert.Single(extraction.Symbols, static symbol => symbol.Name == "None");
+
+        Assert.Equal(["global::System.String", "global::System.Int32"], keyword.ParameterTypes.ToArray());
+        Assert.Equal(keyword.ParameterTypes.ToArray(), qualified.ParameterTypes.ToArray());
+        Assert.Empty(none.ParameterTypes);
+    }
+
+    [Fact]
+    public void Extract_RawSignatureKeepsTheOriginalSpellingTheNormalizedFieldsCollapse()
+    {
+        const string source = "class C { void Run(string name) { } }";
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/C.cs", source);
+        var run = Assert.Single(extraction.Symbols, static symbol => symbol.Name == "Run");
+
+        Assert.Contains("string", run.Signature, StringComparison.Ordinal);
+        Assert.DoesNotContain("System.String", run.Signature, StringComparison.Ordinal);
+        Assert.Equal(["global::System.String"], run.ParameterTypes.ToArray());
+    }
+
+    [Fact]
+    public void Extract_MemberInsideAType_ReportsThatTypesOwnSymbolFactIdAsContainingSymbolId()
+    {
+        const string source = """
+            namespace A;
+            class Owner
+            {
+                void Run() { }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Owner.cs", source);
+        var owner = Assert.Single(extraction.Symbols, static symbol => symbol.Name == "Owner");
+        var run = Assert.Single(extraction.Symbols, static symbol => symbol.Name == "Run");
+        var @namespace = Assert.Single(extraction.Symbols, static symbol => symbol.SymbolKind == "namespace");
+
+        Assert.Equal(owner.SymbolId, run.ContainingSymbolId);
+        Assert.Equal(@namespace.SymbolId, owner.ContainingSymbolId);
+    }
+
+    [Fact]
+    public void Extract_TopLevelDeclarationWithNoEnclosingDeclaration_HasNullContainingSymbolIdAndNamespace()
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/C.cs", "class C { }");
+
+        var symbol = Assert.Single(extraction.Symbols);
+        Assert.Null(symbol.ContainingSymbolId);
+        Assert.Null(symbol.Namespace);
+        Assert.Null(symbol.ContainingType);
+        Assert.Equal("global::C", symbol.FullyQualifiedName);
+    }
+
+    [Fact]
+    public void Extract_SameSimpleNameInTwoNamespaces_StaysDistinctByQualifiedNameAndIdentity()
+    {
+        const string source = """
+            namespace Company.Legacy { class PaymentService { } }
+            namespace Company.Payments { class PaymentService { } }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/PaymentService.cs", source);
+        var services = extraction.Symbols
+            .Where(static symbol => symbol.Name == "PaymentService")
+            .ToArray();
+
+        Assert.Equal(2, services.Length);
+        Assert.Equal(2, services.Select(static symbol => symbol.SymbolId).Distinct().Count());
+        Assert.Equal(
+            ["global::Company.Legacy.PaymentService", "global::Company.Payments.PaymentService"],
+            services.Select(static symbol => symbol.FullyQualifiedName).Order(StringComparer.Ordinal));
+        Assert.Equal(
+            ["Company.Legacy", "Company.Payments"],
+            services.Select(static symbol => symbol.Namespace).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void Extract_PopulatesIdentityFieldsWithoutASemanticModelAndNeverClaimsExactResolution()
+    {
+        const string source = """
+            namespace Acme.Payments;
+            class PaymentsService
+            {
+                string AuthorizePayment(string orderId, decimal amount) => orderId;
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/PaymentsService.cs", source);
+        var method = Assert.Single(extraction.Symbols, static symbol => symbol.Name == "AuthorizePayment");
+
+        Assert.Equal("Acme.Payments", method.Namespace);
+        Assert.Equal("global::Acme.Payments.PaymentsService", method.ContainingType);
+        Assert.Equal(["global::System.String", "global::System.Decimal"], method.ParameterTypes.ToArray());
+        Assert.All(extraction.Symbols, static symbol =>
+            Assert.Equal(FactResolution.Syntactic, symbol.Header.Resolution));
+    }
+
     private static string[] Methods(string source) =>
         SyntaxFactExtractor.Extract(ProjectId, "src/App/C.cs", source).Symbols
             .Where(static symbol => symbol.SymbolKind == "method")

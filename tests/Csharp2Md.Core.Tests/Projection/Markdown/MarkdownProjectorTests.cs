@@ -266,7 +266,16 @@ public sealed class MarkdownProjectorTests
             ContainsErrorSymbol: false,
             [],
             [],
-            []);
+            [],
+            Semantics: null,
+            Name: discriminator,
+            FullyQualifiedName: $"global::{discriminator}",
+            Namespace: null,
+            ContainingType: null,
+            ContainingSymbolId: null,
+            Signature: discriminator,
+            Arity: 0,
+            ParameterTypes: []);
     }
 
     private static RelationFact MakeRelation(DocumentFactId documentId, string claim, FactResolution resolution)

@@ -230,7 +230,16 @@ public sealed class DetectorHostTests
             false,
             [],
             [],
-            []);
+            [],
+            Semantics: null,
+            Name: symbolKind,
+            FullyQualifiedName: $"global::{symbolKind}",
+            Namespace: null,
+            ContainingType: null,
+            ContainingSymbolId: null,
+            Signature: symbolKind,
+            Arity: 0,
+            ParameterTypes: []);
     }
 
     private static AnalysisDiagnostic DetectorDiagnostic(string code) =>

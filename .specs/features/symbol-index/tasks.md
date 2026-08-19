@@ -136,14 +136,14 @@ method type-parameter count; `ParameterTypes` from `ParameterSyntax.Type` text r
 - Skill: `dotnet-skills:csharp-coding-standards`, `dotnet-skills:csharp-nullable-reference-types` (the new nullable fields)
 
 **Done when**:
-- [ ] `SymbolFact` declares all 8 new fields
-- [ ] Every `SymbolFact` produced by `SyntaxFactExtractor.Extract` has `Name`/`Signature` populated (never null/empty for a real declaration)
-- [ ] A nested type's member reports the correct `Namespace` (outer namespace) and `ContainingType` (the nested type's own fully qualified name, not the outer type)
-- [ ] A generic type/method reports the correct `Arity`
-- [ ] A method with parameters reports `ParameterTypes` normalized via `TypeNameNormalizer` (e.g. `string` and `System.String` parameters both normalize identically)
-- [ ] A member declared inside a type reports `ContainingSymbolId` equal to that type's own `SymbolFactId` (reusing `ownerByDeclaration`)
-- [ ] A top-level declaration (no containing type) has `ContainingSymbolId = null`
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] `SymbolFact` declares all 8 new fields
+- [x] Every `SymbolFact` produced by `SyntaxFactExtractor.Extract` has `Name`/`Signature` populated (never null/empty for a real declaration)
+- [x] A nested type's member reports the correct `Namespace` (outer namespace) and `ContainingType` (the nested type's own fully qualified name, not the outer type)
+- [x] A generic type/method reports the correct `Arity`
+- [x] A method with parameters reports `ParameterTypes` normalized via `TypeNameNormalizer` (e.g. `string` and `System.String` parameters both normalize identically)
+- [x] A member declared inside a type reports `ContainingSymbolId` equal to that type's own `SymbolFactId` (reusing `ownerByDeclaration`)
+- [x] A top-level declaration (no containing type) has `ContainingSymbolId = null`
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick

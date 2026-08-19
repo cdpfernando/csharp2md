@@ -288,7 +288,16 @@ public sealed class FactValidatorTests
             containsErrorSymbol,
             [],
             [],
-            []);
+            [],
+            Semantics: null,
+            Name: signature,
+            FullyQualifiedName: $"global::{signature}",
+            Namespace: null,
+            ContainingType: null,
+            ContainingSymbolId: null,
+            Signature: signature,
+            Arity: 0,
+            ParameterTypes: []);
     }
 
     private static RelationFact Relation(

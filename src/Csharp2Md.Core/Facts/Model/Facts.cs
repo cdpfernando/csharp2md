@@ -68,7 +68,15 @@ public sealed record SymbolFact(
     ImmutableArray<SymbolFactId> BaseAndInterfaceIds,
     ImmutableArray<string> Attributes,
     ImmutableArray<string> RelevantTypeReferences,
-    SymbolSemanticDetails? Semantics = null) : IFact;
+    SymbolSemanticDetails? Semantics,
+    string Name,
+    string FullyQualifiedName,
+    string? Namespace,
+    string? ContainingType,
+    SymbolFactId? ContainingSymbolId,
+    string Signature,
+    int Arity,
+    ImmutableArray<string> ParameterTypes) : IFact;
 
 public sealed record SymbolSemanticDetails(
     ImmutableArray<SymbolFactId> ImplementedMemberIds,
