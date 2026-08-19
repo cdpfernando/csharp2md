@@ -55,6 +55,10 @@ public sealed class HttpRelationDetectorTests
         { "var client = otherFactory.CreateClient(\"Payments\");", NamedClient, false, null, null, null },
         { "var svc = new Contoso.Client(); svc.GetAsync(\"/x\");", Request, false, null, null, null },
 
+        // FACT-45/58: a type literally named HttpClient in a foreign namespace is not the real
+        // System.Net.Http.HttpClient - the receiver's fully-qualified type must match, not its simple name.
+        { "var lookalike = new Contoso.HttpClient(); lookalike.GetAsync(\"/x\");", Request, false, null, null, null },
+
         // FACT-45: base address, literal and irreducible.
         { "_http.BaseAddress = new Uri(\"https://payments.internal\");", BaseAddress, true, "base_url", "https://payments.internal", FactResolution.Exact },
         { "_http.BaseAddress = new Uri(GetBase()); static string GetBase() => \"https://x\";", BaseAddress, true, "base_url_expression", "GetBase()", FactResolution.Partial },
@@ -209,6 +213,11 @@ public sealed class HttpRelationDetectorTests
         namespace Contoso
         {
             public sealed class Client
+            {
+                public string GetAsync(string uri) => uri;
+            }
+
+            public sealed class HttpClient
             {
                 public string GetAsync(string uri) => uri;
             }
