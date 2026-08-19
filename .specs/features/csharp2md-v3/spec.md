@@ -342,13 +342,13 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-16 | P1: Factual fragments | T11 compile-time-only project/package reference validation implemented | Implementing |
 | FACT-17 | P1: Factual fragments | T9 nullable representation and T11 unresolved-reason validation implemented | Implementing |
 | FACT-18 | P1: Deterministic output | T19 skeleton and T40 factual relation/component projection implemented | Implementing |
-| FACT-19 | P1: Deterministic output | T12 canonical source-generated JSON implemented; persistence/output closes in T16/T19 | Implementing |
-| FACT-20 | P1: Deterministic output | Specify | Pending |
+| FACT-19 | P1: Deterministic output | T12 canonical source-generated JSON implemented; T45 proves byte-identical canonical UTF-8/LF JSON across two independent absolute roots with independently recomputed fragment hashes | Verified |
+| FACT-20 | P1: Deterministic output | T45 reconstructs a representative document's source bytes exclusively from its persisted document factual fragment | Verified |
 | FACT-21 | P1: Deterministic output | T14 source section partition implemented; T42 verifies exact reconstruction after location movement | Verified |
-| FACT-22 | P1: Deterministic output | Specify | Pending |
-| FACT-23 | P1: Deterministic output | Specify | Pending |
-| FACT-24 | P1: Deterministic output | Specify | Pending |
-| FACT-25 | P1: Deterministic output | T19 omits dependencies.json; T40 derives dependencies.mmd from validated factual relations; T41 removes the remaining v2 graph writers | Implementing |
+| FACT-22 | P1: Deterministic output | T18 emits schema-version-two frontmatter; T45's approved snapshot confirms only the specified fields with a resolvable `facts_ref` | Verified |
+| FACT-23 | P1: Deterministic output | T19 writes the manifest skeleton; T45 independently validates every manifest fragment reference resolves and every hash matches exact artifact bytes | Verified |
+| FACT-24 | P1: Deterministic output | T45 analyzes the same fixture from two unrelated absolute roots and proves byte-identical `raw/` trees except `raw/log.md`, with neither absolute root leaking into any artifact | Verified |
+| FACT-25 | P1: Deterministic output | T19 omits dependencies.json; T40 derives dependencies.mmd from validated factual relations; T41 removes the remaining v2 graph writers; T45 confirms `dependencies.json` stays absent and `dependencies.mmd` is built from the validated relation set across both roots | Verified |
 | FACT-26 | P2: Semantic enrichment | T2 viability and T5 evaluated-compilation backend selected; production closes in T22 | Implementing |
 | FACT-27 | P2: Semantic enrichment | T2 import-path-only preprocessing viability proven; production closes in T22 | Implementing |
 | FACT-28 | P2: Semantic enrichment | T2 `ArgumentList` and T3 evaluator lifecycle proven; production closes in T22 | Implementing |
@@ -379,7 +379,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-53 | P2: Diagnostics and coverage | Specify | Pending |
 | FACT-54 | P2: Diagnostics and coverage | Specify | Pending |
 | FACT-55 | P3: Migration and release | T41 removes v2 paths and closes all 428 ledger rows with executable v3 evidence; T47 performs release quality closure | Implementing |
-| FACT-56 | P3: Migration and release | T12 representative factual snapshot implemented; Markdown/frontmatter snapshots close in T17/T18 | Implementing |
+| FACT-56 | P3: Migration and release | T12 representative factual snapshot implemented; T17/T18 close Markdown/frontmatter snapshots; T45 adds an approved end-to-end Markdown snapshot from a real multi-file fixture | Verified |
 | FACT-57 | P3: Migration and release | T42 language matrix verifies explicit syntax and semantic facts for every required language shape | Verified |
 | FACT-58 | P3: Migration and release | T34-T39 detector suites plus T43's audit and 20 discriminating cases cover every priority detector family with positive, negative, and lookalike assertions | Verified |
 | FACT-59 | P3: Migration and release | T44 proves CLI safety, fallback, extension, timeout, and structural-output boundaries | Verified |
