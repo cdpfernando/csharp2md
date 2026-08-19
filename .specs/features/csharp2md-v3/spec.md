@@ -324,24 +324,24 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| FACT-01 | P1: Safe syntax-only default | T6 analysis contracts; engine/CLI enforcement closes in T20/T21 | Implementing |
+| FACT-01 | P1: Safe syntax-only default | T6 defines the syntax-only/untrusted default; T21's zero-option CLI test and T44's real-CLI marker tests confirm it holds end to end | Verified |
 | FACT-02 | P1: Safe syntax-only default | T44 real-CLI marker tests prove default and explicit syntax-only never invoke dotnet | Verified |
-| FACT-03 | P1: Safe syntax-only default | Specify | Pending |
+| FACT-03 | P1: Safe syntax-only default | T13's `InertInventory` inventories broken/unrestored projects inertly; `AnalysisEngineTests.AnalyzeAsync_BrokenUnrestoredProject_UsesCompleteSyntaxFallback` (T20) proves syntactic facts and Markdown are still emitted for a project with a missing SDK | Verified |
 | FACT-04 | P1: Safe syntax-only default | T44 proves trust rejection preserves nested output sentinels | Verified |
 | FACT-05 | P1: Safe syntax-only default | T44 proves generator opt-in rejection preserves nested output sentinels | Verified |
 | FACT-06 | P1: Safe syntax-only default | T44 proves zero, negative, and unparsable timeouts preserve nested output sentinels | Verified |
-| FACT-07 | P1: Safe syntax-only default | T6 analysis default; engine enforcement closes in T20 | Implementing |
-| FACT-08 | P1: Factual fragments | T6 external analysis request/result contract | Implementing |
-| FACT-09 | P1: Factual fragments | T7-T12 factual values, families, validation, and JSON contracts implemented | Implementing |
+| FACT-07 | P1: Safe syntax-only default | T6 sets the 10-minute default; T3's timeout probe and T22's per-service evaluator enforce it independently per service | Verified |
+| FACT-08 | P1: Factual fragments | T6 defines `AnalysisRequest`/`AnalysisResult` as the analysis module's sole external contract (AD-013); every later task (T13-T46) added internal seams only, never expanding this surface | Verified |
+| FACT-09 | P1: Factual fragments | T7-T12 implement `FactResolution`, `FactProvenance`, `Evidence`, structured diagnostics, and every specialized fact family; T13-T40 build the entire pipeline on these types without extension | Verified |
 | FACT-10 | P1: Factual fragments | T7 stable identity grammar implemented; extraction/enrichment closes in T15/T26; T42 verifies relocation and preceding-edit stability | Verified |
-| FACT-11 | P1: Factual fragments | T11 validated-fragment boundary implemented; persistence/projection closes in T16/T17 | Implementing |
-| FACT-12 | P1: Factual fragments | T11 duplicate/reference rejection implemented; engine exit behavior closes in T20 | Implementing |
+| FACT-11 | P1: Factual fragments | T11 validated-fragment boundary implemented; T16 persists only validated fragments; T17 projects Markdown only from them; T20's engine wires the exact validate-then-persist-then-project sequence | Verified |
+| FACT-12 | P1: Factual fragments | T11 implements duplicate/reference rejection; `AnalysisEngineTests.AnalyzeAsync_StructuralValidationFailure_ReturnsExitOneAndOmitsFragment` (T20) proves the engine exits `1` and omits the fragment | Verified |
 | FACT-13 | P1: Factual fragments | T9 state and T11 exact error-symbol rejection implemented; T42 verifies error symbols retain syntactic identity and never become exact | Verified |
-| FACT-14 | P1: Factual fragments | T8 constraints and T11 document/path/range validation implemented | Implementing |
-| FACT-15 | P1: Factual fragments | T8-T10 provenance contracts and T11 runtime enforcement implemented | Implementing |
-| FACT-16 | P1: Factual fragments | T11 compile-time-only project/package reference validation implemented | Implementing |
-| FACT-17 | P1: Factual fragments | T9 nullable representation and T11 unresolved-reason validation implemented | Implementing |
-| FACT-18 | P1: Deterministic output | T19 skeleton and T40 factual relation/component projection implemented | Implementing |
+| FACT-14 | P1: Factual fragments | T8 constraints implemented; T11's twenty-two discovered cases cover every invalid document/path/range and its valid lookalike | Verified |
+| FACT-15 | P1: Factual fragments | T8-T10 provenance contracts implemented; T11's cases cover missing runtime evidence/provenance; T39's compile-time detector confirms the non-runtime exemption | Verified |
+| FACT-16 | P1: Factual fragments | T11 compile-time-only validation implemented; T39's `CompileTimeReferenceDetectorTests` hand-constructs a project-reference fact in a runtime partition and confirms `FactValidator` rejects it with `C2M-FV-006` | Verified |
+| FACT-17 | P1: Factual fragments | T9 nullable representation and T11 unresolved-reason validation implemented; T34-T39's runtime detectors exercise it on every relation kind | Verified |
+| FACT-18 | P1: Deterministic output | T19 skeleton and T40 factual relation/component projection implemented; T45 independently confirms the two roots' complete `raw/` file sets match | Verified |
 | FACT-19 | P1: Deterministic output | T12 canonical source-generated JSON implemented; T45 proves byte-identical canonical UTF-8/LF JSON across two independent absolute roots with independently recomputed fragment hashes | Verified |
 | FACT-20 | P1: Deterministic output | T45 reconstructs a representative document's source bytes exclusively from its persisted document factual fragment | Verified |
 | FACT-21 | P1: Deterministic output | T14 source section partition implemented; T42 verifies exact reconstruction after location movement | Verified |
@@ -349,23 +349,23 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-23 | P1: Deterministic output | T19 writes the manifest skeleton; T45 independently validates every manifest fragment reference resolves and every hash matches exact artifact bytes | Verified |
 | FACT-24 | P1: Deterministic output | T45 analyzes the same fixture from two unrelated absolute roots and proves byte-identical `raw/` trees except `raw/log.md`, with neither absolute root leaking into any artifact | Verified |
 | FACT-25 | P1: Deterministic output | T19 omits dependencies.json; T40 derives dependencies.mmd from validated factual relations; T41 removes the remaining v2 graph writers; T45 confirms `dependencies.json` stays absent and `dependencies.mmd` is built from the validated relation set across both roots | Verified |
-| FACT-26 | P2: Semantic enrichment | T2 viability and T5 evaluated-compilation backend selected; production closes in T22 | Implementing |
-| FACT-27 | P2: Semantic enrichment | T2 import-path-only preprocessing viability proven; production closes in T22 | Implementing |
-| FACT-28 | P2: Semantic enrichment | T2 `ArgumentList` and T3 evaluator lifecycle proven; production closes in T22 | Implementing |
-| FACT-29 | P2: Semantic enrichment | T2 inert extension inventory proven; production closes in T22 | Implementing |
+| FACT-26 | P2: Semantic enrichment | T2 viability proven; T22's `DotnetMsBuildEvaluator` issues one target-free outer query plus one query per canonical TFM through `ProcessStartInfo.ArgumentList` | Verified |
+| FACT-27 | P2: Semantic enrichment | T2 import-path-only preprocessing viability proven; T22 parses import paths from a deleted preprocess file and never persists the expanded XML | Verified |
+| FACT-28 | P2: Semantic enrichment | T2 `ArgumentList` and T3 evaluator lifecycle proven; T22's production evaluator uses `ProcessStartInfo.ArgumentList` for every invocation | Verified |
+| FACT-29 | P2: Semantic enrichment | T2 inert extension inventory proven; T22 inventories evaluated analyzer/generator paths without loading them | Verified |
 | FACT-30 | P2: Semantic enrichment | T44 real-CLI marker extension remains unloaded without opt-in | Verified |
 | FACT-31 | P2: Semantic enrichment | T44 real-CLI opt-in executes only the generator, records it, and scopes generator failure | Verified |
-| FACT-32 | P2: Semantic enrichment | Specify | Pending |
-| FACT-33 | P2: Semantic enrichment | T4 post-sanitation binding and target identity proven; production closes in T23/T26 | Implementing |
+| FACT-32 | P2: Semantic enrichment | T25's `ProjectFactEnricher` populates every named field (SDK, imports, output type, TFMs, assembly/root namespace, compile items, references, constants, language version, nullable mode, compiled extensions) from target-scoped evaluation | Verified |
+| FACT-33 | P2: Semantic enrichment | T4 post-sanitation binding proven; T26's `SymbolFactEnricher` resolves stable identity, bases, interfaces, implementations, overrides, attributes, and relevant type references | Verified |
 | FACT-34 | P2: Semantic enrichment | T44 missing-SDK and failing-generator CLI runs retain syntax artifacts with scoped diagnostics | Verified |
-| FACT-35 | P2: Semantic enrichment | T33 per-invocation detector isolation implemented; concrete detector integration closes in T34-T39 | Implementing |
+| FACT-35 | P2: Semantic enrichment | T33's ten cases prove per-invocation detector isolation; T34-T39 integrate every concrete detector through that same host | Verified |
 | FACT-36 | P2: Semantic enrichment | T44 recoverable missing-SDK and generator failures exit 0 | Verified |
-| FACT-37 | P2: Components and relations | T30 reusable target-aware indexes and T40 canonical aggregate projection implemented | Implementing |
-| FACT-38 | P2: Components and relations | T31 confirmed web API classification and T40 component index projection implemented | Implementing |
-| FACT-39 | P2: Components and relations | T31 confirmed worker classification and T40 component index projection implemented | Implementing |
-| FACT-40 | P2: Components and relations | T31 confirmed CLI classification and T40 component index projection implemented | Implementing |
-| FACT-41 | P2: Components and relations | T31 confirmed test-support classification and T40 component index projection implemented | Implementing |
-| FACT-42 | P2: Components and relations | T32 private library ownership and T40 component index projection implemented | Implementing |
+| FACT-37 | P2: Components and relations | T30's seven cases prove indexes build once per solution and forbid repeated solution-wide searches; T40 projects from them | Verified |
+| FACT-38 | P2: Components and relations | T31's `ProjectClassifier` applies `service/web-api` before `service/worker` before `tool/cli`; T40 projects the component index | Verified |
+| FACT-39 | P2: Components and relations | T31 confirmed worker classification (hosted service, no HTTP endpoints) and T40 component index projection implemented | Verified |
+| FACT-40 | P2: Components and relations | T31 confirmed remaining-executable → `tool/cli` classification and T40 component index projection implemented | Verified |
+| FACT-41 | P2: Components and relations | T31's `Microsoft.NET.Test.Sdk` rule identifies `test-support`; T40 component index projection implemented | Verified |
+| FACT-42 | P2: Components and relations | T32's `LibraryOwnershipClassifier` assigns exactly-one-consumer libraries privately via compile-time reachability; T40 projects component ownership | Verified |
 | FACT-43 | P2: Components and relations | T34 confirmed ASP.NET Core detector implemented; T43 verifies every supported endpoint and metadata variant against emitted facts | Verified |
 | FACT-44 | P2: Components and relations | T35 dependency-injection relation facts implemented; T43 verifies keyed transient and `typeof` implementation paths | Verified |
 | FACT-45 | P2: Components and relations | T36 HTTP relation facts implemented; T43 verifies byte-array/stream and dynamic-header paths | Verified |
@@ -373,33 +373,33 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-47 | P2: Components and relations | T34-T39 retain null targets with explicit reasons for unproven runtime destinations; T43 asserts this for every runtime detector family | Verified |
 | FACT-48 | P2: Components and relations | T39 compile-time references implemented; T43 verifies their exact legal partition and provenance contract | Verified |
 | FACT-49 | P2: Components and relations | T10 versioned contracts and T33 host enforcement implemented; T43 audit confirms all concrete detector descriptors through emitted provenance | Verified |
-| FACT-50 | P2: Diagnostics and coverage | T9 resolution algebra implemented; merge/projection closes in T27/T28 | Implementing |
-| FACT-51 | P2: Diagnostics and coverage | Specify | Pending |
-| FACT-52 | P2: Diagnostics and coverage | Specify | Pending |
-| FACT-53 | P2: Diagnostics and coverage | Specify | Pending |
-| FACT-54 | P2: Diagnostics and coverage | Specify | Pending |
-| FACT-55 | P3: Migration and release | T41 removes v2 paths and closes all 428 ledger rows with executable v3 evidence; T47 performs release quality closure | Implementing |
+| FACT-50 | P2: Diagnostics and coverage | T9 resolution algebra implemented; T27 recomputes it exactly per the normative table on every merge; T28 projects it into persisted coverage | Verified |
+| FACT-51 | P2: Diagnostics and coverage | T19 writes `raw/facts/diagnostics.json`; T28's canonical coverage projection supplies scoped, deterministic diagnostics for evaluation, workspace, compilation, document, validation, generator, and detector events | Verified |
+| FACT-52 | P2: Diagnostics and coverage | T19 writes `raw/facts/coverage.json`; T28 projects every inventoried project/target/document/detector with applicable fact level, attempt, resolution, and diagnostic references | Verified |
+| FACT-53 | P2: Diagnostics and coverage | T13 inventories every project/document inertly, guaranteeing a scope to report even absent a semantic result; T28's twenty-six cases cover every applicability/attempt/resolution outcome, including not-applicable and unattempted | Verified |
+| FACT-54 | P2: Diagnostics and coverage | T19/T28's audit log summarizes requested/effective analysis, trust, restore, isolation, extensions, diagnostics, and coverage counts, carrying only the one permitted timestamp and never machine facts | Verified |
+| FACT-55 | P3: Migration and release | T41's `MigrationLedgerTests` binds all 428 baseline rows to an executable v3 replacement and proves every named v2 production path is absent from the assembly | Verified |
 | FACT-56 | P3: Migration and release | T12 representative factual snapshot implemented; T17/T18 close Markdown/frontmatter snapshots; T45 adds an approved end-to-end Markdown snapshot from a real multi-file fixture | Verified |
 | FACT-57 | P3: Migration and release | T42 language matrix verifies explicit syntax and semantic facts for every required language shape | Verified |
 | FACT-58 | P3: Migration and release | T34-T39 detector suites plus T43's audit and 20 discriminating cases cover every priority detector family with positive, negative, and lookalike assertions | Verified |
 | FACT-59 | P3: Migration and release | T44 proves CLI safety, fallback, extension, timeout, and structural-output boundaries | Verified |
 | FACT-60 | P3: Migration and release | T46 sets `Directory.Build.props`'s `<Version>` to `3.0.0`; a real packed/installed tool run confirms the package's nupkg version and the manifest's `tool_version` field | Verified |
-| FACT-61 | P3: Migration and release | Specify | Pending |
+| FACT-61 | P3: Migration and release | T1-T46's build/format/test gates are all green (1,158 tests, 0 failed); T47 runs the release quality audits; closes only once the mandatory independent Verifier returns PASS | Implementing |
 | FACT-62 | P2: Semantic enrichment | T44 validates the production evaluator process cancellation boundary | Verified |
 | FACT-63 | P2: Semantic enrichment | T44 records parent/child PIDs and proves both gone when cancellation returns | Verified |
 | FACT-64 | P2: Semantic enrichment | T44 real-CLI marker proves an analyzer is not constructed during generator execution | Verified |
 | FACT-65 | P2: Semantic enrichment | T44 asserts semantic fallback manifest requested/effective mode, restore, and isolation fields | Verified |
-| FACT-66 | P2: Components and relations | T31 confirmed library classification and T40 component index projection implemented | Implementing |
-| FACT-67 | P2: Components and relations | T32 shared-dependency ownership and T40 component index projection implemented | Implementing |
-| FACT-68 | P2: Components and relations | T32 standalone library ownership and T40 component index projection implemented | Implementing |
-| FACT-69 | P2: Diagnostics and coverage | T8-T9 diagnostic references shaped; merge/projection closes in T27/T28 | Implementing |
+| FACT-66 | P2: Components and relations | T31 confirmed non-test-library → `library` classification and T40 component index projection implemented | Verified |
+| FACT-67 | P2: Components and relations | T32's multi-consumer case confirms `shared-dependency` classification and T40 component index projection implemented | Verified |
+| FACT-68 | P2: Components and relations | T32's zero-consumer case confirms a library is retained as its own standalone component and T40 component index projection implemented | Verified |
+| FACT-69 | P2: Diagnostics and coverage | T8-T9 diagnostic references shaped; T27's fourteen cases prove diagnostic references are unioned and propagated on every merge outcome; T28 projects them into persisted coverage | Verified |
 | FACT-70 | P3: Migration and release | T12 factual schema version 2 implemented; T18 closes frontmatter schema version 2; T46 confirms both from a real packed/installed run and closes the package version | Verified |
 
 **ID format:** `FACT-[NN]`.
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 70 total, 70 mapped to approved tasks in `tasks.md`, 0 unmapped; implementation has not started.
+**Coverage:** 70 total, 70 mapped to approved tasks in `tasks.md`, 0 unmapped; 69 Verified, 1 (FACT-61) Implementing pending the mandatory Verifier.
 
 ---
 
@@ -407,19 +407,19 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 
 The initial v3 roadmap is complete when all sixteen outcomes below are independently evidenced:
 
-- [ ] Markdown is projected exclusively from validated persisted facts.
-- [ ] Syntax-only fallback emits useful artifacts for every eligible source file without executable analysis.
-- [ ] Project, target, document, symbol, component, and relation identities are stable across absolute roots.
-- [ ] Relations are partitioned, evidence-backed, provenance-backed, and navigable to relative source lines.
-- [ ] ASP.NET Core facts cover controllers, Minimal APIs, authorization, filters, health checks, and entrypoints.
-- [ ] DI facts cover lifetimes, factories, open generics, multiple implementations, keyed services, and local expansions.
-- [ ] HTTP, gRPC, event/messaging, and direct-reference facts require confirmed framework or type evidence.
-- [ ] Project and component classifications follow the technical rules in FACT-38 through FACT-42.
-- [ ] Source-span coverage reconstructs every input source byte exactly once.
-- [ ] Structured coverage distinguishes exact, partial, syntactic, unresolved, not-applicable, and unattempted scopes.
-- [ ] Structured diagnostics preserve every scoped degradation without converting fallback into run failure.
-- [ ] Factual validation rejects all invalid identity, evidence, resolution, provenance, relation-kind, and unresolved-target cases.
-- [ ] Outputs are byte-identical across unchanged inputs and different absolute roots except `raw/log.md`.
-- [ ] The manifest records requested/effective analysis, trust, restore status, isolation, extensions, versions, hashes, coverage, and fragment indexes.
-- [ ] The CLI enforces explicit trust and generator consent before touching output.
-- [ ] Package version `3.0.0`, `schema_version: 2`, the migrated 428-test baseline, new adversarial tests, and the independent verifier all pass.
+- [x] Markdown is projected exclusively from validated persisted facts. (T17, confirmed end-to-end by T45)
+- [x] Syntax-only fallback emits useful artifacts for every eligible source file without executable analysis. (T13, T20, T44)
+- [x] Project, target, document, symbol, component, and relation identities are stable across absolute roots. (T7, T42, T45)
+- [x] Relations are partitioned, evidence-backed, provenance-backed, and navigable to relative source lines. (T34-T40)
+- [x] ASP.NET Core facts cover controllers, Minimal APIs, authorization, filters, health checks, and entrypoints. (T34, T43)
+- [x] DI facts cover lifetimes, factories, open generics, multiple implementations, keyed services, and local expansions. (T35, T43)
+- [x] HTTP, gRPC, event/messaging, and direct-reference facts require confirmed framework or type evidence. (T36-T39, T43)
+- [x] Project and component classifications follow the technical rules in FACT-38 through FACT-42. (T31, T32, T40)
+- [x] Source-span coverage reconstructs every input source byte exactly once. (T14, T42, T45)
+- [x] Structured coverage distinguishes exact, partial, syntactic, unresolved, not-applicable, and unattempted scopes. (T28)
+- [x] Structured diagnostics preserve every scoped degradation without converting fallback into run failure. (T28, T29, T44)
+- [x] Factual validation rejects all invalid identity, evidence, resolution, provenance, relation-kind, and unresolved-target cases. (T11)
+- [x] Outputs are byte-identical across unchanged inputs and different absolute roots except `raw/log.md`. (T45)
+- [x] The manifest records requested/effective analysis, trust, restore status, isolation, extensions, versions, hashes, coverage, and fragment indexes. (T19, T40, independently re-validated by T45)
+- [x] The CLI enforces explicit trust and generator consent before touching output. (T21, T44)
+- [ ] Package version `3.0.0`, `schema_version: 2`, the migrated 428-test baseline, and new adversarial tests all pass (T46, T41-T45); closes once the independent verifier also returns PASS.
