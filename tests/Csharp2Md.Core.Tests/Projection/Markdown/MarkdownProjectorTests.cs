@@ -61,7 +61,7 @@ public sealed class MarkdownProjectorTests
 
         var markdown = MarkdownProjector.Project(fragment);
 
-        Assert.Contains("- `class` â€” syntactic; attributes: Marker", markdown, StringComparison.Ordinal);
+        Assert.Contains("- `class` — syntactic; attributes: Marker", markdown, StringComparison.Ordinal);
         Assert.True(markdown.IndexOf("Factual annotations", StringComparison.Ordinal) < markdown.IndexOf("```csharp", StringComparison.Ordinal));
         Assert.Equal(source, string.Concat(Assert.Single(fragment.Facts.OfType<DocumentFact>()).Sections.Select(static section => section.Source)));
     }

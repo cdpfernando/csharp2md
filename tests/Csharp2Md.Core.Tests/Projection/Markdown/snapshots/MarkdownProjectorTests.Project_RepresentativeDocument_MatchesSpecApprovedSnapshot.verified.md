@@ -2,9 +2,9 @@
 
 ## Factual annotations
 
-- `class` â€” syntactic; attributes: Marker
-- `method` â€” syntactic
-- `namespace` â€” syntactic
+- `class` — syntactic; attributes: Marker
+- `method` — syntactic
+- `namespace` — syntactic
 
 ## Preamble
 

@@ -53,7 +53,7 @@ internal static class MarkdownProjector
         builder.Append("## Factual annotations\n\n");
         foreach (var symbol in symbols)
         {
-            builder.Append("- `").Append(symbol.SymbolKind).Append("` â€” ")
+            builder.Append("- `").Append(symbol.SymbolKind).Append("` — ")
                 .Append(symbol.Header.Resolution.ToString().ToLowerInvariant());
             if (!symbol.Attributes.IsEmpty)
             {
