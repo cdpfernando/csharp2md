@@ -37,7 +37,9 @@ internal static class SyntaxFactExtractor
         var candidates = new List<SyntacticRelationCandidate>();
         var prose = ImmutableDictionary.CreateBuilder<SymbolFactId, ImmutableArray<string>>();
         var ownerByDeclaration = new Dictionary<MemberDeclarationSyntax, SymbolFactId>();
+        var declarationsBySymbolId = new Dictionary<SymbolFactId, MemberDeclarationSyntax>();
         var methodSymbolsByName = new Dictionary<string, SymbolFactId>(StringComparer.Ordinal);
+        var documentTypeNames = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var declaration in root.DescendantNodes().OfType<MemberDeclarationSyntax>())
         {
@@ -60,9 +62,15 @@ internal static class SyntaxFactExtractor
                 ReferencedTypes(declaration));
             symbols.Add(fact);
             ownerByDeclaration[declaration] = symbolId;
+            declarationsBySymbolId[symbolId] = declaration;
             if (declaration is MethodDeclarationSyntax method)
             {
                 methodSymbolsByName.TryAdd(method.Identifier.ValueText, symbolId);
+            }
+
+            if (kind is "class" or "struct" or "interface" or "record" or "record-struct" or "enum" or "delegate")
+            {
+                documentTypeNames.Add(DeclarationName(declaration));
             }
 
             var documentation = XmlDocProse.Extract(declaration).ToImmutableArray();
@@ -141,6 +149,36 @@ internal static class SyntaxFactExtractor
 
             var ownerId = ResolveOwner(creation, ownerByDeclaration, document.DocumentId.ToFactId());
             candidates.Add(MakeCandidate(ownerId, "creates", simpleName, FactResolution.Syntactic, creation, root.SyntaxTree));
+        }
+
+        var claimedTargetsByOwner = candidates
+            .Where(static candidate => candidate.RelationKind is "calls" or "creates" or "inherits" or "implements")
+            .GroupBy(static candidate => candidate.OwnerId)
+            .ToDictionary(
+                static group => group.Key,
+                static group => group.Select(static candidate => candidate.ObservedTarget).ToHashSet(StringComparer.Ordinal));
+
+        foreach (var symbol in symbols)
+        {
+            foreach (var referenced in symbol.RelevantTypeReferences)
+            {
+                var simpleName = SimpleNameFromTypeText(referenced);
+                if (PrimitiveOrInfrastructureTypeNames.Contains(simpleName)
+                    || RelationNoiseFilter.IsLikelyFrameworkType(simpleName)
+                    || documentTypeNames.Contains(simpleName))
+                {
+                    continue;
+                }
+
+                var ownerId = symbol.SymbolId.ToFactId();
+                if (claimedTargetsByOwner.TryGetValue(ownerId, out var claimed) && claimed.Contains(simpleName))
+                {
+                    continue;
+                }
+
+                var declaration = declarationsBySymbolId[symbol.SymbolId];
+                candidates.Add(MakeCandidate(ownerId, "references", simpleName, FactResolution.Syntactic, declaration, root.SyntaxTree));
+            }
         }
 
         var canonicalSymbols = symbols
@@ -601,6 +639,30 @@ internal static class SyntaxFactExtractor
         SimpleNameSyntax simple => simple.Identifier.ValueText,
         _ => NormalizeNode(type),
     };
+
+    /// <summary>
+    /// Primitive keyword types and other ubiquitous infrastructure types that would otherwise pass
+    /// <see cref="RelationNoiseFilter.IsLikelyFrameworkType"/> (whose denylist targets BCL/collection
+    /// shapes, not primitives) but are meaningless as a <c>references</c> target - e.g. a
+    /// <c>CancellationToken</c> parameter naming no application component.
+    /// </summary>
+    private static readonly ImmutableHashSet<string> PrimitiveOrInfrastructureTypeNames = ImmutableHashSet.Create(
+        StringComparer.Ordinal,
+        "bool", "byte", "sbyte", "char", "decimal", "double", "float", "int", "uint", "long", "ulong",
+        "short", "ushort", "string", "object", "void", "dynamic", "CancellationToken");
+
+    /// <summary>
+    /// Derives a bare simple name from an already-normalized <see cref="SymbolFact.RelevantTypeReferences"/>
+    /// text (e.g. "List&lt;PaymentAuthorizer&gt;" -&gt; "List", "Payments.PaymentsBase" -&gt; "PaymentsBase"):
+    /// drop any generic argument list, then take the last dotted segment.
+    /// </summary>
+    private static string SimpleNameFromTypeText(string text)
+    {
+        var genericStart = text.IndexOf('<', StringComparison.Ordinal);
+        var withoutGenerics = genericStart >= 0 ? text[..genericStart] : text;
+        var lastDot = withoutGenerics.LastIndexOf('.');
+        return lastDot >= 0 ? withoutGenerics[(lastDot + 1)..] : withoutGenerics;
+    }
 
     private static FactHeader Header(FactId id) =>
         FactHeader.Create(id, FactKind.Symbol, FactResolution.Syntactic, [Provenance]);

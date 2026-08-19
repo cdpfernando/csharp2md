@@ -451,6 +451,58 @@ public sealed class SyntaxFactExtractorTests
     }
 
     [Fact]
+    public void Extract_PropertyTypedAsApplicationType_EmitsReferences()
+    {
+        const string source = """
+            class Service
+            {
+                PaymentAuthorizer Authorizer { get; set; }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Service.cs", source);
+        var property = Assert.Single(extraction.Symbols, static symbol => symbol.SymbolKind == "property");
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "references");
+        Assert.Equal("PaymentAuthorizer", candidate.ObservedTarget);
+        Assert.Equal(FactResolution.Syntactic, candidate.ShapeConfidence);
+        Assert.Equal(property.SymbolId.ToFactId(), candidate.OwnerId);
+        Assert.True(candidate.StartLine > 0 && candidate.StartColumn > 0);
+    }
+
+    [Fact]
+    public void Extract_ParameterTypedCancellationTokenOrStringOrPrimitive_EmitsNoReferences()
+    {
+        const string source = """
+            class Service
+            {
+                void Run(CancellationToken cancellationToken, string name) { }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Service.cs", source);
+
+        Assert.DoesNotContain(extraction.RelationCandidates, static candidate => candidate.RelationKind == "references");
+    }
+
+    [Fact]
+    public void Extract_TypeAlreadySurfacedViaCreatesOnSameMember_IsNotAlsoEmittedAsReferences()
+    {
+        const string source = """
+            class Service
+            {
+                PaymentAuthorizer Build() => new PaymentAuthorizer();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Service.cs", source);
+
+        Assert.DoesNotContain(extraction.RelationCandidates, static candidate => candidate.RelationKind == "references");
+        var creates = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "creates");
+        Assert.Equal("PaymentAuthorizer", creates.ObservedTarget);
+    }
+
+    [Fact]
     public void Extract_ErrorBearingDeclarationRemainsSyntacticAndMarked()
     {
         var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Broken.cs", "class Broken<T { void Run( }");

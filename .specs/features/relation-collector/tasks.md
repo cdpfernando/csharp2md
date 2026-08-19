@@ -351,10 +351,10 @@ survivor not already claimed by `calls`/`creates`/`inherits`/`implements` for th
 - Skill: NONE
 
 **Done when**:
-- [ ] A property typed as an application-defined type not otherwise referenced by a call/creation on that member emits a `references` candidate
-- [ ] A parameter typed `CancellationToken`/`string`/other denylisted or primitive type does not emit `references`
-- [ ] A type already surfaced via `creates` on the same member is not also emitted as `references`
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] A property typed as an application-defined type not otherwise referenced by a call/creation on that member emits a `references` candidate
+- [x] A parameter typed `CancellationToken`/`string`/other denylisted or primitive type does not emit `references`
+- [x] A type already surfaced via `creates` on the same member is not also emitted as `references`
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick
