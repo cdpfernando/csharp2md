@@ -31,7 +31,7 @@
     "coverage": { "type": "array", "items": { "$ref": "#/$defs/coverage_fact" } }
   },
   "$defs": {
-    "fact_resolution": { "enum": ["exact", "partial", "syntactic", "unresolved", "not-applicable"] },
+    "fact_resolution": { "enum": ["exact", "partial", "syntactic", "heuristic", "candidate", "unresolved", "not-applicable"] },
     "fact_kind": { "enum": ["solution", "project", "target", "document", "source-section", "symbol", "component", "relation"] },
     "relation_partition": { "enum": ["compile-time", "inheritance", "dependency-injection", "http", "grpc", "events"] },
     "fact_level": { "enum": ["solution", "project", "target", "document", "detector"] },

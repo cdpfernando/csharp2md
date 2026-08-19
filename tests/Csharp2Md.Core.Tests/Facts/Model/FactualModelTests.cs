@@ -35,6 +35,12 @@ public sealed class FactualModelTests
         Assert.Equal(expected, FactResolutionAlgebra.AggregateDocument(resolutions));
 
     [Fact]
+    public void FactResolution_DeclaresMembersInDescendingConfidenceOrder() =>
+        Assert.Equal(
+            ["Exact", "Partial", "Syntactic", "Heuristic", "Candidate", "Unresolved", "NotApplicable"],
+            Enum.GetNames<FactResolution>());
+
+    [Fact]
     public void AggregateDocument_UnknownResolution_IsRejected() =>
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             FactResolutionAlgebra.AggregateDocument([(FactResolution)99]));

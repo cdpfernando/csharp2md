@@ -5,6 +5,8 @@ public enum FactResolution
     Exact,
     Partial,
     Syntactic,
+    Heuristic,
+    Candidate,
     Unresolved,
     NotApplicable,
 }
