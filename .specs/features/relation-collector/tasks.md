@@ -383,11 +383,11 @@ without relying on `DetectorHost`.
 - Skill: `dotnet-skills:csharp-coding-standards`
 
 **Done when**:
-- [ ] Given a synthetic set of candidates covering all 10 kinds, produces one `RelationFact` per candidate with the correct `Partition` mapping
-- [ ] Every produced fact has non-empty `Header.Evidence`, a `FactProvenance` with a non-null `DetectorId`, `TargetId = null`, and a non-empty `UnresolvedReason`
-- [ ] Two candidates with the same kind + target_text in one document get distinct `RelationFactId`s via ordinal disambiguation (existing pattern, ported)
-- [ ] Output passes `FactValidator.Validate` cleanly for a realistic document-level input
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Given a synthetic set of candidates covering all 10 kinds, produces one `RelationFact` per candidate with the correct `Partition` mapping
+- [x] Every produced fact has non-empty `Header.Evidence`, a `FactProvenance` with a non-null `DetectorId`, `TargetId = null`, and a non-empty `UnresolvedReason`
+- [x] Two candidates with the same kind + target_text in one document get distinct `RelationFactId`s via ordinal disambiguation (existing pattern, ported)
+- [x] Output passes `FactValidator.Validate` cleanly for a realistic document-level input
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick
