@@ -9,9 +9,14 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Csharp2Md.Core.Analysis.Syntax;
 
 internal sealed record SyntacticRelationCandidate(
-    SymbolFactId OwnerId,
+    FactId OwnerId,
     string RelationKind,
-    string ObservedTarget);
+    string ObservedTarget,
+    FactResolution ShapeConfidence,
+    int StartLine,
+    int StartColumn,
+    int EndLine,
+    int EndColumn);
 
 internal sealed record SyntaxFactExtraction(
     DocumentFact Document,
@@ -61,7 +66,18 @@ internal static class SyntaxFactExtractor
             if (declaration is BaseTypeDeclarationSyntax { BaseList: { } baseList })
             {
                 candidates.AddRange(baseList.Types.Select(type =>
-                    new SyntacticRelationCandidate(symbolId, "base-or-interface", NormalizeNode(type.Type))));
+                {
+                    var span = root.SyntaxTree.GetLineSpan(type.Type.Span);
+                    return new SyntacticRelationCandidate(
+                        symbolId.ToFactId(),
+                        "base-or-interface",
+                        NormalizeNode(type.Type),
+                        FactResolution.Syntactic,
+                        span.StartLinePosition.Line + 1,
+                        span.StartLinePosition.Character + 1,
+                        span.EndLinePosition.Line + 1,
+                        span.EndLinePosition.Character + 1);
+                }));
             }
         }
 

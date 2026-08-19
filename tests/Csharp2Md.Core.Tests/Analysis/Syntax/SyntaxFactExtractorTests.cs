@@ -86,6 +86,32 @@ public sealed class SyntaxFactExtractorTests
         Assert.Equal(["Base", "IDisposable"], extraction.RelationCandidates.Select(static candidate => candidate.ObservedTarget));
         Assert.Equal(["int", "string"], method.RelevantTypeReferences.ToArray());
         Assert.Contains("Runs work.", Assert.Single(extraction.XmlProse[worker.SymbolId]), StringComparison.Ordinal);
+        Assert.All(extraction.RelationCandidates, static candidate =>
+        {
+            Assert.True(candidate.StartLine > 0 && candidate.StartColumn > 0);
+            Assert.True(candidate.EndLine > 0 && candidate.EndColumn > 0);
+            Assert.True(
+                candidate.EndLine > candidate.StartLine ||
+                (candidate.EndLine == candidate.StartLine && candidate.EndColumn >= candidate.StartColumn));
+        });
+        Assert.All(extraction.RelationCandidates, static candidate =>
+            Assert.Equal(Csharp2Md.Core.Facts.Model.FactResolution.Syntactic, candidate.ShapeConfidence));
+    }
+
+    [Fact]
+    public void Extract_BaseListCandidateSpan_PointsAtTheExactSourceLocationOfTheEntry()
+    {
+        const string source = "class Worker : Base { }";
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Worker.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates);
+        Assert.Equal("Base", candidate.ObservedTarget);
+        Assert.Equal(1, candidate.StartLine);
+        Assert.Equal(1, candidate.EndLine);
+        Assert.Equal(
+            "Base",
+            source.Substring(candidate.StartColumn - 1, candidate.EndColumn - candidate.StartColumn));
     }
 
     [Fact]

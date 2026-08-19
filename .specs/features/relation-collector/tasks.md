@@ -171,9 +171,9 @@ for now — kind-splitting is T6.
 - Skill: NONE
 
 **Done when**:
-- [ ] `SyntacticRelationCandidate` carries a real evidence span for every candidate (no candidate has a zero/default span)
-- [ ] Existing `SyntaxFactExtractorTests` covering `base-or-interface` pass unmodified in assertion intent (span assertions added, not replacing existing ones)
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] `SyntacticRelationCandidate` carries a real evidence span for every candidate (no candidate has a zero/default span)
+- [x] Existing `SyntaxFactExtractorTests` covering `base-or-interface` pass unmodified in assertion intent (span assertions added, not replacing existing ones)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick
