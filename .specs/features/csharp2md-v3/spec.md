@@ -333,10 +333,10 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-07 | P1: Safe syntax-only default | T6 analysis default; engine enforcement closes in T20 | Implementing |
 | FACT-08 | P1: Factual fragments | T6 external analysis request/result contract | Implementing |
 | FACT-09 | P1: Factual fragments | T7-T12 factual values, families, validation, and JSON contracts implemented | Implementing |
-| FACT-10 | P1: Factual fragments | T7 stable identity grammar implemented; extraction/enrichment closes in T15/T26 | Implementing |
+| FACT-10 | P1: Factual fragments | T7 stable identity grammar implemented; extraction/enrichment closes in T15/T26; T42 verifies relocation and preceding-edit stability | Verified |
 | FACT-11 | P1: Factual fragments | T11 validated-fragment boundary implemented; persistence/projection closes in T16/T17 | Implementing |
 | FACT-12 | P1: Factual fragments | T11 duplicate/reference rejection implemented; engine exit behavior closes in T20 | Implementing |
-| FACT-13 | P1: Factual fragments | T9 state and T11 exact error-symbol rejection implemented | Implementing |
+| FACT-13 | P1: Factual fragments | T9 state and T11 exact error-symbol rejection implemented; T42 verifies error symbols retain syntactic identity and never become exact | Verified |
 | FACT-14 | P1: Factual fragments | T8 constraints and T11 document/path/range validation implemented | Implementing |
 | FACT-15 | P1: Factual fragments | T8-T10 provenance contracts and T11 runtime enforcement implemented | Implementing |
 | FACT-16 | P1: Factual fragments | T11 compile-time-only project/package reference validation implemented | Implementing |
@@ -344,7 +344,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-18 | P1: Deterministic output | T19 skeleton and T40 factual relation/component projection implemented | Implementing |
 | FACT-19 | P1: Deterministic output | T12 canonical source-generated JSON implemented; persistence/output closes in T16/T19 | Implementing |
 | FACT-20 | P1: Deterministic output | Specify | Pending |
-| FACT-21 | P1: Deterministic output | Specify | Pending |
+| FACT-21 | P1: Deterministic output | T14 source section partition implemented; T42 verifies exact reconstruction after location movement | Verified |
 | FACT-22 | P1: Deterministic output | Specify | Pending |
 | FACT-23 | P1: Deterministic output | Specify | Pending |
 | FACT-24 | P1: Deterministic output | Specify | Pending |
@@ -380,7 +380,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-54 | P2: Diagnostics and coverage | Specify | Pending |
 | FACT-55 | P3: Migration and release | T41 removes v2 paths and closes all 428 ledger rows with executable v3 evidence; T47 performs release quality closure | Implementing |
 | FACT-56 | P3: Migration and release | T12 representative factual snapshot implemented; Markdown/frontmatter snapshots close in T17/T18 | Implementing |
-| FACT-57 | P3: Migration and release | Specify | Pending |
+| FACT-57 | P3: Migration and release | T42 language matrix verifies explicit syntax and semantic facts for every required language shape | Verified |
 | FACT-58 | P3: Migration and release | T34-T39 (ASP.NET Core, dependency-injection, HTTP, gRPC, messaging, compile-time references) carry 107 combined positive/negative/lookalike spec-derived cases across every priority detector family | Implementing |
 | FACT-59 | P3: Migration and release | Specify | Pending |
 | FACT-60 | P3: Migration and release | Specify | Pending |

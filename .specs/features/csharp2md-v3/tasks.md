@@ -1180,10 +1180,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Every FACT-57 language shape has explicit expected syntax and semantic facts.
-- [ ] Root relocation and unrelated preceding edits preserve IDs while evidence locations move correctly.
-- [ ] Error symbols never become exact and every source byte remains covered once.
-- [ ] At least ten new theory cases pass; full gate records no discovered-test decrease.
+- [x] Every FACT-57 language shape has explicit expected syntax and semantic facts.
+- [x] Root relocation and unrelated preceding edits preserve IDs while evidence locations move correctly.
+- [x] Error symbols never become exact and every source byte remains covered once.
+- [x] At least ten new theory cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-19)**: `LanguageMatrixTests` adds ten theory cases covering overloads, generic types and methods, records, record structs, interfaces, implementations, overrides, conditional compilation, and generic interfaces with explicit syntactic kinds plus exact semantic identities. Its error-symbol case proves the syntactic ID is retained and resolution is `Unresolved`; its stability case proves a preceding unrelated declaration shifts source-section offsets without changing the stable symbol ID, while both complete section sets reconstruct their source exactly. The full gate passed 1,119 tests with 0 failed and 0 skipped, an increase of 12 from T41's 1,107-test baseline.
 
 **Tests**: integration
 **Gate**: full
