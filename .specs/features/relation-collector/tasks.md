@@ -323,12 +323,12 @@ type not on the same denylist, and not already the argument of a claimed `publis
 - Skill: NONE
 
 **Done when**:
-- [ ] `paymentsClient.AuthorizePayment(...)`-shaped call (the fixture case, `Acme.Orders/OrderService.cs`) → `calls`, `target_text=paymentsClient.AuthorizePayment`
-- [ ] `new List<int>()` does not emit `creates` (denylisted)
-- [ ] `new PaymentAuthorizer()` (application type) emits `creates`
-- [ ] A call already classified as `http-call`/`publishes` by T7/T8 is not also emitted as `calls`
-- [ ] `new PaymentProcessed(...)` inside a `PublishAsync(new PaymentProcessed(...))` call is not double-emitted as both `publishes`-target and `creates`
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] `paymentsClient.AuthorizePayment(...)`-shaped call (the fixture case, `Acme.Orders/OrderService.cs`) → `calls`, `target_text=paymentsClient.AuthorizePayment`
+- [x] `new List<int>()` does not emit `creates` (denylisted)
+- [x] `new PaymentAuthorizer()` (application type) emits `creates`
+- [x] A call already classified as `http-call`/`publishes` by T7/T8 is not also emitted as `calls`
+- [x] `new PaymentProcessed(...)` inside a `PublishAsync(new PaymentProcessed(...))` call is not double-emitted as both `publishes`-target and `creates`
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick

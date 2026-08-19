@@ -1,3 +1,4 @@
+using Csharp2Md.Core.Analysis.Relations;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
@@ -97,24 +98,49 @@ internal static class SyntaxFactExtractor
             }
         }
 
+        var consumedObjectCreations = new HashSet<ObjectCreationExpressionSyntax>();
+
         foreach (var invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
-            var ownerId = invocation.Ancestors().OfType<MemberDeclarationSyntax>().FirstOrDefault() is { } enclosing
-                && ownerByDeclaration.TryGetValue(enclosing, out var enclosingSymbolId)
-                ? enclosingSymbolId.ToFactId()
-                : document.DocumentId.ToFactId();
+            var ownerId = ResolveOwner(invocation, ownerByDeclaration, document.DocumentId.ToFactId());
 
-            var messagingCandidates = ClassifyMessagingInvocation(invocation, root.SyntaxTree, ownerId, methodSymbolsByName).ToList();
-            candidates.AddRange(messagingCandidates);
-            if (messagingCandidates.Count > 0)
+            if (IsMessagingShapedMemberName(invocation))
             {
+                // Per spec.md's Edge Case, a Publish/Subscribe-named call that yields no extractable
+                // target still claims the invocation - it emits no relation at all, never falls
+                // through to a "calls"/"http-call" guess.
+                candidates.AddRange(ClassifyMessagingInvocation(
+                    invocation, root.SyntaxTree, ownerId, methodSymbolsByName, consumedObjectCreations));
                 continue;
             }
 
             if (ClassifyHttpInvocation(invocation, root.SyntaxTree, ownerId) is { } httpCandidate)
             {
                 candidates.Add(httpCandidate);
+                continue;
             }
+
+            if (ClassifyCallsInvocation(invocation, root.SyntaxTree, ownerId) is { } callsCandidate)
+            {
+                candidates.Add(callsCandidate);
+            }
+        }
+
+        foreach (var creation in root.DescendantNodes().OfType<ObjectCreationExpressionSyntax>())
+        {
+            if (consumedObjectCreations.Contains(creation))
+            {
+                continue;
+            }
+
+            var simpleName = SimpleTypeName(creation.Type);
+            if (RelationNoiseFilter.IsLikelyFrameworkType(simpleName))
+            {
+                continue;
+            }
+
+            var ownerId = ResolveOwner(creation, ownerByDeclaration, document.DocumentId.ToFactId());
+            candidates.Add(MakeCandidate(ownerId, "creates", simpleName, FactResolution.Syntactic, creation, root.SyntaxTree));
         }
 
         var canonicalSymbols = symbols
@@ -301,11 +327,17 @@ internal static class SyntaxFactExtractor
     /// <c>Subscribe&lt;T&gt;</c> whose single argument is a bare identifier naming an existing method
     /// in this document additionally yields a <c>handles</c> candidate owned by that method.
     /// </summary>
+    private static bool IsMessagingShapedMemberName(InvocationExpressionSyntax invocation) =>
+        invocation.Expression is MemberAccessExpressionSyntax memberAccess
+        && (PublishMemberNames.Contains(memberAccess.Name.Identifier.ValueText)
+            || SubscribeMemberNames.Contains(memberAccess.Name.Identifier.ValueText));
+
     private static IEnumerable<SyntacticRelationCandidate> ClassifyMessagingInvocation(
         InvocationExpressionSyntax invocation,
         SyntaxTree tree,
         FactId ownerId,
-        IReadOnlyDictionary<string, SymbolFactId> methodSymbolsByName)
+        IReadOnlyDictionary<string, SymbolFactId> methodSymbolsByName,
+        HashSet<ObjectCreationExpressionSyntax> consumedObjectCreations)
     {
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
@@ -319,11 +351,16 @@ internal static class SyntaxFactExtractor
 
         if (PublishMemberNames.Contains(memberName))
         {
-            string? targetSimpleName = explicitTypeArgument is not null
-                ? SimpleTypeName(explicitTypeArgument)
-                : invocation.ArgumentList.Arguments is [{ Expression: ObjectCreationExpressionSyntax creation }, ..]
-                    ? SimpleTypeName(creation.Type)
-                    : null;
+            string? targetSimpleName = null;
+            if (explicitTypeArgument is not null)
+            {
+                targetSimpleName = SimpleTypeName(explicitTypeArgument);
+            }
+            else if (invocation.ArgumentList.Arguments is [{ Expression: ObjectCreationExpressionSyntax creation }, ..])
+            {
+                targetSimpleName = SimpleTypeName(creation.Type);
+                consumedObjectCreations.Add(creation);
+            }
 
             if (targetSimpleName is not null)
             {
@@ -448,6 +485,47 @@ internal static class SyntaxFactExtractor
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// A syntax node's owning candidate identity: the nearest enclosing member's own
+    /// <see cref="SymbolFactId"/> (the same identity space assigned per <see cref="MemberDeclarationSyntax"/>
+    /// in the main declaration loop), falling back to the document itself for code with no enclosing
+    /// member (e.g. top-level-statement <c>Program.cs</c> bodies).
+    /// </summary>
+    private static FactId ResolveOwner(
+        SyntaxNode node,
+        IReadOnlyDictionary<MemberDeclarationSyntax, SymbolFactId> ownerByDeclaration,
+        FactId documentFallback) =>
+        node.Ancestors().OfType<MemberDeclarationSyntax>().FirstOrDefault() is { } enclosing
+            && ownerByDeclaration.TryGetValue(enclosing, out var symbolId)
+            ? symbolId.ToFactId()
+            : documentFallback;
+
+    /// <summary>
+    /// Fallback "calls" classification for a member-access invocation not already claimed by
+    /// messaging/HTTP: the receiver's syntactic type - a locally-declared/parameter type when known,
+    /// else the receiver's own identifier text (covers a static-type receiver like
+    /// <c>Guid.NewGuid()</c>, which reads identically to a variable receiver in syntax alone) - must
+    /// not be on the shared <see cref="RelationNoiseFilter"/> denylist (RELC-12/RELC-16).
+    /// </summary>
+    private static SyntacticRelationCandidate? ClassifyCallsInvocation(
+        InvocationExpressionSyntax invocation, SyntaxTree tree, FactId ownerId)
+    {
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        {
+            return null;
+        }
+
+        var receiverTypeName = DeclaredReceiverTypeName(memberAccess.Expression)
+            ?? (memberAccess.Expression is IdentifierNameSyntax identifier ? identifier.Identifier.ValueText : null);
+        if (receiverTypeName is not null && RelationNoiseFilter.IsLikelyFrameworkType(receiverTypeName))
+        {
+            return null;
+        }
+
+        var targetText = $"{NormalizeNode(memberAccess.Expression)}.{memberAccess.Name.Identifier.ValueText}";
+        return MakeCandidate(ownerId, "calls", targetText, FactResolution.Syntactic, invocation, tree);
     }
 
     private static SyntacticRelationCandidate MakeCandidate(

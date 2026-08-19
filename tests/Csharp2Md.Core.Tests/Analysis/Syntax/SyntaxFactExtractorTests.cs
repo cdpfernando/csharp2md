@@ -86,9 +86,14 @@ public sealed class SyntaxFactExtractorTests
         Assert.Equal(["Marker"], worker.Attributes.ToArray());
         // Sorted by (OwnerId, RelationKind, ObservedTarget): "implements" < "inherits" ordinally, so
         // T6's inherits/implements split reorders these relative to ObservedTarget's own alphabetical order.
+        // Scoped to inherits/implements: T9's "calls" pass also (correctly, per RELC-12) surfaces
+        // count.ToString() from the method body, which is out of scope for this base-list assertion.
         Assert.Equal(
             new[] { "Base", "IDisposable" }.Order(StringComparer.Ordinal),
-            extraction.RelationCandidates.Select(static candidate => candidate.ObservedTarget).Order(StringComparer.Ordinal));
+            extraction.RelationCandidates
+                .Where(static candidate => candidate.RelationKind is "inherits" or "implements")
+                .Select(static candidate => candidate.ObservedTarget)
+                .Order(StringComparer.Ordinal));
         Assert.Equal(["int", "string"], method.RelevantTypeReferences.ToArray());
         Assert.Contains("Runs work.", Assert.Single(extraction.XmlProse[worker.SymbolId]), StringComparison.Ordinal);
         Assert.All(extraction.RelationCandidates, static candidate =>
@@ -347,6 +352,102 @@ public sealed class SyntaxFactExtractorTests
         var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Service.cs", source);
 
         Assert.DoesNotContain(extraction.RelationCandidates, static candidate => candidate.RelationKind == "http-call");
+    }
+
+    [Fact]
+    public void Extract_MemberAccessInvocationOnApplicationTypedReceiver_EmitsCallsWithReceiverDotMember()
+    {
+        const string source = """
+            class OrderService
+            {
+                Task<string> Run(PaymentsClient paymentsClient) => paymentsClient.AuthorizePayment("1", 2m);
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal("paymentsClient.AuthorizePayment", candidate.ObservedTarget);
+        Assert.Equal(FactResolution.Syntactic, candidate.ShapeConfidence);
+    }
+
+    [Fact]
+    public void Extract_NewOfDenylistedFrameworkType_EmitsNoCreates()
+    {
+        const string source = """
+            class C
+            {
+                void Run() { var list = new List<int>(); }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/C.cs", source);
+
+        Assert.DoesNotContain(extraction.RelationCandidates, static candidate => candidate.RelationKind == "creates");
+    }
+
+    [Fact]
+    public void Extract_NewOfApplicationType_EmitsCreates()
+    {
+        const string source = """
+            class C
+            {
+                void Run() { var authorizer = new PaymentAuthorizer(); }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/C.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "creates");
+        Assert.Equal("PaymentAuthorizer", candidate.ObservedTarget);
+        Assert.Equal(FactResolution.Syntactic, candidate.ShapeConfidence);
+    }
+
+    [Fact]
+    public void Extract_InvocationAlreadyClassifiedAsPublishes_IsNotAlsoEmittedAsCalls()
+    {
+        const string source = """
+            class Bus
+            {
+                void Run(IEventBus bus) => bus.PublishAsync(new PaymentProcessed());
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Bus.cs", source);
+
+        Assert.DoesNotContain(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+    }
+
+    [Fact]
+    public void Extract_ObjectCreationConsumedAsPublishesTarget_IsNotDoubleEmittedAsCreates()
+    {
+        const string source = """
+            class Bus
+            {
+                void Run(IEventBus bus) => bus.PublishAsync(new PaymentProcessed());
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Bus.cs", source);
+
+        Assert.DoesNotContain(extraction.RelationCandidates, static candidate => candidate.RelationKind == "creates");
+        var publishes = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "publishes");
+        Assert.Equal("PaymentProcessed", publishes.ObservedTarget);
+    }
+
+    [Fact]
+    public void Extract_InvocationOnDenylistedFrameworkTypeReceiver_EmitsNoCalls()
+    {
+        const string source = """
+            class C
+            {
+                void Run() => Guid.NewGuid();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/C.cs", source);
+
+        Assert.DoesNotContain(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
     }
 
     [Fact]
