@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 2,
+  "next_id": 4,
   "lessons": [
     {
       "id": "L-001",
@@ -22,6 +22,42 @@
       ],
       "created": "2026-08-15T05:29:47Z",
       "last_seen": "2026-08-15T05:29:47Z"
+    },
+    {
+      "id": "L-002",
+      "key": "surviving_mutant::when a detector confirms evidence by walking a type s identity add a lookalike test using a type literally sharing the real type s simple name in a foreign namespace not just a differently named lookalike so a fully qualified to simple name weakening is caught",
+      "text": "When a detector confirms evidence by walking a type's identity, add a lookalike test using a type literally sharing the real type's simple name in a foreign namespace, not just a differently-named lookalike, so a fully-qualified-to-simple-name weakening is caught.",
+      "signal": "surviving_mutant",
+      "scope": "detection",
+      "status": "candidate",
+      "features": [
+        "csharp2md-v3"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/Csharp2Md.Core/Detection/Http/HttpRelationDetector.cs:234 (detection)"
+      ],
+      "created": "2026-08-19T13:10:28Z",
+      "last_seen": "2026-08-19T13:10:28Z"
+    },
+    {
+      "id": "L-003",
+      "key": "spec_precision_gap::a migration ledger s mechanized proof must bind each individual baseline row to its own named replacement assertion not a shared category representative method or the every row has a replacement claim is unverified at the granularity it advertises",
+      "text": "A migration ledger's mechanized proof must bind each individual baseline row to its own named replacement assertion, not a shared category-representative method, or the 'every row has a replacement' claim is unverified at the granularity it advertises.",
+      "signal": "spec_precision_gap",
+      "scope": "test-migration",
+      "status": "candidate",
+      "features": [
+        "csharp2md-v3"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tests/Csharp2Md.Core.Tests/Analysis/MigrationLedgerTests.cs:49-64 (test-migration)"
+      ],
+      "created": "2026-08-19T13:10:30Z",
+      "last_seen": "2026-08-19T13:10:30Z"
     }
   ]
 }

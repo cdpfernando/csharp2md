@@ -384,7 +384,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-58 | P3: Migration and release | T34-T39 detector suites plus T43's audit and 20 discriminating cases cover every priority detector family with positive, negative, and lookalike assertions | Verified |
 | FACT-59 | P3: Migration and release | T44 proves CLI safety, fallback, extension, timeout, and structural-output boundaries | Verified |
 | FACT-60 | P3: Migration and release | T46 sets `Directory.Build.props`'s `<Version>` to `3.0.0`; a real packed/installed tool run confirms the package's nupkg version and the manifest's `tool_version` field | Verified |
-| FACT-61 | P3: Migration and release | T1-T46's build/format/test gates are all green (1,158 tests, 0 failed); T47 runs the release quality audits; closes only once the mandatory independent Verifier returns PASS | Implementing |
+| FACT-61 | P3: Migration and release | T1-T47's build/format/test gates are green; the mandatory independent Verifier ran two passes (`.specs/features/csharp2md-v3/validation.md`) — an initial run found two real gaps (fixed in `783a59a`/`5a1d026`), and the re-verify pass returned PASS with a 5/5-killed discrimination sensor | Verified |
 | FACT-62 | P2: Semantic enrichment | T44 validates the production evaluator process cancellation boundary | Verified |
 | FACT-63 | P2: Semantic enrichment | T44 records parent/child PIDs and proves both gone when cancellation returns | Verified |
 | FACT-64 | P2: Semantic enrichment | T44 real-CLI marker proves an analyzer is not constructed during generator execution | Verified |
@@ -399,7 +399,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 70 total, 70 mapped to approved tasks in `tasks.md`, 0 unmapped; 69 Verified, 1 (FACT-61) Implementing pending the mandatory Verifier.
+**Coverage:** 70 total, 70 mapped to approved tasks in `tasks.md`, 0 unmapped; 70/70 Verified.
 
 ---
 
@@ -422,4 +422,4 @@ The initial v3 roadmap is complete when all sixteen outcomes below are independe
 - [x] Outputs are byte-identical across unchanged inputs and different absolute roots except `raw/log.md`. (T45)
 - [x] The manifest records requested/effective analysis, trust, restore status, isolation, extensions, versions, hashes, coverage, and fragment indexes. (T19, T40, independently re-validated by T45)
 - [x] The CLI enforces explicit trust and generator consent before touching output. (T21, T44)
-- [ ] Package version `3.0.0`, `schema_version: 2`, the migrated 428-test baseline, and new adversarial tests all pass (T46, T41-T45); closes once the independent verifier also returns PASS.
+- [x] Package version `3.0.0`, `schema_version: 2`, the migrated 428-test baseline, new adversarial tests, and the independent verifier all pass (T46, T41-T45; Verifier PASS in `.specs/features/csharp2md-v3/validation.md` after one fix→re-verify iteration).

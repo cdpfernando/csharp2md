@@ -20,6 +20,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: P2-14 / src/Csharp2Md.Core/Graph/GraphBuilder.cs:109 (spec-authoring)
 - last seen: 2026-08-15T05:29:47Z
 
+### L-002 - When a detector confirms evidence by walking a type's identity, add a lookalike test using a type literally sharing the real type's simple name in a foreign namespace, not just a differently-named lookalike, so a fully-qualified-to-simple-name weakening is caught.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `detection` · harmful: 0
+- features: csharp2md-v3
+- evidence: src/Csharp2Md.Core/Detection/Http/HttpRelationDetector.cs:234 (detection)
+- last seen: 2026-08-19T13:10:28Z
+
+### L-003 - A migration ledger's mechanized proof must bind each individual baseline row to its own named replacement assertion, not a shared category-representative method, or the 'every row has a replacement' claim is unverified at the granularity it advertises.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `test-migration` · harmful: 0
+- features: csharp2md-v3
+- evidence: tests/Csharp2Md.Core.Tests/Analysis/MigrationLedgerTests.cs:49-64 (test-migration)
+- last seen: 2026-08-19T13:10:30Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
