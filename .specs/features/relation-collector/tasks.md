@@ -412,9 +412,14 @@ earlier in the same method).
 - Skill: NONE
 
 **Done when**:
-- [ ] Running `AnalysisEngine.AnalyzeAsync` against `fixtures/SyntheticSolution` in **syntax-only mode** (default) produces non-empty `subscribes`/`handles`/`publishes`/`http-client`/`http-call`/`calls`/`inherits` relations in the persisted fragments for `Acme.Payments/PaymentsService.cs` and `Acme.Orders/OrderService.cs` — a new integration test, following the `V3DeterminismTests.cs` fixture-driven pattern, asserts this directly (this is literally spec.md's P1 and P2 Independent Tests)
-- [ ] The existing `V3DeterminismTests` (byte-identical output across two roots, manifest hash integrity) still pass unmodified — relation facts must be as deterministic as every other fact kind
-- [ ] Gate check passes: `dotnet test csharp2md.slnx --filter "Category=Integration"` then full `dotnet test csharp2md.slnx`
+- [x] Running `AnalysisEngine.AnalyzeAsync` against `fixtures/SyntheticSolution` in **syntax-only mode** (default) produces non-empty `subscribes`/`handles`/`publishes`/`http-client`/`http-call`/`calls`/`inherits` relations in the persisted fragments for `Acme.Payments/PaymentsService.cs` and `Acme.Orders/OrderService.cs` — a new integration test, following the `V3DeterminismTests.cs` fixture-driven pattern, asserts this directly (this is literally spec.md's P1 and P2 Independent Tests)
+- [x] The existing `V3DeterminismTests` (byte-identical output across two roots, manifest hash integrity) still pass unmodified — relation facts must be as deterministic as every other fact kind
+- [x] Gate check passes: `dotnet test csharp2md.slnx --filter "Category=Integration"` then full `dotnet test csharp2md.slnx`
+
+> Note: `V3DeterminismTests`' approved Markdown snapshot for `OrderService.cs.md` legitimately shifted
+> (`relation_count: 0` → `9`, `relations: {}` → `syntactic: 6, unresolved: 3`) since this is exactly the
+> `relations: []` defect closing — re-approved, not silently weakened, per design.md's note that a snapshot
+> whose relation/symbol mix spans a new resolution kind gets re-approved as part of this feature.
 
 **Tests**: integration
 **Gate**: full

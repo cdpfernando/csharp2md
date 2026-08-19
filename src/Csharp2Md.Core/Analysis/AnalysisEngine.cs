@@ -1,6 +1,7 @@
 using System.Text;
 using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Analysis.Inventory;
+using Csharp2Md.Core.Analysis.Relations;
 using Csharp2Md.Core.Analysis.Semantics;
 using Csharp2Md.Core.Analysis.Semantics.MSBuild;
 using Csharp2Md.Core.Analysis.Semantics.Roslyn;
@@ -245,9 +246,12 @@ public sealed class AnalysisEngine
                     .Where(static symbol => symbol.ContainsErrorSymbol)
                     .Select(static symbol => symbol.SymbolId)
                     .ToHashSet();
+                var relationFacts = RelationCollector.CreateFacts(
+                    extraction.Document.DocumentId, relativePath, extraction.RelationCandidates);
                 var baseline = new IFact[] { documentFact }
                     .Concat(extraction.Document.Sections)
-                    .Concat(extraction.Symbols.Where(symbol => !errorIds.Contains(symbol.SymbolId)));
+                    .Concat(extraction.Symbols.Where(symbol => !errorIds.Contains(symbol.SymbolId)))
+                    .Concat(relationFacts);
                 var merged = FactMerger.Merge(baseline, document.EnrichedSymbols, document.Diagnostics);
                 analysisDiagnostics.AddRange(merged.StructuralDiagnostics);
                 if (!merged.IsValid)
