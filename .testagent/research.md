@@ -27,3 +27,10 @@ Extend the six existing factual detector suites. Production code is unchanged.
 - xUnit 2 on VSTest; detector integration tests use `[Trait("Category", "Integration")]`.
 - Existing theory data drives a real Roslyn compilation and asserts emitted facts, evidence, provenance, resolution, nullable targets, and reasons.
 - Compile-time reference facts deliberately have no source evidence because their origin is evaluated project data.
+
+# T44 security-boundary research
+
+- Syntax-only lacked marker-backed CLI proof that it never resolves `dotnet`.
+- Generator behavior needed real CLI inventory, not only adapter-level markers.
+- Fallback output needed the complete manifest contract, and process cleanup needed the production runner.
+- The new suite uses CLI markers, compiled analyzer/generator extensions, a missing-SDK fixture, and recorded process PIDs.

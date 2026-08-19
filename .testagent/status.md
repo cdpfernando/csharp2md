@@ -22,3 +22,18 @@ No assertion-free or trivial-only new tests were added. The early `Assert.Empty`
 - Changing `AddKeyedTransient` from `transient` to `scoped` failed the focused DI suite.
 - Changing Minimal API `MapPatch` from `PATCH` to `POST` failed the focused ASP.NET suite.
 - Both mutations were reverted before the final gate.
+
+# T44 test quality review
+
+| Boundary | Observable proof |
+| --- | --- |
+| Syntax-only | Real CLI leaves a path-first `dotnet.cmd` marker absent. |
+| Invalid requests | Real CLI exits 1 and preserves a nested binary sentinel. |
+| Fallback | Missing SDK retains syntax facts and coverage, emits C2M-EVAL-001, and exits 0. |
+| Manifest | Requested/effective modes, restore flag, and isolation are exact. |
+| Extensions | CLI executes only the opted-in generator; analyzer marker remains absent. |
+| Generator failure | Syntax artifacts remain with C2M-GEN-003 and exit 0. |
+| Process tree | Production `EvaluationProcessRunner` kills recorded parent and child PIDs. |
+| Structural invalidity | CLI publishes diagnostics and exits 1. |
+
+The focused suite passed 13 tests. Assertions inspect artifacts, markers, PIDs, exit codes, diagnostics, manifest fields, and sentinel bytes rather than internal call structure.

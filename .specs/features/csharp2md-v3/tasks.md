@@ -1232,10 +1232,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Every FACT-59 security/fallback boundary is asserted at the deepest observable interface available.
-- [ ] Invalid requests preserve sentinel output; degraded valid runs retain syntax facts/coverage and exit 0; structural invalidity exits 1.
-- [ ] Process and extension markers prove absence/presence, not merely returned flags.
-- [ ] At least twelve new integration/e2e cases pass; full gate records no count decrease.
+- [x] Every FACT-59 security/fallback boundary is asserted at the deepest observable interface available.
+- [x] Invalid requests preserve sentinel output; degraded valid runs retain syntax facts/coverage and exit 0; structural invalidity exits 1.
+- [x] Process and extension markers prove absence/presence, not merely returned flags.
+- [x] At least twelve new integration/e2e cases pass; full gate records no count decrease.
+
+**Completed evidence (2026-08-19)**: V3SecurityBoundaryTests adds 13 integration cases using the real CLI, a path-first dotnet marker, compiled marker analyzer/generator extensions, a missing-SDK project, nested binary sentinels, and production EvaluationProcessRunner parent/child PID checks. The full gate passed 1,152 tests with 0 failures; format verification also passed.
 
 **Tests**: integration
 **Gate**: full

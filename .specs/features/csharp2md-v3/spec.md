@@ -325,11 +325,11 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | FACT-01 | P1: Safe syntax-only default | T6 analysis contracts; engine/CLI enforcement closes in T20/T21 | Implementing |
-| FACT-02 | P1: Safe syntax-only default | Specify | Pending |
+| FACT-02 | P1: Safe syntax-only default | T44 real-CLI marker tests prove default and explicit syntax-only never invoke dotnet | Verified |
 | FACT-03 | P1: Safe syntax-only default | Specify | Pending |
-| FACT-04 | P1: Safe syntax-only default | T6 typed request validation; engine/CLI enforcement closes in T20/T21 | Implementing |
-| FACT-05 | P1: Safe syntax-only default | T6 typed request validation; engine/CLI enforcement closes in T20/T21 | Implementing |
-| FACT-06 | P1: Safe syntax-only default | T6 typed request validation; engine/CLI enforcement closes in T20/T21 | Implementing |
+| FACT-04 | P1: Safe syntax-only default | T44 proves trust rejection preserves nested output sentinels | Verified |
+| FACT-05 | P1: Safe syntax-only default | T44 proves generator opt-in rejection preserves nested output sentinels | Verified |
+| FACT-06 | P1: Safe syntax-only default | T44 proves zero, negative, and unparsable timeouts preserve nested output sentinels | Verified |
 | FACT-07 | P1: Safe syntax-only default | T6 analysis default; engine enforcement closes in T20 | Implementing |
 | FACT-08 | P1: Factual fragments | T6 external analysis request/result contract | Implementing |
 | FACT-09 | P1: Factual fragments | T7-T12 factual values, families, validation, and JSON contracts implemented | Implementing |
@@ -353,13 +353,13 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-27 | P2: Semantic enrichment | T2 import-path-only preprocessing viability proven; production closes in T22 | Implementing |
 | FACT-28 | P2: Semantic enrichment | T2 `ArgumentList` and T3 evaluator lifecycle proven; production closes in T22 | Implementing |
 | FACT-29 | P2: Semantic enrichment | T2 inert extension inventory proven; production closes in T22 | Implementing |
-| FACT-30 | P2: Semantic enrichment | T4/T5 disabled generator and sanitized compilation boundaries proven; production closes in T24 | Implementing |
-| FACT-31 | P2: Semantic enrichment | T5 trusted generator-only execution and diagnostics proven; production closes in T24 | Implementing |
+| FACT-30 | P2: Semantic enrichment | T44 real-CLI marker extension remains unloaded without opt-in | Verified |
+| FACT-31 | P2: Semantic enrichment | T44 real-CLI opt-in executes only the generator, records it, and scopes generator failure | Verified |
 | FACT-32 | P2: Semantic enrichment | Specify | Pending |
 | FACT-33 | P2: Semantic enrichment | T4 post-sanitation binding and target identity proven; production closes in T23/T26 | Implementing |
-| FACT-34 | P2: Semantic enrichment | T4 scoped compilation fallback viability proven; production closes in T22-T29 | Implementing |
+| FACT-34 | P2: Semantic enrichment | T44 missing-SDK and failing-generator CLI runs retain syntax artifacts with scoped diagnostics | Verified |
 | FACT-35 | P2: Semantic enrichment | T33 per-invocation detector isolation implemented; concrete detector integration closes in T34-T39 | Implementing |
-| FACT-36 | P2: Semantic enrichment | Specify | Pending |
+| FACT-36 | P2: Semantic enrichment | T44 recoverable missing-SDK and generator failures exit 0 | Verified |
 | FACT-37 | P2: Components and relations | T30 reusable target-aware indexes and T40 canonical aggregate projection implemented | Implementing |
 | FACT-38 | P2: Components and relations | T31 confirmed web API classification and T40 component index projection implemented | Implementing |
 | FACT-39 | P2: Components and relations | T31 confirmed worker classification and T40 component index projection implemented | Implementing |
@@ -382,13 +382,13 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-56 | P3: Migration and release | T12 representative factual snapshot implemented; Markdown/frontmatter snapshots close in T17/T18 | Implementing |
 | FACT-57 | P3: Migration and release | T42 language matrix verifies explicit syntax and semantic facts for every required language shape | Verified |
 | FACT-58 | P3: Migration and release | T34-T39 detector suites plus T43's audit and 20 discriminating cases cover every priority detector family with positive, negative, and lookalike assertions | Verified |
-| FACT-59 | P3: Migration and release | Specify | Pending |
+| FACT-59 | P3: Migration and release | T44 proves CLI safety, fallback, extension, timeout, and structural-output boundaries | Verified |
 | FACT-60 | P3: Migration and release | Specify | Pending |
 | FACT-61 | P3: Migration and release | Specify | Pending |
-| FACT-62 | P2: Semantic enrichment | T3 per-service timeout viability proven; production closes in T22/T29 | Implementing |
-| FACT-63 | P2: Semantic enrichment | T3 complete tree termination proven; production closes in T22/T29 | Implementing |
-| FACT-64 | P2: Semantic enrichment | T4 sanitation and T5 analyzer-free generator driver proven; production closes in T23/T24 | Implementing |
-| FACT-65 | P2: Semantic enrichment | Specify | Pending |
+| FACT-62 | P2: Semantic enrichment | T44 validates the production evaluator process cancellation boundary | Verified |
+| FACT-63 | P2: Semantic enrichment | T44 records parent/child PIDs and proves both gone when cancellation returns | Verified |
+| FACT-64 | P2: Semantic enrichment | T44 real-CLI marker proves an analyzer is not constructed during generator execution | Verified |
+| FACT-65 | P2: Semantic enrichment | T44 asserts semantic fallback manifest requested/effective mode, restore, and isolation fields | Verified |
 | FACT-66 | P2: Components and relations | T31 confirmed library classification and T40 component index projection implemented | Implementing |
 | FACT-67 | P2: Components and relations | T32 shared-dependency ownership and T40 component index projection implemented | Implementing |
 | FACT-68 | P2: Components and relations | T32 standalone library ownership and T40 component index projection implemented | Implementing |
