@@ -295,10 +295,10 @@ in T15).
 - Skill: NONE
 
 **Done when**:
-- [ ] `httpClientFactory.CreateClient("PaymentService")` (the fixture case) → `http-client`, `target_text=PaymentService`
-- [ ] `paymentClient.PostAsJsonAsync("payments/authorize", ...)`-shaped call (an HTTP-verb-named invocation on an `HttpClient`-typed receiver) → `http-call` with `http_method=POST` and a route detail
-- [ ] A same-named method call on a receiver that is NOT `HttpClient`-shaped (e.g. a custom `PostAsync` on an unrelated type) does not falsely emit `http-call` when the receiver type is syntactically determinable
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] `httpClientFactory.CreateClient("PaymentService")` (the fixture case) → `http-client`, `target_text=PaymentService`
+- [x] `paymentClient.PostAsJsonAsync("payments/authorize", ...)`-shaped call (an HTTP-verb-named invocation on an `HttpClient`-typed receiver) → `http-call` with `http_method=POST` and a route detail
+- [x] A same-named method call on a receiver that is NOT `HttpClient`-shaped (e.g. a custom `PostAsync` on an unrelated type) does not falsely emit `http-call` when the receiver type is syntactically determinable
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick

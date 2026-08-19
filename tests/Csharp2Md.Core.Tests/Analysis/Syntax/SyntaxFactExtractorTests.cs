@@ -298,6 +298,58 @@ public sealed class SyntaxFactExtractorTests
     }
 
     [Fact]
+    public void Extract_CreateClientWithStringLiteralArgument_EmitsHttpClient()
+    {
+        const string source = """
+            class Service
+            {
+                void Run(IHttpClientFactory httpClientFactory) => httpClientFactory.CreateClient("PaymentService");
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Service.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "http-client");
+        Assert.Equal("PaymentService", candidate.ObservedTarget);
+        Assert.Equal(FactResolution.Syntactic, candidate.ShapeConfidence);
+    }
+
+    [Fact]
+    public void Extract_HttpVerbNamedInvocationOnClientFromCreateClient_EmitsHttpCallWithMethodAndRoute()
+    {
+        const string source = """
+            class OrderService
+            {
+                async Task Run(IHttpClientFactory httpClientFactory)
+                {
+                    var paymentClient = httpClientFactory.CreateClient("PaymentService");
+                    await paymentClient.PostAsJsonAsync("payments/authorize", new { });
+                }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "http-call");
+        Assert.Equal("http_method=POST|route=payments/authorize", candidate.ObservedTarget);
+    }
+
+    [Fact]
+    public void Extract_SameNamedVerbMethodOnDeclaredNonHttpClientReceiver_EmitsNoHttpCall()
+    {
+        const string source = """
+            class Service
+            {
+                void Run(MyCustomService svc) => svc.PostAsync("x");
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Service.cs", source);
+
+        Assert.DoesNotContain(extraction.RelationCandidates, static candidate => candidate.RelationKind == "http-call");
+    }
+
+    [Fact]
     public void Extract_ErrorBearingDeclarationRemainsSyntacticAndMarked()
     {
         var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Broken.cs", "class Broken<T { void Run( }");

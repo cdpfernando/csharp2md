@@ -104,7 +104,17 @@ internal static class SyntaxFactExtractor
                 ? enclosingSymbolId.ToFactId()
                 : document.DocumentId.ToFactId();
 
-            candidates.AddRange(ClassifyMessagingInvocation(invocation, root.SyntaxTree, ownerId, methodSymbolsByName));
+            var messagingCandidates = ClassifyMessagingInvocation(invocation, root.SyntaxTree, ownerId, methodSymbolsByName).ToList();
+            candidates.AddRange(messagingCandidates);
+            if (messagingCandidates.Count > 0)
+            {
+                continue;
+            }
+
+            if (ClassifyHttpInvocation(invocation, root.SyntaxTree, ownerId) is { } httpCandidate)
+            {
+                candidates.Add(httpCandidate);
+            }
         }
 
         var canonicalSymbols = symbols
@@ -334,6 +344,110 @@ internal static class SyntaxFactExtractor
                 yield return MakeCandidate(handlerSymbolId.ToFactId(), "handles", targetSimpleName, FactResolution.Syntactic, invocation, tree);
             }
         }
+    }
+
+    private static readonly (string Prefix, string HttpMethod)[] HttpVerbPrefixes =
+    [
+        ("Get", "GET"),
+        ("Post", "POST"),
+        ("Put", "PUT"),
+        ("Delete", "DELETE"),
+        ("Patch", "PATCH"),
+    ];
+
+    /// <summary>
+    /// Recognizes <c>CreateClient("name")</c> (any receiver - the factory itself is not
+    /// syntactically confirmable without a <see cref="SemanticModel"/>) and HTTP-verb-shaped
+    /// invocations (<c>GetAsync</c>, <c>PostAsJsonAsync</c>, etc. - any member name that starts with
+    /// a verb prefix and continues with another capitalized word) on a receiver that is either
+    /// syntactically typed as <c>HttpClient</c> (a locally-declared/parameter type name literally
+    /// <c>HttpClient</c>, <see cref="FactResolution.Syntactic"/>) or, conservatively, any receiver
+    /// when no type information is syntactically available (<see cref="FactResolution.Unresolved"/>).
+    /// A receiver whose type IS syntactically known and is NOT <c>HttpClient</c> is not a false
+    /// positive.
+    /// </summary>
+    private static SyntacticRelationCandidate? ClassifyHttpInvocation(
+        InvocationExpressionSyntax invocation, SyntaxTree tree, FactId ownerId)
+    {
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        {
+            return null;
+        }
+
+        var memberName = memberAccess.Name.Identifier.ValueText;
+        if (memberName == "CreateClient"
+            && invocation.ArgumentList.Arguments is [{ Expression: LiteralExpressionSyntax { Token.Value: string clientName } }])
+        {
+            return MakeCandidate(ownerId, "http-client", clientName, FactResolution.Syntactic, invocation, tree);
+        }
+
+        var httpMethod = HttpVerbPrefixes.FirstOrDefault(entry =>
+                memberName.Length > entry.Prefix.Length
+                && memberName.StartsWith(entry.Prefix, StringComparison.Ordinal)
+                && char.IsUpper(memberName[entry.Prefix.Length]))
+            .HttpMethod;
+        if (httpMethod is null)
+        {
+            return null;
+        }
+
+        var declaredReceiverType = DeclaredReceiverTypeName(memberAccess.Expression);
+        if (declaredReceiverType is not null && !string.Equals(declaredReceiverType, "HttpClient", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var resolution = declaredReceiverType is "HttpClient" ? FactResolution.Syntactic : FactResolution.Unresolved;
+        var routeArgument = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
+        var route = routeArgument switch
+        {
+            LiteralExpressionSyntax { Token.Value: string routeLiteral } => routeLiteral,
+            { } expression => NormalizeNode(expression),
+            null => "<missing>",
+        };
+
+        return MakeCandidate(ownerId, "http-call", $"http_method={httpMethod}|route={route}", resolution, invocation, tree);
+    }
+
+    /// <summary>
+    /// A receiver's syntactic type name when it is a bare identifier bound to a parameter or a
+    /// non-<c>var</c> local variable declared in the same enclosing member. Returns <c>null</c> (not
+    /// determinable) for anything else, including <c>var</c>-declared locals.
+    /// </summary>
+    private static string? DeclaredReceiverTypeName(ExpressionSyntax receiver)
+    {
+        if (receiver is not IdentifierNameSyntax identifier)
+        {
+            return null;
+        }
+
+        var name = identifier.Identifier.ValueText;
+        var enclosingMember = receiver.Ancestors().OfType<MemberDeclarationSyntax>().FirstOrDefault();
+        if (enclosingMember is null)
+        {
+            return null;
+        }
+
+        if (enclosingMember is BaseMethodDeclarationSyntax method)
+        {
+            var parameter = method.ParameterList.Parameters
+                .FirstOrDefault(parameter => parameter.Identifier.ValueText == name);
+            if (parameter?.Type is { } parameterType)
+            {
+                return SimpleTypeName(parameterType);
+            }
+        }
+
+        var declarator = enclosingMember.DescendantNodes()
+            .OfType<VariableDeclaratorSyntax>()
+            .FirstOrDefault(candidate => candidate.Identifier.ValueText == name);
+        if (declarator?.Parent is VariableDeclarationSyntax { Type: { } declaredType }
+            && declaredType is not IdentifierNameSyntax { Identifier.ValueText: "var" })
+        {
+            return SimpleTypeName(declaredType);
+        }
+
+        return null;
     }
 
     private static SyntacticRelationCandidate MakeCandidate(
