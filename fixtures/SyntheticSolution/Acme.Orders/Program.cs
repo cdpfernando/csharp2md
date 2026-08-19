@@ -1,0 +1,47 @@
+// Host bootstrap for Acme.Orders, shaped like a minimal ASP.NET Core entry point.
+//
+// The fixture declares the Microsoft.AspNetCore.Builder types itself rather than referencing the
+// ASP.NET Core framework, for the same reason PaymentsGrpcClient.cs declares Grpc.Core.ClientBase:
+// the fixture must build and restore without pulling in an external dependency. The frontmatter
+// heuristics classify this file as `configuration` from its name and tag it `bootstrapping` from
+// the WebApplication.CreateBuilder call, so the stand-in exercises the real rules.
+
+using Acme.Orders.Hosting;
+using Microsoft.AspNetCore.Builder;
+
+namespace Microsoft.AspNetCore.Builder
+{
+    /// <summary>Stand-in for the host builder returned by <c>WebApplication.CreateBuilder</c>.</summary>
+    public sealed class WebApplicationBuilder
+    {
+        public IServiceCollection Services { get; } = new ServiceCollection();
+    }
+
+    /// <summary>Stand-in for the ASP.NET Core application entry type.</summary>
+    public static class WebApplication
+    {
+        public static WebApplicationBuilder CreateBuilder(string[] args)
+        {
+            ArgumentNullException.ThrowIfNull(args);
+
+            return new WebApplicationBuilder();
+        }
+    }
+}
+
+namespace Acme.Orders
+{
+    /// <summary>Composition root: builds the host and registers the service's own dependencies.</summary>
+    public static class Program
+    {
+        public static WebApplicationBuilder ConfigureHost(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddScoped<OrderService>();
+            builder.Services.AddSingleton<Data.OrderDbContext>();
+
+            return builder;
+        }
+    }
+}

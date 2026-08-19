@@ -97,4 +97,26 @@ public sealed class ManifestLoaderTests : IDisposable
         Assert.False(result.IsSuccess);
         Assert.Equal(ManifestErrorCode.ZeroEntries, result.Error!.Value.Code);
     }
+
+    [Fact]
+    public void Load_NullServicesProperty_ReturnsZeroEntriesErrorInsteadOfThrowing()
+    {
+        File.WriteAllText(_tempFile, """{ "services": null }""");
+
+        var result = ManifestLoader.Load(_tempFile);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ManifestErrorCode.ZeroEntries, result.Error!.Value.Code);
+    }
+
+    [Fact]
+    public void Load_MissingServicesKey_ReturnsZeroEntriesErrorInsteadOfThrowing()
+    {
+        File.WriteAllText(_tempFile, "{}");
+
+        var result = ManifestLoader.Load(_tempFile);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ManifestErrorCode.ZeroEntries, result.Error!.Value.Code);
+    }
 }

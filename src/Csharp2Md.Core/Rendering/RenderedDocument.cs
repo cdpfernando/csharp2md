@@ -1,4 +1,5 @@
 using System.Text;
+using Csharp2Md.Core.Topic;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Csharp2Md.Core.Rendering;
@@ -33,10 +34,24 @@ public sealed record RenderedDocument(
     /// </summary>
     public string? DependencySection { get; init; }
 
+    /// <summary>
+    /// The YAML frontmatter block <see cref="ToMarkdown"/> prepends above the heading (WIKI-05,
+    /// WIKI-08). Same reasoning as <see cref="DependencySection"/>: it maps to no source bytes, so a
+    /// slot inside <see cref="Sections"/> would break the span-coverage invariant. <c>null</c> renders
+    /// exactly as before frontmatter existed.
+    /// </summary>
+    public Frontmatter? Frontmatter { get; init; }
+
     public string ToMarkdown()
     {
         var fence = new string('`', Math.Max(3, LongestBacktickRun() + 1));
         var builder = new StringBuilder();
+
+        if (Frontmatter is { } frontmatter)
+        {
+            // A blank line separates the block from the heading, matching the schema's fenced shape.
+            builder.Append(FrontmatterYaml.Render(frontmatter)).Append('\n');
+        }
 
         builder.Append("# ").Append(RelativePath).Append("\n\n");
         builder.Append("Namespace: `").Append(Namespace).Append("` | [Index](").Append(IndexLink).Append(")\n\n");

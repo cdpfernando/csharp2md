@@ -1,6 +1,7 @@
 using Csharp2Md.Core.Loading;
 using Csharp2Md.Core.Manifests;
 using Csharp2Md.Core.Pipeline;
+using Csharp2Md.Core.Topic;
 
 namespace Csharp2Md.Core.Tests.Pipeline;
 
@@ -67,8 +68,8 @@ public sealed class AnalysisPipelineInvariantTests : IDisposable
         {
             if (Path.GetFileNameWithoutExtension(solutionPath) == SyntheticFixtureRun.SharedContracts)
             {
-                ordersDocumentWhenNextServiceOpened.Add(
-                    File.Exists(Path.Combine(outputRoot, SyntheticFixtureRun.Orders, "OrderService.cs.md")));
+                var ordersRoot = TopicLayout.ServiceRoot(outputRoot, new ServiceName(SyntheticFixtureRun.Orders));
+                ordersDocumentWhenNextServiceOpened.Add(File.Exists(Path.Combine(ordersRoot, "OrderService.cs.md")));
             }
 
             return loader.LoadAsync(solutionPath, cancellationToken);
@@ -137,8 +138,8 @@ public sealed class AnalysisPipelineInvariantTests : IDisposable
 
         Assert.True(result.IsSuccess);
         Assert.True(File.Exists(Path.Combine(outputRoot, ".csharp2md-output")));
-        Assert.True(File.Exists(Path.Combine(
-            outputRoot, SyntheticFixtureRun.SharedContracts, "Events.cs.md")));
+        var serviceOutputRoot = TopicLayout.ServiceRoot(outputRoot, new ServiceName(SyntheticFixtureRun.SharedContracts));
+        Assert.True(File.Exists(Path.Combine(serviceOutputRoot, "Events.cs.md")));
         Assert.Empty(Directory.EnumerateFiles(_workspace, "*.json"));
     }
 
@@ -172,8 +173,9 @@ public sealed class AnalysisPipelineInvariantTests : IDisposable
 
         var result = await new AnalysisPipeline().RunAsync(manifestPath, outputRoot, CancellationToken.None);
 
-        var generated = Directory.EnumerateFiles(outputRoot, "*.md", SearchOption.AllDirectories)
-            .Select(path => Path.GetRelativePath(outputRoot, path).Replace('\\', '/'))
+        var codebaseRoot = TopicLayout.CodebaseRoot(outputRoot);
+        var generated = Directory.EnumerateFiles(codebaseRoot, "*.md", SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(codebaseRoot, path).Replace('\\', '/'))
             .ToList();
 
         Assert.Contains("Acme.Orders/Acme.Shared.Contracts/Events.cs.md", generated);

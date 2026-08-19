@@ -46,7 +46,8 @@ public sealed class AnalysisPipelineTests(SyntheticFixtureRun run) : IClassFixtu
     [Fact]
     public void RunAsync_WritesRootIndexLinkingEveryPerServiceIndex()
     {
-        var index = File.ReadAllText(Path.Combine(run.OutputRoot, IndexWriter.FileName));
+        // WIKI-03: the root index.md stays part of the mirrored tree it indexes, under raw/codebase/.
+        var index = File.ReadAllText(Path.Combine(run.CodebaseRoot, IndexWriter.FileName));
 
         Assert.Contains("[Acme.Orders](./Acme.Orders/index.md)", index, StringComparison.Ordinal);
         Assert.Contains("[Acme.Payments](./Acme.Payments/index.md)", index, StringComparison.Ordinal);
@@ -57,8 +58,9 @@ public sealed class AnalysisPipelineTests(SyntheticFixtureRun run) : IClassFixtu
     [Fact]
     public void RunAsync_WritesDependencyJsonAndMermaidDiagramFromTheSameGraph()
     {
-        var jsonPath = Path.Combine(run.OutputRoot, DependencyJsonWriter.FileName);
-        var mermaidPath = Path.Combine(run.OutputRoot, MermaidWriter.FileName);
+        // WIKI-03: aggregate graph artifacts sit at the root of raw/, not raw/codebase/.
+        var jsonPath = Path.Combine(run.RawRoot, DependencyJsonWriter.FileName);
+        var mermaidPath = Path.Combine(run.RawRoot, MermaidWriter.FileName);
 
         var deserialized = DependencyJsonWriter.Deserialize(File.ReadAllText(jsonPath));
         var mermaid = File.ReadAllText(mermaidPath);
@@ -99,6 +101,21 @@ public sealed class AnalysisPipelineTests(SyntheticFixtureRun run) : IClassFixtu
             edge => edge.Source == new ServiceName(SyntheticFixtureRun.Orders)
                 && edge.Target == new ServiceName(SyntheticFixtureRun.SharedContracts)
                 && edge.Communication == CommunicationType.DirectReference);
+    }
+
+    [Fact]
+    public void RunAsync_WritesEveryArtifactBeneathRaw_WithTheOwnershipMarkerOutsideIt()
+    {
+        // WIKI-01/WIKI-04: every generated artifact lives under raw/, but the ownership marker
+        // stays at the output root so OutputWriter.PrepareRun can read it before deleting anything.
+        Assert.True(Directory.Exists(run.RawRoot));
+        Assert.True(File.Exists(Path.Combine(run.CodebaseRoot, IndexWriter.FileName)));
+        Assert.True(File.Exists(Path.Combine(run.ServiceOutput(SyntheticFixtureRun.Orders), IndexWriter.FileName)));
+        Assert.True(File.Exists(Path.Combine(run.RawRoot, DependencyJsonWriter.FileName)));
+        Assert.True(File.Exists(Path.Combine(run.RawRoot, MermaidWriter.FileName)));
+
+        Assert.True(File.Exists(Path.Combine(run.OutputRoot, ".csharp2md-output")));
+        Assert.False(File.Exists(Path.Combine(run.RawRoot, ".csharp2md-output")));
     }
 
     private static IReadOnlyList<string> GeneratedDocuments(string serviceOutputRoot) =>

@@ -1,10 +1,14 @@
 using System.CommandLine;
 using System.ComponentModel;
+using System.Reflection;
 using Csharp2Md.Core.Manifests;
 using Csharp2Md.Core.Output;
 using Csharp2Md.Core.Pipeline;
+using Csharp2Md.Core.Topic;
 
-const string Usage = "Usage: csharp2md [directory] [--manifest <file>] [--output <directory>] [--force]";
+const string Usage =
+    "Usage: csharp2md [directory] [--manifest <file>] [--output <directory>] [--force] "
+    + "[--topic <slug>] [--domain <slug>]";
 
 var directoryArgument = new Argument<DirectoryInfo?>("directory")
 {
@@ -27,11 +31,23 @@ var forceOption = new Option<bool>("--force")
     Description = "Replace a non-empty output directory not previously created by csharp2md.",
 };
 
+var topicOption = new Option<string?>("--topic")
+{
+    Description = "Slug identifying the generated topic. Defaults to the slug of the input directory name.",
+};
+
+var domainOption = new Option<string?>("--domain")
+{
+    Description = "Slug identifying the topic's domain. Defaults to 'system-design'.",
+};
+
 var rootCommand = new RootCommand("csharp2md - convert a C#/.NET codebase to Markdown");
 rootCommand.Arguments.Add(directoryArgument);
 rootCommand.Options.Add(manifestOption);
 rootCommand.Options.Add(outputOption);
 rootCommand.Options.Add(forceOption);
+rootCommand.Options.Add(topicOption);
+rootCommand.Options.Add(domainOption);
 
 rootCommand.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
 {
@@ -39,6 +55,8 @@ rootCommand.SetAction(async (ParseResult parseResult, CancellationToken cancella
     var manifestFile = parseResult.GetValue(manifestOption);
     var configuredOutput = parseResult.GetValue(outputOption);
     var force = parseResult.GetValue(forceOption);
+    var topic = parseResult.GetValue(topicOption);
+    var domain = parseResult.GetValue(domainOption);
 
     if (directory is not null && manifestFile is not null)
     {
@@ -65,19 +83,30 @@ rootCommand.SetAction(async (ParseResult parseResult, CancellationToken cancella
         return 1;
     }
 
+    // WIKI-14: rejected before anything touches outputRoot - no OutputWriter.PrepareRun has run yet.
+    var topicOptionsResult = TopicOptions.Create(topic, domain, inputRoot);
+    if (!topicOptionsResult.IsSuccess)
+    {
+        Console.Error.WriteLine($"csharp2md: {topicOptionsResult.Error}");
+        return 1;
+    }
+
+    var topicOptions = topicOptionsResult.Options!;
+
     PipelineRunResult result;
     try
     {
         var pipeline = new AnalysisPipeline();
         result = manifestFile is not null
             ? await pipeline.RunAsync(
-                manifestFile.FullName, outputRoot, cancellationToken, forceOutput: force)
+                manifestFile.FullName, outputRoot, cancellationToken, forceOutput: force, topicOptions: topicOptions)
             : await pipeline.RunAsync(
                 new Manifest([new ManifestEntry(inputRoot)]),
                 inputRoot,
                 outputRoot,
                 cancellationToken,
-                forceOutput: force);
+                forceOutput: force,
+                topicOptions: topicOptions);
     }
     catch (OutputPreparationException exception)
     {
@@ -103,13 +132,69 @@ rootCommand.SetAction(async (ParseResult parseResult, CancellationToken cancella
         Console.Error.WriteLine($"csharp2md: warning: {warning}");
     }
 
-    Console.Write(RunReporter.Summarize(result.LoadReport));
-    Console.WriteLine($"Wrote {result.Graph.Edges.Count} dependency edge(s) to {outputRoot}");
+    // WIKI-10/WIKI-11/WIKI-18..22: the topic scaffold and run log are written for every successful
+    // manifest run (including one that will still exit 1 on frontmatter validation failures below -
+    // "the rest of the topic is still generated", design.md), never for a failed manifest (nothing
+    // was written at all in that case, handled by the !result.IsSuccess branch above).
+    var toolVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
+    TopicScaffoldWriter.Write(outputRoot, topicOptions, toolVersion);
 
-    return 0;
+    var absoluteOutputRoot = Path.GetFullPath(outputRoot);
+    RunLogWriter.Write(
+        outputRoot,
+        new RunLogData(
+            BuildInvocation(directory?.FullName, manifestFile, outputRoot, force, topicOptions),
+            result.DocumentCount,
+            result.Graph.Edges.Count,
+            result.ServiceCount,
+            result.FrontmatterFailures,
+            absoluteOutputRoot),
+        TimeProvider.System);
+
+    foreach (var failure in result.FrontmatterFailures)
+    {
+        Console.Error.WriteLine($"csharp2md: {failure.SourcePath}: {failure.Error}");
+    }
+
+    Console.Write(RunReporter.Summarize(result.LoadReport));
+    // WIKI-17: document count, frontmatter validation failure count, and the output topic path.
+    Console.WriteLine(
+        $"Wrote {result.DocumentCount} document(s) and {result.Graph.Edges.Count} dependency edge(s) to {outputRoot}");
+    Console.WriteLine($"Frontmatter validation failures: {result.FrontmatterFailures.Count}");
+    Console.WriteLine($"Output topic path: {absoluteOutputRoot}");
+
+    return result.ExitCode;
 });
 
 return await rootCommand.Parse(args).InvokeAsync();
+
+// WIKI-18: reconstructed from the resolved arguments (defaults already applied), not the raw argv -
+// so a zero-config run's log.md still records the topic/domain/output it actually used.
+static string BuildInvocation(
+    string? directoryArg, FileInfo? manifestFile, string outputRoot, bool force, TopicOptions options)
+{
+    var parts = new List<string> { "csharp2md" };
+
+    if (manifestFile is not null)
+    {
+        parts.Add($"--manifest \"{manifestFile.FullName}\"");
+    }
+    else if (directoryArg is not null)
+    {
+        parts.Add($"\"{directoryArg}\"");
+    }
+
+    parts.Add($"--output \"{outputRoot}\"");
+    parts.Add($"--topic {options.Topic}");
+    parts.Add($"--domain {options.Domain}");
+
+    if (force)
+    {
+        parts.Add("--force");
+    }
+
+    return string.Join(' ', parts);
+}
 
 // MSBuildWorkspace starts exactly one external process - the BuildHost - so a Win32Exception
 // anywhere in the chain means that launch failed.

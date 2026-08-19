@@ -1,4 +1,5 @@
 using Csharp2Md.Core.Pipeline;
+using Csharp2Md.Core.Topic;
 
 namespace Csharp2Md.Core.Tests.Pipeline;
 
@@ -17,9 +18,16 @@ public sealed class SyntheticFixtureRun : IAsyncLifetime
 
     public string OutputRoot { get; private set; } = string.Empty;
 
+    /// <summary>WIKI-01: everything Phase 1 generates, beneath <c>&lt;OutputRoot&gt;/raw</c>.</summary>
+    public string RawRoot => TopicLayout.RawRoot(OutputRoot);
+
+    /// <summary>WIKI-02: the mirrored source tree, beneath <c>&lt;OutputRoot&gt;/raw/codebase</c>.</summary>
+    public string CodebaseRoot => TopicLayout.CodebaseRoot(OutputRoot);
+
     public PipelineRunResult Result { get; private set; } = null!;
 
-    public string ServiceOutput(string serviceName) => Path.Combine(OutputRoot, serviceName);
+    public string ServiceOutput(string serviceName) =>
+        TopicLayout.ServiceRoot(OutputRoot, new ServiceName(serviceName));
 
     public async Task InitializeAsync()
     {

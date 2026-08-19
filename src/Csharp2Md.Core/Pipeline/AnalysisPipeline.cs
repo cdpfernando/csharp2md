@@ -6,6 +6,7 @@ using Csharp2Md.Core.Loading;
 using Csharp2Md.Core.Manifests;
 using Csharp2Md.Core.Output;
 using Csharp2Md.Core.Rendering;
+using Csharp2Md.Core.Topic;
 using Microsoft.CodeAnalysis;
 
 namespace Csharp2Md.Core.Pipeline;
@@ -26,12 +27,23 @@ public sealed record PipelineRunResult(
     ManifestError? ManifestError,
     LoadReport LoadReport,
     DependencyGraph Graph,
-    IReadOnlyList<string> Warnings)
+    IReadOnlyList<string> Warnings,
+    IReadOnlyList<FrontmatterFailure> FrontmatterFailures,
+    int DocumentCount,
+    int ServiceCount)
 {
     public bool IsSuccess => ManifestError is null;
 
+    /// <summary>
+    /// WIKI-12: the exit code this run warrants — <c>1</c> when the manifest itself failed (nothing
+    /// written) or one or more documents failed frontmatter validation (everything else still
+    /// written); <c>0</c> otherwise. A degraded project load (AD-005) is neither condition, so it
+    /// stays <c>0</c> with warnings — the two failure modes are never conflated.
+    /// </summary>
+    public int ExitCode => !IsSuccess || FrontmatterFailures.Count > 0 ? 1 : 0;
+
     public static PipelineRunResult Failed(ManifestError error) =>
-        new(error, new LoadReport([]), new DependencyGraph([]), []);
+        new(error, new LoadReport([]), new DependencyGraph([]), [], [], 0, 0);
 }
 
 /// <summary>
@@ -73,7 +85,8 @@ public sealed class AnalysisPipeline
         string manifestPath,
         string outputRoot,
         CancellationToken cancellationToken = default,
-        bool forceOutput = false)
+        bool forceOutput = false,
+        TopicOptions? topicOptions = null)
     {
         ArgumentNullException.ThrowIfNull(outputRoot);
 
@@ -87,7 +100,7 @@ public sealed class AnalysisPipeline
 
         var inputRoot = Path.GetDirectoryName(Path.GetFullPath(manifestPath))!;
         return await RunAsync(
-            manifest.Manifest!, inputRoot, outputRoot, cancellationToken, forceOutput);
+            manifest.Manifest!, inputRoot, outputRoot, cancellationToken, forceOutput, topicOptions);
     }
 
     public async Task<PipelineRunResult> RunAsync(
@@ -95,11 +108,17 @@ public sealed class AnalysisPipeline
         string inputRoot,
         string outputRoot,
         CancellationToken cancellationToken = default,
-        bool forceOutput = false)
+        bool forceOutput = false,
+        TopicOptions? topicOptions = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(inputRoot);
         ArgumentNullException.ThrowIfNull(outputRoot);
+
+        // WIKI-06/WIKI-14..16: callers that already validated --topic/--domain pass the result
+        // through; every other caller (every pre-existing test, T13's own integration tests) gets
+        // the zero-config default so frontmatter derivation never needs a caller-supplied value.
+        var options = topicOptions ?? TopicOptions.Default(inputRoot);
 
         var discovery = ServiceDiscoverer.Discover(manifest);
         var warnings = new List<string>(discovery.Warnings);
@@ -113,24 +132,33 @@ public sealed class AnalysisPipeline
         var signals = new List<DependencySignal>();
         var loadResults = new List<ProjectLoadResult>();
         var serviceIndexes = new List<ServiceIndexEntry>();
+        var frontmatterFailures = new List<FrontmatterFailure>();
+        var documentCount = 0;
 
         foreach (var service in catalog.Services)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var indexPath = await AnalyzeAsync(
-                service, catalog, config.Index, outputRoot, signals, loadResults, cancellationToken);
+            var (indexPath, serviceDocumentCount) = await AnalyzeAsync(
+                service, catalog, config.Index, outputRoot, options, signals, loadResults, warnings,
+                frontmatterFailures, cancellationToken);
 
             serviceIndexes.Add(new ServiceIndexEntry(service.Name, indexPath));
+            documentCount += serviceDocumentCount;
         }
 
         // ── Stage 3: Aggregate ──────────────────────────────────────────────────────────────
+        // WIKI-01..03: dependencies.json/.mmd sit at the root of raw/, while the root index.md
+        // stays part of the mirrored raw/codebase/ tree it indexes, alongside every service's own.
         var graph = GraphBuilder.Build(signals);
-        DependencyJsonWriter.Write(graph, outputRoot);
-        MermaidWriter.Write(graph, outputRoot);
-        IndexWriter.WriteRootIndex(outputRoot, serviceIndexes);
+        var rawRoot = TopicLayout.RawRoot(outputRoot);
+        DependencyJsonWriter.Write(graph, rawRoot);
+        MermaidWriter.Write(graph, rawRoot);
+        IndexWriter.WriteRootIndex(TopicLayout.CodebaseRoot(outputRoot), serviceIndexes, options);
 
-        return new PipelineRunResult(null, new LoadReport(loadResults), graph, warnings);
+        return new PipelineRunResult(
+            null, new LoadReport(loadResults), graph, warnings, frontmatterFailures,
+            documentCount, catalog.Services.Count);
     }
 
     /// <summary>
@@ -164,17 +192,20 @@ public sealed class AnalysisPipeline
         return new ServiceCatalog(services);
     }
 
-    /// <summary>Analyzes one service and returns the path of its written <c>index.md</c>.</summary>
-    private async Task<string> AnalyzeAsync(
+    /// <summary>Analyzes one service and returns the path of its written <c>index.md</c> and the count of source documents written.</summary>
+    private async Task<(string IndexPath, int DocumentCount)> AnalyzeAsync(
         ServiceDescriptor service,
         ServiceCatalog catalog,
         ConfigIndex configIndex,
         string outputRoot,
+        TopicOptions options,
         List<DependencySignal> signals,
         List<ProjectLoadResult> loadResults,
+        List<string> warnings,
+        List<FrontmatterFailure> frontmatterFailures,
         CancellationToken cancellationToken)
     {
-        var serviceOutputRoot = Path.Combine(outputRoot, service.Name.Value);
+        var serviceOutputRoot = TopicLayout.ServiceRoot(outputRoot, service.Name);
         var writer = new OutputWriter(serviceOutputRoot);
         var writtenPaths = new List<string>();
 
@@ -213,11 +244,13 @@ public sealed class AnalysisPipeline
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 await AnalyzeDocumentAsync(
-                    document, service, project, configIndex, writer, writtenPaths, signals, cancellationToken);
+                    document, service, project, configIndex, writer, options, writtenPaths, signals, warnings,
+                    frontmatterFailures, cancellationToken);
             }
         }
 
-        return IndexWriter.WriteServiceIndex(serviceOutputRoot, service.Name, writtenPaths); // P1-13
+        var indexPath = IndexWriter.WriteServiceIndex(serviceOutputRoot, service.Name, writtenPaths, options); // P1-13
+        return (indexPath, writtenPaths.Count);
     }
 
     private async Task AnalyzeDocumentAsync(
@@ -226,8 +259,11 @@ public sealed class AnalysisPipeline
         Project project,
         ConfigIndex configIndex,
         OutputWriter writer,
+        TopicOptions options,
         List<string> writtenPaths,
         List<DependencySignal> signals,
+        List<string> warnings,
+        List<FrontmatterFailure> frontmatterFailures,
         CancellationToken cancellationToken)
     {
         if (document.FilePath is null || !document.SupportsSyntaxTree)
@@ -262,6 +298,25 @@ public sealed class AnalysisPipeline
         var renderContext = new RenderContext(relativePath, syntaxTree, semanticModel);
         var rendered = DependencySectionRenderer.Apply(
             SemanticEnricher.Enrich(_renderer.Render(renderContext), renderContext), documentSignals);
+
+        // WIKI-06/WIKI-09/WIKI-13: derived from the tree already materialized above for the
+        // detectors — no second parse, no re-read of the file writer.Write is about to produce.
+        // project.Name is the SDK-style project's default root namespace absent an explicit
+        // <RootNamespace> override, matching every fixture project (AnalysisPipeline.cs already
+        // relies on the same property at RelativePathFor).
+        var sourcePath = $"{service.Name.Value}/{relativePath}";
+        var frontmatter = FrontmatterBuilder.Build(
+            syntaxTree, sourcePath, project.Name, options, out var frontmatterWarnings);
+        warnings.AddRange(frontmatterWarnings);
+        rendered = rendered with { Frontmatter = frontmatter };
+
+        // WIKI-12: a validation failure never aborts the run — it is collected here and the loop
+        // continues to the next document exactly as if nothing happened; the document is still
+        // written, matching design.md's "the rest of the topic is still generated" contract.
+        if (FrontmatterYaml.Validate(FrontmatterYaml.Render(frontmatter), sourcePath) is { } failure)
+        {
+            frontmatterFailures.Add(failure);
+        }
 
         // Written and dropped immediately: only the written path survives, for the index (AD-001).
         if (writer.Write(rendered) is { } path)

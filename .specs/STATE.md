@@ -42,14 +42,42 @@
 - **Date**: 2026-08-14
 - **Status**: active
 
+### AD-006
+- **Decision**: The LLMWiki topic layout replaces the v1 flat output layout unconditionally — every run writes beneath `raw/` (`raw/codebase/` for source documents, `raw/topic.yaml`, `raw/CLAUDE.md`, `raw/dependencies.json`, `raw/dependencies.mmd`, `raw/log.md`), with no opt-in flag and no compatibility mode. `.csharp2md-output` stays at the output root. Frontmatter is injected inline as a decorator during the existing per-document write, and `--topic` / `--domain` are added to the CLI surface.
+- **Reason**: One layout means one set of tests and no branch in `OutputWriter`; a flag would double the output contract for a tool with a single author. Inline injection is the only option consistent with AD-001's render-write-discard streaming — a post-hoc pass over every written file would re-read the whole output. Hardcoding `topic`/`domain` (as the original draft did, at `arquitetura-software/eshop`) would make the tool correct for exactly one codebase, so the CLI surface has to grow; this supersedes the Phase-1 Out-of-Scope row that froze it.
+- **Trade-off**: A breaking change to the v1 output shape — existing end-to-end tests asserting root-level paths must be updated, and any consumer of the v1 layout breaks. User explicitly waived backward compatibility (2026-08-15). Keeping the marker outside `raw/` is a deliberate asymmetry, required because `OutputWriter.PrepareRun` reads it at the output root before deleting anything.
+- **Scope**: All csharp2md output layout, the CLI option surface, and where frontmatter is produced.
+- **Date**: 2026-08-15
+- **Status**: active
+
+### AD-007
+- **Decision**: Breaking work lands on a feature branch, never on `master`. `csharp2md-llmwiki-phase1` runs on `feat/llmwiki-phase1`, cut from `master`, carrying one atomic commit per task; it merges only after the Verifier returns PASS, and it merges through a GitHub Pull Request rather than a local merge. The output-format break is signalled by semver: `<Version>2.0.0</Version>` is introduced as part of the feature and the merge commit is tagged `v2.0.0`. Pushing the branch and opening the PR require the user's explicit go-ahead each time.
+- **Reason**: `master` is identical to `origin/master`, so every commit on it is already published on GitHub, and the project packs as a dotnet tool (`PackAsTool`, `PackageId=csharp2md`). The layout migration is deliberately broken mid-sequence — the task that moves output under `raw/` invalidates path assertions that later tasks restore — so intermediate states must never reach a published branch. Semver is the only signal a `dotnet tool update` consumer gets that the output contract changed; without a `Version` property the package ships as `1.0.0` forever and the break is silent.
+- **Trade-off**: A single long-lived branch delays integration until the whole feature is done, so a conflict with concurrent `master` work surfaces late. Accepted: there is no concurrent work, the repository has a single author, and the alternative — incremental merges — publishes a half-migrated layout. Tagging at merge means the tag names a commit that exists only after the PR is merged, so the version bump and the tag are not in the same commit.
+- **Scope**: Branch, integration, and release marking for this feature and any future breaking change to the output contract.
+- **Date**: 2026-08-15
+- **Status**: active
+
 ## Handoff
 
-**Feature**: Optional Manifest and Directory CLI (`cli-directory-input`)
-**Phase/Task**: Complete — all 18 requirements verified independently.
-**Completed**: Manifests are optional; `csharp2md [directory]` and no-argument current-directory runs derive a sibling `<input>_md` output. Explicit `--output` remains literal. Generated outputs are marker-owned (`.csharp2md-output`); unmarked non-empty directories require `--force`, while filesystem roots, inputs, and input ancestors are always protected.
-**Validation**: Release build and formatting verification passed; 303 tests passed, 0 failed/skipped. Fresh independent verifier: 18/18 requirements evidence-backed, discrimination sensor 3/3 mutations killed. Report: `.specs/features/cli-directory-input/validation.md`.
-**Next step**: None for this feature.
+**Feature**: csharp2md + LLMWiki Phase 1 (`csharp2md-llmwiki-phase1`)
+**Phase/Task**: Execute — **all 21 tasks complete (T1-T21), feature-level validation PASSED.** Everything is committed; nothing remains but the user's push/PR decision.
+**Branch**: `feat/llmwiki-phase1`, cut from `master`, 21 task commits ahead (`5baabda`..`59d4757`) plus the prior planning commits. `master` is untouched and identical to `origin/master`. Nothing has been pushed.
+
+**Completed this session**: all 21 tasks, executed as 4 sub-agent batches (`T1–T4`, `T5–T11`, `T12–T18`, `T19–T21`) per the prior session's plan, run sequentially in a fresh conversation.
+- **Batch 1** (T1–T4): ManifestLoader null-services fix, `TopicOptions`, `TopicLayout`, and the breaking `raw/` layout migration. 322 tests passing.
+- **Batch 2** (T5–T11): the frontmatter model, JSON schema sync test, `TitleResolver`, `FileTypeClassifier`, `TagDeriver`, `FrontmatterBuilder`, `FrontmatterYaml`. All five no-precedent Roslyn members (`FileScopedNamespaceDeclarationSyntax`, `BaseListSyntax`, `InterfaceDeclarationSyntax`, `.Modifiers`, extension-method detection) verified against official docs before use, per `tasks.md`'s binding Knowledge Verification rule. Caught a real YamlDotNet empty-scalar serialization defect before it shipped. 337 tests passing.
+- **Batch 3** (T12–T18): frontmatter emission into `RenderedDocument`, wired through `AnalysisPipeline`, index frontmatter, exit-1-on-validation-failure, `TopicScaffoldWriter`, `RunLogWriter`, and the CLI `--topic`/`--domain` options. **This batch hit a monthly spend limit mid-T18** (T12–T17 landed as 6 commits from the sub-agent; T18 was finished directly in the orchestrating session). Finishing T18 surfaced and closed a real gap: `TopicScaffoldWriter`/`RunLogWriter` had been built standalone with no caller, and `Program.cs` was hardcoding exit code `0` regardless of `PipelineRunResult.ExitCode` — so WIKI-12's exit-1 contract was never actually exercised through the real binary. Both fixed inline, documented in `tasks.md` under T18. 411 tests passing after T18.
+- **Batch 4** (T19–T21): fixture heuristic-coverage proof, the byte-identical-except-timestamp determinism test, and the `2.0.0` version bump. Found and fixed one more real pre-existing defect: `TagDeriver`'s dependency-injection rule only scanned invocation call sites, missing extension-method declarations never called within the same file. 428 tests passing.
+- **Verifier** (fresh sub-agent, author ≠ verifier): **PASS.** 24/24 measurable ACs spec-anchored with `file:line` evidence; discrimination sensor 6/6 injected mutations killed (covering the span-coverage/byte-identical body invariant, the WIKI-12 exit-code distinction, title-tier order, file_type rule order, the `TimeProvider` seam, and the syntax-only guarantee); manual smoke test against the packaged CLI confirmed all `raw/` artifacts present and frontmatter matching the Fixture Expectations table. Two informational (non-blocking) gaps noted: a pre-existing spec.md self-contradiction about `Acme.Broken` between its own Independent Test and its Edge Cases table (implementation follows the consistent majority), and P1-18's log-collision recording being untested (inherited from v1, not a WIKI-NN requirement). Report: `.specs/features/csharp2md-llmwiki-phase1/validation.md`. `validate_state.py` confirms exit 0.
+
+**Baseline**: **428 tests passing, 0 failing** (up from 303 at the start of Execute). `dotnet format --verify-no-changes` and `dotnet build -c Release` both clean.
+
+**Next step**: The feature is done pending the user's go-ahead to push `feat/llmwiki-phase1` and open the PR to `master` (AD-007 requires explicit approval for each, not yet given). The `v2.0.0` tag applies to the merge commit once the PR lands, per AD-007 — it does not exist yet.
+
 **Blockers**: None.
+
+**Prior features**: `csharp2md` (v1) and `cli-directory-input` are both complete and independently verified — see their `validation.md` files.
 
 ## Historical Handoff
 
