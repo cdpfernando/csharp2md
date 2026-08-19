@@ -1,6 +1,4 @@
-using Csharp2Md.Core;
 using Csharp2Md.Core.Manifests;
-using Csharp2Md.Core.Output;
 using Csharp2Md.Core.Tests.Pipeline;
 using Csharp2Md.Core.Topic;
 
@@ -25,7 +23,7 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
             var result = await RunAsync(string.Empty, input);
 
             Assert.Equal(0, result.ExitCode);
-            AssertGenerated(expectedOutput, "src");
+            AssertGenerated(expectedOutput);
         }
         finally
         {
@@ -45,7 +43,7 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
             var result = await RunAsync($"\"{input}\"", workspace);
 
             Assert.Equal(0, result.ExitCode);
-            AssertGenerated(expectedOutput, "src");
+            AssertGenerated(expectedOutput);
         }
         finally
         {
@@ -68,7 +66,7 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
             var result = await RunAsync($"--manifest \"{manifestPath}\"", workspace);
 
             Assert.Equal(0, result.ExitCode);
-            AssertGenerated(expectedOutput, "service");
+            AssertGenerated(expectedOutput);
         }
         finally
         {
@@ -88,7 +86,7 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
             var result = await RunAsync($"\"{input}\" --output \"{output}\"", workspace);
 
             Assert.Equal(0, result.ExitCode);
-            AssertGenerated(output, "src");
+            AssertGenerated(output);
             Assert.False(Directory.Exists(Path.Combine(output, "src_md")));
         }
         finally
@@ -225,7 +223,7 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
 
             Assert.Equal(0, result.ExitCode);
             Assert.False(File.Exists(existing));
-            AssertGenerated(output, "src");
+            AssertGenerated(output);
         }
         finally
         {
@@ -290,7 +288,7 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
                 $"--manifest \"{manifestPath}\" --output \"{outputPath}\"", TestPaths.RepoRoot);
 
             Assert.Equal(0, result.ExitCode);
-            Assert.Contains("1 of 3 project(s) need attention", result.StandardOutput);
+            Assert.Contains("Analyzed 4 project(s)", result.StandardOutput, StringComparison.Ordinal);
         }
         finally
         {
@@ -345,11 +343,8 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
 
             Assert.Equal(0, result.ExitCode);
             var topicYaml = File.ReadAllText(Path.Combine(TopicLayout.RawRoot(output), "topic.yaml"));
-            Assert.Contains("slug: src", topicYaml, StringComparison.Ordinal);
-
-            var documentPath = Path.Combine(
-                TopicLayout.ServiceRoot(output, new ServiceName("src")), "Program.cs.md");
-            Assert.Contains("domain: system-design", File.ReadAllText(documentPath), StringComparison.Ordinal);
+            Assert.Contains("topic: src", topicYaml, StringComparison.Ordinal);
+            Assert.Contains("domain: system-design", topicYaml, StringComparison.Ordinal);
         }
         finally
         {
@@ -358,7 +353,7 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Run_OnSuccess_ReportsDocumentCountFailureCountAndOutputTopicPath()
+    public async Task Run_OnSuccess_ReportsProjectAndDocumentCountsAndOutputTopicPath()
     {
         var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-summary-").FullName;
         try
@@ -369,8 +364,7 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
             var result = await RunAsync($"\"{input}\" --output \"{output}\" --topic acme-shop", workspace);
 
             Assert.Equal(0, result.ExitCode);
-            Assert.Contains("Wrote 1 document(s)", result.StandardOutput, StringComparison.Ordinal);
-            Assert.Contains("Frontmatter validation failures: 0", result.StandardOutput, StringComparison.Ordinal);
+            Assert.Contains("Analyzed 1 project(s) and 1 document(s)", result.StandardOutput, StringComparison.Ordinal);
             Assert.Contains(
                 $"Output topic path: {Path.GetFullPath(output)}", result.StandardOutput, StringComparison.Ordinal);
         }
@@ -380,15 +374,8 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
         }
     }
 
-    // WIKI-12 at the CLI boundary: Program.cs previously returned a hardcoded 0 regardless of
-    // PipelineRunResult.ExitCode, so a frontmatter validation failure was only ever proven at the
-    // pipeline layer (FrontmatterValidationTests.cs) and never actually surfaced as a non-zero exit
-    // from the real binary. Fixed as part of wiring --topic/--domain through (T18) since Program.cs
-    // is exactly this task's file; forcing mechanism matches FrontmatterValidationTests.cs's
-    // precedent — TopicOptions.Create validates only the topic slug (WIKI-14), not domain, so an
-    // empty --domain reaches FrontmatterYaml.Validate as a genuinely empty required field.
     [Fact]
-    public async Task Run_WithFrontmatterValidationFailure_ExitsOneAndStillWritesLog()
+    public async Task Run_WithExplicitEmptyDomain_PreservesMetadataAndWritesLog()
     {
         var workspace = Directory.CreateTempSubdirectory("csharp2md-cli-frontmatter-fail-").FullName;
         try
@@ -399,13 +386,12 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
             var result = await RunAsync(
                 $"--manifest \"{manifestPath}\" --output \"{outputPath}\" --domain \"\"", TestPaths.RepoRoot);
 
-            Assert.Equal(1, result.ExitCode);
-            Assert.DoesNotContain(
-                "Frontmatter validation failures: 0", result.StandardOutput, StringComparison.Ordinal);
+            Assert.Equal(0, result.ExitCode);
 
             var logPath = Path.Combine(TopicLayout.RawRoot(outputPath), "log.md");
             Assert.True(File.Exists(logPath));
-            Assert.Contains("domain", File.ReadAllText(logPath), StringComparison.Ordinal);
+            var topicYaml = File.ReadAllText(Path.Combine(TopicLayout.RawRoot(outputPath), "topic.yaml"));
+            Assert.Contains("domain: \n", topicYaml, StringComparison.Ordinal);
         }
         finally
         {
@@ -427,12 +413,10 @@ public sealed class CliArgumentValidationTests : IAsyncLifetime
         return directory;
     }
 
-    private static void AssertGenerated(string output, string serviceName)
+    private static void AssertGenerated(string output)
     {
-        // WIKI-01/02/04: marker stays at the output root; everything else moves beneath raw/.
         Assert.True(File.Exists(Path.Combine(output, ".csharp2md-output")));
-        Assert.True(File.Exists(Path.Combine(TopicLayout.CodebaseRoot(output), IndexWriter.FileName)));
-        Assert.True(File.Exists(Path.Combine(
-            TopicLayout.ServiceRoot(output, new ServiceName(serviceName)), "Program.cs.md")));
+        Assert.True(File.Exists(Path.Combine(TopicLayout.RawRoot(output), "facts", "manifest.json")));
+        Assert.Single(Directory.EnumerateFiles(TopicLayout.CodebaseRoot(output), "*.cs.md", SearchOption.AllDirectories));
     }
 }

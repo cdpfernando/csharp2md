@@ -1,5 +1,3 @@
-using Csharp2Md.Core.Rendering;
-
 namespace Csharp2Md.Core.Output;
 
 /// <summary>
@@ -84,26 +82,6 @@ public sealed class OutputWriter(string outputRoot)
             right,
             OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 
-    /// <summary>
-    /// Writes one document and returns the path written, or <c>null</c> when the document is
-    /// excluded from generation and nothing was written.
-    /// </summary>
-    public string? Write(RenderedDocument document)
-    {
-        ArgumentNullException.ThrowIfNull(document);
-
-        if (IsExcluded(document.RelativePath))
-        {
-            return null;
-        }
-
-        var path = OutputPath(OutputRoot, document.RelativePath);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, document.ToMarkdown());
-
-        return path;
-    }
-
     /// <summary>Build-output and generated files are noise, not documentation (spec Assumptions).</summary>
     public static bool IsExcluded(string relativePath)
     {
@@ -124,9 +102,6 @@ public sealed class OutputWriter(string outputRoot)
         return ExcludedFileSuffixes.Any(suffix => fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>Mirrors the source path and appends <c>.md</c>, so <c>Foo.cs</c> becomes <c>Foo.cs.md</c>.</summary>
-    public static string OutputPath(string outputRoot, string relativePath) =>
-        Path.Combine(outputRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)) + ".md";
 }
 
 public sealed class OutputPreparationException(string message) : InvalidOperationException(message);

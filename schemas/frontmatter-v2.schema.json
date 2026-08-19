@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "csharp2md frontmatter schema version 2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "document_id",
+    "project_id",
+    "component_ids",
+    "classifications",
+    "analysis_summary",
+    "diagnostics",
+    "facts_ref"
+  ],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "document_id": { "type": "string", "minLength": 1 },
+    "project_id": { "type": "string", "minLength": 1 },
+    "component_ids": { "type": "array", "items": { "type": "string" } },
+    "classifications": { "type": "array", "items": { "type": "string" } },
+    "analysis_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolution", "symbol_count", "relation_count", "diagnostic_count"],
+      "properties": {
+        "resolution": { "enum": ["exact", "partial", "syntactic", "unresolved", "notapplicable"] },
+        "symbol_count": { "type": "integer", "minimum": 0 },
+        "relation_count": { "type": "integer", "minimum": 0 },
+        "diagnostic_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "severity", "count"],
+        "properties": {
+          "code": { "type": "string" },
+          "severity": { "enum": ["info", "warning", "error"] },
+          "count": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "facts_ref": { "type": "string", "pattern": "^facts/document/[0-9a-f]{2}/[0-9a-f]{64}\\.json$" }
+  }
+}

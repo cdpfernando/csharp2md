@@ -1,28 +1,36 @@
-# CLI Directory Input Test Research
+# T43 detector test research
 
 ## Scope
 
-The feature changes two production areas: output preparation in `OutputWriter`, and input/path resolution across `AnalysisPipeline` and the CLI entry point. Tests stay in the existing xUnit v2 project and follow its unit/integration split.
+Extend the six existing factual detector suites. Production code is unchanged.
 
-## Existing conventions
+## Requirement checklist
 
-- SDK-style `net10.0` test project using xUnit 2.9.3 on VSTest.
-- Unit tests live beside their production area under `tests/Csharp2Md.Core.Tests/`.
-- Process-level CLI tests carry `[Trait("Category", "Integration")]`.
-- Temporary directories are created per test and deleted in `finally` or `IDisposable.Dispose`.
-- The Roslyn static-pairing analyzer found `OutputWriter` paired with `OutputWriterTests`; `AnalysisPipeline` paired with pipeline tests; top-level `Program.cs` has no declared type and is exercised by CLI process tests. Static pairing is a heuristic, not line or branch coverage.
+- FACT-43: ASP.NET Core framework-confirmed endpoints, authorization, filters, health checks, entrypoints, and partial routes.
+- FACT-44: DI lifetime, keyed, `typeof`, generic, factory, and expansion facts.
+- FACT-45: HTTP client method, client name, headers, timeout, and partial expressions.
+- FACT-46: confirmed gRPC, messaging, and compile-time framework/type evidence only.
+- FACT-47: unproven runtime targets remain null with a reason.
+- FACT-48: project and package references remain compile-time only.
+- FACT-49/58: descriptors and every detector have behavioral positive, negative, and lookalike coverage.
 
-## Acceptance checklist
+## Verified gaps
 
-- Direct positional directory and current-directory input work without a manifest file.
-- Missing/file input and conflicting manifest + directory fail before output.
-- Default output uses the effective input directory name plus `_md`.
-- Manifest mode derives default output from the manifest-containing directory.
-- Explicit `--output` is the exact destination.
-- Missing/empty output receives `.csharp2md-output`.
-- Marked output regenerates without force.
-- Non-empty unmarked output is unchanged and requires `--force`.
-- `--force` replaces unmarked output without prompting and creates the marker.
-- Filesystem roots, the input directory, and input ancestors cannot be cleared, even with force.
-- Existing manifest errors and explicit manifest behavior remain intact.
+- ASP.NET MVC and Minimal API variants: POST/PUT/DELETE/PATCH/HEAD/OPTIONS and MapPut/MapDelete/MapPatch/MapMethods/Map.
+- DI: keyed transient and `typeof` implementation registration.
+- HTTP: byte-array/stream methods, dynamic header name, and dynamic named client.
+- Messaging: synchronous Publish and asynchronous Subscribe.
+- Compile-time: direct project-reference provenance/resolution and exact resolution for both reference kinds.
 
+## Conventions
+
+- xUnit 2 on VSTest; detector integration tests use `[Trait("Category", "Integration")]`.
+- Existing theory data drives a real Roslyn compilation and asserts emitted facts, evidence, provenance, resolution, nullable targets, and reasons.
+- Compile-time reference facts deliberately have no source evidence because their origin is evaluated project data.
+
+# T44 security-boundary research
+
+- Syntax-only lacked marker-backed CLI proof that it never resolves `dotnet`.
+- Generator behavior needed real CLI inventory, not only adapter-level markers.
+- Fallback output needed the complete manifest contract, and process cleanup needed the production runner.
+- The new suite uses CLI markers, compiled analyzer/generator extensions, a missing-SDK fixture, and recorded process PIDs.

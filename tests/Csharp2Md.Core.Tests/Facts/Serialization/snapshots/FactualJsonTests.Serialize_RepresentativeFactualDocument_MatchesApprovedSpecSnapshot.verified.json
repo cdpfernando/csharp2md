@@ -1,0 +1,34 @@
+{
+  "schema_version": 2,
+  "solutions": [],
+  "projects": [
+    {
+      "header": {
+        "id": "id1:project;path=src%2FApp.csproj",
+        "kind": "project",
+        "resolution": "syntactic",
+        "provenance": [
+          {
+            "engine_id": "csharp2md",
+            "engine_version": "3.0.0"
+          }
+        ],
+        "evidence": [],
+        "diagnostic_ids": []
+      },
+      "project_id": "id1:project;path=src%2FApp.csproj",
+      "name": "App",
+      "relative_path": "src/App.csproj",
+      "target_ids": [],
+      "document_ids": []
+    }
+  ],
+  "targets": [],
+  "documents": [],
+  "source_sections": [],
+  "symbols": [],
+  "components": [],
+  "relations": [],
+  "diagnostics": [],
+  "coverage": []
+}

@@ -1,44 +1,55 @@
 using System.CommandLine;
-using System.ComponentModel;
-using System.Reflection;
-using Csharp2Md.Core.Manifests;
+using System.Globalization;
+using Csharp2Md.Core.Analysis;
+using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Output;
-using Csharp2Md.Core.Pipeline;
 using Csharp2Md.Core.Topic;
 
 const string Usage =
     "Usage: csharp2md [directory] [--manifest <file>] [--output <directory>] [--force] "
-    + "[--topic <slug>] [--domain <slug>]";
+    + "[--topic <slug>] [--domain <slug>] [--analysis <syntax-only|semantic>] "
+    + "[--trust <untrusted|trusted-solution>] [--include-source-generators] [--analysis-timeout <duration>]";
 
 var directoryArgument = new Argument<DirectoryInfo?>("directory")
 {
     Description = "Directory to analyze. Defaults to the current working directory.",
     Arity = ArgumentArity.ZeroOrOne,
 };
-
 var manifestOption = new Option<FileInfo?>("--manifest")
 {
     Description = "Optional manifest JSON file listing service roots to analyze.",
 };
-
 var outputOption = new Option<DirectoryInfo?>("--output", "-o")
 {
     Description = "Exact output directory. Defaults to a sibling named <input>_md.",
 };
-
 var forceOption = new Option<bool>("--force")
 {
     Description = "Replace a non-empty output directory not previously created by csharp2md.",
 };
-
 var topicOption = new Option<string?>("--topic")
 {
     Description = "Slug identifying the generated topic. Defaults to the slug of the input directory name.",
 };
-
 var domainOption = new Option<string?>("--domain")
 {
     Description = "Slug identifying the topic's domain. Defaults to 'system-design'.",
+};
+var analysisOption = new Option<string?>("--analysis")
+{
+    Description = "Analysis mode: syntax-only (default) or semantic.",
+};
+var trustOption = new Option<string?>("--trust")
+{
+    Description = "Input trust: untrusted (default) or trusted-solution.",
+};
+var generatorsOption = new Option<bool>("--include-source-generators")
+{
+    Description = "Run source generators in trusted semantic mode.",
+};
+var timeoutOption = new Option<string?>("--analysis-timeout")
+{
+    Description = "Positive per-service analysis timeout (default 00:10:00).",
 };
 
 var rootCommand = new RootCommand("csharp2md - convert a C#/.NET codebase to Markdown");
@@ -48,6 +59,12 @@ rootCommand.Options.Add(outputOption);
 rootCommand.Options.Add(forceOption);
 rootCommand.Options.Add(topicOption);
 rootCommand.Options.Add(domainOption);
+rootCommand.Options.Add(analysisOption);
+rootCommand.Options.Add(trustOption);
+rootCommand.Options.Add(generatorsOption);
+rootCommand.Options.Add(timeoutOption);
+
+var consoleObserver = new ConsoleProgressObserver();
 
 rootCommand.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
 {
@@ -55,158 +72,133 @@ rootCommand.SetAction(async (ParseResult parseResult, CancellationToken cancella
     var manifestFile = parseResult.GetValue(manifestOption);
     var configuredOutput = parseResult.GetValue(outputOption);
     var force = parseResult.GetValue(forceOption);
-    var topic = parseResult.GetValue(topicOption);
-    var domain = parseResult.GetValue(domainOption);
 
     if (directory is not null && manifestFile is not null)
     {
-        Console.Error.WriteLine("csharp2md: specify either a directory or --manifest, not both.");
-        Console.Error.WriteLine(Usage);
-        return 1;
+        return Invalid("specify either a directory or --manifest, not both.", includeUsage: true);
     }
 
-    var inputRoot = directory?.FullName
-        ?? manifestFile?.Directory?.FullName
-        ?? Environment.CurrentDirectory;
-
+    var inputRoot = directory?.FullName ?? manifestFile?.Directory?.FullName ?? Environment.CurrentDirectory;
     if (manifestFile is null && !Directory.Exists(inputRoot))
     {
-        Console.Error.WriteLine($"csharp2md: input directory does not exist or is not a directory: {inputRoot}");
-        return 1;
+        return Invalid($"input directory does not exist or is not a directory: {inputRoot}");
+    }
+
+    if (manifestFile is not null && !manifestFile.Exists)
+    {
+        return Invalid($"manifest file does not exist: {manifestFile.FullName}");
     }
 
     var outputRoot = configuredOutput?.FullName ?? OutputPathResolver.DefaultForInput(inputRoot);
     if (outputRoot is null)
     {
-        Console.Error.WriteLine(
-            $"csharp2md: cannot derive an output name from input directory '{inputRoot}'; specify --output.");
-        return 1;
+        return Invalid($"cannot derive an output name from input directory '{inputRoot}'; specify --output.");
     }
 
-    // WIKI-14: rejected before anything touches outputRoot - no OutputWriter.PrepareRun has run yet.
-    var topicOptionsResult = TopicOptions.Create(topic, domain, inputRoot);
-    if (!topicOptionsResult.IsSuccess)
+    var topicResult = TopicOptions.Create(
+        parseResult.GetValue(topicOption),
+        parseResult.GetValue(domainOption),
+        inputRoot);
+    if (!topicResult.IsSuccess)
     {
-        Console.Error.WriteLine($"csharp2md: {topicOptionsResult.Error}");
-        return 1;
+        return Invalid(topicResult.Error!);
     }
 
-    var topicOptions = topicOptionsResult.Options!;
-
-    PipelineRunResult result;
-    try
+    if (!TryAnalysisMode(parseResult.GetValue(analysisOption), out var analysisMode))
     {
-        var pipeline = new AnalysisPipeline();
-        result = manifestFile is not null
-            ? await pipeline.RunAsync(
-                manifestFile.FullName, outputRoot, cancellationToken, forceOutput: force, topicOptions: topicOptions)
-            : await pipeline.RunAsync(
-                new Manifest([new ManifestEntry(inputRoot)]),
-                inputRoot,
-                outputRoot,
-                cancellationToken,
-                forceOutput: force,
-                topicOptions: topicOptions);
-    }
-    catch (OutputPreparationException exception)
-    {
-        Console.Error.WriteLine($"csharp2md: {exception.Message}");
-        return 1;
-    }
-    catch (Exception exception) when (CannotStartBuildHost(exception))
-    {
-        Console.Error.WriteLine(
-            "csharp2md: could not start the Roslyn build host - the .NET SDK ('dotnet') could not be "
-            + "started. Install the .NET SDK and make sure 'dotnet' is on PATH, then run csharp2md again.");
-        return 1;
+        return Invalid("--analysis must be 'syntax-only' or 'semantic'.");
     }
 
-    if (!result.IsSuccess)
+    if (!TryTrustMode(parseResult.GetValue(trustOption), out var trustMode))
     {
-        Console.Error.WriteLine($"csharp2md: {result.ManifestError!.Value.Message}");
-        return 1;
+        return Invalid("--trust must be 'untrusted' or 'trusted-solution'.");
     }
 
-    foreach (var warning in result.Warnings)
+    if (!TryTimeout(parseResult.GetValue(timeoutOption), out var timeout))
     {
-        Console.Error.WriteLine($"csharp2md: warning: {warning}");
+        return Invalid("--analysis-timeout must be a positive duration.");
     }
 
-    // WIKI-10/WIKI-11/WIKI-18..22: the topic scaffold and run log are written for every successful
-    // manifest run (including one that will still exit 1 on frontmatter validation failures below -
-    // "the rest of the topic is still generated", design.md), never for a failed manifest (nothing
-    // was written at all in that case, handled by the !result.IsSuccess branch above).
-    var toolVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
-    TopicScaffoldWriter.Write(outputRoot, topicOptions, toolVersion);
-
-    var absoluteOutputRoot = Path.GetFullPath(outputRoot);
-    RunLogWriter.Write(
+    var requestResult = AnalysisRequest.Create(
+        manifestFile?.FullName ?? inputRoot,
         outputRoot,
-        new RunLogData(
-            BuildInvocation(directory?.FullName, manifestFile, outputRoot, force, topicOptions),
-            result.DocumentCount,
-            result.Graph.Edges.Count,
-            result.ServiceCount,
-            result.FrontmatterFailures,
-            absoluteOutputRoot),
-        TimeProvider.System);
-
-    foreach (var failure in result.FrontmatterFailures)
+        force,
+        new AnalysisOptions
+        {
+            Mode = analysisMode,
+            Trust = trustMode,
+            IncludeSourceGenerators = parseResult.GetValue(generatorsOption),
+            ServiceTimeout = timeout,
+        },
+        topicResult.Options!.Topic,
+        topicResult.Options.Domain);
+    if (!requestResult.IsSuccess)
     {
-        Console.Error.WriteLine($"csharp2md: {failure.SourcePath}: {failure.Error}");
+        return Invalid(requestResult.Message!);
     }
 
-    Console.Write(RunReporter.Summarize(result.LoadReport));
-    // WIKI-17: document count, frontmatter validation failure count, and the output topic path.
-    Console.WriteLine(
-        $"Wrote {result.DocumentCount} document(s) and {result.Graph.Edges.Count} dependency edge(s) to {outputRoot}");
-    Console.WriteLine($"Frontmatter validation failures: {result.FrontmatterFailures.Count}");
-    Console.WriteLine($"Output topic path: {absoluteOutputRoot}");
+    var result = await new AnalysisEngine(consoleObserver).AnalyzeAsync(requestResult.Request!, cancellationToken);
+    foreach (var diagnostic in result.Diagnostics)
+    {
+        Console.Error.WriteLine($"csharp2md: {diagnostic}");
+    }
 
+    Console.WriteLine(result.Summary);
+    Console.WriteLine($"Output topic path: {Path.GetFullPath(outputRoot)}");
     return result.ExitCode;
 });
 
 return await rootCommand.Parse(args).InvokeAsync();
 
-// WIKI-18: reconstructed from the resolved arguments (defaults already applied), not the raw argv -
-// so a zero-config run's log.md still records the topic/domain/output it actually used.
-static string BuildInvocation(
-    string? directoryArg, FileInfo? manifestFile, string outputRoot, bool force, TopicOptions options)
+static int Invalid(string message, bool includeUsage = false)
 {
-    var parts = new List<string> { "csharp2md" };
-
-    if (manifestFile is not null)
+    Console.Error.WriteLine($"csharp2md: {message}");
+    if (includeUsage)
     {
-        parts.Add($"--manifest \"{manifestFile.FullName}\"");
-    }
-    else if (directoryArg is not null)
-    {
-        parts.Add($"\"{directoryArg}\"");
+        Console.Error.WriteLine(Usage);
     }
 
-    parts.Add($"--output \"{outputRoot}\"");
-    parts.Add($"--topic {options.Topic}");
-    parts.Add($"--domain {options.Domain}");
-
-    if (force)
-    {
-        parts.Add("--force");
-    }
-
-    return string.Join(' ', parts);
+    return 1;
 }
 
-// MSBuildWorkspace starts exactly one external process - the BuildHost - so a Win32Exception
-// anywhere in the chain means that launch failed.
-static bool CannotStartBuildHost(Exception exception)
+static bool TryAnalysisMode(string? value, out AnalysisMode mode)
 {
-    for (var current = exception; current is not null; current = current.InnerException)
+    mode = value switch
     {
-        if (current is Win32Exception)
-        {
-            return true;
-        }
+        null or "syntax-only" => AnalysisMode.SyntaxOnly,
+        "semantic" => AnalysisMode.Semantic,
+        _ => default,
+    };
+    return value is null or "syntax-only" or "semantic";
+}
+
+static bool TryTrustMode(string? value, out TrustMode mode)
+{
+    mode = value switch
+    {
+        null or "untrusted" => TrustMode.Untrusted,
+        "trusted-solution" => TrustMode.TrustedSolution,
+        _ => default,
+    };
+    return value is null or "untrusted" or "trusted-solution";
+}
+
+static bool TryTimeout(string? value, out TimeSpan timeout)
+{
+    timeout = TimeSpan.FromMinutes(AnalysisRequest.DefaultServiceTimeoutMinutes);
+    return value is null
+        || (TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out timeout) && timeout > TimeSpan.Zero);
+}
+
+internal sealed class ConsoleProgressObserver : Csharp2Md.Core.Analysis.IAnalysisEngineObserver
+{
+    public void ScopeStarted(string scope)
+    {
+        Console.Error.WriteLine($"[csharp2md] Analyzing {scope}");
     }
 
-    return false;
+    public void ScopeCompleted(string scope)
+    {
+        Console.Error.WriteLine($"[csharp2md] Completed {scope}");
+    }
 }

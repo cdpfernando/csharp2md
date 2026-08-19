@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/felipfr/csharp2md/schemas/facts.schema.json",
+  "title": "csharp2md factual document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "solutions",
+    "projects",
+    "targets",
+    "documents",
+    "source_sections",
+    "symbols",
+    "components",
+    "relations",
+    "diagnostics",
+    "coverage"
+  ],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "solutions": { "type": "array", "items": { "$ref": "#/$defs/solution_fact" } },
+    "projects": { "type": "array", "items": { "$ref": "#/$defs/project_fact" } },
+    "targets": { "type": "array", "items": { "$ref": "#/$defs/target_fact" } },
+    "documents": { "type": "array", "items": { "$ref": "#/$defs/document_fact" } },
+    "source_sections": { "type": "array", "items": { "$ref": "#/$defs/source_section_fact" } },
+    "symbols": { "type": "array", "items": { "$ref": "#/$defs/symbol_fact" } },
+    "components": { "type": "array", "items": { "$ref": "#/$defs/component_fact" } },
+    "relations": { "type": "array", "items": { "$ref": "#/$defs/relation_fact" } },
+    "diagnostics": { "type": "array", "items": { "$ref": "#/$defs/analysis_diagnostic" } },
+    "coverage": { "type": "array", "items": { "$ref": "#/$defs/coverage_fact" } }
+  },
+  "$defs": {
+    "fact_resolution": { "enum": ["exact", "partial", "syntactic", "unresolved", "not-applicable"] },
+    "fact_kind": { "enum": ["solution", "project", "target", "document", "source-section", "symbol", "component", "relation"] },
+    "relation_partition": { "enum": ["compile-time", "inheritance", "dependency-injection", "http", "grpc", "events"] },
+    "fact_level": { "enum": ["solution", "project", "target", "document", "detector"] },
+    "coverage_applicability": { "enum": ["applicable", "not-applicable"] },
+    "coverage_attempt": { "enum": ["not-attempted", "attempted"] },
+    "diagnostic_stage": { "enum": ["inventory", "evaluation", "workspace", "compilation", "document", "validation", "generator", "detector", "persistence", "projection"] },
+    "diagnostic_severity": { "enum": ["information", "warning", "error"] },
+    "header": {
+      "type": "object",
+      "required": ["id", "kind", "resolution", "provenance", "evidence", "diagnostic_ids"]
+    },
+    "solution_fact": { "type": "object", "required": ["header", "name", "project_ids"] },
+    "project_fact": { "type": "object", "required": ["header", "project_id", "name", "relative_path", "target_ids", "document_ids"], "properties": { "evaluation": { "$ref": "#/$defs/project_evaluation" } } },
+    "project_evaluation": { "type": "object", "required": ["declared_sdk", "evaluated_imports", "target_frameworks", "requested_analysis", "effective_resolution", "restore_performed", "isolation"] },
+    "target_fact": { "type": "object", "required": ["header", "target_id", "project_id", "target_framework"], "properties": { "evaluation": { "$ref": "#/$defs/target_evaluation" } } },
+    "target_evaluation": { "type": "object", "required": ["output_type", "assembly_name", "root_namespace", "compile_items", "project_references", "package_references", "references", "constants", "language_version", "nullable_mode", "compiled_extensions"] },
+    "document_fact": { "type": "object", "required": ["header", "document_id", "project_id", "relative_path", "section_ids", "symbol_ids"] },
+    "source_section_fact": { "type": "object", "required": ["header", "document_id", "section_kind", "occurrence_ordinal", "start_offset", "length", "source"] },
+    "symbol_fact": { "type": "object", "required": ["header", "symbol_id", "document_id", "symbol_kind", "contains_error_symbol", "base_and_interface_ids", "attributes", "relevant_type_references"], "properties": { "semantics": { "$ref": "#/$defs/symbol_semantics" } } },
+    "symbol_semantics": { "type": "object", "required": ["implemented_member_ids"] },
+    "component_fact": { "type": "object", "required": ["header", "component_id", "component_kind", "project_ids"] },
+    "relation_fact": { "type": "object", "required": ["header", "relation_id", "source_id", "partition", "relation_kind"], "properties": { "details": { "type": "array", "items": { "$ref": "#/$defs/relation_detail" } } } },
+    "relation_detail": { "type": "object", "required": ["key", "value"] },
+    "analysis_diagnostic": { "type": "object", "required": ["id", "code", "severity", "stage", "scope_id", "message", "data", "evidence"] },
+    "coverage_fact": { "type": "object", "required": ["scope_id", "fact_level", "applicability", "attempt", "resolution", "diagnostic_ids"] }
+  }
+}

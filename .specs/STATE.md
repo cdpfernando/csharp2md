@@ -8,7 +8,7 @@
 - **Trade-off**: Gave up the materialized-model architecture, which would make renderers pure functions of a complete model and make added output formats trivial. Any future output that needs whole-codebase knowledge per file (e.g. incoming-edge sections) will need a second pass or a model-building variant.
 - **Scope**: All of csharp2md — pipeline shape, component boundaries, memory strategy.
 - **Date**: 2026-08-14
-- **Status**: active
+- **Status**: superseded by AD-008
 
 ### AD-002
 - **Decision**: Source files render as structural Markdown (a section per type/member, full bodies verbatim, XML docs as prose, light semantic facts), guarded by a span-coverage invariant: every source byte lands in exactly one emitted section. Semantic enrichment is an additive decorator, never woven into the renderer.
@@ -16,7 +16,7 @@
 - **Trade-off**: Structural rendering can silently drop usings, inter-member code, `#region`, and top-level statements. Accepted only because the span-coverage test converts that risk into a testable invariant; without that test this decision is not safe.
 - **Scope**: MarkdownRenderer and any future output format derived from source files.
 - **Date**: 2026-08-14
-- **Status**: active
+- **Status**: superseded by AD-009
 
 ### AD-003
 - **Decision**: Target `net10.0`, use `Microsoft.CodeAnalysis.Workspaces.MSBuild` 5.6.0, do **not** reference `Microsoft.Build.*`, do **not** call `MSBuildLocator.RegisterDefaults()`, and read load failures from the `workspace.Diagnostics` property rather than the `WorkspaceFailed` event.
@@ -40,7 +40,7 @@
 - **Trade-off**: `dependencies.json` and the Mermaid diagram show, for `HardCoded`/`Dynamic` edges, whatever raw value was resolved (a URL, an env-var name, a Docker service name) rather than necessarily a real manifest service name — honest but less immediately readable as a service graph. User confirmed deferring a real matching strategy to a later iteration ("depois pensamos em uma estratégia de match", 2026-08-14).
 - **Scope**: `GraphBuilder` (T19) and any future correlation logic for HTTP/gRPC signal targets.
 - **Date**: 2026-08-14
-- **Status**: active
+- **Status**: superseded by AD-011
 
 ### AD-006
 - **Decision**: The LLMWiki topic layout replaces the v1 flat output layout unconditionally — every run writes beneath `raw/` (`raw/codebase/` for source documents, `raw/topic.yaml`, `raw/CLAUDE.md`, `raw/dependencies.json`, `raw/dependencies.mmd`, `raw/log.md`), with no opt-in flag and no compatibility mode. `.csharp2md-output` stays at the output root. Frontmatter is injected inline as a decorator during the existing per-document write, and `--topic` / `--domain` are added to the CLI surface.
@@ -48,7 +48,7 @@
 - **Trade-off**: A breaking change to the v1 output shape — existing end-to-end tests asserting root-level paths must be updated, and any consumer of the v1 layout breaks. User explicitly waived backward compatibility (2026-08-15). Keeping the marker outside `raw/` is a deliberate asymmetry, required because `OutputWriter.PrepareRun` reads it at the output root before deleting anything.
 - **Scope**: All csharp2md output layout, the CLI option surface, and where frontmatter is produced.
 - **Date**: 2026-08-15
-- **Status**: active
+- **Status**: superseded by AD-010
 
 ### AD-007
 - **Decision**: Breaking work lands on a feature branch, never on `master`. `csharp2md-llmwiki-phase1` runs on `feat/llmwiki-phase1`, cut from `master`, carrying one atomic commit per task; it merges only after the Verifier returns PASS, and it merges through a GitHub Pull Request rather than a local merge. The output-format break is signalled by semver: `<Version>2.0.0</Version>` is introduced as part of the feature and the merge commit is tagged `v2.0.0`. Pushing the branch and opening the PR require the user's explicit go-ahead each time.
@@ -58,7 +58,85 @@
 - **Date**: 2026-08-15
 - **Status**: active
 
+### AD-008
+- **Decision**: csharp2md retains the Inventory → Analysis → Aggregate stages but replaces render-write-discard with a validated factual-fragment lifecycle: inventory completes inertly, each project/document fragment is extracted, enriched when authorized, validated, persisted, projected to Markdown, and discarded; aggregation retains only catalogs, compact summaries, diagnostics, coverage, and persisted references. This supersedes AD-001.
+- **Reason**: v3 needs one factual authority for JSON, Markdown, relations, coverage, and diagnostics without materializing a complete solution model. A per-fragment materialization preserves the existing sequential memory bound while allowing pure projectors and cross-artifact validation.
+- **Trade-off**: Aggregates that need whole-codebase knowledge must stream persisted fragments or retain purpose-built summaries. The pipeline performs more small writes and needs an explicit manifest/index to navigate fragments.
+- **Scope**: Pipeline lifecycle, memory strategy, fact persistence, and aggregate inputs.
+- **Date**: 2026-08-17
+- **Status**: active
+
+### AD-009
+- **Decision**: Validated document facts are the sole input to Markdown projection. Syntax extraction retains AD-002's exact span partition and source-byte fidelity, but semantic and detector information become facts before rendering instead of direct Markdown decorators. This supersedes AD-002.
+- **Reason**: Direct enrichment lets presentation and machine data disagree. Persisting and validating one fragment before projecting it makes facts authoritative while retaining the source-fidelity invariant that made structural Markdown safe.
+- **Trade-off**: The syntax extractor must store enough section/source information for projection, and renderer tests migrate from syntax-tree inputs to factual-fragment inputs.
+- **Scope**: Syntax extraction, Markdown/frontmatter rendering, semantic annotations, and source fidelity.
+- **Date**: 2026-08-17
+- **Status**: active
+
+### AD-010
+- **Decision**: v3 keeps the unconditional `raw/` topic root and the ownership marker outside it, but replaces `raw/dependencies.json` with schema-version-2 factual fragments under `raw/facts/` and partitioned relation files. Frontmatter becomes a compact fact reference; topic, domain, and generator version exist only in topic metadata or the factual manifest. This supersedes AD-006.
+- **Reason**: The v2 dependency graph and per-document topic metadata duplicate or overstate information. Partitioned validated facts support navigation, honest resolution, and deterministic downstream processing.
+- **Trade-off**: The output is deliberately incompatible with v2 and requires consumers to start from `raw/facts/manifest.json`. No compatibility adapter or dual-write mode is provided.
+- **Scope**: Output layout, factual/frontmatter schema, dependency artifacts, and downstream navigation.
+- **Date**: 2026-08-17
+- **Status**: active
+
+### AD-011
+- **Decision**: A runtime relation without a proven target keeps `target: null`, carries `unresolved_reason`, evidence, detector provenance, and `Unresolved` or `Partial` resolution. Logical names, URLs, environment keys, and discovery names are never promoted to `ServiceName` without matching evidence. Project and package references are compile-time relations only. This supersedes AD-005.
+- **Reason**: Wrapping a raw logical value as a service identity creates a graph node that the analysis did not prove. v3 distinguishes observed text from resolved identity and validates the distinction structurally.
+- **Trade-off**: Mermaid and relation outputs contain explicit unresolved endpoints until a future evidence-backed matcher exists, so diagrams can be less immediately connected but remain truthful.
+- **Scope**: HTTP, gRPC, messaging, direct-reference relations, component graphs, and validation.
+- **Date**: 2026-08-17
+- **Status**: active
+
+### AD-012
+- **Decision**: `syntax-only` with untrusted input is the default and creates no executable analysis adapter. Semantic analysis requires `--trust trusted-solution`; source generators require a second explicit opt-in; analyzers never run. Trust and option validation occurs before output preparation or process creation.
+- **Reason**: MSBuild evaluation can execute property functions and Roslyn extensions are executable assemblies. Without hard CPU/memory isolation, only inert source/project parsing is appropriate for arbitrary code.
+- **Trade-off**: Zero-configuration runs lose semantic precision. Trusted runs expose the user to evaluated project logic and record `isolation: none`; callers must make that choice explicitly.
+- **Scope**: CLI modes, analysis composition, MSBuild/Roslyn adapters, output preparation, and security tests.
+- **Date**: 2026-08-17
+- **Status**: active
+
+### AD-013
+- **Decision**: v3 is a modular replacement inside `Csharp2Md.Core`. `AnalysisEngine.AnalyzeAsync(AnalysisRequest, CancellationToken)` is the analysis module's only external interface; Roslyn, process, detector, storage, and projection seams are internal. Migration occurs by cuts that remove each superseded path, with no permanent v2/v3 branch and no new assembly until a second external caller justifies it.
+- **Reason**: The current `AnalysisPipeline` already mixes inventory, loading, detection, rendering, validation, writing, and aggregation. Adding facts in place would spread mode checks and expose internal coordination. A deep module gives callers one operation while keeping change and tests local.
+- **Trade-off**: Internal implementation remains substantial inside one project, and namespace/folder dependency discipline is not compiler-enforced across assemblies. This is accepted to avoid project/package ceremony before it provides leverage.
+- **Scope**: Analysis module interface, internal seams, migration strategy, project layout, and primary test surface.
+- **Date**: 2026-08-17
+- **Status**: active
+
+### AD-014
+- **Decision**: v3 factual IDs use the approved `id1:<type>;key=value;...` grammar with ordered percent-encoded components, ordinal case-sensitive comparison, and no Unicode or case normalization. Resolved symbols prefer documentation-comment IDs and otherwise use a location-free canonical semantic signature; syntactic symbols use a location-free normalized declaration signature. Artifact paths are SHA-256 references of canonical Fact IDs, and a distinct-ID collision is a structural failure rather than an order-dependent suffix.
+- **Reason**: Stable facts must survive absolute-root relocation and unrelated preceding edits while remaining auditable, unambiguous, portable to restrictive filesystems, and compatible with sequential fragment persistence.
+- **Trade-off**: IDs are more verbose, the fallback signature and repeated-occurrence ordinal need deliberate tests, and a cryptographic reference collision fails the run instead of attempting an unstable recovery. Consumers must navigate persisted data through the manifest's artifact reference rather than deriving a filename from a readable Fact ID.
+- **Scope**: All factual value types, validation, storage references, manifest navigation, semantic enrichment, detector facts, and v3 output determinism.
+- **Date**: 2026-08-17
+- **Status**: active
+
 ## Handoff
+
+- **Feature**: csharp2md v3 — factual model and semantic analysis (`.specs/features/csharp2md-v3/`)
+- **Phase / Task**: Execute — **all 47 tasks complete (T1-T47), feature-level validation PASSED.** Everything is committed; nothing remains but the user's push/PR decision (branch never pushed, per AD-007).
+- **Completed this session (2026-08-19)**: T45 (`V3DeterminismTests` — cross-root byte-identical output, independently recomputed manifest hashes, persisted-fragment source reconstruction, approved Markdown snapshot), a pre-existing mojibake fix in `MarkdownProjector` surfaced while approving that snapshot (`884bb10`), T46 (package version 3.0.0, real packed/installed-tool assertions), T47 (README.md/README.pt-BR.md rewritten for the actual v3 surface — both had been stuck describing the stale v1 flat layout; ran the four required pre-Verifier quality skills, all clean; walked all 70 spec requirements and the 16-item Success Criteria checklist against actual task-completion state, closing a chronic staleness drift where most rows were never updated after their closing task landed). Then the mandatory independent Verifier ran two passes: the first (`.specs/features/csharp2md-v3/validation.md`) found two real, well-scoped gaps — a surviving discrimination-sensor mutant in `HttpRelationDetector.IsHttpClient` (no lookalike caught a fully-qualified-name-to-simple-name weakening) and an overstated migration-ledger claim (`MigrationLedgerTests` verifies at 12-category granularity, not per-row for all 428, though T41's evidence claimed the latter) — both fixed (`783a59a`, `5a1d026`) and independently re-verified PASS in a second pass (`e4e4aa3`): gate green, discrimination sensor 5/5 killed.
+- **In-progress** (file:line): none. Feature is done.
+- **Next step**: None for this feature. Push `feat/csharp2md-v3` and open the PR to `master` require the user's explicit go-ahead (AD-007) — not yet given, not yet requested.
+- **Pitfalls confirmed empirically across T34-T39 (kept as reference for any future detector/relation work in this codebase, not forward-looking for this feature anymore)**:
+  1. Any detector file nested under `Csharp2Md.Core.Detection.<Family>` (e.g. `.Http`, `.Grpc`, `.Messaging`, `.CompileTime`) has C#'s enclosing-namespace lookup resolve the bare name `DocumentDetectionContext` to the legacy v2 type in `Csharp2Md.Core.Detection` (still present pending T41's removal) instead of the v3 one in `Csharp2Md.Core.Detection.Contracts`, even with the right `using` present — a `using`-alias does **not** override this either. Fix: `using FactDocumentDetectionContext = Csharp2Md.Core.Detection.Contracts.DocumentDetectionContext;` (pick a name that can't collide) and use that alias throughout the detector file; fully-qualify the same type inline in the test file wherever it imports both `Csharp2Md.Core.Detection` and `Csharp2Md.Core.Detection.Contracts` (CS0104 ambiguity there).
+  2. For a reduced extension-method call `receiver.Extension(x)`, do not trust `IInvocationOperation.Instance`/`Arguments` position to find the receiver or its type — both have been observed to behave differently than the official XML docs describe depending on call shape. The robust, call-shape-independent way to get an extension method's declared receiver type is `(method.ReducedFrom ?? method).Parameters[0].Type` (works whether or not Roslyn reduced this particular call). To extract a specific named argument's value regardless of position, always match by `argument.Parameter?.Name`, never by index.
+  3. A `string`/value-type argument passed to an `object`/interface-typed parameter (e.g. `AddKeyedSingleton(..., object? serviceKey)`) arrives as `IArgumentOperation.Value` being an `IConversionOperation` (boxing), whose own `.ConstantValue.HasValue` is `false` — unwrap via `conversion.Operand.ConstantValue` before falling back to "irreducible expression, mark Partial". A single-element `params` array constant is a separate case: `IArrayCreationOperation.Initializer.ElementValues[0].ConstantValue`.
+  4. A `typeof(X)` argument is an `ITypeOfOperation` — read `.TypeOperand` for the `ITypeSymbol`; an unbound generic (`typeof(IRepository<>)`) has `IsUnboundGenericType: true` on that symbol.
+  5. Any test fixture that inlines framework-shape stubs (fake `IServiceCollection`, fake attribute/base-class hierarchies, etc.) alongside the code under test must compile them as a **separate `SyntaxTree`** from the detection-target tree in the same `CSharpCompilation` (each tree needs its own `using` directives — see the `BodyUsings`/`FrameworkStubs` split in both `AspNetCoreDetectorTests.cs` and `DependencyInjectionDetectorTests.cs`), or the detector will legitimately also "detect" declarations inside your own stub scaffolding.
+  6. Ground every non-obvious Roslyn member against `~/.nuget/packages/microsoft.codeanalysis.common/5.6.0/lib/net10.0/Microsoft.CodeAnalysis.xml` (grep it) before relying on remembered behavior — official docs and actual runtime behavior have already diverged once (pitfall 2) in this exact Roslyn/net10.0 setup.
+  7. Pitfalls 2-3 (extension-method `Arguments`/`Instance` quirks, boxing conversions) are specific to **extension-method or `object`-typed-parameter call shapes** — T36's `HttpRelationDetector` needed none of them because every real `HttpClient`/`IHttpClientFactory` member it uses is a genuine instance method/property. Don't apply those workarounds reflexively; check whether the call shape is actually an extension method or boxes its argument first.
+  8. (Resolved as of T41) `spec.md`'s "Requirement Traceability" table (~line 323+) had an unrelated, never-committed AD-014 identity-grammar edit sitting in its working tree since T7. It stopped reproducing once that edit was committed (by T41 at the latest) — the `git stash` workaround described here is no longer needed for this feature, but the underlying lesson stands for any future project: check `git status` on a spec file before editing its traceability table, in case an earlier task left an unrelated edit uncommitted.
+  9. Comparing a **constructed** generic method's `Parameters[i].Type` (call-site type-substituted, e.g. `OrderPlaced`) against its own `TypeParameters[i]` (always unsubstituted, e.g. `TEvent`) can never succeed — they're from different substitution states. Use `method.ConstructedFrom` (or `method.OriginalDefinition`) first, then compare `Parameters`/`TypeParameters` on *that*, so both sides stay consistently unsubstituted. This broke every direct-interface-typed call in T38 silently (zero facts, no exception) until fixed; a concrete-typed call site was accidentally unaffected because `INamedTypeSymbol.GetMembers(name)` already returns unconstructed declarations.
+  10. `FactValidator` (T11, `src/Csharp2Md.Core/Facts/Validation/FactValidator.cs`) only requires `Header.Evidence` non-empty and `Header.Provenance` to include a `DetectorId` for **runtime** relations (`RelationFact.IsRuntime`, true for `DependencyInjection`/`Http`/`Grpc`/`Events`, false for `CompileTime`/`Inheritance`). A `CompileTime`-partition fact may legitimately have empty evidence when it has no source-document location to point at (e.g. a project reference, which lives in project XML, not a `DocumentFact`) — don't invent fake evidence to satisfy a rule that doesn't apply. Also: `FactValidator.CompileTimeOnlyRelationKinds` already hardcodes the exact strings `"project-reference"`/`"package-reference"` (T11) — read the validator before naming new compile-time relation kinds, don't guess a name and hope it matches.
+- **Blockers**: None. (Historical: this Claude Code account hit its monthly spend limit on 2026-08-18 mid-Phase-5 sub-agent batch work; resolved by finishing inline. Not relevant to resuming from here — the feature is done.)
+- **Uncommitted files**: unchanged, still out of scope for this feature: `.agents/`, `.claude/`, `.cursor/`, `.windsurf/`, `.specs/features/csharp2md-v3/context.md`, both dated Markdown files, `AGENTS.md`, `CLAUDE.md`, `research/`, and `src/Csharp2Md.Cli/Properties/`. (`README.pt-BR.md` was in this list before T47; T47 rewrote and committed it, so it's no longer uncommitted.)
+- **Branch**: `feat/csharp2md-v3`, HEAD `e4e4aa3`. All 47 tasks committed, independent Verifier returned PASS after one fix→re-verify iteration (`.specs/features/csharp2md-v3/validation.md`). Nothing left except the user's push/PR decision (AD-007).
+
+## Historical Handoff — LLMWiki Phase 1
 
 **Feature**: csharp2md + LLMWiki Phase 1 (`csharp2md-llmwiki-phase1`)
 **Phase/Task**: Execute — **all 21 tasks complete (T1-T21), feature-level validation PASSED.** Everything is committed; nothing remains but the user's push/PR decision.

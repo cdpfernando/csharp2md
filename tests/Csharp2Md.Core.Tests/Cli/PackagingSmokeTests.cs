@@ -1,4 +1,5 @@
 using Csharp2Md.Core.Tests.Pipeline;
+using Csharp2Md.Core.Topic;
 
 namespace Csharp2Md.Core.Tests.Cli;
 
@@ -26,7 +27,9 @@ public sealed class PackagingSmokeTests : IAsyncLifetime
         var packResult = await ProcessRunner.RunAsync(
             "dotnet", $"pack \"{CliProjectPath}\" -c Release", RepoRoot, CancellationToken.None);
         Assert.True(packResult.ExitCode == 0, $"dotnet pack failed:\n{packResult.StandardOutput}\n{packResult.StandardError}");
-        Assert.NotEmpty(Directory.GetFiles(NupkgDirectory, "*.nupkg"));
+        // T46: the package's own metadata is the v3 release marker (AD-007); a stale nupkg version
+        // would mean a `dotnet tool update` consumer never learns the output contract changed.
+        Assert.NotEmpty(Directory.GetFiles(NupkgDirectory, "csharp2md.3.0.0.nupkg"));
 
         var installResult = await ProcessRunner.RunAsync(
             "dotnet",
@@ -35,8 +38,8 @@ public sealed class PackagingSmokeTests : IAsyncLifetime
             CancellationToken.None);
         Assert.True(installResult.ExitCode == 0, $"dotnet tool install failed:\n{installResult.StandardOutput}\n{installResult.StandardError}");
 
-        // Direct-directory mode uses the automatic .sln heuristic (P1-02), which picks up
-        // Acme.Orders.slnx and loads 3 real projects. Acme.DoesNotExist is skipped rather than counted.
+        // Direct-directory mode uses the automatic .sln heuristic and inventories all four
+        // declared projects without invoking restore or the Roslyn BuildHost.
         var outputDirectory = Directory.CreateTempSubdirectory("csharp2md-smoke-").FullName;
         var runDirectory = Directory.CreateTempSubdirectory("csharp2md-smoke-cwd-").FullName;
         var inputDirectory = TestPaths.SyntheticSolution("Acme.Orders");
@@ -47,14 +50,18 @@ public sealed class PackagingSmokeTests : IAsyncLifetime
             runDirectory, // outside the repo entirely — proves the packed tool is self-contained
             CancellationToken.None);
 
-        // Acme.Broken (referenced by Acme.Orders.slnx) is genuinely unrestorable, so the run
-        // reports it needing attention rather than a clean summary — still exits 0 per P3-05.
-        // Pinned to "need attention" specifically (not just "3 project(s)", which the clean-run
-        // branch would also match) so this test actually exercises the degraded case it claims to.
         Assert.True(
             runResult.ExitCode == 0,
             $"packed tool run failed (exit {runResult.ExitCode}):\n{runResult.StandardOutput}\n{runResult.StandardError}");
-        Assert.Contains("1 of 3 project(s) need attention", runResult.StandardOutput);
+        Assert.Contains("Analyzed 4 project(s)", runResult.StandardOutput, StringComparison.Ordinal);
+
+        // T46: the real packed/installed binary — not just the in-process test build — must emit the
+        // v3 factual contract: schema version 2, a matching tool version, and no v2 compatibility file.
+        var rawRoot = TopicLayout.RawRoot(outputDirectory);
+        var manifest = File.ReadAllText(Path.Combine(rawRoot, "facts", "manifest.json"));
+        Assert.Contains("\"schema_version\": 2", manifest, StringComparison.Ordinal);
+        Assert.Contains("\"tool_version\": \"3.0.0\"", manifest, StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Combine(rawRoot, "dependencies.json")));
     }
 
     private static async Task UninstallIfPresentAsync() =>

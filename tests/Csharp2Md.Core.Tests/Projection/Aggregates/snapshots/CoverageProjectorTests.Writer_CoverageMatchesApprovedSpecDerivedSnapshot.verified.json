@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "kind": "coverage",
+  "entries": [
+    {
+      "scope_id": "id1:project;path=Probe.csproj",
+      "fact_level": "project",
+      "applicability": "applicable",
+      "attempt": "not-attempted",
+      "resolution": "syntactic",
+      "diagnostic_ids": []
+    }
+  ]
+}
