@@ -77,6 +77,7 @@ internal static class FactValidator
         SymbolFact symbol => symbol.BaseAndInterfaceIds.Select(static id => id.ToFactId())
             .Concat(symbol.Semantics?.ImplementedMemberIds.Select(static id => id.ToFactId()) ?? [])
             .Concat(symbol.Semantics?.OverriddenMemberId is { } overridden ? [overridden.ToFactId()] : [])
+            .Concat(symbol.ContainingSymbolId is { } containing ? [containing.ToFactId()] : [])
             .Append(symbol.DocumentId.ToFactId()),
         ComponentFact component => component.ProjectIds.Select(static id => id.ToFactId()),
         RelationFact relation when relation.TargetId is { } target => [relation.SourceId, target],

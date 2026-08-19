@@ -165,10 +165,10 @@ caught by the existing per-fragment `missing-reference` (`C2M-FV-002`) diagnosti
 - Skill: NONE
 
 **Done when**:
-- [ ] A `SymbolFact` whose `ContainingSymbolId` points to another fact in the same validation input passes validation
-- [ ] A `SymbolFact` whose `ContainingSymbolId` points to an id absent from the input produces `C2M-FV-002`/`missing-reference`
-- [ ] A `SymbolFact` with `ContainingSymbolId = null` is unaffected (no new diagnostic)
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] A `SymbolFact` whose `ContainingSymbolId` points to another fact in the same validation input passes validation
+- [x] A `SymbolFact` whose `ContainingSymbolId` points to an id absent from the input produces `C2M-FV-002`/`missing-reference`
+- [x] A `SymbolFact` with `ContainingSymbolId = null` is unaffected (no new diagnostic)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick
