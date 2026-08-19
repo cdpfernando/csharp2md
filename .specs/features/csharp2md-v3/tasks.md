@@ -1284,10 +1284,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Packaged metadata reports exactly 3.0.0 and the real packaged CLI emits schema version 2.
-- [ ] No v2 compatibility artifact or `dependencies.json` appears.
-- [ ] At least three updated/new packaging and schema assertions pass without weakening existing checks.
-- [ ] Build gate passes with no discovered-test decrease.
+- [x] Packaged metadata reports exactly 3.0.0 and the real packaged CLI emits schema version 2.
+- [x] No v2 compatibility artifact or `dependencies.json` appears.
+- [x] At least three updated/new packaging and schema assertions pass without weakening existing checks.
+- [x] Build gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-19)**: `Directory.Build.props`'s `<Version>` moves from `2.0.0` to `3.0.0` (AD-007's semver release marker, now signalling the v3 factual contract). `AnalysisEngine`'s `AggregateOutputSnapshot` construction already carried a `"3.0.0"` `ToolVersion` literal — a real pre-existing inconsistency this task closes by making the shipped package version agree with it, rather than leaving two independently-hardcoded "3.0.0"s that could silently drift apart in the future (left as a currently-harmless duplication; both are literals, not read from each other, so a future bump to either still needs both touched — out of this task's stated file scope to re-wire). `PackagingSmokeTests` (the only test that packs, installs, and runs the *real* binary outside the repo, per its own doc comment) gained three assertions against that real run: the produced nupkg is named `csharp2md.3.0.0.nupkg`; the packed tool's own `raw/facts/manifest.json` contains `"schema_version": 2` and `"tool_version": "3.0.0"`; and `raw/dependencies.json` is absent. Build gate: Release build 0 warnings/errors, `dotnet format --verify-no-changes` clean, and 1,158 tests with 0 failed and 0 skipped (unchanged from T45 — this task added assertions to an existing test method, not new test cases, matching its own "assertions" wording).
 
 **Tests**: integration
 **Gate**: build

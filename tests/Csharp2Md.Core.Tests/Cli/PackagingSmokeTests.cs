@@ -1,4 +1,5 @@
 using Csharp2Md.Core.Tests.Pipeline;
+using Csharp2Md.Core.Topic;
 
 namespace Csharp2Md.Core.Tests.Cli;
 
@@ -26,7 +27,9 @@ public sealed class PackagingSmokeTests : IAsyncLifetime
         var packResult = await ProcessRunner.RunAsync(
             "dotnet", $"pack \"{CliProjectPath}\" -c Release", RepoRoot, CancellationToken.None);
         Assert.True(packResult.ExitCode == 0, $"dotnet pack failed:\n{packResult.StandardOutput}\n{packResult.StandardError}");
-        Assert.NotEmpty(Directory.GetFiles(NupkgDirectory, "*.nupkg"));
+        // T46: the package's own metadata is the v3 release marker (AD-007); a stale nupkg version
+        // would mean a `dotnet tool update` consumer never learns the output contract changed.
+        Assert.NotEmpty(Directory.GetFiles(NupkgDirectory, "csharp2md.3.0.0.nupkg"));
 
         var installResult = await ProcessRunner.RunAsync(
             "dotnet",
@@ -51,6 +54,14 @@ public sealed class PackagingSmokeTests : IAsyncLifetime
             runResult.ExitCode == 0,
             $"packed tool run failed (exit {runResult.ExitCode}):\n{runResult.StandardOutput}\n{runResult.StandardError}");
         Assert.Contains("Analyzed 4 project(s)", runResult.StandardOutput, StringComparison.Ordinal);
+
+        // T46: the real packed/installed binary — not just the in-process test build — must emit the
+        // v3 factual contract: schema version 2, a matching tool version, and no v2 compatibility file.
+        var rawRoot = TopicLayout.RawRoot(outputDirectory);
+        var manifest = File.ReadAllText(Path.Combine(rawRoot, "facts", "manifest.json"));
+        Assert.Contains("\"schema_version\": 2", manifest, StringComparison.Ordinal);
+        Assert.Contains("\"tool_version\": \"3.0.0\"", manifest, StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Combine(rawRoot, "dependencies.json")));
     }
 
     private static async Task UninstallIfPresentAsync() =>

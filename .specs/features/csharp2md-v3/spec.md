@@ -383,7 +383,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-57 | P3: Migration and release | T42 language matrix verifies explicit syntax and semantic facts for every required language shape | Verified |
 | FACT-58 | P3: Migration and release | T34-T39 detector suites plus T43's audit and 20 discriminating cases cover every priority detector family with positive, negative, and lookalike assertions | Verified |
 | FACT-59 | P3: Migration and release | T44 proves CLI safety, fallback, extension, timeout, and structural-output boundaries | Verified |
-| FACT-60 | P3: Migration and release | Specify | Pending |
+| FACT-60 | P3: Migration and release | T46 sets `Directory.Build.props`'s `<Version>` to `3.0.0`; a real packed/installed tool run confirms the package's nupkg version and the manifest's `tool_version` field | Verified |
 | FACT-61 | P3: Migration and release | Specify | Pending |
 | FACT-62 | P2: Semantic enrichment | T44 validates the production evaluator process cancellation boundary | Verified |
 | FACT-63 | P2: Semantic enrichment | T44 records parent/child PIDs and proves both gone when cancellation returns | Verified |
@@ -393,7 +393,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-67 | P2: Components and relations | T32 shared-dependency ownership and T40 component index projection implemented | Implementing |
 | FACT-68 | P2: Components and relations | T32 standalone library ownership and T40 component index projection implemented | Implementing |
 | FACT-69 | P2: Diagnostics and coverage | T8-T9 diagnostic references shaped; merge/projection closes in T27/T28 | Implementing |
-| FACT-70 | P3: Migration and release | T12 factual schema version 2 implemented; frontmatter/package closure in T18/T46 | Implementing |
+| FACT-70 | P3: Migration and release | T12 factual schema version 2 implemented; T18 closes frontmatter schema version 2; T46 confirms both from a real packed/installed run and closes the package version | Verified |
 
 **ID format:** `FACT-[NN]`.
 
