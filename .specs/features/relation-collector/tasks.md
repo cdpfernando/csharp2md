@@ -117,10 +117,10 @@ cases to `FactMerger.ResolutionRank`'s ladder (`Unresolved=1 < Candidate=2 < Heu
 - Skill: NONE
 
 **Done when**:
-- [ ] `RelationPartition.Structural` exists
-- [ ] `RelationProjector.Project` groups a `Structural`-partition `RelationFact` under its own partition bucket instead of throwing `InvalidOperationException`
-- [ ] `RelationProjector`'s Mermaid `Wire()` renders a `structural:`-prefixed edge label for a `Structural` relation with both endpoints resolved to components
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] `RelationPartition.Structural` exists
+- [x] `RelationProjector.Project` groups a `Structural`-partition `RelationFact` under its own partition bucket instead of throwing `InvalidOperationException`
+- [x] `RelationProjector`'s Mermaid `Wire()` renders a `structural:`-prefixed edge label for a `Structural` relation with both endpoints resolved to components
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick

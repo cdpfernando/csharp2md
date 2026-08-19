@@ -39,6 +39,7 @@ internal static class RelationProjector
         RelationPartition.Http,
         RelationPartition.Grpc,
         RelationPartition.Events,
+        RelationPartition.Structural,
     ];
 
     public static RelationProjectionResult Project(IEnumerable<ValidatedFactFragment> fragments)
@@ -188,6 +189,7 @@ internal static class RelationProjector
         RelationPartition.Http => "http",
         RelationPartition.Grpc => "grpc",
         RelationPartition.Events => "events",
+        RelationPartition.Structural => "structural",
         _ => throw new ArgumentOutOfRangeException(nameof(partition), partition, "Unsupported relation partition."),
     };
 

@@ -171,6 +171,7 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
         "http" => RelationPartition.Http,
         "grpc" => RelationPartition.Grpc,
         "events" => RelationPartition.Events,
+        "structural" => RelationPartition.Structural,
         _ => throw new ArgumentOutOfRangeException(nameof(partition), partition, "Unsupported relation partition."),
     };
 

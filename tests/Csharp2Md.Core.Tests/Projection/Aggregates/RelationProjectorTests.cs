@@ -32,6 +32,7 @@ public sealed class RelationProjectorTests : IDisposable
     [InlineData(RelationPartition.Http)]
     [InlineData(RelationPartition.Grpc)]
     [InlineData(RelationPartition.Events)]
+    [InlineData(RelationPartition.Structural)]
     public void Project_PlacesEachLegalRelationInItsSingleDeclaredPartition(RelationPartition partition)
     {
         var relation = Relation(partition, $"{partition}-relation", Payments.ToFactId());
@@ -110,6 +111,20 @@ public sealed class RelationProjectorTests : IDisposable
         Assert.Contains(orders.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
         Assert.Contains(payments.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
         Assert.Contains("compile-time:project-reference", result.Mermaid, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Project_BuildsMermaidWithStructuralPrefixedEdgeLabelForResolvedStructuralRelation()
+    {
+        var relation = Relation(RelationPartition.Structural, "calls", Payments.ToFactId());
+        var orders = Component("service/web-api", Orders);
+        var payments = Component("library", Payments);
+
+        var result = RelationProjector.Project([Validated(relation, orders, payments)]);
+
+        Assert.Contains(orders.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
+        Assert.Contains(payments.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
+        Assert.Contains("structural:calls", result.Mermaid, StringComparison.Ordinal);
     }
 
     [Fact]
