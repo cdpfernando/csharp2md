@@ -348,7 +348,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-22 | P1: Deterministic output | Specify | Pending |
 | FACT-23 | P1: Deterministic output | Specify | Pending |
 | FACT-24 | P1: Deterministic output | Specify | Pending |
-| FACT-25 | P1: Deterministic output | T19 omits dependencies.json; T40 derives dependencies.mmd from validated factual relations | Implementing |
+| FACT-25 | P1: Deterministic output | T19 omits dependencies.json; T40 derives dependencies.mmd from validated factual relations; T41 removes the remaining v2 graph writers | Implementing |
 | FACT-26 | P2: Semantic enrichment | T2 viability and T5 evaluated-compilation backend selected; production closes in T22 | Implementing |
 | FACT-27 | P2: Semantic enrichment | T2 import-path-only preprocessing viability proven; production closes in T22 | Implementing |
 | FACT-28 | P2: Semantic enrichment | T2 `ArgumentList` and T3 evaluator lifecycle proven; production closes in T22 | Implementing |
@@ -378,7 +378,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-52 | P2: Diagnostics and coverage | Specify | Pending |
 | FACT-53 | P2: Diagnostics and coverage | Specify | Pending |
 | FACT-54 | P2: Diagnostics and coverage | Specify | Pending |
-| FACT-55 | P3: Migration and release | T1 migration ledger established; T41/T47 close executable migration | Implementing |
+| FACT-55 | P3: Migration and release | T41 removes v2 paths and closes all 428 ledger rows with executable v3 evidence; T47 performs release quality closure | Implementing |
 | FACT-56 | P3: Migration and release | T12 representative factual snapshot implemented; Markdown/frontmatter snapshots close in T17/T18 | Implementing |
 | FACT-57 | P3: Migration and release | Specify | Pending |
 | FACT-58 | P3: Migration and release | T34-T39 (ASP.NET Core, dependency-injection, HTTP, gRPC, messaging, compile-time references) carry 107 combined positive/negative/lookalike spec-derived cases across every priority detector family | Implementing |

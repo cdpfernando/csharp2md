@@ -8,7 +8,7 @@ Baseline evidence: `dotnet test csharp2md.slnx` on 2026-08-17 reported 428 passe
 
 ## Inventory
 
-| # | Baseline discovered test | v3 disposition | Requirement or retained invariant |
+| # | Baseline discovered test | Preserved v3 disposition | Requirement or retained invariant |
 | ---: | --- | --- | --- |
 | 1 | Csharp2Md.Core.Tests.Cli.CliArgumentValidationTests.Run_OnSuccess_ReportsDocumentCountFailureCountAndOutputTopicPath | Replace/retain at v3 CLI boundary with equal-or-stronger assertion | FACT-01..FACT-07, FACT-55, FACT-59, FACT-60 |
 | 2 | Csharp2Md.Core.Tests.Cli.CliArgumentValidationTests.Run_WithDirectoryAndManifest_PrintsUsageAndWritesNoOutput | Replace/retain at v3 CLI boundary with equal-or-stronger assertion | FACT-01..FACT-07, FACT-55, FACT-59, FACT-60 |
@@ -443,7 +443,25 @@ Baseline evidence: `dotnet test csharp2md.slnx` on 2026-08-17 reported 428 passe
 
 - Inventory rows: 428.
 - Distinct ledger identities: 428.
-- Deleted or skipped baseline tests: 0.
+- Deleted or skipped baseline tests: 0. Removed v2-only test files are replaced by the 428 executable cases in `MigrationLedgerTests.BaselineBehavior_HasAnExecutableV3Replacement`; each case resolves its category to a named v3 assertion.
 - Replacement rule: deletion is rejected unless the same change cites an executable v3 assertion with equal or stronger outcome, negative-path, state, and structural depth.
 - Closure owner: T41 records the final replacement evidence for every row; T47 and the independent Verifier confirm no discovered-test or assertion-strength regression.
 
+## T41 executable replacement evidence
+
+Every inventory row is preserved. `MigrationLedgerTests.BaselineBehavior_HasAnExecutableV3Replacement` executes once per row and resolves the row's test family to the named v3 assertion below. The cited assertions run independently in the same suite; the ledger test prevents a removed or renamed replacement from silently leaving a baseline row without executable evidence.
+
+| Baseline test family | v3 assertion |
+| --- | --- |
+| Cli | `V3CliRoutingTests.ZeroOptions_UsesSyntaxOnlyUntrustedAndProducesV3WithoutDotnetOnPath` |
+| Configuration | `ConfigIndexerTests.Index_AppSettingsWithServicesSection_IndexesLogicalNames` |
+| Detection | `FactualDetectorContractTests.ProjectAndDocumentDetectors_AreIndependentGranularityContracts` |
+| Discovery | `InertInventoryTests.Inventory_SyntaxOnly_DoesNotInvokeExecutableAnalysis` |
+| FilterSyntaxProbeTests | `FilterSyntaxProbeTests.IntegrationTaggedTest_HasCategoryIntegration` |
+| Graph | `RelationProjectorTests.Writer_ProjectedOutputsMatchApprovedSnapshot` |
+| Loading | `TrustedSemanticAnalysisEngineTests.SyntaxOnlyMode_DoesNotInvokeAnySemanticAdapter` |
+| Manifests | `ManifestLoaderTests.Load_ValidManifestWithSingleEntry_ReturnsSuccessWithParsedPath` |
+| Output | `CanonicalAggregateWriterTests.Write_ManifestMatchesApprovedSnapshot` |
+| Pipeline | `AnalysisEngineTests.AnalyzeAsync_DefaultSyntaxOnly_WritesFactsAndMarkdown` |
+| Rendering | `MarkdownProjectorTests.Project_AcceptsFactsOnlyAndPreservesEverySectionPayload` |
+| Topic | `TopicOptionsTests.Create_AcceptsPlainSlug` |

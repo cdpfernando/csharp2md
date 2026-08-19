@@ -1154,10 +1154,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Every one of the 428 baseline rows is marked preserved with its executable replacement evidence.
-- [ ] No production reference remains to `AnalysisPipeline`, `SolutionLoader` orchestration, direct semantic Markdown enrichment, old detector interfaces/signals/graph builder, or `DependencyJsonWriter`.
-- [ ] Removed tests have equal-or-stronger v3 assertions and the discovered count does not fall below the task-entry count.
-- [ ] Full gate passes.
+- [x] Every one of the 428 baseline rows is marked preserved with its executable replacement evidence.
+- [x] No production reference remains to `AnalysisPipeline`, `SolutionLoader` orchestration, direct semantic Markdown enrichment, old detector interfaces/signals/graph builder, or `DependencyJsonWriter`.
+- [x] Removed tests have equal-or-stronger v3 assertions and the discovered count does not fall below the task-entry count.
+- [x] Full gate passes.
+
+**Completed evidence (2026-08-19)**: `MigrationLedgerTests.BaselineBehavior_HasAnExecutableV3Replacement` discovers 428 ledger-backed cases and binds every baseline family to a named replacement v3 assertion; `RemovedV2Paths_AreAbsentFromTheProductionAssembly` proves all named v2 types absent from `Csharp2Md.Core`. The v2 pipeline, `SolutionLoader`, direct rendering enrichers, unversioned detector/graph model, and graph writers plus their exclusive tests are deleted. The full gate passed 1,107 tests with 0 failed and 0 skipped, exceeding the 950-test task-entry baseline.
 
 **Tests**: integration
 **Gate**: full
