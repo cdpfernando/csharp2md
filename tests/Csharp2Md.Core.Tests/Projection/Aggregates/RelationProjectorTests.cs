@@ -235,14 +235,14 @@ public sealed class RelationProjectorTests : IDisposable
         ImmutableArray<RelationDetail> details = default)
     {
         var id = RelationFactId.Create(Orders.ToFactId(), kind, $"target={target?.Value ?? "none"}", 1);
-        var runtime = partition is RelationPartition.DependencyInjection or RelationPartition.Http or RelationPartition.Grpc or RelationPartition.Events;
+        var requiresEvidence = kind is not ("project-reference" or "package-reference");
         return new RelationFact(
             FactHeader.Create(
                 id.ToFactId(),
                 FactKind.Relation,
                 target is null ? FactResolution.Unresolved : FactResolution.Exact,
-                [new FactProvenance("test", "1", runtime ? Detector : null, runtime ? "1" : null)],
-                runtime ? [new Evidence(Document, "Client.cs", 1, 1, 1, 2)] : []),
+                [new FactProvenance("test", "1", requiresEvidence ? Detector : null, requiresEvidence ? "1" : null)],
+                requiresEvidence ? [new Evidence(Document, "Client.cs", 1, 1, 1, 2)] : []),
             id,
             Orders.ToFactId(),
             target,

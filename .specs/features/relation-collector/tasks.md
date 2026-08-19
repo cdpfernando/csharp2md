@@ -143,10 +143,10 @@ kinds (`project-reference`, `package-reference`).
 - Skill: NONE
 
 **Done when**:
-- [ ] `Inheritance`-partition relation without evidence now fails `C2M-FV-005` (previously exempt because `Inheritance` isn't in `IsRuntime`) — new test proves the tightened rule
-- [ ] Existing `project-reference`/`package-reference` relations (evidence-free, from `CompileTimeReferenceDetector`, still untouched code) still validate cleanly — regression test
-- [ ] Existing `FactValidatorTests` for `Http`/`Events`/`DependencyInjection`/`Grpc` partitions still pass unmodified (no behavior change for kinds already requiring evidence)
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] `Inheritance`-partition relation without evidence now fails `C2M-FV-005` (previously exempt because `Inheritance` isn't in `IsRuntime`) — new test proves the tightened rule
+- [x] Existing `project-reference`/`package-reference` relations (evidence-free, from `CompileTimeReferenceDetector`, still untouched code) still validate cleanly — regression test
+- [x] Existing `FactValidatorTests` for `Http`/`Events`/`DependencyInjection`/`Grpc` partitions still pass unmodified (no behavior change for kinds already requiring evidence)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick

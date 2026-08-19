@@ -143,6 +143,46 @@ public sealed class FactValidatorTests
     }
 
     [Fact]
+    public void Validate_InheritanceRelationWithoutDetectorProvenance_IsNowRejected()
+    {
+        var relation = Relation(RelationPartition.Inheritance, "implements", Target.ToFactId(), FactResolution.Syntactic, detectorProvenance: false);
+
+        var result = Validate([relation]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ValidationDiagnostics, diagnostic => Rule(diagnostic) == "runtime-detector-provenance");
+    }
+
+    [Fact]
+    public void Validate_InheritanceRelationWithoutEvidence_IsNowRejected()
+    {
+        var relation = Relation(RelationPartition.Inheritance, "inherits", Target.ToFactId(), FactResolution.Syntactic, evidence: []);
+
+        var result = Validate([relation]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ValidationDiagnostics, diagnostic => Rule(diagnostic) == "runtime-evidence");
+    }
+
+    [Theory]
+    [InlineData("project-reference")]
+    [InlineData("package-reference")]
+    public void Validate_CompileTimeOnlyRelationWithoutEvidenceOrDetectorProvenance_StillValidatesCleanly(string relationKind)
+    {
+        var relation = Relation(
+            RelationPartition.CompileTime,
+            relationKind,
+            Target.ToFactId(),
+            FactResolution.Exact,
+            detectorProvenance: false,
+            evidence: []);
+
+        var result = Validate([relation]);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
     public void Validate_RuntimeRelationWithDetectorProvenanceAndEvidence_IsAccepted()
     {
         var relation = Relation(RelationPartition.Http, "http-request", Target.ToFactId(), FactResolution.Exact);
