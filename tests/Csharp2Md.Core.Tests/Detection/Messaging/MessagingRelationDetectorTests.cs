@@ -21,9 +21,11 @@ public sealed class MessagingRelationDetectorTests
     {
         // FACT-46: a confirmed publish, generic argument inferred from the constructed message.
         { "await _bus.PublishAsync(new OrderPlaced(System.Guid.NewGuid()));", Publish, true, "OrderPlaced" },
+        { "_bus.Publish<OrderPlaced>(new OrderPlaced(System.Guid.NewGuid()));", Publish, true, "OrderPlaced" },
 
         // FACT-46: a confirmed subscribe with an explicit type argument.
         { "_bus.Subscribe<OrderPlaced>(Handle);", Subscribe, true, "OrderPlaced" },
+        { "await _bus.SubscribeAsync<OrderPlaced>(Handle);", Subscribe, true, "OrderPlaced" },
 
         // Inference through a variable works the same as an explicit construction.
         { "var message = new PaymentProcessed(System.Guid.NewGuid()); await _bus.PublishAsync(message);", Publish, true, "PaymentProcessed" },
@@ -184,15 +186,19 @@ public sealed class MessagingRelationDetectorTests
             public interface IEventBus
             {
                 Task PublishAsync<TEvent>(TEvent message, CancellationToken cancellationToken = default);
+                void Publish<TEvent>(TEvent message);
 
                 void Subscribe<TEvent>(Func<TEvent, CancellationToken, Task> handler);
+                Task SubscribeAsync<TEvent>(Func<TEvent, CancellationToken, Task> handler);
             }
 
             public sealed class EventBus : IEventBus
             {
                 public Task PublishAsync<TEvent>(TEvent message, CancellationToken cancellationToken = default) => Task.CompletedTask;
+                public void Publish<TEvent>(TEvent message) { }
 
                 public void Subscribe<TEvent>(Func<TEvent, CancellationToken, Task> handler) { }
+                public Task SubscribeAsync<TEvent>(Func<TEvent, CancellationToken, Task> handler) => Task.CompletedTask;
             }
         }
 
@@ -231,8 +237,10 @@ public sealed class MessagingRelationDetectorTests
             public sealed class EventBus : Acme.Contracts.IEventBus
             {
                 public Task PublishAsync<TEvent>(TEvent message, CancellationToken cancellationToken = default) => Task.CompletedTask;
+                public void Publish<TEvent>(TEvent message) { }
 
                 public void Subscribe<TEvent>(Func<TEvent, CancellationToken, Task> handler) { }
+                public Task SubscribeAsync<TEvent>(Func<TEvent, CancellationToken, Task> handler) => Task.CompletedTask;
             }
         }
         """;

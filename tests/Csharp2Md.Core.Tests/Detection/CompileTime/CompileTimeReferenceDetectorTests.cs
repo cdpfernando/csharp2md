@@ -31,8 +31,12 @@ public sealed class CompileTimeReferenceDetectorTests
         var fact = Assert.Single(facts, item => item.RelationKind == ProjectReference);
         Assert.Equal(ContractsProjectId.ToFactId(), fact.TargetId);
         Assert.Null(fact.UnresolvedReason);
+        Assert.Equal(FactResolution.Exact, fact.Header.Resolution);
         Assert.Equal(RelationPartition.CompileTime, fact.Partition);
         Assert.False(fact.IsRuntime);
+        Assert.Contains(fact.Header.Provenance, static provenance =>
+            provenance.DetectorId?.Value == "id1:detector;name=io.csharp2md.compile-time"
+            && provenance.DetectorVersion == "1.0.0");
     }
 
     // FACT-46/47: a project reference outside the indexed solution stays honestly unresolved.
@@ -57,6 +61,7 @@ public sealed class CompileTimeReferenceDetectorTests
 
         var fact = Assert.Single(facts, item => item.RelationKind == PackageReference);
         Assert.Null(fact.TargetId);
+        Assert.Equal(FactResolution.Exact, fact.Header.Resolution);
         Assert.False(string.IsNullOrWhiteSpace(fact.UnresolvedReason));
         Assert.Contains(fact.Details, detail => detail.Key == "reference" && detail.Value == "Newtonsoft.Json");
     }

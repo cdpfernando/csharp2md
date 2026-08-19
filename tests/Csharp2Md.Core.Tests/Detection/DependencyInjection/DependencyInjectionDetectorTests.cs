@@ -35,6 +35,7 @@ public sealed class DependencyInjectionDetectorTests
         { "services.AddSingleton<IClock, SystemClock>();", Registration, true, "implementation", "SystemClock", FactResolution.Exact },
         { "services.AddSingleton<SystemClock>();", Registration, true, "implementation", "SystemClock", FactResolution.Exact },
         { "services.AddSingleton(typeof(IClock), typeof(SystemClock));", Registration, true, "service", "IClock", FactResolution.Exact },
+        { "services.AddSingleton(typeof(IClock), typeof(SystemClock));", Registration, true, "implementation", "SystemClock", FactResolution.Exact },
 
         // FACT-44 + FACT-43 edge case: a factory hides the implementation type, so the fact stays partial.
         { "services.AddSingleton<IClock>(provider => new SystemClock());", Registration, true, "factory", "provider => new SystemClock()", FactResolution.Partial },
@@ -46,6 +47,7 @@ public sealed class DependencyInjectionDetectorTests
         // FACT-44: keyed services, exact for a constant key and partial for an irreducible one.
         { "services.AddKeyedSingleton<IClock, SystemClock>(\"primary\");", Registration, true, "key", "primary", FactResolution.Exact },
         { "services.AddKeyedScoped<IClock, SystemClock>(Key()); static object Key() => \"primary\";", Registration, true, "key_expression", "Key()", FactResolution.Partial },
+        { "services.AddKeyedTransient<IClock, SystemClock>(\"primary\");", Registration, true, "lifetime", "transient", FactResolution.Exact },
 
         // FACT-44: navigable local registration expansion.
         { $"services.AddClockServices(); {LocalExtension}", Expansion, true, "method", "ClockRegistrations.AddClockServices", FactResolution.Exact },
@@ -234,6 +236,7 @@ public sealed class DependencyInjectionDetectorTests
                 public static IServiceCollection AddTransient<TService, TImplementation>(this IServiceCollection services) => services;
                 public static IServiceCollection AddKeyedSingleton<TService, TImplementation>(this IServiceCollection services, object? serviceKey) => services;
                 public static IServiceCollection AddKeyedScoped<TService, TImplementation>(this IServiceCollection services, object? serviceKey) => services;
+                public static IServiceCollection AddKeyedTransient<TService, TImplementation>(this IServiceCollection services, object? serviceKey) => services;
             }
         }
 

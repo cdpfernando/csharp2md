@@ -366,13 +366,13 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-40 | P2: Components and relations | T31 confirmed CLI classification and T40 component index projection implemented | Implementing |
 | FACT-41 | P2: Components and relations | T31 confirmed test-support classification and T40 component index projection implemented | Implementing |
 | FACT-42 | P2: Components and relations | T32 private library ownership and T40 component index projection implemented | Implementing |
-| FACT-43 | P2: Components and relations | T34 confirmed ASP.NET Core detector implemented (controllers, actions, Minimal APIs, health checks, authorization, policies, filters, entrypoints) | Implementing |
-| FACT-44 | P2: Components and relations | T35 confirmed dependency-injection detector implemented (lifetimes, factories, open generics, keyed services, navigable local expansions) | Implementing |
-| FACT-45 | P2: Components and relations | T36 confirmed HTTP relation detector implemented (named/typed clients, verbs, routes, base address, timeout, headers) | Implementing |
-| FACT-46 | P2: Components and relations | T37-T39 (gRPC, messaging, compile-time references) confirmed relation detectors implemented (namespace-qualified/shape/evaluated-data evidence, no name-only matching) | Implementing |
-| FACT-47 | P2: Components and relations | T36-T38 (HTTP, gRPC, messaging) relations always leave `TargetId: null` with `UnresolvedReason` set | Implementing |
-| FACT-48 | P2: Components and relations | T39 confirmed compile-time reference detector implemented (project/package references, exclusively `CompileTime` partition, validated against FACT-16's existing rule) | Implementing |
-| FACT-49 | P2: Components and relations | T10 versioned contracts and T33 host enforcement implemented; concrete detectors close in T34-T39 | Implementing |
+| FACT-43 | P2: Components and relations | T34 confirmed ASP.NET Core detector implemented; T43 verifies every supported endpoint and metadata variant against emitted facts | Verified |
+| FACT-44 | P2: Components and relations | T35 dependency-injection relation facts implemented; T43 verifies keyed transient and `typeof` implementation paths | Verified |
+| FACT-45 | P2: Components and relations | T36 HTTP relation facts implemented; T43 verifies byte-array/stream and dynamic-header paths | Verified |
+| FACT-46 | P2: Components and relations | T37-T39 confirmed gRPC, messaging, and compile-time relation facts implemented; T43 closes their positive/negative/lookalike audit | Verified |
+| FACT-47 | P2: Components and relations | T34-T39 retain null targets with explicit reasons for unproven runtime destinations; T43 asserts this for every runtime detector family | Verified |
+| FACT-48 | P2: Components and relations | T39 compile-time references implemented; T43 verifies their exact legal partition and provenance contract | Verified |
+| FACT-49 | P2: Components and relations | T10 versioned contracts and T33 host enforcement implemented; T43 audit confirms all concrete detector descriptors through emitted provenance | Verified |
 | FACT-50 | P2: Diagnostics and coverage | T9 resolution algebra implemented; merge/projection closes in T27/T28 | Implementing |
 | FACT-51 | P2: Diagnostics and coverage | Specify | Pending |
 | FACT-52 | P2: Diagnostics and coverage | Specify | Pending |
@@ -381,7 +381,7 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-55 | P3: Migration and release | T41 removes v2 paths and closes all 428 ledger rows with executable v3 evidence; T47 performs release quality closure | Implementing |
 | FACT-56 | P3: Migration and release | T12 representative factual snapshot implemented; Markdown/frontmatter snapshots close in T17/T18 | Implementing |
 | FACT-57 | P3: Migration and release | T42 language matrix verifies explicit syntax and semantic facts for every required language shape | Verified |
-| FACT-58 | P3: Migration and release | T34-T39 (ASP.NET Core, dependency-injection, HTTP, gRPC, messaging, compile-time references) carry 107 combined positive/negative/lookalike spec-derived cases across every priority detector family | Implementing |
+| FACT-58 | P3: Migration and release | T34-T39 detector suites plus T43's audit and 20 discriminating cases cover every priority detector family with positive, negative, and lookalike assertions | Verified |
 | FACT-59 | P3: Migration and release | Specify | Pending |
 | FACT-60 | P3: Migration and release | Specify | Pending |
 | FACT-61 | P3: Migration and release | Specify | Pending |

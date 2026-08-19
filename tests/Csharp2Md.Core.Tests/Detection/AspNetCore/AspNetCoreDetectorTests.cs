@@ -19,17 +19,30 @@ public sealed class AspNetCoreDetectorTests
         { "public class Orders : ControllerBase { }", "aspnet-controller", true, "controller", "Orders", FactResolution.Exact },
         { "[ApiController] public class Orders { }", "aspnet-controller", true, null, null, FactResolution.Exact },
         { "public class Orders : ControllerBase { [HttpGet(\"/orders\")] public string Get() => \"ok\"; }", "http-endpoint", true, "route", "/orders", FactResolution.Exact },
+        { "public class Orders : ControllerBase { [HttpPost(\"/orders\")] public string Post() => \"ok\"; }", "http-endpoint", true, "http_method", "POST", FactResolution.Exact },
+        { "public class Orders : ControllerBase { [HttpPut(\"/orders\")] public string Put() => \"ok\"; }", "http-endpoint", true, "http_method", "PUT", FactResolution.Exact },
+        { "public class Orders : ControllerBase { [HttpDelete(\"/orders\")] public string Delete() => \"ok\"; }", "http-endpoint", true, "http_method", "DELETE", FactResolution.Exact },
+        { "public class Orders : ControllerBase { [HttpPatch(\"/orders\")] public string Patch() => \"ok\"; }", "http-endpoint", true, "http_method", "PATCH", FactResolution.Exact },
+        { "public class Orders : ControllerBase { [HttpHead(\"/orders\")] public string Head() => \"ok\"; }", "http-endpoint", true, "http_method", "HEAD", FactResolution.Exact },
+        { "public class Orders : ControllerBase { [HttpOptions(\"/orders\")] public string Options() => \"ok\"; }", "http-endpoint", true, "http_method", "OPTIONS", FactResolution.Exact },
         { "public class Orders : ControllerBase { [NonAction] public string Get() => \"ok\"; }", "http-endpoint", false, null, null, null },
         { "public class OrdersController { public string Get() => \"ok\"; }", "aspnet-controller", false, null, null, null },
         { "var app = WebApplication.CreateBuilder(args).Build(); app.MapGet(\"/orders\", () => \"ok\");", "http-endpoint", true, "http_method", "GET", FactResolution.Exact },
         { "var app = WebApplication.CreateBuilder(args).Build(); app.MapPost(\"/orders\", () => \"ok\");", "http-endpoint", true, "http_method", "POST", FactResolution.Exact },
+        { "var app = WebApplication.CreateBuilder(args).Build(); app.MapPut(\"/orders\", () => \"ok\");", "http-endpoint", true, "http_method", "PUT", FactResolution.Exact },
+        { "var app = WebApplication.CreateBuilder(args).Build(); app.MapDelete(\"/orders\", () => \"ok\");", "http-endpoint", true, "http_method", "DELETE", FactResolution.Exact },
+        { "var app = WebApplication.CreateBuilder(args).Build(); app.MapPatch(\"/orders\", () => \"ok\");", "http-endpoint", true, "http_method", "PATCH", FactResolution.Exact },
+        { "var app = WebApplication.CreateBuilder(args).Build(); app.MapMethods(\"/orders\", new[] { \"GET\" }, () => \"ok\");", "http-endpoint", true, "http_method", "MULTIPLE", FactResolution.Exact },
+        { "var app = WebApplication.CreateBuilder(args).Build(); app.Map(\"/orders\", () => \"ok\");", "http-endpoint", true, "http_method", "ANY", FactResolution.Exact },
         { "var app = WebApplication.CreateBuilder(args).Build(); var route = GetRoute(); app.MapGet(route, () => \"ok\"); string GetRoute() => \"/orders\";", "http-endpoint", true, "route_expression", "route", FactResolution.Partial },
         { "var app = new Contoso.App(); app.MapGet(\"/orders\", () => \"ok\");", "http-endpoint", false, null, null, null },
         { "[Authorize(Policy = \"admin\")] public class Orders : ControllerBase { }", "aspnet-authorization", true, "policy", "admin", FactResolution.Exact },
+        { "public class Orders : ControllerBase { [Authorize(Policy = \"admin\")] public string Get() => \"ok\"; }", "aspnet-authorization", true, "policy", "admin", FactResolution.Exact },
         { "[AllowAnonymous] public class Orders : ControllerBase { }", "aspnet-authorization", true, "policy", "allow-anonymous", FactResolution.Exact },
         { "var app = WebApplication.CreateBuilder(args).Build(); app.MapGet(\"/\", () => \"ok\").RequireAuthorization(\"admin\");", "aspnet-authorization", true, "policy", "admin", FactResolution.Exact },
         { "var options = new AuthorizationOptions(); options.AddPolicy(\"admin\", new object());", "aspnet-policy", true, "policy", "admin", FactResolution.Exact },
         { "[AuditFilter] public class Orders : ControllerBase { }", "aspnet-filter", true, "filter", "AuditFilterAttribute", FactResolution.Exact },
+        { "public class Orders : ControllerBase { [AuditFilter] public string Get() => \"ok\"; }", "aspnet-filter", true, "filter", "AuditFilterAttribute", FactResolution.Exact },
         { "var app = WebApplication.CreateBuilder(args).Build(); app.MapGet(\"/\", () => \"ok\").AddEndpointFilter(new AuditFilter());", "aspnet-filter", true, "filter", "AuditFilter", FactResolution.Exact },
         { "var app = WebApplication.CreateBuilder(args).Build(); app.MapHealthChecks(\"/health\");", "aspnet-health-check", true, "route", "/health", FactResolution.Exact },
         { "var app = WebApplication.CreateBuilder(args).Build(); app.Run();", "aspnet-entrypoint", true, "operation", "CreateBuilder", FactResolution.Exact },
@@ -174,6 +187,11 @@ public sealed class AspNetCoreDetectorTests
             {
                 public static RouteHandlerBuilder MapGet(this WebApplication app, string pattern, Func<string> handler) => new();
                 public static RouteHandlerBuilder MapPost(this WebApplication app, string pattern, Func<string> handler) => new();
+                public static RouteHandlerBuilder MapPut(this WebApplication app, string pattern, Func<string> handler) => new();
+                public static RouteHandlerBuilder MapDelete(this WebApplication app, string pattern, Func<string> handler) => new();
+                public static RouteHandlerBuilder MapPatch(this WebApplication app, string pattern, Func<string> handler) => new();
+                public static RouteHandlerBuilder MapMethods(this WebApplication app, string pattern, string[] methods, Func<string> handler) => new();
+                public static RouteHandlerBuilder Map(this WebApplication app, string pattern, Func<string> handler) => new();
                 public static RouteHandlerBuilder RequireAuthorization(this RouteHandlerBuilder builder, params string[] policyNames) => builder;
                 public static RouteHandlerBuilder AddEndpointFilter<T>(this RouteHandlerBuilder builder, T filter) => builder;
             }

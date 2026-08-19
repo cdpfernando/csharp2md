@@ -1206,10 +1206,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Every detector rule has at least one positive, negative, and confusing lookalike assertion.
-- [ ] Assertions verify outcome values, evidence/provenance, resolution, and absence of fictional targets—not implementation call structure.
-- [ ] The audit table contains no uncovered rule and all added cases pass.
-- [ ] Full gate passes with no discovered-test decrease.
+- [x] Every detector rule has at least one positive, negative, and confusing lookalike assertion.
+- [x] Assertions verify outcome values, evidence/provenance, resolution, and absence of fictional targets—not implementation call structure.
+- [x] The audit table contains no uncovered rule and all added cases pass.
+- [x] Full gate passes with no discovered-test decrease.
+
+**Completed evidence (2026-08-19)**: The detector audit in `.testagent/status.md` maps every detector family to its positive, negative, lookalike, partial/failure, integrity, provenance, and resolution coverage. The targeted additions close the identified gaps, and the full suite passed 1,139 tests with no failures.
 
 **Tests**: integration
 **Gate**: full

@@ -1,19 +1,5 @@
-# CLI Directory Input Test Plan
+# T43 detector test plan
 
-## Phase 1: Output ownership
-
-- Extend `OutputWriterTests` with missing, empty, marked, unmarked, forced, root, input-equal, and input-ancestor cases.
-- Assert marker presence, exact retained/deleted files, typed failure messages, and pre/post directory snapshots where refusal is required.
-- Run the focused `OutputWriterTests` VSTest filter, then the full test project before commit.
-
-## Phase 2: Manifest-equivalent direct input
-
-- Extend pipeline tests to pass an in-memory single-root manifest and prove the same discovery/output behavior without a manifest file.
-- Run focused pipeline tests, then the full test project before commit.
-
-## Phase 3: CLI contract
-
-- Extend process tests for zero arguments, positional directory, invalid input, conflicting input modes, both default-output rules, explicit-output override, force behavior, and protected paths.
-- Preserve existing manifest success/failure coverage and update obsolete required-argument expectations to the approved contract.
-- Run all unit and integration tests plus the repository build/format gate.
-
+1. Extend existing ASP.NET, DI, HTTP, messaging, and compile-time theory/test data with the verified gaps.
+2. Add `DetectorMatrixTests` as an executable audit that binds every detector rule family to positive, negative, and lookalike behavioral evidence.
+3. Run focused detector tests, review assertions against FACT-43 through FACT-49 and FACT-58, run the full gate, then record the final review in `.testagent/status.md`.

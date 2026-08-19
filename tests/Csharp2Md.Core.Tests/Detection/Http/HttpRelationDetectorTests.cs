@@ -37,6 +37,8 @@ public sealed class HttpRelationDetectorTests
 
         // FACT-45: every recognized verb.
         { "_http.GetStringAsync(\"/x\");", Request, true, "http_method", "GET", FactResolution.Exact },
+        { "_http.GetByteArrayAsync(\"/x\");", Request, true, "http_method", "GET", FactResolution.Exact },
+        { "_http.GetStreamAsync(\"/x\");", Request, true, "http_method", "GET", FactResolution.Exact },
         { "_http.PostAsync(\"/x\", null!);", Request, true, "http_method", "POST", FactResolution.Exact },
         { "_http.PutAsync(\"/x\", null!);", Request, true, "http_method", "PUT", FactResolution.Exact },
         { "_http.DeleteAsync(\"/x\");", Request, true, "http_method", "DELETE", FactResolution.Exact },
@@ -64,6 +66,7 @@ public sealed class HttpRelationDetectorTests
         { "_http.DefaultRequestHeaders.Add(\"X-Api-Key\", \"secret\");", HeaderKind, true, "header_name", "X-Api-Key", FactResolution.Exact },
         { "_http.DefaultRequestHeaders.Add(\"X-Api-Key\", \"secret\");", HeaderKind, true, "header_value", "secret", FactResolution.Exact },
         { "_http.DefaultRequestHeaders.Add(\"X-Api-Key\", GetKey()); static string GetKey() => \"s\";", HeaderKind, true, "header_value_expression", "GetKey()", FactResolution.Partial },
+        { "_http.DefaultRequestHeaders.Add(GetHeader(), \"secret\"); static string GetHeader() => \"X-Api-Key\";", HeaderKind, true, "header_name_expression", "GetHeader()", FactResolution.Partial },
         { "var fake = new Contoso.FakeClient(); fake.DefaultRequestHeaders.Add(\"X\", \"Y\");", HeaderKind, false, null, null, null },
     };
 
