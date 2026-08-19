@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Csharp2Md.Core.Analysis.Syntax;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
@@ -263,7 +264,21 @@ internal static class RelationCollector
     }
 
     private static string ClaimFor(ImmutableArray<RelationDetail> details) =>
-        string.Join('|', details.Select(static detail => $"{detail.Key}={detail.Value}"));
+        Canonicalize(string.Join('|', details.Select(static detail => $"{detail.Key}={detail.Value}")));
+
+    /// <summary>
+    /// Collapses whitespace so the result satisfies <c>FactIdGrammar.RequireCanonicalText</c>. A
+    /// detail's raw source text (e.g. <c>http-call</c>'s <c>route</c>, captured verbatim from the
+    /// argument expression) can span multiple lines when the expression itself does, e.g. an object
+    /// initializer - normalize before it becomes part of a claim fingerprint.
+    /// </summary>
+    private static string Canonicalize(string value)
+    {
+        var collapsed = WhitespaceRun.Replace(value, " ");
+        return collapsed.Trim();
+    }
+
+    private static readonly Regex WhitespaceRun = new(@"\s+", RegexOptions.Compiled);
 
     /// <summary>
     /// Every kind wraps its observed target as one <c>target_text</c> detail, except

@@ -78,6 +78,26 @@ public sealed class RelationCollectorTests
     }
 
     [Fact]
+    public void CreateFacts_HttpCallRouteSpansMultipleLines_CanonicalizesTheClaimFingerprintInsteadOfThrowing()
+    {
+        // Regression: a non-literal route argument (e.g. an object-initializer expression) is
+        // captured verbatim by SyntaxFactExtractor and can span multiple lines. The claim
+        // fingerprint feeding RelationFactId.Create must still satisfy
+        // FactIdGrammar.RequireCanonicalText (no \r, \n, \t, double-spaces, or leading/trailing
+        // whitespace), even though the persisted "route" detail value keeps the original text.
+        var multiLineRoute = "new PayrollProposalFilters {\n  PageNumber = 1,\n  PageSize = 20\n}";
+        var candidates = ImmutableArray.Create(
+            Candidate("http-call", $"http_method=GET|route={multiLineRoute}", FactResolution.Syntactic));
+
+        var fact = Assert.Single(RelationCollector.CreateFacts(DocumentId, "Worker.cs", candidates));
+
+        Assert.Contains(fact.Details, detail => detail is { Key: "route" } && detail.Value == multiLineRoute);
+        Assert.DoesNotContain('\n', fact.RelationId.Value);
+        Assert.DoesNotContain('\r', fact.RelationId.Value);
+        Assert.DoesNotContain('\t', fact.RelationId.Value);
+    }
+
+    [Fact]
     public void CreateFacts_NonHttpCallKind_WrapsObservedTargetAsOneTargetTextDetail()
     {
         var candidates = ImmutableArray.Create(Candidate("creates", "PaymentAuthorizer", FactResolution.Syntactic));
