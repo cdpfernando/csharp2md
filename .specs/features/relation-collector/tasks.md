@@ -478,9 +478,19 @@ builder to `DocumentState` (mirroring `EnrichedSymbols`). In `BindDocuments`, af
 - Skill: NONE
 
 **Done when**:
-- [ ] Running `AnalysisEngine.AnalyzeAsync` against `fixtures/SyntheticSolution` in **trusted mode** (`--trust trusted-solution`) upgrades the same relations T12 proved in syntax-only mode to at least `Syntactic` resolution wherever semantic binding succeeds, and the `PublishAsync(message)`-through-a-variable case (T13) now appears with a real `target_text` in the persisted output
-- [ ] An unresolved cross-project type in trusted mode (the originally-reported defect scenario) still yields the syntax-only baseline relation rather than nothing (RELC-08 proven end-to-end, not just at the `RelationCollector` unit level)
-- [ ] Gate check passes: `dotnet test csharp2md.slnx --filter "Category=Integration"` then full `dotnet test csharp2md.slnx`
+- [x] Running `AnalysisEngine.AnalyzeAsync` against `fixtures/SyntheticSolution` in **trusted mode** (`--trust trusted-solution`) upgrades the same relations T12 proved in syntax-only mode to at least `Syntactic` resolution wherever semantic binding succeeds, and the `PublishAsync(message)`-through-a-variable case (T13) now appears with a real `target_text` in the persisted output
+- [x] An unresolved cross-project type in trusted mode (the originally-reported defect scenario) still yields the syntax-only baseline relation rather than nothing (RELC-08 proven end-to-end, not just at the `RelationCollector` unit level)
+- [x] Gate check passes: `dotnet test csharp2md.slnx --filter "Category=Integration"` then full `dotnet test csharp2md.slnx`
+
+> Note: `fixtures/SyntheticSolution` itself never exercises the `PublishAsync(message)`-through-a-variable
+> shape (both real call sites use an inline `new T(...)` argument, already resolved at syntax level) — that
+> case is proven end-to-end instead by a second, self-contained fixture (no external package references, so
+> real MSBuild evaluation stays fast) that reproduces exactly the T13 shape and runs it through the real
+> `AnalysisEngine` in trusted mode. Also: `http-call`'s `Unresolved` resolution in this fixture (receiver is
+> `var`-declared, so its type isn't syntactically knowable) does not get upgraded by `Refine` — T13's own
+> Done-when and design.md's `RelationCollector.Refine` component never describe semantic refinement for
+> `http-call`, only for `inherits`/`implements` and `publishes`/`subscribes`; every kind `Refine` actually
+> targets, and every kind that was already `Syntactic` at the syntax-only baseline, is asserted directly.
 
 **Tests**: integration
 **Gate**: full

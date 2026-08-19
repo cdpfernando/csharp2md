@@ -252,7 +252,8 @@ public sealed class AnalysisEngine
                     .Concat(extraction.Document.Sections)
                     .Concat(extraction.Symbols.Where(symbol => !errorIds.Contains(symbol.SymbolId)))
                     .Concat(relationFacts);
-                var merged = FactMerger.Merge(baseline, document.EnrichedSymbols, document.Diagnostics);
+                var enrichment = document.EnrichedSymbols.Cast<IFact>().Concat(document.EnrichedRelations);
+                var merged = FactMerger.Merge(baseline, enrichment, document.Diagnostics);
                 analysisDiagnostics.AddRange(merged.StructuralDiagnostics);
                 if (!merged.IsValid)
                 {
@@ -329,7 +330,7 @@ public sealed class AnalysisEngine
         ImmutableArray<SemanticProjectDocument> sources) =>
         new(
             new ProjectFactEnrichmentResult(project, [], []),
-            sources.Select(static source => new SemanticProcessedDocument(source, false, [], [], [])).ToImmutableArray(),
+            sources.Select(static source => new SemanticProcessedDocument(source, false, [], [], [], [])).ToImmutableArray(),
             [], [], false);
 
     private static AnalysisResult Result(
