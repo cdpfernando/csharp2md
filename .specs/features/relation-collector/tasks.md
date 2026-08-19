@@ -224,13 +224,13 @@ branch specifically gets `Heuristic` confidence. A base-list entry that can't be
 - Skill: NONE
 
 **Done when**:
-- [ ] `interface I2 : I1` → `implements`, `Syntactic`
-- [ ] `struct S : IDisposable` → `implements`, `Syntactic`
-- [ ] `class D : Base, IDisposable` → first entry `inherits`/`Syntactic` (not `I`-prefixed), second `implements`/`Syntactic`
-- [ ] `class PaymentsService : Payments.PaymentsBase` (the fixture case from spec.md's P2 Independent Test) → `inherits`, `target_text` `PaymentsBase` or `Payments.PaymentsBase`
-- [ ] `class C : IRepository` (single entry, `I`-prefixed) → `implements`, `Heuristic`
-- [ ] Unresolvable base-list entry defaults to `implements`/`Unresolved`, never `inherits` (spec.md Edge Case)
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] `interface I2 : I1` → `implements`, `Syntactic`
+- [x] `struct S : IDisposable` → `implements`, `Syntactic`
+- [x] `class D : Base, IDisposable` → first entry `inherits`/`Syntactic` (not `I`-prefixed), second `implements`/`Syntactic`
+- [x] `class PaymentsService : Payments.PaymentsBase` (the fixture case from spec.md's P2 Independent Test) → `inherits`, `target_text` `PaymentsBase` or `Payments.PaymentsBase`
+- [x] `class C : IRepository` (single entry, `I`-prefixed) → `implements`, `Heuristic`
+- [x] Unresolvable base-list entry defaults to `implements`/`Unresolved`, never `inherits` (spec.md Edge Case)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick

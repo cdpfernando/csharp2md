@@ -65,14 +65,23 @@ internal static class SyntaxFactExtractor
 
             if (declaration is BaseTypeDeclarationSyntax { BaseList: { } baseList })
             {
-                candidates.AddRange(baseList.Types.Select(type =>
+                var typeParameterNames = declaration is TypeDeclarationSyntax typeDeclaration
+                    ? typeDeclaration.TypeParameterList?.Parameters
+                        .Select(static parameter => parameter.Identifier.ValueText)
+                        .ToImmutableHashSet(StringComparer.Ordinal) ?? ImmutableHashSet<string>.Empty
+                    : ImmutableHashSet<string>.Empty;
+                var isInterfaceLikeDeclaration = IsInterfaceLikeBaseListOwner(declaration);
+
+                candidates.AddRange(baseList.Types.Select((type, index) =>
                 {
                     var span = root.SyntaxTree.GetLineSpan(type.Type.Span);
+                    var (relationKind, resolution) = ClassifyBaseListEntry(
+                        type.Type, index, isInterfaceLikeDeclaration, typeParameterNames);
                     return new SyntacticRelationCandidate(
                         symbolId.ToFactId(),
-                        "base-or-interface",
+                        relationKind,
                         NormalizeNode(type.Type),
-                        FactResolution.Syntactic,
+                        resolution,
                         span.StartLinePosition.Line + 1,
                         span.StartLinePosition.Character + 1,
                         span.EndLinePosition.Line + 1,
@@ -249,6 +258,60 @@ internal static class SyntaxFactExtractor
 
     private static string NormalizeNode(SyntaxNode node) =>
         node.WithoutTrivia().NormalizeWhitespace(indentation: " ", eol: " ", elasticTrivia: false).ToFullString();
+
+    /// <summary>
+    /// Every base-list entry on an interface/struct/record-struct declaration is necessarily an
+    /// interface (single inheritance means a class base list is the only place "inherits" can occur).
+    /// </summary>
+    private static bool IsInterfaceLikeBaseListOwner(MemberDeclarationSyntax declaration) => declaration switch
+    {
+        InterfaceDeclarationSyntax => true,
+        StructDeclarationSyntax => true,
+        RecordDeclarationSyntax record => record.ClassOrStructKeyword.IsKind(SyntaxKind.StructKeyword),
+        _ => false,
+    };
+
+    /// <summary>
+    /// Classifies one base-list entry per design.md's rule: interface-like owners and every
+    /// non-first entry are always "implements" (certain, <see cref="FactResolution.Syntactic"/>); a
+    /// class/record's first entry is "inherits" unless it looks like an interface name
+    /// (<see cref="FactResolution.Heuristic"/> - a guess, not a certainty); an entry naming the
+    /// declaring type's own generic type parameter can't be classified even heuristically and
+    /// defaults to "implements"/<see cref="FactResolution.Unresolved"/> rather than guessing "inherits".
+    /// </summary>
+    private static (string RelationKind, FactResolution Resolution) ClassifyBaseListEntry(
+        TypeSyntax type,
+        int index,
+        bool isInterfaceLikeDeclaration,
+        ImmutableHashSet<string> typeParameterNames)
+    {
+        var simpleName = SimpleTypeName(type);
+        if (typeParameterNames.Contains(simpleName))
+        {
+            return ("implements", FactResolution.Unresolved);
+        }
+
+        if (isInterfaceLikeDeclaration || index > 0)
+        {
+            return ("implements", FactResolution.Syntactic);
+        }
+
+        return LooksLikeInterfaceName(simpleName)
+            ? ("implements", FactResolution.Heuristic)
+            : ("inherits", FactResolution.Syntactic);
+    }
+
+    private static bool LooksLikeInterfaceName(string simpleName) =>
+        simpleName.Length >= 2 && simpleName[0] == 'I' && char.IsUpper(simpleName[1]);
+
+    private static string SimpleTypeName(TypeSyntax type) => type switch
+    {
+        QualifiedNameSyntax qualified => SimpleTypeName(qualified.Right),
+        AliasQualifiedNameSyntax alias => SimpleTypeName(alias.Name),
+        GenericNameSyntax generic => generic.Identifier.ValueText,
+        SimpleNameSyntax simple => simple.Identifier.ValueText,
+        _ => NormalizeNode(type),
+    };
 
     private static FactHeader Header(FactId id) =>
         FactHeader.Create(id, FactKind.Symbol, FactResolution.Syntactic, [Provenance]);

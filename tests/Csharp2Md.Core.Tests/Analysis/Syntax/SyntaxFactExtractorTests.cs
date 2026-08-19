@@ -1,5 +1,6 @@
 using Csharp2Md.Core.Analysis.Syntax;
 using Csharp2Md.Core.Facts.Identity;
+using Csharp2Md.Core.Facts.Model;
 
 namespace Csharp2Md.Core.Tests.Analysis.Syntax;
 
@@ -83,7 +84,11 @@ public sealed class SyntaxFactExtractorTests
         var method = Assert.Single(extraction.Symbols, static symbol => symbol.SymbolKind == "method");
 
         Assert.Equal(["Marker"], worker.Attributes.ToArray());
-        Assert.Equal(["Base", "IDisposable"], extraction.RelationCandidates.Select(static candidate => candidate.ObservedTarget));
+        // Sorted by (OwnerId, RelationKind, ObservedTarget): "implements" < "inherits" ordinally, so
+        // T6's inherits/implements split reorders these relative to ObservedTarget's own alphabetical order.
+        Assert.Equal(
+            new[] { "Base", "IDisposable" }.Order(StringComparer.Ordinal),
+            extraction.RelationCandidates.Select(static candidate => candidate.ObservedTarget).Order(StringComparer.Ordinal));
         Assert.Equal(["int", "string"], method.RelevantTypeReferences.ToArray());
         Assert.Contains("Runs work.", Assert.Single(extraction.XmlProse[worker.SymbolId]), StringComparison.Ordinal);
         Assert.All(extraction.RelationCandidates, static candidate =>
@@ -112,6 +117,71 @@ public sealed class SyntaxFactExtractorTests
         Assert.Equal(
             "Base",
             source.Substring(candidate.StartColumn - 1, candidate.EndColumn - candidate.StartColumn));
+    }
+
+    [Fact]
+    public void Extract_InterfaceBaseListEntry_IsAlwaysImplementsSyntactic()
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/I2.cs", "interface I2 : I1 { }");
+
+        var candidate = Assert.Single(extraction.RelationCandidates);
+        Assert.Equal("implements", candidate.RelationKind);
+        Assert.Equal(FactResolution.Syntactic, candidate.ShapeConfidence);
+    }
+
+    [Fact]
+    public void Extract_StructBaseListEntry_IsAlwaysImplementsSyntactic()
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/S.cs", "struct S : IDisposable { }");
+
+        var candidate = Assert.Single(extraction.RelationCandidates);
+        Assert.Equal("implements", candidate.RelationKind);
+        Assert.Equal(FactResolution.Syntactic, candidate.ShapeConfidence);
+    }
+
+    [Fact]
+    public void Extract_ClassWithBaseClassAndInterface_FirstEntryInheritsRestImplements()
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/D.cs", "class D : Base, IDisposable { }");
+
+        var baseEntry = Assert.Single(extraction.RelationCandidates, static candidate => candidate.ObservedTarget == "Base");
+        var interfaceEntry = Assert.Single(extraction.RelationCandidates, static candidate => candidate.ObservedTarget == "IDisposable");
+        Assert.Equal("inherits", baseEntry.RelationKind);
+        Assert.Equal(FactResolution.Syntactic, baseEntry.ShapeConfidence);
+        Assert.Equal("implements", interfaceEntry.RelationKind);
+        Assert.Equal(FactResolution.Syntactic, interfaceEntry.ShapeConfidence);
+    }
+
+    [Fact]
+    public void Extract_QualifiedBaseClassNotIPrefixed_ClassifiesAsInherits()
+    {
+        const string source = "namespace Acme.Payments; sealed class PaymentsService : Payments.PaymentsBase { }";
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/PaymentsService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates);
+        Assert.Equal("inherits", candidate.RelationKind);
+        Assert.True(candidate.ObservedTarget is "PaymentsBase" or "Payments.PaymentsBase");
+    }
+
+    [Fact]
+    public void Extract_SingleIPrefixedBaseListEntryOnClass_ClassifiesAsImplementsHeuristic()
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/C.cs", "class C : IRepository { }");
+
+        var candidate = Assert.Single(extraction.RelationCandidates);
+        Assert.Equal("implements", candidate.RelationKind);
+        Assert.Equal(FactResolution.Heuristic, candidate.ShapeConfidence);
+    }
+
+    [Fact]
+    public void Extract_BaseListEntryNamingTheDeclaringTypesOwnTypeParameter_DefaultsToImplementsUnresolved()
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/Weird.cs", "class Weird<T> : T { }");
+
+        var candidate = Assert.Single(extraction.RelationCandidates);
+        Assert.Equal("implements", candidate.RelationKind);
+        Assert.Equal(FactResolution.Unresolved, candidate.ShapeConfidence);
     }
 
     [Fact]
