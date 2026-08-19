@@ -196,9 +196,9 @@ type): bool` (semantic path: `ContainingNamespace` starts with `System` or `Micr
 - Skill: NONE
 
 **Done when**:
-- [ ] Both methods exist with the documented denylist/namespace rule
-- [ ] Unit tests cover every listed denylist entry plus at least 2 non-matching (application-shaped) names for each method
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Both methods exist with the documented denylist/namespace rule
+- [x] Unit tests cover every listed denylist entry plus at least 2 non-matching (application-shaped) names for each method
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick
