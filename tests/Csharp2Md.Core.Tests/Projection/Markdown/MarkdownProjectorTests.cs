@@ -1,5 +1,6 @@
 using Csharp2Md.Core.Analysis.Syntax;
 using Csharp2Md.Core.Facts.Identity;
+using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
 using Csharp2Md.Core.Facts.Validation;
 using Csharp2Md.Core.Projection.Markdown;
@@ -54,16 +55,108 @@ public sealed class MarkdownProjectorTests
     }
 
     [Fact]
-    public void Project_SymbolAnnotationsRemainOutsideEveryCodePayload()
+    public void Project_AnalysisSectionRemainsOutsideEveryCodePayload()
     {
         const string source = "[Marker] class C { }";
         var fragment = Fragment(source);
 
         var markdown = MarkdownProjector.Project(fragment);
 
-        Assert.Contains("- `class` — syntactic; attributes: Marker", markdown, StringComparison.Ordinal);
-        Assert.True(markdown.IndexOf("Factual annotations", StringComparison.Ordinal) < markdown.IndexOf("```csharp", StringComparison.Ordinal));
+        Assert.Contains("resolution: syntactic", markdown, StringComparison.Ordinal);
+        Assert.Contains("symbols:\n  syntactic: 1", markdown, StringComparison.Ordinal);
+        Assert.Contains("relations: {}", markdown, StringComparison.Ordinal);
+        Assert.Contains("diagnostics: {}", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("- `class`", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("attributes:", markdown, StringComparison.Ordinal);
+        Assert.True(markdown.IndexOf("## Analysis", StringComparison.Ordinal) < markdown.IndexOf("```csharp", StringComparison.Ordinal));
         Assert.Equal(source, string.Concat(Assert.Single(fragment.Facts.OfType<DocumentFact>()).Sections.Select(static section => section.Source)));
+    }
+
+    [Fact]
+    public void Project_AnalysisBlock_ZeroSymbolsRenderAsEmptyMapWhenRelationsPresent()
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/C.cs", string.Empty);
+        var documentId = extraction.Document.DocumentId;
+        var fragment = new ValidatedFactFragment(
+            [extraction.Document, .. extraction.Document.Sections, MakeRelation(documentId, "http-request", FactResolution.Exact)],
+            []);
+
+        var markdown = MarkdownProjector.Project(fragment);
+
+        Assert.Contains("symbols: {}", markdown, StringComparison.Ordinal);
+        Assert.Contains("relations:\n  exact: 1", markdown, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Project_AnalysisBlock_ResolutionLineReflectsDocumentHeaderResolutionNotAHardcodedValue()
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/C.cs", "class C { }");
+        var exactHeader = FactHeader.Create(extraction.Document.Header.Id, FactKind.Document, FactResolution.Exact);
+        var document = extraction.Document with { Header = exactHeader };
+        var fragment = new ValidatedFactFragment(
+            [document, .. document.Sections, .. extraction.Symbols],
+            []);
+
+        var markdown = MarkdownProjector.Project(fragment);
+
+        Assert.Contains("resolution: exact", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("resolution: syntactic", markdown, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Project_AnalysisBlock_IsDeterministicAcrossRepeatedProjection()
+    {
+        var fragment = Fragment("class C { void Run() { } }");
+
+        var first = MarkdownProjector.Project(fragment);
+        var second = MarkdownProjector.Project(fragment);
+
+        Assert.Equal(first, second);
+    }
+
+    [Fact]
+    public void Project_AnalysisBlock_AggregatesResolutionKindsAndDiagnosticsByCode()
+    {
+        const string source = "class C { void Run() { } }";
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/C.cs", source);
+        var documentId = extraction.Document.DocumentId;
+        var extraSymbols = new[]
+        {
+            MakeSymbol(documentId, "class", FactResolution.Exact, "extra-exact"),
+            MakeSymbol(documentId, "class", FactResolution.Unresolved, "extra-unresolved"),
+        };
+        var relations = new[]
+        {
+            MakeRelation(documentId, "http-request-1", FactResolution.Exact),
+            MakeRelation(documentId, "http-request-2", FactResolution.Unresolved),
+        };
+        var diagnostics = new[]
+        {
+            MakeDiagnostic(documentId, DiagnosticSeverity.Warning, "first occurrence"),
+            MakeDiagnostic(documentId, DiagnosticSeverity.Error, "second occurrence"),
+        };
+        var fragment = new ValidatedFactFragment(
+            [
+                extraction.Document, .. extraction.Document.Sections, .. extraction.Symbols,
+                .. extraSymbols, .. relations,
+            ],
+            [.. diagnostics]);
+
+        var markdown = MarkdownProjector.Project(fragment);
+
+        Assert.Contains(
+            "```yaml\nresolution: syntactic\nsymbols:\n  exact: 1\n  syntactic: 2\n  unresolved: 1\n"
+                + "relations:\n  exact: 1\n  unresolved: 1\ndiagnostics:\n  C2M-BIND-002: 2\n```",
+            markdown,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Project_NoSymbolsRelationsOrDiagnostics_OmitsAnalysisSection()
+    {
+        var markdown = MarkdownProjector.Project(Fragment(string.Empty));
+
+        Assert.DoesNotContain("## Analysis", markdown, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -116,4 +209,34 @@ public sealed class MarkdownProjectorTests
             [extraction.Document, .. extraction.Document.Sections, .. extraction.Symbols],
             []);
     }
+
+    private static SymbolFact MakeSymbol(DocumentFactId documentId, string kind, FactResolution resolution, string discriminator)
+    {
+        var symbolId = SymbolFactId.CreateSyntactic(ProjectId, "src/C.cs", kind, discriminator);
+        return new SymbolFact(
+            FactHeader.Create(symbolId.ToFactId(), FactKind.Symbol, resolution),
+            symbolId,
+            documentId,
+            kind,
+            ContainsErrorSymbol: false,
+            [],
+            [],
+            []);
+    }
+
+    private static RelationFact MakeRelation(DocumentFactId documentId, string claim, FactResolution resolution)
+    {
+        var relationId = RelationFactId.Create(documentId.ToFactId(), "http", claim, 1);
+        return new RelationFact(
+            FactHeader.Create(relationId.ToFactId(), FactKind.Relation, resolution),
+            relationId,
+            documentId.ToFactId(),
+            TargetId: null,
+            RelationPartition.Http,
+            "http-request",
+            resolution == FactResolution.Unresolved ? "no target proved" : null);
+    }
+
+    private static AnalysisDiagnostic MakeDiagnostic(DocumentFactId documentId, DiagnosticSeverity severity, string message) =>
+        AnalysisDiagnostic.Create("C2M-BIND-002", severity, DiagnosticStage.Detector, documentId.ToFactId(), message);
 }

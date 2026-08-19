@@ -15,14 +15,15 @@ facts_ref: "facts/document/45/4532df7bd67a908fab160445df45ff9201f190a3d382cadfce
 
 # Acme.Orders/OrderService.cs
 
-## Factual annotations
+## Analysis
 
-- `class` — syntactic
-- `method` — syntactic
-- `method` — syntactic
-- `method` — syntactic
-- `method` — syntactic
-- `namespace` — syntactic
+```yaml
+resolution: syntactic
+symbols:
+  syntactic: 6
+relations: {}
+diagnostics: {}
+```
 
 ## Preamble
 

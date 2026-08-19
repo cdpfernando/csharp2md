@@ -1,10 +1,14 @@
-# src/C.cs
+﻿# src/C.cs
 
-## Factual annotations
+## Analysis
 
-- `class` — syntactic; attributes: Marker
-- `method` — syntactic
-- `namespace` — syntactic
+```yaml
+resolution: syntactic
+symbols:
+  syntactic: 3
+relations: {}
+diagnostics: {}
+```
 
 ## Preamble
 
