@@ -194,12 +194,12 @@ caught by the existing per-fragment `missing-reference` (`C2M-FV-002`) diagnosti
 - Skill: NONE
 
 **Done when**:
-- [ ] `SymbolFactJson` carries all 8 new properties with `JsonPropertyOrder` 9-16
-- [ ] `FactualJsonMapper.Map(SymbolFact)` maps every new field, including `null` for the three optional ones
-- [ ] `FactualJsonSerializer.SchemaVersion` is `3`; `FactualSchemaSyncTests`'s schema-version assertion is updated (test renamed to reflect "IsThree", not left asserting the old value under a stale name)
-- [ ] `schemas/facts.schema.json`'s `symbol_fact` definition and `schema_version` const both reflect the new shape
-- [ ] Every `.verified.*` snapshot under `tests/**/snapshots/` that includes `"symbols"` is re-approved (diffed and confirmed correct, not blindly accepted) — explicitly enumerated in the commit, not silently left stale
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] `SymbolFactJson` carries all 8 new properties with `JsonPropertyOrder` 9-16
+- [x] `FactualJsonMapper.Map(SymbolFact)` maps every new field, including `null` for the three optional ones
+- [x] `FactualJsonSerializer.SchemaVersion` is `3`; `FactualSchemaSyncTests`'s schema-version assertion is updated (test renamed to reflect "IsThree", not left asserting the old value under a stale name)
+- [x] `schemas/facts.schema.json`'s `symbol_fact` definition and `schema_version` const both reflect the new shape
+- [x] Every `.verified.*` snapshot under `tests/**/snapshots/` that includes `"symbols"` is re-approved (diffed and confirmed correct, not blindly accepted) — explicitly enumerated in the commit, not silently left stale
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: build

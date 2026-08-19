@@ -98,13 +98,13 @@ public sealed class FactStoreTests : IDisposable
     }
 
     [Fact]
-    public void Persist_BytesAreSourceGeneratedSchemaVersionTwoUtf8Lf()
+    public void Persist_BytesAreSourceGeneratedSchemaVersionThreeUtf8Lf()
     {
         var stored = new FactStore(_root).Persist(Fragment("class C { }"));
         var bytes = Read(stored);
         var json = System.Text.Encoding.UTF8.GetString(bytes);
 
-        Assert.Contains("\"schema_version\": 2", json, StringComparison.Ordinal);
+        Assert.Contains("\"schema_version\": 3", json, StringComparison.Ordinal);
         Assert.DoesNotContain('\r', json);
         Assert.EndsWith("\n", json, StringComparison.Ordinal);
         Assert.False(bytes.AsSpan().StartsWith(System.Text.Encoding.UTF8.Preamble));
