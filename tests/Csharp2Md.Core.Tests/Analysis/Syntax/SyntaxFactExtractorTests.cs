@@ -97,6 +97,31 @@ public sealed class SyntaxFactExtractorTests
         Assert.All(extraction.Symbols, static symbol => Assert.Equal(Csharp2Md.Core.Facts.Model.FactResolution.Syntactic, symbol.Header.Resolution));
     }
 
+    [Fact]
+    public void Extract_AttributeArgumentsWithWhitespaceRemainStableAndCanonicallyFormatted()
+    {
+        const string source = """
+            namespace Application.Tests.CommandHandlers.Customer;
+
+            [Theory]
+            [InlineData(null)]
+            [InlineData("")]
+            [InlineData("   ")]
+            public class VerifyHomeAndMainAddressAreEqualsHandlerTest
+            {
+                public async Task Should_Returns_False_When_HomeAddressId_Is_Null_Or_Empty_Or_White_Spaces(string homeAddressId) { }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/VerifyHomeAndMainAddressAreEqualsHandlerTest.cs", source);
+
+        Assert.Contains(extraction.Symbols, static symbol => symbol.SymbolKind == "class");
+        Assert.Contains(extraction.Symbols, static symbol => symbol.SymbolKind == "method");
+        Assert.All(extraction.Symbols, static symbol => Assert.DoesNotContain("\n", symbol.SymbolId.Value, StringComparison.Ordinal));
+        Assert.All(extraction.Symbols, static symbol => Assert.DoesNotContain("\t", symbol.SymbolId.Value, StringComparison.Ordinal));
+        Assert.All(extraction.Symbols, static symbol => Assert.DoesNotContain("  ", symbol.SymbolId.Value, StringComparison.Ordinal));
+    }
+
     private static string[] Methods(string source) =>
         SyntaxFactExtractor.Extract(ProjectId, "src/App/C.cs", source).Symbols
             .Where(static symbol => symbol.SymbolKind == "method")

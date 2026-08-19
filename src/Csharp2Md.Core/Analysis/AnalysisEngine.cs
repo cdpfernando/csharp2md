@@ -19,7 +19,7 @@ namespace Csharp2Md.Core.Analysis;
 
 internal delegate FactValidationResult FragmentValidationFunc(FactValidationInput input);
 
-internal interface IAnalysisEngineObserver
+public interface IAnalysisEngineObserver
 {
     void ScopeStarted(string scope);
     void ScopeCompleted(string scope);
@@ -37,6 +37,12 @@ public sealed class AnalysisEngine
 
     public AnalysisEngine()
         : this(new InertInventory(), FactValidator.Validate, null,
+            new DotnetMsBuildEvaluator(), new SemanticCompilationAdapter(), new SourceGeneratorAdapter())
+    {
+    }
+
+    public AnalysisEngine(IAnalysisEngineObserver? observer)
+        : this(new InertInventory(), FactValidator.Validate, observer,
             new DotnetMsBuildEvaluator(), new SemanticCompilationAdapter(), new SourceGeneratorAdapter())
     {
     }

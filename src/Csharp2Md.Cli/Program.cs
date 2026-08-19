@@ -64,6 +64,8 @@ rootCommand.Options.Add(trustOption);
 rootCommand.Options.Add(generatorsOption);
 rootCommand.Options.Add(timeoutOption);
 
+var consoleObserver = new ConsoleProgressObserver();
+
 rootCommand.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
 {
     var directory = parseResult.GetValue(directoryArgument);
@@ -135,7 +137,7 @@ rootCommand.SetAction(async (ParseResult parseResult, CancellationToken cancella
         return Invalid(requestResult.Message!);
     }
 
-    var result = await new AnalysisEngine().AnalyzeAsync(requestResult.Request!, cancellationToken);
+    var result = await new AnalysisEngine(consoleObserver).AnalyzeAsync(requestResult.Request!, cancellationToken);
     foreach (var diagnostic in result.Diagnostics)
     {
         Console.Error.WriteLine($"csharp2md: {diagnostic}");
@@ -186,4 +188,17 @@ static bool TryTimeout(string? value, out TimeSpan timeout)
     timeout = TimeSpan.FromMinutes(AnalysisRequest.DefaultServiceTimeoutMinutes);
     return value is null
         || (TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out timeout) && timeout > TimeSpan.Zero);
+}
+
+internal sealed class ConsoleProgressObserver : Csharp2Md.Core.Analysis.IAnalysisEngineObserver
+{
+    public void ScopeStarted(string scope)
+    {
+        Console.Error.WriteLine($"[csharp2md] Analyzing {scope}");
+    }
+
+    public void ScopeCompleted(string scope)
+    {
+        Console.Error.WriteLine($"[csharp2md] Completed {scope}");
+    }
 }

@@ -1128,10 +1128,12 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45 -> T46 -> T47
 
 **Done when**:
 
-- [ ] Every relation is in exactly one legal partition with valid evidence/provenance and honest nullable targets.
-- [ ] Mermaid and component/index output derive only from validated summaries and never promote logical names to identities.
-- [ ] Aggregation reads one partition/summary stream at a time in canonical order.
-- [ ] At least twelve integration/snapshot cases pass; full gate records no discovered-test decrease.
+- [x] Every relation is in exactly one legal partition with valid evidence/provenance and honest nullable targets.
+- [x] Mermaid and component/index output derive only from validated summaries and never promote logical names to identities.
+- [x] Aggregation reads one partition/summary stream at a time in canonical order.
+- [x] At least twelve integration/snapshot cases pass; full gate records no discovered-test decrease.
+
+**Completed evidence (2026-08-19)**: `RelationProjectorTests` adds 17 integration/snapshot cases for all six partitions, canonical ordering, unresolved targets, component ownership, Mermaid identity safety, partition/component output, and a verified snapshot. `dotnet test csharp2md.slnx` passed 950 tests with 0 failed and 0 skipped.
 
 **Tests**: integration + snapshot
 **Gate**: full

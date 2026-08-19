@@ -121,10 +121,12 @@ internal static class SyntaxFactExtractor
                 break;
             }
 
-            if (token.Text.Length > 0)
+            if (token.Text.Length == 0)
             {
-                tokens.Add(token.Text);
+                continue;
             }
+
+            tokens.Add(token.Text);
             parenthesisDepth += kind switch
             {
                 SyntaxKind.OpenParenToken => 1,
@@ -151,8 +153,29 @@ internal static class SyntaxFactExtractor
             .Reverse()
             .Select(static ancestor => $"{DeclarationKind(ancestor)}:{DeclarationName(ancestor)}");
         var prefix = string.Join('/', container);
-        var header = string.Join(' ', tokens);
-        return prefix.Length == 0 ? header : $"{prefix}/{header}";
+        var rawHeader = string.Join(' ', tokens);
+        var sanitizedHeader = SanitizeCanonicalText(rawHeader);
+        return prefix.Length == 0 ? sanitizedHeader : $"{prefix}/{sanitizedHeader}";
+    }
+
+    private static string SanitizeCanonicalText(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        var normalized = value.Replace("\r", " ", StringComparison.Ordinal)
+            .Replace("\n", " ", StringComparison.Ordinal)
+            .Replace("\t", " ", StringComparison.Ordinal)
+            .Replace("  ", " ", StringComparison.Ordinal);
+
+        while (normalized.Contains("  ", StringComparison.Ordinal))
+        {
+            normalized = normalized.Replace("  ", " ", StringComparison.Ordinal);
+        }
+
+        return normalized.Trim();
     }
 
     private static string DeclarationName(MemberDeclarationSyntax declaration) => declaration switch

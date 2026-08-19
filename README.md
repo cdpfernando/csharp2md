@@ -1,63 +1,63 @@
 # csharp2md
 
-`csharp2md` converte um projeto ou uma base C#/.NET em arquivos Markdown e gera
-índices e uma visão consolidada das dependências entre serviços.
+English | [Português](./README.pt-BR.md)
 
-## Pré-requisitos
+`csharp2md` converts a C#/.NET project or codebase into Markdown files and
+generates indexes and a consolidated view of dependencies between services.
 
-- .NET SDK 10 disponível no `PATH`.
-- Dependências dos projetos que serão analisados restauradas, quando possível.
+## Prerequisites
 
-## Executar a partir do código-fonte
+- .NET SDK 10 available on `PATH`.
+- Dependencies for the projects being analyzed restored whenever possible.
 
-Use `--` para separar os argumentos do `dotnet run` dos argumentos do
-`csharp2md`:
+## Run from source
+
+Use `--` to separate `dotnet run` arguments from `csharp2md` arguments:
 
 ```shell
 dotnet run --project src/Csharp2Md.Cli -- --help
 ```
 
-Os exemplos abaixo usam o comando global `csharp2md`. Durante o desenvolvimento,
-ele pode ser substituído por `dotnet run --project src/Csharp2Md.Cli --`.
+The examples below use the global `csharp2md` command. During development, you
+can replace it with `dotnet run --project src/Csharp2Md.Cli --`.
 
-## Exemplos
+## Examples
 
-### Analisar o diretório atual
+### Analyze the current directory
 
 ```shell
-cd MinhaSolucao
+cd MySolution
 csharp2md
 ```
 
-Se o diretório atual for `MinhaSolucao`, a saída será gravada por padrão em um
-diretório irmão chamado `MinhaSolucao_md`.
+If the current directory is named `MySolution`, the output is written by
+default to a sibling directory named `MySolution_md`.
 
-### Analisar um diretório específico
+### Analyze a specific directory
 
 ```shell
 csharp2md ./src
 ```
 
-Nesse caso, a saída padrão será `./src_md`. Caminhos que contêm espaços devem
-ser colocados entre aspas:
+In this case, the default output is `./src_md`. Wrap paths containing spaces in
+quotes:
 
 ```shell
-csharp2md "C:\repos\Minha Solucao"
+csharp2md "C:\repos\My Solution"
 ```
 
-### Escolher o diretório de saída
+### Choose the output directory
 
-`--output` (ou `-o`) representa o caminho final exato; nenhum sufixo é
-acrescentado:
+`--output` (or `-o`) represents the exact final path; no suffix is appended:
 
 ```shell
-csharp2md ./src --output ./docs/codigo
-csharp2md ./src -o ./docs/codigo
+csharp2md ./src --output ./docs/code
+csharp2md ./src -o ./docs/code
 ```
 
-### Analisar múltiplos serviços com um manifesto
+### Analyze multiple services with a manifest
 
-Crie um arquivo `manifest.json`:
+Create a `manifest.json` file:
 
 ```json
 {
@@ -72,13 +72,13 @@ Crie um arquivo `manifest.json`:
 }
 ```
 
-Depois execute:
+Then run:
 
 ```shell
-csharp2md --manifest ./manifest.json --output ./docs/codigo
+csharp2md --manifest ./manifest.json --output ./docs/code
 ```
 
-O campo `path` também aceita `*` ou `?` no último segmento. Por exemplo:
+The `path` field also accepts `*` or `?` in its final segment. For example:
 
 ```json
 {
@@ -88,27 +88,26 @@ O campo `path` também aceita `*` ou `?` no último segmento. Por exemplo:
 }
 ```
 
-Os caminhos do manifesto são resolvidos a partir do diretório em que o comando
-é executado. O argumento posicional de diretório e `--manifest` são modos
-alternativos e não podem ser usados juntos.
+Manifest paths are resolved from the directory where the command is run. The
+positional directory argument and `--manifest` are alternative modes and
+cannot be used together.
 
-### Substituir uma saída existente
+### Replace existing output
 
-O `csharp2md` pode atualizar automaticamente diretórios que ele próprio criou.
-Para substituir um diretório não vazio que não foi criado pela ferramenta, use
-`--force`:
+`csharp2md` can automatically update directories it created. To replace a
+non-empty directory that was not created by the tool, use `--force`:
 
 ```shell
-csharp2md ./src --output ./docs/codigo --force
+csharp2md ./src --output ./docs/code --force
 ```
 
-Esse comando remove o conteúdo anterior do diretório de saída. A ferramenta
-sempre recusa usar como saída o diretório de entrada, um ancestral dele ou a
-raiz do sistema de arquivos.
+This command removes the previous contents of the output directory. The tool
+always refuses to use the input directory, one of its ancestors, or a file
+system root as its output directory.
 
-### Executar contra a fixture deste repositório
+### Run against this repository's fixture
 
-Sem instalar a ferramenta globalmente:
+Without installing the tool globally:
 
 ```shell
 dotnet run --project src/Csharp2Md.Cli -- \
@@ -116,13 +115,13 @@ dotnet run --project src/Csharp2Md.Cli -- \
   --output ./artifacts/example
 ```
 
-No PowerShell, a mesma execução pode ser escrita em uma linha:
+In PowerShell, the same command can be written on one line:
 
 ```powershell
 dotnet run --project src/Csharp2Md.Cli -- ./fixtures/SyntheticSolution/Acme.Orders --output ./artifacts/example
 ```
 
-## Instalar como ferramenta global a partir do repositório
+## Install as a global tool from this repository
 
 ```shell
 dotnet pack src/Csharp2Md.Cli -c Release
@@ -130,14 +129,14 @@ dotnet tool install --global --add-source ./src/Csharp2Md.Cli/nupkg csharp2md
 csharp2md --help
 ```
 
-Para reinstalar uma versão empacotada localmente, remova primeiro a instalação
-anterior com `dotnet tool uninstall --global csharp2md`.
+To reinstall a locally packed version, first remove the previous installation
+with `dotnet tool uninstall --global csharp2md`.
 
-## Saída gerada
+## Generated output
 
-Além de um arquivo `.cs.md` para cada fonte C#, a saída contém:
+In addition to one `.cs.md` file for each C# source file, the output contains:
 
-- `index.md` na raiz e em cada serviço;
-- `dependencies.json` com o grafo de dependências;
-- `dependencies.mmd` com o diagrama Mermaid;
-- `.csharp2md-output`, que identifica um diretório gerenciado pela ferramenta.
+- `index.md` at the root and for each service;
+- `dependencies.json` containing the dependency graph;
+- `dependencies.mmd` containing the Mermaid diagram;
+- `.csharp2md-output`, which identifies a directory managed by the tool.

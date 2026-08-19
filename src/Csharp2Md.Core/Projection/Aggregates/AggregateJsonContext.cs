@@ -5,6 +5,7 @@ namespace Csharp2Md.Core.Projection.Aggregates;
 [JsonSerializable(typeof(AggregateEnvelope))]
 [JsonSerializable(typeof(DiagnosticAggregate))]
 [JsonSerializable(typeof(CoverageAggregate))]
+[JsonSerializable(typeof(RelationAggregate))]
 [JsonSerializable(typeof(FactualManifest))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower,

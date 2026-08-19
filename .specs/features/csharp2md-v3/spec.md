@@ -96,12 +96,19 @@ Document resolution is `exact` when all applicable facts are exact, `syntactic` 
 
 ### Stable identities
 
-- Project ID: normalized forward-slash path of the project file relative to the analysis root.
-- Target ID: project ID plus target framework.
-- Resolved symbol ID: target ID plus `GetDocumentationCommentId()` when available, otherwise a canonical symbol signature.
-- Syntactic symbol ID: project ID plus relative document path, declaration kind, and normalized declaration signature.
-- Document ID: project ID plus normalized relative document path.
+Every factual ID uses the versioned grammar `id1:<type>;key=value;...`. Keys are fixed per type and emitted in their declared order. Values use UTF-8 percent-encoding with uppercase hexadecimal escapes; empty values are invalid unless a type explicitly permits them. The `id1` grammar version is independent of package and factual-schema versions.
+
+- Paths are normalized relative paths with forward slashes, no `.` or `..` segment, drive, UNC prefix, or absolute root. Path and non-path components compare with ordinal, case-sensitive semantics; the system does not case-fold or normalize Unicode.
+- Project ID: `id1:project;path=<relative-project-path>`.
+- Target ID: `id1:target;project=<project-id>;tfm=<target-framework>`.
+- Document ID: `id1:document;project=<project-id>;path=<relative-document-path>`.
+- Resolved symbol ID: `id1:symbol;target=<target-id>;doc=<documentation-comment-id>` when `GetDocumentationCommentId()` is available; otherwise `doc` holds the canonical semantic fallback signature.
+- A fallback signature is trivia-free and source-location-free. It uses the symbol kind, fully-qualified containing namespace/type chain, metadata names and generic arity, fully-qualified parameter/type arguments, and `ref`, `out`, or `in` modifiers when applicable. It excludes parameter names, whitespace, source text, line ranges, and spans.
+- Syntactic symbol ID: `id1:syntactic-symbol;project=<project-id>;document=<relative-document-path>;kind=<declaration-kind>;signature=<normalized-declaration-signature>`. Its signature retains declaration tokens relevant to identity but excludes trivia and source locations.
+- Component IDs use their kind and canonically sorted owner/project identities. Relation IDs use owner scope, relation kind, normalized claim fingerprint, and a one-based ordinal only among otherwise identical claims in that scope. The ordinal distinguishes repeated equivalent occurrences without using a source position.
+- Diagnostic IDs use stage, scope, code, and a normalized message/data fingerprint. Detector IDs use a lower-ASCII reverse-DNS-style name; detector version belongs in provenance, not in the detector ID.
 - `span-start` and line ranges are evidence locations only and never identity components.
+- `ArtifactReference` is not a fact identity. It is `facts/<type>/<first-two-lowercase-hex-sha256>/<lowercase-full-sha256>.json`, where SHA-256 receives the UTF-8 bytes of the canonical Fact ID. If two different Fact IDs yield the same reference, validation fails deterministically with an artifact-reference collision; no order-dependent suffix is assigned.
 
 ### Output layout
 
@@ -334,14 +341,14 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-15 | P1: Factual fragments | T8-T10 provenance contracts and T11 runtime enforcement implemented | Implementing |
 | FACT-16 | P1: Factual fragments | T11 compile-time-only project/package reference validation implemented | Implementing |
 | FACT-17 | P1: Factual fragments | T9 nullable representation and T11 unresolved-reason validation implemented | Implementing |
-| FACT-18 | P1: Deterministic output | Specify | Pending |
+| FACT-18 | P1: Deterministic output | T19 skeleton and T40 factual relation/component projection implemented | Implementing |
 | FACT-19 | P1: Deterministic output | T12 canonical source-generated JSON implemented; persistence/output closes in T16/T19 | Implementing |
 | FACT-20 | P1: Deterministic output | Specify | Pending |
 | FACT-21 | P1: Deterministic output | Specify | Pending |
 | FACT-22 | P1: Deterministic output | Specify | Pending |
 | FACT-23 | P1: Deterministic output | Specify | Pending |
 | FACT-24 | P1: Deterministic output | Specify | Pending |
-| FACT-25 | P1: Deterministic output | Specify | Pending |
+| FACT-25 | P1: Deterministic output | T19 omits dependencies.json; T40 derives dependencies.mmd from validated factual relations | Implementing |
 | FACT-26 | P2: Semantic enrichment | T2 viability and T5 evaluated-compilation backend selected; production closes in T22 | Implementing |
 | FACT-27 | P2: Semantic enrichment | T2 import-path-only preprocessing viability proven; production closes in T22 | Implementing |
 | FACT-28 | P2: Semantic enrichment | T2 `ArgumentList` and T3 evaluator lifecycle proven; production closes in T22 | Implementing |
@@ -353,12 +360,12 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-34 | P2: Semantic enrichment | T4 scoped compilation fallback viability proven; production closes in T22-T29 | Implementing |
 | FACT-35 | P2: Semantic enrichment | T33 per-invocation detector isolation implemented; concrete detector integration closes in T34-T39 | Implementing |
 | FACT-36 | P2: Semantic enrichment | Specify | Pending |
-| FACT-37 | P2: Components and relations | T30 reusable target-aware indexes implemented; detector and aggregate integration closes in T33/T40 | Implementing |
-| FACT-38 | P2: Components and relations | T31 confirmed web API classification implemented; component projection closes in T40 | Implementing |
-| FACT-39 | P2: Components and relations | T31 confirmed worker classification implemented; component projection closes in T40 | Implementing |
-| FACT-40 | P2: Components and relations | T31 confirmed CLI classification implemented; component projection closes in T40 | Implementing |
-| FACT-41 | P2: Components and relations | T31 confirmed test-support classification implemented; component projection closes in T40 | Implementing |
-| FACT-42 | P2: Components and relations | T32 private library ownership implemented; component projection closes in T40 | Implementing |
+| FACT-37 | P2: Components and relations | T30 reusable target-aware indexes and T40 canonical aggregate projection implemented | Implementing |
+| FACT-38 | P2: Components and relations | T31 confirmed web API classification and T40 component index projection implemented | Implementing |
+| FACT-39 | P2: Components and relations | T31 confirmed worker classification and T40 component index projection implemented | Implementing |
+| FACT-40 | P2: Components and relations | T31 confirmed CLI classification and T40 component index projection implemented | Implementing |
+| FACT-41 | P2: Components and relations | T31 confirmed test-support classification and T40 component index projection implemented | Implementing |
+| FACT-42 | P2: Components and relations | T32 private library ownership and T40 component index projection implemented | Implementing |
 | FACT-43 | P2: Components and relations | T34 confirmed ASP.NET Core detector implemented (controllers, actions, Minimal APIs, health checks, authorization, policies, filters, entrypoints) | Implementing |
 | FACT-44 | P2: Components and relations | T35 confirmed dependency-injection detector implemented (lifetimes, factories, open generics, keyed services, navigable local expansions) | Implementing |
 | FACT-45 | P2: Components and relations | T36 confirmed HTTP relation detector implemented (named/typed clients, verbs, routes, base address, timeout, headers) | Implementing |
@@ -382,9 +389,9 @@ Frontmatter schema version 2 contains only `schema_version`, document identity, 
 | FACT-63 | P2: Semantic enrichment | T3 complete tree termination proven; production closes in T22/T29 | Implementing |
 | FACT-64 | P2: Semantic enrichment | T4 sanitation and T5 analyzer-free generator driver proven; production closes in T23/T24 | Implementing |
 | FACT-65 | P2: Semantic enrichment | Specify | Pending |
-| FACT-66 | P2: Components and relations | T31 confirmed library classification implemented; component projection closes in T40 | Implementing |
-| FACT-67 | P2: Components and relations | T32 shared-dependency ownership implemented; component projection closes in T40 | Implementing |
-| FACT-68 | P2: Components and relations | T32 standalone library ownership implemented; component projection closes in T40 | Implementing |
+| FACT-66 | P2: Components and relations | T31 confirmed library classification and T40 component index projection implemented | Implementing |
+| FACT-67 | P2: Components and relations | T32 shared-dependency ownership and T40 component index projection implemented | Implementing |
+| FACT-68 | P2: Components and relations | T32 standalone library ownership and T40 component index projection implemented | Implementing |
 | FACT-69 | P2: Diagnostics and coverage | T8-T9 diagnostic references shaped; merge/projection closes in T27/T28 | Implementing |
 | FACT-70 | P3: Migration and release | T12 factual schema version 2 implemented; frontmatter/package closure in T18/T46 | Implementing |
 

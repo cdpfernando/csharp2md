@@ -456,6 +456,10 @@ Use dedicated value types to prevent identity mixups:
 
 Every type stores its canonical string. Construction validates normalization and relative-path constraints. A separate `ArtifactReference` identifies the persisted file; it is not a fact identity.
 
+The normative grammar is `id1:<type>;key=value;...`, with fixed, ordered keys and UTF-8 percent-encoded values. `id1` version-controls the grammar independently of the package and factual schema. Path values are relative, forward-slash paths without roots, drives, UNC prefixes, or dot segments, and all components use ordinal, case-sensitive comparison without Unicode normalization. Resolved symbols prefer Roslyn documentation-comment IDs. Their fallback is a trivia-free semantic signature containing kind, fully-qualified containment and types, metadata names/arities, and applicable parameter modifiers; it excludes parameter names and every source location. Syntactic symbols retain project, document, declaration kind, and a trivia-free declaration signature. Relation occurrences use a local ordinal only among equivalent normalized claims in the same owner scope; no fact identity contains a span or line range.
+
+`ArtifactReference` is `facts/<type>/<sha256[0..1]>/<sha256>.json`, using the lowercase SHA-256 of the UTF-8 canonical Fact ID. A collision between distinct Fact IDs is a structural validation failure rather than a suffix assignment, because suffixes would make references depend on processing order or require materializing the full fact set.
+
 ### Resolution and configuration
 
 ```text

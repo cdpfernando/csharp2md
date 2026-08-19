@@ -20,6 +20,11 @@ internal sealed record CoverageAggregate(
     [property: JsonPropertyOrder(1)] string Kind,
     [property: JsonPropertyOrder(2)] ImmutableArray<CoverageFactJson> Entries);
 
+internal sealed record RelationAggregate(
+    [property: JsonPropertyOrder(0)] int SchemaVersion,
+    [property: JsonPropertyOrder(1)] string Kind,
+    [property: JsonPropertyOrder(2)] ImmutableArray<RelationFactJson> Entries);
+
 internal sealed record ManifestAnalysis(
     [property: JsonPropertyOrder(0)] string Requested,
     [property: JsonPropertyOrder(1)] string Effective);
@@ -57,6 +62,7 @@ internal sealed record AggregateOutputSnapshot(
     ImmutableArray<string> Extensions,
     ManifestCoverage Coverage,
     ImmutableArray<StoredFactFragment> Fragments,
-    CoverageProjectionResult? HonestCoverage = null);
+    CoverageProjectionResult? HonestCoverage = null,
+    RelationProjectionResult? Relations = null);
 
 internal sealed record AggregateWriteResult(string RawRoot, string ManifestPath);

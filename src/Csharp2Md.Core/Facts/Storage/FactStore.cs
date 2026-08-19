@@ -129,7 +129,7 @@ internal static class FactualJsonMapper
             facts.OfType<SourceSectionFact>().Select(Map).ToImmutableArray(),
             facts.OfType<SymbolFact>().Select(Map).ToImmutableArray(),
             facts.OfType<ComponentFact>().Select(Map).ToImmutableArray(),
-            facts.OfType<RelationFact>().Select(Map).ToImmutableArray(),
+            facts.OfType<RelationFact>().Select(MapRelation).ToImmutableArray(),
             fragment.Diagnostics.Select(Map).ToImmutableArray(),
             []);
     }
@@ -186,9 +186,9 @@ internal static class FactualJsonMapper
         new(Map(fact.Header), fact.ComponentId.Value, fact.ComponentKind,
             fact.ProjectIds.Select(static id => id.Value).ToImmutableArray());
 
-    private static RelationFactJson Map(RelationFact fact) =>
+    internal static RelationFactJson MapRelation(RelationFact fact) =>
         new(Map(fact.Header), fact.RelationId.Value, fact.SourceId.Value, fact.TargetId?.Value,
-            Wire(fact.Partition), fact.RelationKind, fact.UnresolvedReason,
+            WireRelationPartition(fact.Partition), fact.RelationKind, fact.UnresolvedReason,
             fact.Details.IsDefaultOrEmpty
                 ? null
                 : fact.Details.Order().Select(static detail => new RelationDetailJson(detail.Key, detail.Value)).ToImmutableArray());
@@ -212,4 +212,15 @@ internal static class FactualJsonMapper
 
     private static string Wire<T>(T value) where T : struct, Enum =>
         value.ToString().Replace("SourceSection", "source-section", StringComparison.Ordinal).ToLowerInvariant();
+
+    private static string WireRelationPartition(RelationPartition partition) => partition switch
+    {
+        RelationPartition.CompileTime => "compile-time",
+        RelationPartition.Inheritance => "inheritance",
+        RelationPartition.DependencyInjection => "dependency-injection",
+        RelationPartition.Http => "http",
+        RelationPartition.Grpc => "grpc",
+        RelationPartition.Events => "events",
+        _ => throw new ArgumentOutOfRangeException(nameof(partition), partition, "Unsupported relation partition."),
+    };
 }

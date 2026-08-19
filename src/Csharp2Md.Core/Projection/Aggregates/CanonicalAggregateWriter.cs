@@ -57,9 +57,11 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
         files.CreateDirectory("raw/codebase");
 
         files.Write("raw/facts/solutions.json", Json(new AggregateEnvelope(2, "solutions", [])));
+        var relationProjection = snapshot.Relations;
         foreach (var partition in RelationPartitions)
         {
-            files.Write($"raw/facts/relations/{partition}.json", Json(new AggregateEnvelope(2, partition, [])));
+            var projected = relationProjection?.Partition(ParsePartition(partition));
+            files.Write($"raw/facts/relations/{partition}.json", Json(new RelationAggregate(2, partition, projected?.Relations ?? [])));
         }
 
         var honestCoverage = snapshot.HonestCoverage ?? CoverageProjectionResult.Empty;
@@ -68,7 +70,8 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
             2,
             "coverage",
             honestCoverage.Coverage.Select(Map).ToImmutableArray())));
-        files.Write("raw/dependencies.mmd", Utf8("flowchart LR\n"));
+        files.Write("raw/dependencies.mmd", Utf8(relationProjection?.Mermaid ?? "flowchart LR\n"));
+        files.Write("raw/codebase/components.md", Utf8(relationProjection?.ComponentIndex ?? "# Components\n"));
         files.Write("raw/topic.yaml", Utf8(TopicYaml(snapshot)));
         files.Write("raw/CLAUDE.md", Utf8("# Generated codebase topic\n\nStart with `facts/manifest.json`.\n"));
         files.Write("raw/log.md", Utf8(Log(snapshot, timeProvider.GetUtcNow())));
@@ -124,6 +127,7 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
     private static byte[] Json(AggregateEnvelope value) => Serialize(value, AggregateJsonContext.Default.AggregateEnvelope);
     private static byte[] Json(DiagnosticAggregate value) => Serialize(value, AggregateJsonContext.Default.DiagnosticAggregate);
     private static byte[] Json(CoverageAggregate value) => Serialize(value, AggregateJsonContext.Default.CoverageAggregate);
+    private static byte[] Json(RelationAggregate value) => Serialize(value, AggregateJsonContext.Default.RelationAggregate);
     private static byte[] Json(FactualManifest value) => Serialize(value, AggregateJsonContext.Default.FactualManifest);
 
     private static byte[] Serialize<T>(T value, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo)
@@ -158,6 +162,17 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
             .Replace("syntaxonly", "syntax-only", StringComparison.Ordinal)
             .Replace("notapplicable", "not-applicable", StringComparison.Ordinal)
             .Replace("notattempted", "not-attempted", StringComparison.Ordinal);
+
+    private static RelationPartition ParsePartition(string partition) => partition switch
+    {
+        "compile-time" => RelationPartition.CompileTime,
+        "inheritance" => RelationPartition.Inheritance,
+        "dependency-injection" => RelationPartition.DependencyInjection,
+        "http" => RelationPartition.Http,
+        "grpc" => RelationPartition.Grpc,
+        "events" => RelationPartition.Events,
+        _ => throw new ArgumentOutOfRangeException(nameof(partition), partition, "Unsupported relation partition."),
+    };
 
     private sealed class LocalAggregateFileWriter(string root) : IAggregateFileWriter
     {
