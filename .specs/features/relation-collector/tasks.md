@@ -550,9 +550,19 @@ reported defect, closed).
 - Skill: `dotnet-test:assertion-quality`, `dotnet-test:test-anti-patterns` (per `AGENTS.md`'s quality-gate table, before declaring the suite done)
 
 **Done when**:
-- [ ] Every P1/P2 Independent Test scenario from spec.md has a direct, named assertion in this file
-- [ ] `spec.md`'s Requirement Traceability table is updated to `Status: Verified` for all 17 IDs once this passes
-- [ ] Gate check passes: full Build gate (`dotnet build csharp2md.slnx -c Release` → `dotnet format csharp2md.slnx --verify-no-changes` → `dotnet test csharp2md.slnx`)
+- [x] Every P1/P2 Independent Test scenario from spec.md has a direct, named assertion in this file
+- [x] `spec.md`'s Requirement Traceability table is updated to `Status: Verified` for all 17 IDs once this passes
+- [x] Gate check passes: full Build gate (`dotnet build csharp2md.slnx -c Release` → `dotnet format csharp2md.slnx --verify-no-changes` → `dotnet test csharp2md.slnx`)
+
+> Note: `dotnet-test:assertion-quality` review found one real weak assertion introduced earlier in this
+> batch - `RelationCollectorTrustedWiringTests.AssertAtLeastSyntactic` (T14) asserted only
+> `NotEqual("unresolved", ...)`, which would not catch a mutant wrongly assigning `Heuristic`/`Candidate`.
+> Tightened to `Assert.Equal("syntactic", ...)` (this feature's collector never emits those other kinds
+> for the relation kinds under test, per context.md's documented boundary) - fixed in the same commit as
+> this task, all 30 relation-collector-scoped tests re-run green after the change.
+> `dotnet-test:test-anti-patterns` found no flaky/order-dependent/swallowed-exception/tautological/
+> coverage-touching findings in the batch's test files (unique temp directories per fixture, no shared
+> static state, all assertions target concrete relation-kind/target-text/resolution values).
 
 **Tests**: integration
 **Gate**: build

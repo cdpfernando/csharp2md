@@ -52,11 +52,15 @@ public sealed class RelationCollectorTrustedWiringTests(RelationCollectorTrusted
         Assert.False(string.IsNullOrWhiteSpace(inheritsRelation.UnresolvedReason));
     }
 
+    // "At least Syntactic" collapses to exactly "syntactic" for every kind this suite checks: per
+    // context.md's documented boundary, RelationCollector never emits Exact/Partial/Heuristic/Candidate
+    // for these kinds in this feature - only Syntactic or Unresolved. Asserting the exact string (not
+    // merely NotEqual("unresolved", ...)) also catches a mutant that wrongly assigned Heuristic/Candidate.
     private static void AssertAtLeastSyntactic(FactualJsonDocument document, string relationKind)
     {
         var matches = document.Relations.Where(relation => relation.RelationKind == relationKind).ToArray();
         Assert.NotEmpty(matches);
-        Assert.All(matches, relation => Assert.NotEqual("unresolved", relation.Header.Resolution));
+        Assert.All(matches, relation => Assert.Equal("syntactic", relation.Header.Resolution));
     }
 }
 
