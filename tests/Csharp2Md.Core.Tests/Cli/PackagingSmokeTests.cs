@@ -29,7 +29,7 @@ public sealed class PackagingSmokeTests : IAsyncLifetime
         Assert.True(packResult.ExitCode == 0, $"dotnet pack failed:\n{packResult.StandardOutput}\n{packResult.StandardError}");
         // T46: the package's own metadata is the v3 release marker (AD-007); a stale nupkg version
         // would mean a `dotnet tool update` consumer never learns the output contract changed.
-        Assert.NotEmpty(Directory.GetFiles(NupkgDirectory, "csharp2md.3.0.0.nupkg"));
+        Assert.NotEmpty(Directory.GetFiles(NupkgDirectory, "csharp2md.3.0.1.nupkg"));
 
         var installResult = await ProcessRunner.RunAsync(
             "dotnet",
@@ -60,7 +60,7 @@ public sealed class PackagingSmokeTests : IAsyncLifetime
         var rawRoot = TopicLayout.RawRoot(outputDirectory);
         var manifest = File.ReadAllText(Path.Combine(rawRoot, "facts", "manifest.json"));
         Assert.Contains("\"schema_version\": 2", manifest, StringComparison.Ordinal);
-        Assert.Contains("\"tool_version\": \"3.0.0\"", manifest, StringComparison.Ordinal);
+        Assert.Contains("\"tool_version\": \"3.0.1\"", manifest, StringComparison.Ordinal);
         Assert.False(File.Exists(Path.Combine(rawRoot, "dependencies.json")));
     }
 
