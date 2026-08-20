@@ -6,13 +6,57 @@ using Csharp2Md.Core.Facts.Model;
 namespace Csharp2Md.Core.Analysis.Indexes;
 
 /// <summary>
+/// The queryable surface every consumer of the index sees. Kept separate from
+/// <see cref="SymbolIndex"/> so a future consumer (a relation resolver) depends on the query
+/// contract rather than on the concrete <see cref="FrozenDictionary"/>-backed implementation.
+/// </summary>
+internal interface ISymbolIndex
+{
+    SymbolFact? GetById(SymbolFactId id);
+
+    ImmutableArray<SymbolFact> FindByName(string simpleName);
+
+    ImmutableArray<SymbolFact> FindByQualifiedName(string fullyQualifiedName);
+
+    ImmutableArray<SymbolFact> FindMembers(string containingType, string memberName);
+
+    ImmutableArray<SymbolFact> FindMethods(MethodLookup lookup);
+}
+
+/// <summary>
+/// The query shape for <see cref="ISymbolIndex.FindMethods"/>. <see cref="ArgumentCount"/> filters
+/// candidates to that exact declared parameter count; <see cref="ArgumentTypes"/> only ranks them,
+/// never discards. <see cref="Namespace"/>, <see cref="ProjectId"/> and <see cref="Imports"/> are
+/// carried for the caller's benefit but do not narrow a method lookup - spec.md assigns contextual
+/// hints to <c>FindCandidates</c>, and defines no <c>FindMethods</c> behaviour for them.
+/// </summary>
+internal sealed record MethodLookup
+{
+    public required string Name { get; init; }
+
+    public string? ReceiverType { get; init; }
+
+    public string? Namespace { get; init; }
+
+    public string? ProjectId { get; init; }
+
+    public int? ArgumentCount { get; init; }
+
+    public ImmutableArray<string?> ArgumentTypes { get; init; } = [];
+
+    public ImmutableArray<string> Imports { get; init; } = [];
+}
+
+/// <summary>
 /// A name-indexed, cross-project view of every symbol a run discovered, regardless of whether that
 /// symbol's semantic binding succeeded. Every lookup is a direct key lookup - never a scan of all
 /// symbols - and every list-returning lookup is ordered by <see cref="SymbolFactId"/> ordinal so
 /// results do not depend on the order facts were supplied in.
 /// </summary>
-internal sealed class SymbolIndex
+internal sealed class SymbolIndex : ISymbolIndex
 {
+    private const string MethodKind = "method";
+
     private readonly FrozenDictionary<SymbolFactId, SymbolFact> _byId;
     private readonly FrozenDictionary<string, ImmutableArray<SymbolFact>> _byName;
     private readonly FrozenDictionary<string, ImmutableArray<SymbolFact>> _byQualifiedName;
@@ -68,6 +112,61 @@ internal sealed class SymbolIndex
         ArgumentException.ThrowIfNullOrWhiteSpace(memberName);
         return _byMember.GetValueOrDefault((TypeNameNormalizer.Normalize(containingType), memberName), []);
     }
+
+    /// <summary>
+    /// Every method matching <paramref name="lookup"/>, ranked best-first. A candidate whose
+    /// declared parameter types match the looked-up argument types outranks a same-count candidate
+    /// whose types do not, but neither is dropped: the caller sees both and decides.
+    /// </summary>
+    public ImmutableArray<SymbolFact> FindMethods(MethodLookup lookup)
+    {
+        ArgumentNullException.ThrowIfNull(lookup);
+
+        var candidates = string.IsNullOrWhiteSpace(lookup.ReceiverType)
+            ? FindByName(lookup.Name)
+            : FindMembers(lookup.ReceiverType, lookup.Name);
+
+        var methods = candidates.Where(static symbol => string.Equals(symbol.SymbolKind, MethodKind, StringComparison.Ordinal));
+        if (lookup.ArgumentCount is { } argumentCount)
+        {
+            methods = methods.Where(symbol => symbol.ParameterTypes.Length == argumentCount);
+        }
+
+        return methods
+            .OrderByDescending(symbol => ArgumentTypeMatchScore(symbol, lookup.ArgumentTypes))
+            .ThenBy(static symbol => symbol.SymbolId.Value, StringComparer.Ordinal)
+            .ToImmutableArray();
+    }
+
+    /// <summary>
+    /// How many looked-up argument types match the method's declared parameter type at the same
+    /// position, compared in normalized form. An argument whose type the caller could not determine
+    /// (<c>null</c>) neither matches nor penalizes.
+    /// </summary>
+    private static int ArgumentTypeMatchScore(SymbolFact method, ImmutableArray<string?> argumentTypes)
+    {
+        if (argumentTypes.IsDefaultOrEmpty)
+        {
+            return 0;
+        }
+
+        var score = 0;
+        var comparable = Math.Min(argumentTypes.Length, method.ParameterTypes.Length);
+        for (var position = 0; position < comparable; position++)
+        {
+            if (Normalized(argumentTypes[position]) is { } argument
+                && Normalized(method.ParameterTypes[position]) is { } parameter
+                && string.Equals(argument, parameter, StringComparison.Ordinal))
+            {
+                score++;
+            }
+        }
+
+        return score;
+    }
+
+    private static string? Normalized(string? typeSpelling) =>
+        string.IsNullOrWhiteSpace(typeSpelling) ? null : TypeNameNormalizer.Normalize(typeSpelling);
 }
 
 /// <summary>

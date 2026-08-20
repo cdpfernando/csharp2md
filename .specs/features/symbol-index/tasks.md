@@ -284,10 +284,10 @@ bucket by exact `ParameterTypes.Count` match on `ArgumentCount`, and ranking (no
 - Skill: NONE
 
 **Done when**:
-- [ ] `FindMethods` with `ArgumentCount` set returns only methods whose `ParameterTypes.Count` equals it exactly, including the zero-parameter/zero-argument boundary case
-- [ ] `FindMethods` with `ArgumentTypes` set returns both an exact-type match and a same-count/different-type candidate, with the exact match ranked first — neither is silently dropped
-- [ ] Against `fixtures/SyntheticSolution/Acme.Payments/PaymentsService.cs`'s real `AuthorizePayment` method (via a direct `SyntaxFactExtractor.Extract` call, not a full `AnalysisEngine` run), `FindMethods` with the method's real declared argument count returns it, and a mismatched count returns empty
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] `FindMethods` with `ArgumentCount` set returns only methods whose `ParameterTypes.Count` equals it exactly, including the zero-parameter/zero-argument boundary case
+- [x] `FindMethods` with `ArgumentTypes` set returns both an exact-type match and a same-count/different-type candidate, with the exact match ranked first — neither is silently dropped
+- [x] Against `fixtures/SyntheticSolution/Acme.Payments/PaymentsService.cs`'s real `AuthorizePayment` method (via a direct `SyntaxFactExtractor.Extract` call, not a full `AnalysisEngine` run), `FindMethods` with the method's real declared argument count returns it, and a mismatched count returns empty
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick

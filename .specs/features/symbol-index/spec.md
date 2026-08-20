@@ -235,8 +235,8 @@ without throwing, and the returned metrics report the expected total/duplicate/a
 | SYMIDX-10 | P1 (Name/Namespace/ContainingType from syntax alone) | Design | Implementing |
 | SYMIDX-11 | P1 (empty solution) | Design | Implementing |
 | SYMIDX-12 | P1 (no simple-name-only merging) | Design | Implementing |
-| SYMIDX-13 | P2 (FindMethods argument-count filter) | Design | Pending |
-| SYMIDX-14 | P2 (FindMethods argument-type ranking) | Design | Pending |
+| SYMIDX-13 | P2 (FindMethods argument-count filter) | Design | Implementing |
+| SYMIDX-14 | P2 (FindMethods argument-type ranking) | Design | Implementing |
 | SYMIDX-15 | P2 (FindCandidates priority ordering) | Design | Pending |
 | SYMIDX-16 | P2 (ambiguity reporting) | Design | Pending |
 | SYMIDX-17 | P2 (no silent tie-break) | Design | Pending |

@@ -247,6 +247,115 @@ public sealed class SymbolIndexTests
         Assert.Equal(symbol.SymbolId, Assert.Single(index.FindByName("Duplicated")).SymbolId);
     }
 
+    [Fact]
+    public void FindMethods_ArgumentCountSet_ReturnsOnlyMethodsWhoseParameterCountEqualsItExactly()
+    {
+        var none = Method("Authorize", "global::Acme.Api", [], "none");
+        var one = Method("Authorize", "global::Acme.Api", ["global::System.String"], "one");
+        var two = Method("Authorize", "global::Acme.Api", ["global::System.String", "global::System.Decimal"], "two");
+        var index = Build(two, none, one);
+
+        var found = index.FindMethods(new MethodLookup
+        {
+            Name = "Authorize",
+            ReceiverType = "global::Acme.Api",
+            ArgumentCount = 1,
+        });
+
+        Assert.Equal(one.SymbolId, Assert.Single(found).SymbolId);
+    }
+
+    [Fact]
+    public void FindMethods_ZeroArgumentCount_MatchesTheZeroParameterOverloadAndIsNotAnUnsetFilterNoOp()
+    {
+        var none = Method("Authorize", "global::Acme.Api", [], "none");
+        var one = Method("Authorize", "global::Acme.Api", ["global::System.String"], "one");
+        var two = Method("Authorize", "global::Acme.Api", ["global::System.String", "global::System.Decimal"], "two");
+        var index = Build(two, none, one);
+
+        var zeroArguments = index.FindMethods(new MethodLookup
+        {
+            Name = "Authorize",
+            ReceiverType = "global::Acme.Api",
+            ArgumentCount = 0,
+        });
+        var unfiltered = index.FindMethods(new MethodLookup { Name = "Authorize", ReceiverType = "global::Acme.Api" });
+
+        Assert.Equal(none.SymbolId, Assert.Single(zeroArguments).SymbolId);
+        Assert.Equal(3, unfiltered.Length);
+    }
+
+    [Fact]
+    public void FindMethods_ArgumentTypesSet_RanksTheExactTypeMatchFirstWithoutDroppingTheMismatchedCandidate()
+    {
+        var matching = Method("Authorize", "global::Acme.Api", ["global::System.String"], "zeta");
+        var mismatched = Method("Authorize", "global::Acme.Api", ["global::System.Int32"], "alpha");
+        var index = Build(mismatched, matching);
+
+        var found = index.FindMethods(new MethodLookup
+        {
+            Name = "Authorize",
+            ReceiverType = "global::Acme.Api",
+            ArgumentCount = 1,
+            ArgumentTypes = ["string"],
+        });
+
+        // The exact-type match deliberately sorts *after* the mismatched candidate by Id ordinal, so
+        // only argument-type ranking - never the ordinal tie-break - can put it first.
+        Assert.True(string.CompareOrdinal(matching.SymbolId.Value, mismatched.SymbolId.Value) > 0);
+        Assert.Equal(2, found.Length);
+        Assert.Equal(matching.SymbolId, found[0].SymbolId);
+        Assert.Equal(mismatched.SymbolId, found[1].SymbolId);
+    }
+
+    [Fact]
+    public void FindMethods_APropertyMatchingTheNameAndArgumentCount_IsNotReturnedBecauseOnlyMethodsQualify()
+    {
+        var index = BuildFromSource("""
+            namespace Acme.Api;
+            class Gateway
+            {
+                public string Authorize { get; set; }
+            }
+            """);
+
+        Assert.Equal("property", Assert.Single(index.FindMembers("Gateway", "Authorize")).SymbolKind);
+        Assert.Empty(index.FindMethods(new MethodLookup
+        {
+            Name = "Authorize",
+            ReceiverType = "Gateway",
+            ArgumentCount = 0,
+        }));
+    }
+
+    [Fact]
+    public void FindMethods_RealAuthorizePaymentFixtureMethod_MatchesItsDeclaredArgumentCountAndNotAMismatchedOne()
+    {
+        var relativePath = "Acme.Payments/PaymentsService.cs";
+        var source = File.ReadAllText(TestPaths.SyntheticSolution(Path.Combine("Acme.Payments", "PaymentsService.cs")));
+        var index = SymbolIndexBuilder.Build(
+            SyntaxFactExtractor.Extract(ProjectId, relativePath, source).Symbols, [], [], []);
+
+        var found = index.FindMethods(new MethodLookup
+        {
+            Name = "AuthorizePayment",
+            ReceiverType = "PaymentsService",
+            ArgumentCount = 2,
+        });
+
+        var method = Assert.Single(found);
+        Assert.Equal("AuthorizePayment", method.Name);
+        Assert.Equal("global::Acme.Payments.PaymentsService", method.ContainingType);
+        Assert.Equal(2, method.ParameterTypes.Length);
+
+        Assert.Empty(index.FindMethods(new MethodLookup
+        {
+            Name = "AuthorizePayment",
+            ReceiverType = "PaymentsService",
+            ArgumentCount = 1,
+        }));
+    }
+
     private static string[] Ids(ImmutableArray<SymbolFact> symbols) =>
         symbols.Select(static symbol => symbol.SymbolId.Value).ToArray();
 
@@ -287,6 +396,16 @@ public sealed class SymbolIndexTests
             Arity: 0,
             ParameterTypes: []);
     }
+
+    private static SymbolFact Method(
+        string name,
+        string containingType,
+        ImmutableArray<string> parameterTypes,
+        string discriminator) =>
+        Member(name, containingType, FactResolution.Syntactic, discriminator) with
+        {
+            ParameterTypes = parameterTypes,
+        };
 
     private static SymbolFact Member(
         string name,
