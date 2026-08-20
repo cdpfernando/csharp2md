@@ -427,6 +427,72 @@ public sealed class EfCoreAnalyzerTests
         Assert.Empty(claims.Where(claim => claim.Kind == DatabaseClaimKind.Access));
     }
 
+    // DAD-11 (claim side): the brief's tracked write, recorded as observation without attribution.
+    [Fact]
+    public void Analyze_PropertyAssignmentInAMemberThatSavesChanges_YieldsAWriteColumnClaimCarryingBothTexts()
+    {
+        const string Source = """
+            class OrderService
+            {
+                private OrderDbContext _context;
+
+                public async Task PayOrder(int id)
+                {
+                    var order = await _context.Orders.FirstAsync(x => x.Id == id);
+                    order.Status = "Paid";
+                    await _context.SaveChangesAsync();
+                }
+            }
+            """;
+
+        var claim = Assert.Single(EfCoreAnalysis.Claims(Source));
+
+        Assert.Equal(DatabaseClaimKind.ColumnAccess, claim.Kind);
+        Assert.Equal(ColumnUsage.Write, claim.Usage);
+        Assert.Equal("Status", claim.PropertyText);
+        Assert.Equal("order.Status", claim.ColumnText);
+        Assert.Equal(EfCoreAnalysis.SymbolIdOfMethodDeclaration(Source, "PayOrder"), claim.OwnerId);
+    }
+
+    // The claim records what was observed; deciding which entity owns Status is the resolver's job.
+    [Fact]
+    public void Analyze_TrackedWriteClaim_MakesNoEntityAttribution()
+    {
+        var claim = Assert.Single(EfCoreAnalysis.Claims(
+            """
+            class OrderService
+            {
+                private OrderDbContext _context;
+
+                public void PayOrder(Order order)
+                {
+                    order.Status = "Paid";
+                    _context.SaveChanges();
+                }
+            }
+            """));
+
+        Assert.Null(claim.EntityText);
+    }
+
+    // DAD-11: without a SaveChanges call in the same member, an assignment is not a database write.
+    [Fact]
+    public void Analyze_PropertyAssignmentInAMemberWithNoSaveChangesCall_YieldsNothing()
+    {
+        var claims = EfCoreAnalysis.Claims(
+            """
+            class OrderService
+            {
+                public void MarkPaid(Order order)
+                {
+                    order.Status = "Paid";
+                }
+            }
+            """);
+
+        Assert.Empty(claims);
+    }
+
     // DAD-01 is only reachable on a real run if the analyzer is one the collector actually runs.
     [Fact]
     public void RegisteredAnalyzers_IncludeTheEfCoreAnalyzer()

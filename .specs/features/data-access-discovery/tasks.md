@@ -775,12 +775,12 @@ invokes `SaveChanges`/`SaveChangesAsync`, carrying the receiver text so the reso
 
 **Done when**:
 
-- [ ] Brief §8's `order.Status = ...; await context.SaveChangesAsync();` yields a write claim carrying both
+- [x] Brief §8's `order.Status = ...; await context.SaveChangesAsync();` yields a write claim carrying both
       `order.Status` and the property name `Status`
-- [ ] An assignment in a member with no `SaveChanges` call yields nothing
-- [ ] The claim records the observed text only — it makes no entity attribution, which is T29's job
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] An assignment in a member with no `SaveChanges` call yields nothing
+- [x] The claim records the observed text only — it makes no entity attribution, which is T29's job
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

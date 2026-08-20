@@ -67,7 +67,56 @@ internal sealed class EfCoreAnalyzer : IDataAccessAnalyzer
         }
 
         AnalyzeEntitySetAccesses(context, EntityByEntitySetName(entitySets), claims);
+        AnalyzeTrackedWrites(context, claims);
     }
+
+    /// <summary>
+    /// DAD-11, claim side: a property assignment inside a member that also calls
+    /// <c>SaveChanges</c>/<c>SaveChangesAsync</c> is a tracked write. The claim records only what was
+    /// observed - the property's own name and the receiver text - because syntax cannot prove which
+    /// entity the receiver holds. Attribution belongs to the mapping resolver.
+    /// </summary>
+    private static void AnalyzeTrackedWrites(
+        DataAccessContext context,
+        ImmutableArray<RawDatabaseClaim>.Builder claims)
+    {
+        foreach (var member in context.Root.DescendantNodes().OfType<BaseMethodDeclarationSyntax>())
+        {
+            if (!SavesChanges(member))
+            {
+                continue;
+            }
+
+            foreach (var assignment in member.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+            {
+                if (assignment.Left is not MemberAccessExpressionSyntax target)
+                {
+                    continue;
+                }
+
+                claims.Add(new RawDatabaseClaim
+                {
+                    Kind = DatabaseClaimKind.ColumnAccess,
+                    OwnerId = context.OwnerOf(assignment),
+                    Evidence = EvidenceFor(context, target),
+                    ShapeConfidence = FactResolution.Syntactic,
+                    AnalyzerId = AnalyzerId,
+                    PropertyText = target.Name.Identifier.ValueText,
+                    ColumnText = NormalizeNode(target),
+                    Usage = ColumnUsage.Write,
+                });
+            }
+        }
+    }
+
+    private static bool SavesChanges(BaseMethodDeclarationSyntax member) =>
+        member.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Any(static invocation =>
+                InvokedMemberName(invocation) is "SaveChanges" or "SaveChangesAsync");
+
+    private static string NormalizeNode(SyntaxNode node) =>
+        node.WithoutTrivia().NormalizeWhitespace(indentation: " ", eol: " ", elasticTrivia: false).ToFullString();
 
     /// <summary>
     /// Every read of a discovered <c>DbSet</c> property, plus the entity properties the LINQ chain built
