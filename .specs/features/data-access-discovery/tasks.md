@@ -931,14 +931,14 @@ precedence and minting a node only for a configured name.
 
 **Done when**:
 
-- [ ] A `DbSet` with no `ToTable` yields a `maps-to` with `target_id` null, `target_text` the set name, and
+- [x] A `DbSet` with no `ToTable` yields a `maps-to` with `target_id` null, `target_text` the set name, and
       resolution `Heuristic` (DAD-02)
-- [ ] A `ToTable` in a *different document* from the entity resolves correctly — the case that forced the
+- [x] A `ToTable` in a *different document* from the entity resolves correctly — the case that forced the
       two-pass design
-- [ ] An entity with both yields only the configured mapping (DAD-04)
-- [ ] Two `DbContext`s exposing the same entity produce one `exposes` each, per the spec's Edge Case
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] An entity with both yields only the configured mapping (DAD-04)
+- [x] Two `DbContext`s exposing the same entity produce one `exposes` each, per the spec's Edge Case
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
