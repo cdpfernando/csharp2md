@@ -204,14 +204,14 @@ than one path stops producing duplicate documents, fragments and coverage scopes
 
 **Done when**:
 
-- [ ] A test running the full `fixtures/SyntheticSolution` through `AnalyzeAsync` is written first and
+- [x] A test running the full `fixtures/SyntheticSolution` through `AnalyzeAsync` is written first and
       observed to FAIL with the current `ArgumentException` from `CoverageProjector`
-- [ ] `Acme.Shared.Contracts` is analysed exactly once even though three paths reach it
-- [ ] The run completes and reports a project count matching the fixture's distinct project count
-- [ ] Documents already analysed are skipped without emitting a diagnostic (a shared project is normal, not
+- [x] `Acme.Shared.Contracts` is analysed exactly once even though three paths reach it
+- [x] The run completes and reports a project count matching the fixture's distinct project count
+- [x] Documents already analysed are skipped without emitting a diagnostic (a shared project is normal, not
       an anomaly)
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: integration
 **Gate**: full

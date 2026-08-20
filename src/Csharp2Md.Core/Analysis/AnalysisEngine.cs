@@ -115,6 +115,7 @@ public sealed class AnalysisEngine
         var analysisDiagnostics = ImmutableArray.CreateBuilder<AnalysisDiagnostic>();
         var resultDiagnostics = new List<string>(inventory.Diagnostics.Select(static diagnostic => diagnostic.Message));
         var loadedExtensions = ImmutableArray.CreateBuilder<string>();
+        var analysedProjects = new HashSet<ProjectFactId>();
         var structuralFailure = false;
         var semanticSuccess = false;
         var documentCount = 0;
@@ -129,6 +130,15 @@ public sealed class AnalysisEngine
                 foreach (var project in service.Projects)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+
+                    // A shared project listed by more than one solution is reached once per path. That is
+                    // normal, not an anomaly, so the repeat is skipped silently: analysing it again would
+                    // duplicate its documents, fragments and coverage scopes.
+                    if (!analysedProjects.Add(ProjectFactId.Create(project.RelativePath)))
+                    {
+                        continue;
+                    }
+
                     projectCount++;
                     ScopeStarted($"project:{project.RelativePath}");
                     try

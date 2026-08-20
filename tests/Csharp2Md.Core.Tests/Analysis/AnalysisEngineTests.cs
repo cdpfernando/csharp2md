@@ -152,6 +152,28 @@ public sealed class AnalysisEngineTests : IDisposable
         Assert.Equal(2, coverage.GetProperty("documents").GetInt32());
     }
 
+    [Fact]
+    public async Task AnalyzeAsync_ProjectReachedBySeveralPaths_IsAnalysedOnceAndTheRunCompletes()
+    {
+        // fixtures/SyntheticSolution has no top-level solution, so every project directory becomes its
+        // own service. Acme.Orders.slnx and Acme.Payments.slnx both list Acme.Shared.Contracts, and it
+        // is a service root in its own right - three paths reach the same project.
+        var observer = new SequentialObserver();
+        var request = Assert.IsType<AnalysisRequest>(
+            AnalysisRequest.Create(TestPaths.SyntheticSolution("."), _output).Request);
+
+        var result = await new AnalysisEngine(new InertInventory(), FactValidator.Validate, observer)
+            .AnalyzeAsync(request);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal(1, observer.Events.Count(value =>
+            value == "start:project:Acme.Shared.Contracts/Acme.Shared.Contracts.csproj"));
+        // Acme.Broken, Acme.DoesNotExist, Acme.Orders, Acme.Payments, Acme.Shared.Contracts.
+        Assert.Contains("Analyzed 5 project(s)", result.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain(result.Diagnostics, diagnostic =>
+            diagnostic.Contains("Acme.Shared.Contracts", StringComparison.Ordinal));
+    }
+
     private AnalysisRequest Request(AnalysisOptions? options = null) =>
         Assert.IsType<AnalysisRequest>(AnalysisRequest.Create(_input, _output, options: options).Request);
 
