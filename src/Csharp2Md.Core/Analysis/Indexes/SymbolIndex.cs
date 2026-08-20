@@ -1,6 +1,8 @@
 using System.Collections.Frozen;
+using System.Globalization;
 using Csharp2Md.Core.Analysis.Semantics;
 using Csharp2Md.Core.Facts.Identity;
+using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
 
 namespace Csharp2Md.Core.Analysis.Indexes;
@@ -23,6 +25,8 @@ internal interface ISymbolIndex
     ImmutableArray<SymbolFact> FindMethods(MethodLookup lookup);
 
     SymbolLookupResult FindCandidates(SymbolLookup lookup);
+
+    ImmutableArray<AnalysisDiagnostic> Diagnostics { get; }
 }
 
 /// <summary>
@@ -107,7 +111,8 @@ internal sealed class SymbolIndex : ISymbolIndex
         FrozenDictionary<string, ImmutableArray<SymbolFact>> byQualifiedName,
         FrozenDictionary<(string ContainingType, string Name), ImmutableArray<SymbolFact>> byMember,
         FrozenDictionary<string, SymbolFact> byIdValue,
-        FrozenDictionary<DocumentFactId, string> projectByDocument)
+        FrozenDictionary<DocumentFactId, string> projectByDocument,
+        ImmutableArray<AnalysisDiagnostic> diagnostics)
     {
         _byId = byId;
         _byName = byName;
@@ -115,7 +120,14 @@ internal sealed class SymbolIndex : ISymbolIndex
         _byMember = byMember;
         _byIdValue = byIdValue;
         _projectByDocument = projectByDocument;
+        Diagnostics = diagnostics;
     }
+
+    /// <summary>
+    /// What the build found wrong with the facts it was given. Recording a diagnostic never aborts
+    /// the build: an inconsistent input degrades to an entry here and the index stays queryable.
+    /// </summary>
+    public ImmutableArray<AnalysisDiagnostic> Diagnostics { get; }
 
     /// <summary>Every indexed symbol, ordered by <see cref="SymbolFactId"/> ordinal.</summary>
     public ImmutableArray<SymbolFact> Symbols =>
@@ -328,11 +340,11 @@ internal static class SymbolIndexBuilder
         ArgumentNullException.ThrowIfNull(documents);
         ArgumentNullException.ThrowIfNull(targets);
 
-        var distinct = symbols
+        var byIdentity = symbols
             .OrderBy(static symbol => symbol.SymbolId.Value, StringComparer.Ordinal)
             .GroupBy(static symbol => symbol.SymbolId)
-            .Select(static group => group.First())
             .ToImmutableArray();
+        var distinct = byIdentity.Select(static group => group.First()).ToImmutableArray();
 
         return new SymbolIndex(
             distinct.ToFrozenDictionary(static symbol => symbol.SymbolId),
@@ -349,8 +361,87 @@ internal static class SymbolIndexBuilder
                 .GroupBy(static document => document.DocumentId)
                 .ToFrozenDictionary(
                     static group => group.Key,
-                    static group => group.First().ProjectId.Value));
+                    static group => group.First().ProjectId.Value),
+            Diagnose(byIdentity, distinct));
     }
+
+    /// <summary>
+    /// Everything inconsistent about the supplied facts, scanned once here at build-completion time
+    /// rather than per query, so ambiguity is visible without a caller having to probe every name.
+    /// </summary>
+    private static ImmutableArray<AnalysisDiagnostic> Diagnose(
+        ImmutableArray<IGrouping<SymbolFactId, SymbolFact>> byIdentity,
+        ImmutableArray<SymbolFact> distinct)
+    {
+        var diagnostics = ImmutableArray.CreateBuilder<AnalysisDiagnostic>();
+
+        foreach (var collision in byIdentity.Where(static group => group.Count() > 1))
+        {
+            var kept = collision.First();
+            diagnostics.Add(Diagnostic(
+                "C2M-SYMIDX-001",
+                "duplicated-symbol-id",
+                DiagnosticSeverity.Warning,
+                kept.Header.Id,
+                $"Symbol identity '{kept.SymbolId.Value}' was produced by {collision.Count()} facts; one entry was kept.",
+                new DiagnosticData("symbol_id", kept.SymbolId.Value),
+                new DiagnosticData("discarded", Count(collision.Count() - 1))));
+        }
+
+        var identities = distinct.Select(static symbol => symbol.SymbolId).ToImmutableHashSet();
+        foreach (var symbol in distinct)
+        {
+            if (symbol.ContainingSymbolId is { } containing && !identities.Contains(containing))
+            {
+                diagnostics.Add(Diagnostic(
+                    "C2M-SYMIDX-002",
+                    "invalid-containing-symbol",
+                    DiagnosticSeverity.Warning,
+                    symbol.Header.Id,
+                    $"Symbol '{symbol.SymbolId.Value}' references a containing symbol absent from the index.",
+                    new DiagnosticData("containing_symbol_id", containing.Value)));
+            }
+        }
+
+        var ambiguous = distinct
+            .Where(static symbol => !string.IsNullOrWhiteSpace(symbol.Name))
+            .GroupBy(static symbol => symbol.Name, StringComparer.Ordinal)
+            .Where(static group => group
+                .Select(static symbol => (symbol.Namespace, symbol.ContainingType))
+                .Distinct()
+                .Count() > 1);
+        foreach (var group in ambiguous)
+        {
+            var first = group.First();
+            diagnostics.Add(Diagnostic(
+                "C2M-SYMIDX-003",
+                "ambiguous-symbol-lookup",
+                DiagnosticSeverity.Information,
+                first.Header.Id,
+                $"Simple name '{group.Key}' resolves to candidates in more than one namespace or containing type.",
+                new DiagnosticData("name", group.Key),
+                new DiagnosticData("candidates", Count(group.Count()))));
+        }
+
+        return [.. diagnostics.Order()];
+    }
+
+    private static string Count(int value) => value.ToString(CultureInfo.InvariantCulture);
+
+    private static AnalysisDiagnostic Diagnostic(
+        string code,
+        string rule,
+        DiagnosticSeverity severity,
+        FactId scopeId,
+        string message,
+        params DiagnosticData[] data) =>
+        AnalysisDiagnostic.Create(
+            code,
+            severity,
+            DiagnosticStage.Projection,
+            scopeId,
+            message,
+            [new DiagnosticData("rule", rule), .. data]);
 
     private static FrozenDictionary<string, ImmutableArray<SymbolFact>> GroupByKey(
         ImmutableArray<SymbolFact> symbols,

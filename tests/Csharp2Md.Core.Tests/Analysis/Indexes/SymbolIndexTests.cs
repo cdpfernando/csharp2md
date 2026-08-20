@@ -486,6 +486,72 @@ public sealed class SymbolIndexTests
         Assert.Equal(SymbolLookupStatus.Unique, byIdentity.Status);
     }
 
+    [Fact]
+    public void Build_TwoFactsSharingOneIdentity_RecordsDuplicatedSymbolIdAndKeepsExactlyOneEntry()
+    {
+        var first = Symbol("Duplicated", "global::Acme.Duplicated");
+        var second = first with { Signature = "class Duplicated /* second declaration */" };
+        Assert.Equal(first.SymbolId, second.SymbolId);
+
+        var index = SymbolIndexBuilder.Build([first, second], [], [], []);
+
+        var diagnostic = Assert.Single(index.Diagnostics);
+        Assert.Equal("C2M-SYMIDX-001", diagnostic.Code);
+        Assert.Contains(diagnostic.Data, data => data is { Key: "rule", Value: "duplicated-symbol-id" });
+        Assert.Contains(diagnostic.Data, data => data is { Key: "symbol_id" } && data.Value == first.SymbolId.Value);
+
+        var kept = Assert.Single(index.Symbols);
+        Assert.Equal(first.SymbolId, kept.SymbolId);
+        Assert.Contains(kept, new[] { first, second });
+    }
+
+    [Fact]
+    public void Build_ContainingSymbolIdReferencingAnAbsentId_RecordsInvalidContainingSymbolAndStillIndexesTheSymbol()
+    {
+        var absent = SymbolFactId.CreateSyntactic(ProjectId, "Missing.cs", "class", "global::Acme.Absent");
+        var orphan = Member("Run", "global::Acme.Api", FactResolution.Syntactic, "orphan") with
+        {
+            ContainingSymbolId = absent,
+        };
+
+        var index = SymbolIndexBuilder.Build([orphan], [], [], []);
+
+        var diagnostic = Assert.Single(index.Diagnostics);
+        Assert.Equal("C2M-SYMIDX-002", diagnostic.Code);
+        Assert.Contains(diagnostic.Data, data => data is { Key: "rule", Value: "invalid-containing-symbol" });
+        Assert.Contains(diagnostic.Data, data => data is { Key: "containing_symbol_id" } && data.Value == absent.Value);
+
+        Assert.NotNull(index.GetById(orphan.SymbolId));
+        Assert.Equal(orphan.SymbolId, Assert.Single(index.FindByName("Run")).SymbolId);
+    }
+
+    [Fact]
+    public void Build_SimpleNameWithCandidatesInTwoNamespaces_RecordsAmbiguousSymbolLookupWithoutAnyQuery()
+    {
+        var legacy = Symbol("PaymentService", "global::Company.Legacy.PaymentService", projectId: ProjectId)
+            with { Namespace = "Company.Legacy" };
+        var current = Symbol("PaymentService", "global::Company.Payments.PaymentService", projectId: OtherProjectId)
+            with { Namespace = "Company.Payments" };
+
+        // Read straight off the freshly built index - no Find* call precedes this.
+        var index = SymbolIndexBuilder.Build([legacy, current], [], [], []);
+        var diagnostic = Assert.Single(index.Diagnostics);
+
+        Assert.Equal("C2M-SYMIDX-003", diagnostic.Code);
+        Assert.Contains(diagnostic.Data, data => data is { Key: "rule", Value: "ambiguous-symbol-lookup" });
+        Assert.Contains(diagnostic.Data, data => data is { Key: "name", Value: "PaymentService" });
+    }
+
+    [Fact]
+    public void Build_ConsistentFacts_RecordsNoDiagnosticsAtAll()
+    {
+        var index = Build(
+            Symbol("PaymentsService", "global::Acme.Payments.PaymentsService") with { Namespace = "Acme.Payments" },
+            Symbol("OrderService", "global::Acme.Orders.OrderService") with { Namespace = "Acme.Orders" });
+
+        Assert.Empty(index.Diagnostics);
+    }
+
     private static DocumentFact Document(ProjectFactId projectId, string relativePath)
     {
         var documentId = DocumentFactId.Create(projectId, relativePath);

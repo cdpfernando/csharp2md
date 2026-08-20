@@ -241,9 +241,9 @@ without throwing, and the returned metrics report the expected total/duplicate/a
 | SYMIDX-16 | P2 (ambiguity reporting) | Design | Implementing |
 | SYMIDX-17 | P2 (no silent tie-break) | Design | Implementing |
 | SYMIDX-18 | P2 (unique match reporting) | Design | Implementing |
-| SYMIDX-19 | P3 (duplicated-symbol-id diagnostic) | Design | Pending |
-| SYMIDX-20 | P3 (invalid-containing-symbol diagnostic) | Design | Pending |
-| SYMIDX-21 | P3 (ambiguous-symbol-lookup diagnostic) | Design | Pending |
+| SYMIDX-19 | P3 (duplicated-symbol-id diagnostic) | Design | Implementing |
+| SYMIDX-20 | P3 (invalid-containing-symbol diagnostic) | Design | Implementing |
+| SYMIDX-21 | P3 (ambiguous-symbol-lookup diagnostic) | Design | Implementing |
 | SYMIDX-22 | P3 (index metrics) | Design | Pending |
 | SYMIDX-23 | P3 (syntax-only mode has no precondition) | Design | Pending |
 

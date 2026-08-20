@@ -339,10 +339,10 @@ namespace/containing type.
 - Skill: NONE
 
 **Done when**:
-- [ ] Two hand-built `SymbolFact`s sharing one `SymbolFactId` produce a `duplicated-symbol-id` diagnostic, `Build` completes without throwing, and exactly one of the two (the ordinal-first) is queryable afterward
-- [ ] A `ContainingSymbolId` pointing at an absent id produces an `invalid-containing-symbol` diagnostic, and the symbol is still indexed under its own id
-- [ ] A simple name with candidates in two different namespaces produces one `ambiguous-symbol-lookup` diagnostic at build time, without requiring a caller to have queried that name
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Two hand-built `SymbolFact`s sharing one `SymbolFactId` produce a `duplicated-symbol-id` diagnostic, `Build` completes without throwing, and exactly one of the two (the ordinal-first) is queryable afterward
+- [x] A `ContainingSymbolId` pointing at an absent id produces an `invalid-containing-symbol` diagnostic, and the symbol is still indexed under its own id
+- [x] A simple name with candidates in two different namespaces produces one `ambiguous-symbol-lookup` diagnostic at build time, without requiring a caller to have queried that name
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick
