@@ -38,6 +38,7 @@ public sealed class AnalysisEngine
     private readonly ISemanticCompilationAdapter _compilationAdapter;
     private readonly ISourceGeneratorAdapter _generatorAdapter;
     private readonly Action<SymbolIndex>? _onSymbolIndexBuilt;
+    private readonly IEnumerable<IDataAccessAnalyzer>? _dataAccessAnalyzers;
 
     public AnalysisEngine()
         : this(new InertInventory(), FactValidator.Validate, null,
@@ -55,10 +56,11 @@ public sealed class AnalysisEngine
         InertInventory inventory,
         FragmentValidationFunc validate,
         IAnalysisEngineObserver? observer,
-        Action<SymbolIndex>? onSymbolIndexBuilt = null)
+        Action<SymbolIndex>? onSymbolIndexBuilt = null,
+        IEnumerable<IDataAccessAnalyzer>? dataAccessAnalyzers = null)
         : this(inventory, validate, observer,
             new DotnetMsBuildEvaluator(), new SemanticCompilationAdapter(), new SourceGeneratorAdapter(),
-            onSymbolIndexBuilt)
+            onSymbolIndexBuilt, dataAccessAnalyzers)
     {
     }
 
@@ -69,9 +71,11 @@ public sealed class AnalysisEngine
         IProjectEvaluationAdapter evaluator,
         ISemanticCompilationAdapter compilationAdapter,
         ISourceGeneratorAdapter generatorAdapter,
-        Action<SymbolIndex>? onSymbolIndexBuilt = null)
+        Action<SymbolIndex>? onSymbolIndexBuilt = null,
+        IEnumerable<IDataAccessAnalyzer>? dataAccessAnalyzers = null)
     {
         _onSymbolIndexBuilt = onSymbolIndexBuilt;
+        _dataAccessAnalyzers = dataAccessAnalyzers;
         _inventory = inventory;
         _validate = validate;
         _observer = observer;
@@ -241,7 +245,7 @@ public sealed class AnalysisEngine
             sources.Add(new SemanticProjectDocument(
                 relativeSourcePath,
                 source,
-                SyntaxFactExtractor.Extract(projectId, relativeSourcePath, source)));
+                SyntaxFactExtractor.Extract(projectId, relativeSourcePath, source, _dataAccessAnalyzers)));
         }
 
         var syntacticProject = new ProjectFact(

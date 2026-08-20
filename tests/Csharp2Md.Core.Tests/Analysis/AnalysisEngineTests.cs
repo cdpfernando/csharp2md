@@ -4,6 +4,7 @@ using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Analysis.Inventory;
 using Csharp2Md.Core.Facts.Validation;
 using Csharp2Md.Core.Manifests;
+using Csharp2Md.Core.Tests.Analysis.DataAccess;
 
 namespace Csharp2Md.Core.Tests.Analysis;
 
@@ -231,6 +232,44 @@ public sealed class AnalysisEngineTests : IDisposable
         var column = Assert.Single(catalogue.RootElement.GetProperty("columns").EnumerateArray());
         Assert.Equal("order_status", column.GetProperty("name").GetString());
         Assert.Equal(table.GetProperty("object_id").GetString(), column.GetProperty("object_id").GetString());
+    }
+
+    // DAD-18: a persistence analyzer throwing mid-run is a diagnostic, not a run failure - contrast
+    // with AnalyzeAsync_StructuralValidationFailure_ReturnsExitOneAndOmitsFragment above, where the
+    // exit code genuinely does change. Only a structural failure may move it; C2M-DA-001 must not.
+    [Fact]
+    public async Task AnalyzeAsync_WhenADataAccessAnalyzerThrows_LeavesTheExitCodeUnchangedAndKeepsAnalysingRemainingDocuments()
+    {
+        CreateProjectWithFiles(
+            "App",
+            ("Broken.cs", "class Broken { void Run() { } }"),
+            ("Fine.cs", "class Fine { void Run() { } }"));
+        var failing = StubDataAccessAnalyzer.AppendingThenThrowing(
+            "csharp2md.dataaccess.failing", new InvalidOperationException("boom"));
+        var engine = new AnalysisEngine(
+            new InertInventory(), FactValidator.Validate, null, dataAccessAnalyzers: [failing]);
+
+        var result = await engine.AnalyzeAsync(Request());
+
+        Assert.Equal(0, result.ExitCode);
+        using var diagnostics = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(_output, "raw", "facts", "diagnostics.json")));
+        var entries = diagnostics.RootElement.GetProperty("entries").EnumerateArray().ToArray();
+        Assert.Equal(2, entries.Length);
+        Assert.All(entries, entry => Assert.Equal("C2M-DA-001", entry.GetProperty("code").GetString()));
+        var scopeIds = entries.Select(entry => entry.GetProperty("scope_id").GetString()).ToArray();
+        Assert.Contains(scopeIds, scopeId => scopeId!.Contains("Broken.cs", StringComparison.Ordinal));
+        Assert.Contains(scopeIds, scopeId => scopeId!.Contains("Fine.cs", StringComparison.Ordinal));
+        Assert.NotEqual(scopeIds[0], scopeIds[1]);
+
+        var documentFragments = Directory.EnumerateFiles(
+            Path.Combine(_output, "raw", "facts", "document"), "*.json", SearchOption.AllDirectories);
+        var symbolNames = documentFragments
+            .SelectMany(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement.GetProperty("symbols").EnumerateArray())
+            .Select(symbol => symbol.GetProperty("name").GetString())
+            .ToArray();
+        Assert.Contains("Broken", symbolNames);
+        Assert.Contains("Fine", symbolNames);
     }
 
     // Spec Edge Case: a codebase with no persistence API usage records nothing and complains about nothing.
