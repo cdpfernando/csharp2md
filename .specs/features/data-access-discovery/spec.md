@@ -170,11 +170,17 @@ invents a destination.
 
 21. WHEN a string literal's first significant token is `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `MERGE`,
     `EXEC` or `CALL`, compared case-insensitively, THEN the system SHALL emit one access relation sourced at
-    the enclosing member's symbol id whose `operation` detail is derived from that verb.
+    the enclosing member's symbol id whose `operation` detail is derived from that verb — `read`, `insert`,
+    `update`, `delete`, `execute` for their like-named verbs, `execute` for `EXEC`/`CALL`, and `update` for
+    `MERGE`, since it always writes and the vocabulary names no separate upsert operation.
 22. WHEN such a statement names its target object as a plain identifier the analyser can read — after
     `FROM`, `INTO`, `UPDATE`, `DELETE FROM`, `MERGE INTO`, `EXEC` or `CALL` — THEN the system SHALL emit a
     database-object node for that identifier with resolution `Exact` and set the relation's `target_id` to
-    that node's id.
+    that node's id. The relation's own resolution is `Syntactic`, not `Exact`: a literal proves the node's
+    identity, but proving that the string is genuinely passed to a database API rather than used as a
+    message that happens to start with a SQL verb is exactly what the Edge Case below (a SQL-shaped literal
+    used as a message) says the analyser cannot promise — the same `Syntactic` resolution applies whether
+    or not the target read.
 23. WHERE the statement verb is `EXEC` or `CALL` the system SHALL set the emitted node's kind to
     `procedure`, and for every other recognised verb the system SHALL set the node's kind to `unknown`.
 24. WHEN an `INSERT INTO <object> (<column-list>)` column list is present THEN the system SHALL emit one
