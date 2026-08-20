@@ -154,8 +154,9 @@ internal sealed class EfCoreAnalyzer : IDataAccessAnalyzer
     }
 
     /// <summary>
-    /// DAD-08: every entity property a chain operator's lambda references, in chain order, de-duplicated
-    /// per property and usage so a property named twice in one projection is one column claim.
+    /// DAD-08 and DAD-09: every entity property a chain operator's lambda references, in chain order,
+    /// de-duplicated per property and usage so a property named twice in one projection is one column
+    /// claim while a property both filtered on and projected stays two.
     /// </summary>
     private static ImmutableArray<ColumnReference> ChainColumns(
         ImmutableArray<InvocationExpressionSyntax> chain)
@@ -171,10 +172,13 @@ internal sealed class EfCoreAnalyzer : IDataAccessAnalyzer
                     continue;
                 }
 
+                var usage = InvokedMemberName(invocation) == "Where"
+                    ? ColumnUsage.Filter
+                    : ColumnUsage.Read;
                 foreach (var reference in LambdaPropertyReferences(lambda))
                 {
                     var column = new ColumnReference(
-                        reference.Name.Identifier.ValueText, ColumnUsage.Read, reference);
+                        reference.Name.Identifier.ValueText, usage, reference);
                     if (seen.Add((column.PropertyName, column.Usage)))
                     {
                         columns.Add(column);

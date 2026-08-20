@@ -342,6 +342,60 @@ public sealed class EfCoreAnalyzerTests
         Assert.Empty(claims.Where(claim => claim.Kind == DatabaseClaimKind.ColumnAccess));
     }
 
+    // DAD-09: a Where lambda's property references are filters, not projections.
+    [Fact]
+    public void Analyze_WhereLambdaReferencingAnEntityProperty_YieldsExactlyOneFilterColumnClaim()
+    {
+        var claims = EfCoreAnalysis.Claims(
+            """
+            class OrderDbContext : DbContext
+            {
+                public DbSet<Order> Orders { get; set; }
+            }
+
+            class OrderService
+            {
+                private OrderDbContext _context;
+
+                public object GetOrder(int orderId) => _context.Orders.Where(x => x.Id == orderId);
+            }
+            """);
+
+        var column = Assert.Single(claims.Where(claim => claim.Kind == DatabaseClaimKind.ColumnAccess));
+        Assert.Equal("Id", column.PropertyText);
+        Assert.Equal(ColumnUsage.Filter, column.Usage);
+    }
+
+    // DAD-08 + DAD-09: filtering by a column and projecting it are two distinct uses of it.
+    [Fact]
+    public void Analyze_PropertyReferencedInBothAWhereAndAProjection_YieldsAFilterClaimAndAReadClaim()
+    {
+        var claims = EfCoreAnalysis.Claims(
+            """
+            class OrderDbContext : DbContext
+            {
+                public DbSet<Order> Orders { get; set; }
+            }
+
+            class OrderService
+            {
+                private OrderDbContext _context;
+
+                public object GetOrder(int orderId) => _context.Orders
+                    .Where(x => x.Id == orderId)
+                    .Select(x => new OrderDto { Id = x.Id });
+            }
+            """);
+
+        var idColumns = claims
+            .Where(claim => claim.Kind == DatabaseClaimKind.ColumnAccess && claim.PropertyText == "Id")
+            .ToList();
+
+        Assert.Equal(2, idColumns.Count);
+        Assert.Contains(idColumns, column => column.Usage == ColumnUsage.Filter);
+        Assert.Contains(idColumns, column => column.Usage == ColumnUsage.Read);
+    }
+
     // DAD-01 is only reachable on a real run if the analyzer is one the collector actually runs.
     [Fact]
     public void RegisteredAnalyzers_IncludeTheEfCoreAnalyzer()

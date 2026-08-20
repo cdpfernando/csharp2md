@@ -718,11 +718,11 @@ references.
 
 **Done when**:
 
-- [ ] Brief §7's `Where(x => x.Id == orderId)` yields exactly one `filter` claim for `Id`
-- [ ] A property referenced in both a `Where` and a projection yields both a `filter` and a `read` claim,
+- [x] Brief §7's `Where(x => x.Id == orderId)` yields exactly one `filter` claim for `Id`
+- [x] A property referenced in both a `Where` and a projection yields both a `filter` and a `read` claim,
       not one collapsed claim
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
