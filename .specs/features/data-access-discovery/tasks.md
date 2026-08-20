@@ -323,11 +323,11 @@ confirm evidence-range validation applies to them.
 
 **Done when**:
 
-- [ ] A `DatabaseColumnFact` whose owning object is absent from the fragment produces `C2M-FV-002`
-- [ ] A column whose owning object is present validates cleanly
-- [ ] Out-of-range evidence on either new kind produces `C2M-FV-004`
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] A `DatabaseColumnFact` whose owning object is absent from the fragment produces `C2M-FV-002`
+- [x] A column whose owning object is present validates cleanly
+- [x] Out-of-range evidence on either new kind produces `C2M-FV-004`
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions) — 1436 -> 1441 (+5)
 
 **Tests**: unit
 **Gate**: quick

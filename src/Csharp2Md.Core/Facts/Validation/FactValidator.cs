@@ -82,6 +82,10 @@ internal static class FactValidator
         ComponentFact component => component.ProjectIds.Select(static id => id.ToFactId()),
         RelationFact relation when relation.TargetId is { } target => [relation.SourceId, target],
         RelationFact relation => [relation.SourceId],
+        DatabaseColumnFact column => [column.ObjectId.ToFactId()],
+        // A database object owns its columns and references nothing: its connection is a name, not a fact,
+        // until a connection node exists to point at.
+        DatabaseObjectFact => [],
         _ => [],
     };
 
