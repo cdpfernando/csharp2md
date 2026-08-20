@@ -805,13 +805,13 @@ invokes `SaveChanges`/`SaveChangesAsync`, carrying the receiver text so the reso
 
 **Done when**:
 
-- [ ] Each of the seven verbs is recognised case-insensitively, with leading whitespace and `--` comments
+- [x] Each of the seven verbs is recognised case-insensitively, with leading whitespace and `--` comments
       skipped
-- [ ] `EXEC`/`CALL` targets are classified `procedure`; every other verb's target is `unknown`
-- [ ] A target the reader cannot read as a plain identifier returns no target rather than a guess
-- [ ] A non-SQL string returns false
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] `EXEC`/`CALL` targets are classified `procedure`; every other verb's target is `unknown`
+- [x] A target the reader cannot read as a plain identifier returns no target rather than a guess
+- [x] A non-SQL string returns false
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
