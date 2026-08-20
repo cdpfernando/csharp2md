@@ -10,7 +10,20 @@ namespace Csharp2Md.Core.Analysis.DataAccess.Sql;
 internal readonly record struct SqlStatement(
     DatabaseOperation Operation,
     DatabaseObjectKind ObjectKind,
-    string? Target);
+    string? Target)
+{
+    private readonly ImmutableArray<string> _writtenColumns;
+
+    /// <summary>
+    /// DAD-24 and DAD-25: the columns the statement proves it writes - an <c>INSERT</c> column list or
+    /// an <c>UPDATE ... SET</c> assignment list. Empty whenever the list is absent or unreadable.
+    /// </summary>
+    public ImmutableArray<string> WrittenColumns
+    {
+        get => _writtenColumns.IsDefault ? [] : _writtenColumns;
+        init => _writtenColumns = value;
+    }
+}
 
 /// <summary>What one token of a SQL statement is, as far as this reader distinguishes.</summary>
 internal enum SqlTokenKind
@@ -78,10 +91,116 @@ internal static class SqlStatementReader
             return false;
         }
 
-        var target = ReadTarget(first.Text, tokens);
-        statement = new SqlStatement(operation, ObjectKindOfVerb(first.Text), target);
+        var (target, afterTarget) = ReadTarget(first.Text, tokens);
+        statement = new SqlStatement(operation, ObjectKindOfVerb(first.Text), target)
+        {
+            WrittenColumns = ReadWrittenColumns(first.Text, tokens, afterTarget),
+        };
         return true;
     }
+
+    /// <summary>
+    /// DAD-24 and DAD-25: the written column list, read only from the shape each verb proves - the
+    /// parenthesised list after an <c>INSERT</c> target, or the <c>SET</c> assignment list of an
+    /// <c>UPDATE</c>. Every other verb writes no column list.
+    /// </summary>
+    private static ImmutableArray<string> ReadWrittenColumns(
+        string verb, List<SqlToken> tokens, int afterTarget) =>
+        verb.ToUpperInvariant() switch
+        {
+            "INSERT" => ReadParenthesisedColumnList(tokens, afterTarget),
+            "UPDATE" => ReadAssignedColumns(tokens),
+            _ => [],
+        };
+
+    /// <summary>
+    /// The plain-identifier list in <c>(a, b, c)</c>. A list holding anything else, or one that never
+    /// closes, yields nothing at all rather than the prefix it managed to read.
+    /// </summary>
+    private static ImmutableArray<string> ReadParenthesisedColumnList(List<SqlToken> tokens, int index)
+    {
+        if (index < 0 || index >= tokens.Count
+            || tokens[index] is not { Kind: SqlTokenKind.Other, Text: "(" })
+        {
+            return [];
+        }
+
+        var columns = ImmutableArray.CreateBuilder<string>();
+        var cursor = index + 1;
+        while (cursor + 1 < tokens.Count && tokens[cursor].Kind == SqlTokenKind.Word)
+        {
+            columns.Add(tokens[cursor].Text);
+            cursor++;
+            if (tokens[cursor] is { Kind: SqlTokenKind.Other, Text: ")" })
+            {
+                return columns.ToImmutable();
+            }
+
+            if (tokens[cursor] is not { Kind: SqlTokenKind.Other, Text: "," })
+            {
+                return [];
+            }
+
+            cursor++;
+        }
+
+        return [];
+    }
+
+    /// <summary>
+    /// The columns assigned by an <c>UPDATE ... SET</c> clause: an identifier followed by <c>=</c> at
+    /// the start of an assignment, at parenthesis depth zero. Assigned values never qualify, and the
+    /// scan stops where the clause does.
+    /// </summary>
+    private static ImmutableArray<string> ReadAssignedColumns(List<SqlToken> tokens)
+    {
+        var index = IndexAfterKeyword(tokens, "SET");
+        if (index < 0)
+        {
+            return [];
+        }
+
+        var columns = ImmutableArray.CreateBuilder<string>();
+        var depth = 0;
+        var startsAssignment = true;
+        for (var cursor = index; cursor < tokens.Count; cursor++)
+        {
+            var token = tokens[cursor];
+            if (token is { Kind: SqlTokenKind.Other, Text: "(" })
+            {
+                depth++;
+            }
+            else if (token is { Kind: SqlTokenKind.Other, Text: ")" })
+            {
+                depth--;
+            }
+            else if (depth == 0 && token is { Kind: SqlTokenKind.Other, Text: "," })
+            {
+                startsAssignment = true;
+                continue;
+            }
+            else if (depth == 0 && EndsAssignmentList(token))
+            {
+                break;
+            }
+            else if (depth == 0 && startsAssignment
+                && token.Kind == SqlTokenKind.Word
+                && cursor + 1 < tokens.Count
+                && tokens[cursor + 1] is { Kind: SqlTokenKind.Operator, Text: "=" })
+            {
+                columns.Add(token.Text);
+            }
+
+            startsAssignment = false;
+        }
+
+        return columns.ToImmutable();
+    }
+
+    private static bool EndsAssignmentList(SqlToken token) =>
+        token is { Kind: SqlTokenKind.Other, Text: ";" }
+            || (token.Kind == SqlTokenKind.Word
+                && token.Text.Equals("WHERE", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// DAD-23: <c>EXEC</c> and <c>CALL</c> prove the target is a procedure. Every other verb proves an
@@ -102,7 +221,7 @@ internal static class SqlStatementReader
     /// Without that anchor a message such as "Update failed for order" would mint a table named
     /// <c>failed</c>; requiring <c>SET</c> keeps the reader inside what the text proves.
     /// </remarks>
-    private static string? ReadTarget(string verb, List<SqlToken> tokens)
+    private static (string? Name, int Next) ReadTarget(string verb, List<SqlToken> tokens)
     {
         var index = verb.ToUpperInvariant() switch
         {
@@ -131,14 +250,15 @@ internal static class SqlStatementReader
     }
 
     /// <summary>
-    /// A plain identifier, optionally dot-qualified, recorded verbatim. Anything else - a bracketed or
-    /// quoted name, a parameter, an opening parenthesis - is unreadable and yields <c>null</c>.
+    /// A plain identifier, optionally dot-qualified, recorded verbatim, plus the index just past it.
+    /// Anything else - a bracketed or quoted name, a parameter, an opening parenthesis - is unreadable
+    /// and yields <c>null</c>.
     /// </summary>
-    private static string? ReadQualifiedIdentifier(List<SqlToken> tokens, int index)
+    private static (string? Name, int Next) ReadQualifiedIdentifier(List<SqlToken> tokens, int index)
     {
         if (index < 0 || index >= tokens.Count || tokens[index].Kind != SqlTokenKind.Word)
         {
-            return null;
+            return (null, index);
         }
 
         var name = tokens[index].Text;
@@ -151,7 +271,7 @@ internal static class SqlStatementReader
             cursor += 2;
         }
 
-        return name;
+        return (name, cursor);
     }
 
     /// <summary>

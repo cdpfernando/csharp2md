@@ -117,6 +117,64 @@ public sealed class SqlStatementReaderTests
         Assert.Null(statement.Target);
     }
 
+    // DAD-24: the INSERT column list yields exactly the listed columns, verbatim and in order.
+    [Fact]
+    public void TryRead_InsertWithAColumnList_YieldsExactlyThoseColumns()
+    {
+        Assert.True(SqlStatementReader.TryRead(
+            "INSERT INTO Orders (Id, Status, Amount) VALUES (@id, @status, @amount)",
+            out var statement));
+
+        Assert.Equal(["Id", "Status", "Amount"], statement.WrittenColumns.ToArray());
+    }
+
+    // DAD-25: the SET assignment list yields exactly the assigned columns - not the assigned values,
+    // and not the columns the WHERE clause compares.
+    [Fact]
+    public void TryRead_UpdateWithASetList_YieldsTheAssignedColumnsOnly()
+    {
+        Assert.True(SqlStatementReader.TryRead(
+            "UPDATE Orders SET Status = 'Paid', Amount = 10 WHERE Id = @id", out var statement));
+
+        Assert.Equal(["Status", "Amount"], statement.WrittenColumns.ToArray());
+    }
+
+    // DAD-25: a value expression containing parentheses and commas does not leak into the column list.
+    [Fact]
+    public void TryRead_UpdateAssigningAFunctionResult_StillYieldsTheAssignedColumnsOnly()
+    {
+        Assert.True(SqlStatementReader.TryRead(
+            "UPDATE Orders SET Status = COALESCE(@status, 'New'), Amount = 10", out var statement));
+
+        Assert.Equal(["Status", "Amount"], statement.WrittenColumns.ToArray());
+    }
+
+    // T24: a malformed or unclosed list yields no columns rather than a partial guess.
+    [Theory]
+    [InlineData("INSERT INTO Orders (Id, Status VALUES (1, 2)")]
+    [InlineData("INSERT INTO Orders (Id, Status")]
+    [InlineData("INSERT INTO Orders (Id, UPPER(Status)) VALUES (1, 2)")]
+    [InlineData("INSERT INTO Orders (Id, [Status]) VALUES (1, 2)")]
+    public void TryRead_MalformedInsertColumnList_YieldsNoColumns(string sql)
+    {
+        Assert.True(SqlStatementReader.TryRead(sql, out var statement));
+
+        Assert.Empty(statement.WrittenColumns);
+    }
+
+    // T24: statements that write no column list prove no written columns.
+    [Theory]
+    [InlineData("INSERT INTO Orders VALUES (1, 2)")]
+    [InlineData("SELECT Id FROM Orders")]
+    [InlineData("DELETE FROM Orders WHERE Id = @id")]
+    [InlineData("UPDATE Orders WHERE Id = @id")]
+    public void TryRead_StatementWithoutAWrittenColumnList_YieldsNoColumns(string sql)
+    {
+        Assert.True(SqlStatementReader.TryRead(sql, out var statement));
+
+        Assert.Empty(statement.WrittenColumns);
+    }
+
     // T23: the reader keys off the first significant token only, so a sentence merely containing a
     // SQL verb is not a statement (spec Edge Case: a verb used as a message).
     [Theory]

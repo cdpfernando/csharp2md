@@ -836,12 +836,12 @@ assignment list.
 
 **Done when**:
 
-- [ ] A three-column `INSERT` yields exactly those three column names
-- [ ] A two-assignment `UPDATE ... SET` yields exactly those two column names and does not pick up the
+- [x] A three-column `INSERT` yields exactly those three column names
+- [x] A two-assignment `UPDATE ... SET` yields exactly those two column names and does not pick up the
       values
-- [ ] A malformed or unclosed list yields no columns rather than a partial guess
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] A malformed or unclosed list yields no columns rather than a partial guess
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
