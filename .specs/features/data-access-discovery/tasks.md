@@ -538,10 +538,10 @@ documents that produced one, and emits a canonically ordered snapshot.
 
 **Done when**:
 
-- [ ] A document contributing no claims leaves no extent retained — asserted, not assumed
-- [ ] `ToSnapshot` returns the same ordering regardless of the order documents were added
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] A document contributing no claims leaves no extent retained — asserted, not assumed
+- [x] `ToSnapshot` returns the same ordering regardless of the order documents were added
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
