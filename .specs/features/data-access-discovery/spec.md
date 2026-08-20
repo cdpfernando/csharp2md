@@ -335,9 +335,9 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DAD-14 | P1: EF Core persistence model and access | T29 | Verified |
 | DAD-15 | P1: EF Core persistence model and access | Design | Pending |
 | DAD-16 | P1: EF Core persistence model and access | Design | Pending |
-| DAD-17 | P1: EF Core persistence model and access | Design | Pending |
+| DAD-17 | P1: EF Core persistence model and access | T35 | Verified |
 | DAD-18 | P1: EF Core persistence model and access | Design | Pending |
-| DAD-19 | P1: EF Core persistence model and access | Design | Pending |
+| DAD-19 | P1: EF Core persistence model and access | T35 | Verified |
 | DAD-20 | P1: EF Core persistence model and access | Design | Pending |
 | DAD-21 | P1: Literal SQL statements | Design | Pending |
 | DAD-22 | P1: Literal SQL statements | Design | Pending |

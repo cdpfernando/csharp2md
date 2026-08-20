@@ -1211,20 +1211,43 @@ Test count: 1680 before, 1680 after.
 
 **Done when**:
 
-- [ ] `data.json` contains the `maps-to`, `reads`, `reads-column`, `filters-by` and `writes-column` relations
+- [x] `data.json` contains the `maps-to`, `reads`, `reads-column`, `filters-by` and `writes-column` relations
       with the resolutions the spec names
-- [ ] `database.json` lists the configured table and column nodes
-- [ ] Brief §7's question is answerable: `Id`, `Status`, `Amount` read; `Id` filtered
-- [ ] Brief §8's question is answerable: the write member appears as a writer of `Order.Status`'s column
-- [ ] The run is in the default syntax-only, untrusted mode — not trusted mode
-- [ ] Gate check passes: `dotnet test csharp2md.slnx --filter "Category=Integration"` then
+- [x] `database.json` lists the configured table and column nodes
+- [x] Brief §7's question is answerable: `Id`, `Status`, `Amount` read; `Id` filtered
+- [x] Brief §8's question is answerable: the write member appears as a writer of `Order.Status`'s column
+- [x] The run is in the default syntax-only, untrusted mode — not trusted mode
+- [x] Gate check passes: `dotnet test csharp2md.slnx --filter "Category=Integration"` then
       `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: integration
 **Gate**: full
 
 **Commit**: `test(dataaccess): verify EF Core discovery end to end`
+
+**Evidence** — `tests/Csharp2Md.Core.Tests/Analysis/DataAccessDiscoveryEndToEndTests.cs`:
+
+| AC | `file:line` — assertion |
+| --- | --- |
+| default mode | `:27` — `Assert.Equal("syntax-only", fixture.Manifest.Analysis.Requested)`; `:29` — `Assert.Equal("untrusted", fixture.Manifest.Trust)` |
+| DAD-01 | `:38` — `Assert.Equal(2, exposes.Length)`; `:39` — `Assert.Equal(["Order", "OrderLine"], …target_text)`; `:42` — source is `OrderDbContext` |
+| DAD-02 | `:54` — `Assert.Equal("heuristic", convention.Header.Resolution)`; `:55` — `Assert.Null(convention.TargetId)`; `:56` — `Assert.Equal("OrderLines", …)` |
+| DAD-03 | `:65` — `Assert.Equal("table", table.Kind)`; `:66` — `"exact"`; `:71` — `Assert.Equal(table.ObjectId, configured.TargetId)` |
+| DAD-04 | `:90` — `Assert.Single(mappingsForOrder)`; `:91` — `Assert.Equal("configured", Detail(only, "mapping"))` |
+| DAD-05 | `:101` — `Assert.Equal(table.ObjectId, column.ObjectId)`; `:108` — `Assert.Equal(column.ColumnId, mapping.TargetId)`; `:109` — `"exact"` |
+| DAD-06 | `:123` — `"heuristic"`; `:124` — `Assert.Null(relation.TargetId)`; `:125`/`:126` — `target_text` is the property's own name |
+| DAD-07 | `:140` — `Assert.Equal("read", Detail(read, "operation"))`; `:142` — target is the mapped object |
+| DAD-08 | `:154` — `Assert.Equal(["Amount", "Id", "Status"], …)`; `:157` — `usage == "read"` |
+| DAD-09 | `:168` — `Assert.Equal("Id", Detail(filter, "target_text"))`; `:169` — `usage == "filter"` |
+| DAD-10 | `:180` — `Assert.Equal("insert", Detail(write, "operation"))` (the `Update`/`Remove` families stay unit-covered in `EfCoreAnalyzerTests`) |
+| DAD-11 | `:195` — `Assert.Equal(column.ColumnId, write.TargetId)`; `:196` — `"heuristic"`; `:198` — `"order.Status"` |
+| DAD-12 | `:209` — `Assert.Null(write.TargetId)`; `:210` — `"candidate"`; `:211` — `"ambiguous-entity-attribution"` |
+| DAD-13 | `:229`–`:232` — every emitted relation and node carries a one-based located span |
+| DAD-17 | `:242` — the document was analysed; `:243` — no relation is evidenced in it; `:247` — no node named after it |
+| DAD-19 | `:254` — `Assert.Equal(3, repeated.Header.Evidence.Length)` on one entry for `Orders` |
+
+Test count: 1680 before, 1696 after (16 added, 0 deleted or skipped).
 
 ---
 
