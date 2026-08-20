@@ -212,6 +212,64 @@ public sealed class EfCoreAnalyzerTests
         Assert.Empty(claims);
     }
 
+    // DAD-05: a literal HasColumnName proves the column, attributed to the enclosing Entity<T>().
+    [Fact]
+    public void Analyze_PropertyChainEndingInLiteralHasColumnName_YieldsAnExactColumnConfiguredClaim()
+    {
+        var claim = Assert.Single(EfCoreAnalysis.Claims(
+            """
+            class OrderConfiguration
+            {
+                public void Configure(ModelBuilder modelBuilder)
+                {
+                    modelBuilder.Entity<Order>().Property(x => x.Status).HasColumnName("order_status");
+                }
+            }
+            """));
+
+        Assert.Equal(DatabaseClaimKind.ColumnConfigured, claim.Kind);
+        Assert.Equal("Order", claim.EntityText);
+        Assert.Equal("Status", claim.PropertyText);
+        Assert.Equal("order_status", claim.ColumnText);
+        Assert.Equal(FactResolution.Exact, claim.ShapeConfidence);
+    }
+
+    // Spec Edge Case: a non-literal HasColumnName argument configures nothing.
+    [Fact]
+    public void Analyze_HasColumnNameWithANonLiteralArgument_YieldsNoColumnConfiguredClaim()
+    {
+        var claims = EfCoreAnalysis.Claims(
+            """
+            class OrderConfiguration
+            {
+                public void Configure(ModelBuilder modelBuilder, string columnName)
+                {
+                    modelBuilder.Entity<Order>().Property(x => x.Status).HasColumnName(columnName);
+                }
+            }
+            """);
+
+        Assert.Empty(claims);
+    }
+
+    // Without an enclosing Entity<T>() the owning entity is unknown, so nothing is claimed.
+    [Fact]
+    public void Analyze_PropertyChainWithNoEnclosingEntityCall_YieldsNothing()
+    {
+        var claims = EfCoreAnalysis.Claims(
+            """
+            class OrderConfiguration
+            {
+                public void Configure(EntityTypeBuilder builder)
+                {
+                    builder.Property(x => x.Status).HasColumnName("order_status");
+                }
+            }
+            """);
+
+        Assert.Empty(claims);
+    }
+
     // DAD-01 is only reachable on a real run if the analyzer is one the collector actually runs.
     [Fact]
     public void RegisteredAnalyzers_IncludeTheEfCoreAnalyzer()

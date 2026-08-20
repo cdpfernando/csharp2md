@@ -659,12 +659,12 @@ emit a `ColumnConfigured` claim.
 
 **Done when**:
 
-- [ ] `Property(x => x.Status).HasColumnName("order_status")` yields a claim naming the property and the
+- [x] `Property(x => x.Status).HasColumnName("order_status")` yields a claim naming the property and the
       column, attributed to the entity the enclosing `Entity<T>()` names
-- [ ] A non-literal argument yields no configured claim (spec Edge Case)
-- [ ] A `Property` chain with no enclosing `Entity<T>()` is skipped rather than guessed at
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] A non-literal argument yields no configured claim (spec Edge Case)
+- [x] A `Property` chain with no enclosing `Entity<T>()` is skipped rather than guessed at
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

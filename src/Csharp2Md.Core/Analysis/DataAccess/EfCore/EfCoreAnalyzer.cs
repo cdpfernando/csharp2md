@@ -86,6 +86,56 @@ internal sealed class EfCoreAnalyzer : IDataAccessAnalyzer
                 ObjectKind = DatabaseObjectKind.Table,
             });
         }
+
+        if (memberName == "HasColumnName"
+            && FirstLiteralArgument(invocation) is { } columnName
+            && ConfiguredPropertyName(invocation.Expression) is { } propertyName
+            && ConfiguredEntityName(invocation.Expression) is { } columnEntityName)
+        {
+            // DAD-05: the column's name is proven; the property it belongs to is read off the
+            // Property(x => x.P) selector rather than guessed from the column text.
+            claims.Add(new RawDatabaseClaim
+            {
+                Kind = DatabaseClaimKind.ColumnConfigured,
+                OwnerId = context.OwnerOf(invocation),
+                Evidence = EvidenceFor(context, invocation),
+                ShapeConfidence = FactResolution.Exact,
+                AnalyzerId = AnalyzerId,
+                EntityText = columnEntityName,
+                PropertyText = propertyName,
+                ColumnText = columnName,
+            });
+        }
+    }
+
+    /// <summary>
+    /// The property named by the nearest <c>Property(x =&gt; x.P)</c> selector in this expression's own
+    /// receiver chain, or <c>null</c> when there is none to read.
+    /// </summary>
+    private static string? ConfiguredPropertyName(ExpressionSyntax expression)
+    {
+        var cursor = expression;
+        while (true)
+        {
+            switch (cursor)
+            {
+                case MemberAccessExpressionSyntax memberAccess:
+                    cursor = memberAccess.Expression;
+                    break;
+                case InvocationExpressionSyntax nested:
+                    if (InvokedMemberName(nested) == "Property"
+                        && nested.ArgumentList.Arguments is [{ Expression: LambdaExpressionSyntax lambda }]
+                        && lambda.Body is MemberAccessExpressionSyntax selected)
+                    {
+                        return selected.Name.Identifier.ValueText;
+                    }
+
+                    cursor = nested.Expression;
+                    break;
+                default:
+                    return null;
+            }
+        }
     }
 
     /// <summary>
