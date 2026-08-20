@@ -281,7 +281,7 @@ internal static class SyntaxFactExtractor
                 continue;
             }
 
-            tokens.Add(token.Text);
+            tokens.Add(IsCredentialLiteral(kind, token.Text) ? RedactedLiteralText : token.Text);
             parenthesisDepth += kind switch
             {
                 SyntaxKind.OpenParenToken => 1,
@@ -312,6 +312,18 @@ internal static class SyntaxFactExtractor
         var sanitizedHeader = SanitizeCanonicalText(rawHeader);
         return prefix.Length == 0 ? sanitizedHeader : $"{prefix}/{sanitizedHeader}";
     }
+
+    /// <summary>DAD-15: the placeholder a credential-shaped literal token is replaced with.</summary>
+    private const string RedactedLiteralText = "\"<redacted>\"";
+
+    /// <summary>
+    /// DAD-15: whether this token is a string literal whose own text assigns a credential, e.g.
+    /// <c>"...Password=hunter2;"</c>. The signature must never carry the value verbatim, since it and
+    /// the symbol id derived from it are facts.
+    /// </summary>
+    private static bool IsCredentialLiteral(SyntaxKind kind, string text) =>
+        kind is SyntaxKind.StringLiteralToken or SyntaxKind.Utf8StringLiteralToken
+        && CredentialText.Carries(text);
 
     private static string SanitizeCanonicalText(string value)
     {

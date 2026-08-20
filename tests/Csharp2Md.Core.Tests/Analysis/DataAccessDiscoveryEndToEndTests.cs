@@ -389,12 +389,15 @@ public sealed class DataAccessDiscoveryEndToEndTests(DataAccessDiscoveryFixture 
     /// <summary>
     /// DAD-15. The fixture carries two different credential values on purpose, and each one proves a
     /// different half of the invariant: the one that never enters a C# document must reach no output file
-    /// at all, and the one the SQL analyser genuinely walks past must reach no relation detail, no node
-    /// and no diagnostic. The second value does survive in the two places the tool reproduces source
-    /// verbatim, which is what the tool is for; DAD-15 governs the facts this stage synthesises.
+    /// at all, and the one the SQL analyser genuinely walks past must reach no relation detail, no node,
+    /// no diagnostic, and - the fact this stage synthesises about the declaring symbol itself - no
+    /// signature or id derived from it, anywhere under <c>raw/facts</c>. It does survive in the one place
+    /// the tool reproduces source verbatim (<c>source_sections</c>), which is a separate, deliberately
+    /// unredacted array and is what the tool is for; the assertion below proves that split is real by
+    /// requiring both halves to hold at once, not just the convenient one.
     /// </summary>
     [Fact]
-    public void DAD15_NoCredentialText_ReachesTheFactsTheDiscoveryStageProduces()
+    public void DAD15_NoCredentialText_ReachesAnyFactOrIdTheDiscoveryStageSynthesises()
     {
         // Without a credential in the analysed input, every assertion below would hold of an
         // implementation with no guard at all.
@@ -415,6 +418,44 @@ public sealed class DataAccessDiscoveryEndToEndTests(DataAccessDiscoveryFixture 
         Assert.DoesNotContain(
             fixture.DataRelations.SelectMany(relation => relation.Details ?? []),
             detail => detail.Value.Contains("Password", StringComparison.OrdinalIgnoreCase));
+
+        // The declaring field's own signature and every id derived from it - a fact the syntax pass
+        // synthesises, not rendered source - must never carry the value either.
+        var documentFragments = Directory.EnumerateFiles(
+            Path.Combine(TopicLayout.RawRoot(fixture.Output), "facts", "document"), "*.json", SearchOption.AllDirectories);
+        var sawInlineCredentialInSource = false;
+        foreach (var path in documentFragments)
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            foreach (var symbol in document.RootElement.GetProperty("symbols").EnumerateArray())
+            {
+                Assert.DoesNotContain(InlineCredential, symbol.GetProperty("signature").GetString(), StringComparison.Ordinal);
+                Assert.DoesNotContain(InlineCredential, symbol.GetProperty("symbol_id").GetString(), StringComparison.Ordinal);
+                Assert.DoesNotContain(
+                    InlineCredential, symbol.GetProperty("header").GetProperty("id").GetString(), StringComparison.Ordinal);
+            }
+
+            foreach (var doc in document.RootElement.GetProperty("documents").EnumerateArray())
+            {
+                foreach (var symbolId in doc.GetProperty("symbol_ids").EnumerateArray())
+                {
+                    Assert.DoesNotContain(InlineCredential, symbolId.GetString(), StringComparison.Ordinal);
+                }
+            }
+
+            foreach (var section in document.RootElement.GetProperty("source_sections").EnumerateArray())
+            {
+                if (section.GetProperty("source").GetString()!.Contains(InlineCredential, StringComparison.Ordinal))
+                {
+                    sawInlineCredentialInSource = true;
+                }
+            }
+        }
+
+        Assert.True(
+            sawInlineCredentialInSource,
+            "the fixture's inline credential never reached verbatim source rendering - the DAD-15 " +
+            "split this test proves is untested, not satisfied");
     }
 
     // DAD-20: the same unchanged input analysed twice writes the same persistence bytes.

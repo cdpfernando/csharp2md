@@ -1,4 +1,4 @@
-using Csharp2Md.Core.Facts.Metadata;
+﻿using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -32,13 +32,6 @@ internal sealed class SqlTextAnalyzer : IDataAccessAnalyzer
 
     /// <summary>DAD-28: the reason a readable statement's target stayed unresolved.</summary>
     internal const string UnreadableTargetReason = "unreadable-sql-target";
-
-    /// <summary>
-    /// DAD-15: connection-string keys whose value, when it is a literal rather than a parameter, is a
-    /// credential. A statement carrying one keeps its access but never its text.
-    /// </summary>
-    private static readonly string[] CredentialKeys =
-        ["password", "pwd", "accountkey", "sharedaccesskey", "accesstoken"];
 
     public DataAccessAnalyzerId Id => AnalyzerId;
 
@@ -149,51 +142,7 @@ internal sealed class SqlTextAnalyzer : IDataAccessAnalyzer
     /// DAD-15: the statement text, or <c>null</c> when it assigns a literal credential value. The
     /// access is still claimed either way; only the text is withheld.
     /// </summary>
-    private static string? PreservableText(string text) => CarriesCredentialText(text) ? null : text;
-
-    private static bool CarriesCredentialText(ReadOnlySpan<char> text)
-    {
-        foreach (var key in CredentialKeys)
-        {
-            var rest = text;
-            while (rest.IndexOf(key, StringComparison.OrdinalIgnoreCase) is var index and >= 0)
-            {
-                rest = rest[(index + key.Length)..];
-                if (AssignsLiteralValue(rest))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Whether what follows a credential key is <c>= &lt;value&gt;</c> with a value that is not a
-    /// parameter reference. <c>SET Password = @password</c> carries no credential; <c>Password=x</c> does.
-    /// </summary>
-    private static bool AssignsLiteralValue(ReadOnlySpan<char> rest)
-    {
-        var cursor = SkipWhitespace(rest, 0);
-        if (cursor >= rest.Length || rest[cursor] != '=')
-        {
-            return false;
-        }
-
-        cursor = SkipWhitespace(rest, cursor + 1);
-        return cursor < rest.Length && rest[cursor] is not ('@' or ':');
-    }
-
-    private static int SkipWhitespace(ReadOnlySpan<char> text, int index)
-    {
-        while (index < text.Length && char.IsWhiteSpace(text[index]))
-        {
-            index++;
-        }
-
-        return index;
-    }
+    private static string? PreservableText(string text) => CredentialText.Carries(text) ? null : text;
 
     /// <summary>The literal text that opens a string expression, or <c>null</c> when it does not open with one.</summary>
     private static string? LeadingLiteralText(ExpressionSyntax expression) => expression switch

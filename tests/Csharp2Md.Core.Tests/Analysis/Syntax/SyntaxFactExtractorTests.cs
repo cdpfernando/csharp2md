@@ -642,6 +642,43 @@ public sealed class SyntaxFactExtractorTests
         Assert.Equal(["global::System.String"], run.ParameterTypes.ToArray());
     }
 
+    // DAD-15: a field initializer's literal is part of the signature and the id derived from it - both
+    // are facts, so a credential-shaped literal must never survive into either.
+    [Fact]
+    public void Extract_FieldInitializerCarryingACredential_RedactsTheLiteralInTheSignatureAndId()
+    {
+        const string source = """
+            class C
+            {
+                private const string ConnectionString =
+                    "Server=db;Database=Orders;User Id=app;Password=hunter2;";
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/C.cs", source);
+        var field = Assert.Single(extraction.Symbols, static symbol => symbol.Name == "ConnectionString");
+
+        Assert.DoesNotContain("hunter2", field.Signature, StringComparison.Ordinal);
+        Assert.DoesNotContain("hunter2", field.SymbolId.Value, StringComparison.Ordinal);
+        Assert.Contains("<redacted>", field.Signature, StringComparison.Ordinal);
+        Assert.Contains("private const string ConnectionString", field.Signature, StringComparison.Ordinal);
+    }
+
+    // DAD-15's redaction is narrow: an ordinary literal, including one that merely mentions "password"
+    // as a plain word rather than assigning one, is untouched.
+    [Theory]
+    [InlineData("""class C { private const string Greeting = "hello password"; }""", "hello password")]
+    [InlineData("""class C { private const string Query = "SET Password = @password"; }""", "SET Password = @password")]
+    [InlineData("""class C { private const int MaxRetries = 3; }""", "3")]
+    public void Extract_OrdinaryOrParameterizedLiteral_IsNotRedacted(string source, string expectedText)
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/C.cs", source);
+        var field = Assert.Single(extraction.Symbols, symbol => symbol.SymbolKind == "field");
+
+        Assert.Contains(expectedText, field.Signature, StringComparison.Ordinal);
+        Assert.DoesNotContain("<redacted>", field.Signature, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Extract_MemberInsideAType_ReportsThatTypesOwnSymbolFactIdAsContainingSymbolId()
     {
