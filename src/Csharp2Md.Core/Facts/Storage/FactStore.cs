@@ -236,6 +236,7 @@ internal static class FactualJsonMapper
         RelationPartition.Grpc => "grpc",
         RelationPartition.Events => "events",
         RelationPartition.Structural => "structural",
+        RelationPartition.Data => "data",
         _ => throw new ArgumentOutOfRangeException(nameof(partition), partition, "Unsupported relation partition."),
     };
 }

@@ -144,6 +144,8 @@ public sealed class FactualModelTests
     [InlineData(RelationPartition.Http, true)]
     [InlineData(RelationPartition.Grpc, true)]
     [InlineData(RelationPartition.Events, true)]
+    [InlineData(RelationPartition.Structural, false)]
+    [InlineData(RelationPartition.Data, true)]
     public void RelationPartition_RuntimeClassification_IsExplicit(RelationPartition partition, bool expected)
     {
         var relationId = RelationFactId.Create(Document.ToFactId(), partition.ToString(), "claim", 1);

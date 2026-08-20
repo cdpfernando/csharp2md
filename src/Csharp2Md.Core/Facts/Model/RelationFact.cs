@@ -11,6 +11,7 @@ public enum RelationPartition
     Grpc,
     Events,
     Structural,
+    Data,
 }
 
 public sealed record RelationFact(
@@ -23,11 +24,14 @@ public sealed record RelationFact(
     string? UnresolvedReason,
     ImmutableArray<RelationDetail> Details = default) : IFact
 {
+    // Data is runtime: a persistence access names a resource that exists only when the program runs,
+    // exactly like an HTTP or gRPC edge, and unlike a reference the compiler can resolve.
     public bool IsRuntime => Partition is
         RelationPartition.DependencyInjection or
         RelationPartition.Http or
         RelationPartition.Grpc or
-        RelationPartition.Events;
+        RelationPartition.Events or
+        RelationPartition.Data;
 }
 
 public readonly record struct RelationDetail(string Key, string Value) : IComparable<RelationDetail>

@@ -417,12 +417,14 @@ confirm evidence-range validation applies to them.
 
 **Done when**:
 
-- [ ] `raw/facts/relations/data.json` is written by a real run, empty at this point but present
-- [ ] `RelationProjector` accepts the new partition without throwing `Unsupported relation partition`
-- [ ] The partition is classified as runtime or compile-time deliberately, with the choice justified in a
-      code comment
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] `raw/facts/relations/data.json` is written by a real run, empty at this point but present
+- [x] `RelationProjector` accepts the new partition without throwing `Unsupported relation partition` — its
+      hand-kept partition list is now projected over the enum and its duplicate wire-name switch is gone,
+      so `FactStore.WireRelationPartition` is the single source of truth for store, writer and projector
+- [x] The partition is classified as runtime or compile-time deliberately, with the choice justified in a
+      code comment — runtime, like `http` and `grpc`: the target exists only when the program runs
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions) — 1450 -> 1454 (+4)
 
 **Tests**: integration
 **Gate**: full

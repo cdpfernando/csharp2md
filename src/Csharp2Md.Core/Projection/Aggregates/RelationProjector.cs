@@ -31,16 +31,10 @@ internal sealed record RelationProjectionResult(
 /// </summary>
 internal static class RelationProjector
 {
+    // Projected over the enum, not a hand-kept list: a new RelationPartition member cannot be silently
+    // left without a projection, which is the same duplication the aggregate writer already dropped.
     private static readonly ImmutableArray<RelationPartition> Partitions =
-    [
-        RelationPartition.CompileTime,
-        RelationPartition.Inheritance,
-        RelationPartition.DependencyInjection,
-        RelationPartition.Http,
-        RelationPartition.Grpc,
-        RelationPartition.Events,
-        RelationPartition.Structural,
-    ];
+        [.. Enum.GetValues<RelationPartition>()];
 
     public static RelationProjectionResult Project(IEnumerable<ValidatedFactFragment> fragments)
     {
@@ -158,7 +152,7 @@ internal static class RelationProjector
         foreach (var edge in edges)
         {
             builder.Append("    ").Append(nodeIds[edge.Source!.ComponentId])
-                .Append(" -->|").Append(Wire(edge.Partition)).Append(':').Append(Escape(edge.Relation.RelationKind))
+                .Append(" -->|").Append(FactualJsonMapper.WireRelationPartition(edge.Partition)).Append(':').Append(Escape(edge.Relation.RelationKind))
                 .Append("| ").Append(nodeIds[edge.Target!.ComponentId]).Append('\n');
         }
 
@@ -180,18 +174,6 @@ internal static class RelationProjector
 
         return builder.ToString();
     }
-
-    private static string Wire(RelationPartition partition) => partition switch
-    {
-        RelationPartition.CompileTime => "compile-time",
-        RelationPartition.Inheritance => "inheritance",
-        RelationPartition.DependencyInjection => "dependency-injection",
-        RelationPartition.Http => "http",
-        RelationPartition.Grpc => "grpc",
-        RelationPartition.Events => "events",
-        RelationPartition.Structural => "structural",
-        _ => throw new ArgumentOutOfRangeException(nameof(partition), partition, "Unsupported relation partition."),
-    };
 
     private static string Escape(string value) => value
         .Replace("#", "#35;", StringComparison.Ordinal)

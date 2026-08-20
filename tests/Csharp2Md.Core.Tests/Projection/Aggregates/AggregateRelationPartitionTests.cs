@@ -37,6 +37,19 @@ public sealed class AggregateRelationPartitionTests(AggregateRelationPartitionFi
 
         Assert.Equal(Enum.GetValues<RelationPartition>().Length, written.Length);
         Assert.Contains("structural", written, StringComparer.Ordinal);
+        Assert.Contains("data", written, StringComparer.Ordinal);
+    }
+
+    [Fact]
+    public void DataPartitionFile_IsWrittenByARealRunAndCarriesNoEntriesYet()
+    {
+        Assert.True(File.Exists(fixture.PartitionPath("data")));
+
+        using var partition = fixture.ReadPartition("data");
+
+        Assert.Equal("data", partition.RootElement.GetProperty("kind").GetString());
+        Assert.Equal(2, partition.RootElement.GetProperty("schema_version").GetInt32());
+        Assert.Empty(partition.RootElement.GetProperty("entries").EnumerateArray());
     }
 
     [Fact]
