@@ -130,6 +130,88 @@ public sealed class EfCoreAnalyzerTests
         Assert.Equal("Order", claim.EntityText);
     }
 
+    // DAD-03: a literal ToTable proves the table's name, so the claim is Exact and names both sides.
+    [Fact]
+    public void Analyze_EntityChainEndingInLiteralToTable_YieldsAnExactTableConfiguredClaim()
+    {
+        var claim = Assert.Single(EfCoreAnalysis.Claims(
+            """
+            class OrderConfiguration
+            {
+                public void Configure(ModelBuilder modelBuilder)
+                {
+                    modelBuilder.Entity<Order>().ToTable("tb_order");
+                }
+            }
+            """));
+
+        Assert.Equal(DatabaseClaimKind.TableConfigured, claim.Kind);
+        Assert.Equal("Order", claim.EntityText);
+        Assert.Equal("tb_order", claim.ObjectText);
+        Assert.Equal(DatabaseObjectKind.Table, claim.ObjectKind);
+        Assert.Equal(FactResolution.Exact, claim.ShapeConfidence);
+    }
+
+    // DAD-13: the configuration claim is owned by the configuring member and evidenced at the call.
+    [Fact]
+    public void Analyze_TableConfiguredClaim_IsOwnedByTheConfiguringMemberAndEvidencedAtTheCall()
+    {
+        const string Source = """
+            class OrderConfiguration
+            {
+                public void Configure(ModelBuilder modelBuilder)
+                {
+                    modelBuilder.Entity<Order>().ToTable("tb_order");
+                }
+            }
+            """;
+
+        var claim = Assert.Single(EfCoreAnalysis.Claims(Source));
+
+        Assert.Equal(EfCoreAnalysis.SymbolIdOfMethodDeclaration(Source, "Configure"), claim.OwnerId);
+        Assert.Equal(5, claim.Evidence.StartLine);
+        Assert.Equal(9, claim.Evidence.StartColumn);
+        Assert.Equal(5, claim.Evidence.EndLine);
+        Assert.Equal(57, claim.Evidence.EndColumn);
+    }
+
+    // Spec Edge Case: a non-literal ToTable argument configures nothing, leaving the convention path.
+    [Fact]
+    public void Analyze_ToTableWithANonLiteralArgument_YieldsNoTableConfiguredClaim()
+    {
+        var claims = EfCoreAnalysis.Claims(
+            """
+            class OrderConfiguration
+            {
+                public void Configure(ModelBuilder modelBuilder, string tableName)
+                {
+                    modelBuilder.Entity<Order>().ToTable(tableName);
+                }
+            }
+            """);
+
+        Assert.Empty(claims);
+    }
+
+    // A chain split across statements hides the entity, so nothing is claimed rather than mis-attributed.
+    [Fact]
+    public void Analyze_ToTableReachedThroughAChainSplitAcrossStatements_YieldsNothing()
+    {
+        var claims = EfCoreAnalysis.Claims(
+            """
+            class OrderConfiguration
+            {
+                public void Configure(ModelBuilder modelBuilder)
+                {
+                    var entity = modelBuilder.Entity<Order>();
+                    entity.ToTable("tb_order");
+                }
+            }
+            """);
+
+        Assert.Empty(claims);
+    }
+
     // DAD-01 is only reachable on a real run if the analyzer is one the collector actually runs.
     [Fact]
     public void RegisteredAnalyzers_IncludeTheEfCoreAnalyzer()
@@ -150,12 +232,18 @@ internal static class EfCoreAnalysis
         return claims.ToImmutable();
     }
 
-    public static FactId SymbolIdOfTypeDeclaration(string source, string typeName)
-    {
-        var declaration = CSharpSyntaxTree.ParseText(source).GetRoot()
+    public static FactId SymbolIdOfTypeDeclaration(string source, string typeName) =>
+        SymbolIdOf(CSharpSyntaxTree.ParseText(source).GetRoot()
             .DescendantNodes().OfType<TypeDeclarationSyntax>()
-            .Single(candidate => candidate.Identifier.ValueText == typeName);
+            .Single(candidate => candidate.Identifier.ValueText == typeName));
 
+    public static FactId SymbolIdOfMethodDeclaration(string source, string methodName) =>
+        SymbolIdOf(CSharpSyntaxTree.ParseText(source).GetRoot()
+            .DescendantNodes().OfType<MethodDeclarationSyntax>()
+            .Single(candidate => candidate.Identifier.ValueText == methodName));
+
+    private static FactId SymbolIdOf(MemberDeclarationSyntax declaration)
+    {
         return SymbolFactId.CreateSyntactic(
             DataAccessTestFacts.ProjectId,
             "OrderRepository.cs",

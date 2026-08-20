@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "csharp2md (synthetic fixture)": {
+      "commandName": "Project",
+      "workingDirectory": "../../",
+      "commandLineArgs": "fixtures/SyntheticSolution/Acme.Orders --output ../csharp2md-local-output/fixture --topic acme-shop --force --analysis semantic --trust trusted-solution"
+    },
+    "csharp2md (custom input - edit commandLineArgs)": {
+      "commandName": "Project",
+      "workingDirectory": "../../",
+      "commandLineArgs": "\"D:\\workspace\\chupinhados\\Teste\" --output ../csharp2md-local-output/custom --topic local-test --force"
+    },
+    "csharp2md (manifest)": {
+      "commandName": "Project",
+      "workingDirectory": "../../",
+      "commandLineArgs": "--manifest \"fixtures/launch-manifest.json\" --output ../csharp2md-local-output/custom --topic local-test --force --analysis semantic --trust trusted-solution"
+    },
+    "csharp2md (run all fixtures)": {
+      "commandName": "Project",
+      "workingDirectory": "../../",
+      "commandLineArgs": "--manifest \"fixtures/launch-manifest.json\" --output ../csharp2md-local-output/fixtures --topic fixtures-run --force --analysis semantic --trust trusted-solution"
+    }
+  }
+}

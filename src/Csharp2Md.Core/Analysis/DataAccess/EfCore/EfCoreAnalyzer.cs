@@ -38,6 +38,11 @@ internal sealed class EfCoreAnalyzer : IDataAccessAnalyzer
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(claims);
 
+        foreach (var invocation in context.Root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            AnalyzeInvocation(context, invocation, claims);
+        }
+
         foreach (var entitySet in DiscoverEntitySets(context))
         {
             // DAD-01: sourced at the declaring context type, evidenced at the property that proves it.
@@ -53,6 +58,78 @@ internal sealed class EfCoreAnalyzer : IDataAccessAnalyzer
             });
         }
     }
+
+    private static void AnalyzeInvocation(
+        DataAccessContext context,
+        InvocationExpressionSyntax invocation,
+        ImmutableArray<RawDatabaseClaim>.Builder claims)
+    {
+        if (InvokedMemberName(invocation) is not { } memberName)
+        {
+            return;
+        }
+
+        if (memberName == "ToTable"
+            && FirstLiteralArgument(invocation) is { } tableName
+            && ConfiguredEntityName(invocation.Expression) is { } entityName)
+        {
+            // DAD-03: a literal proves the table's name, which is the only thing that mints a node.
+            claims.Add(new RawDatabaseClaim
+            {
+                Kind = DatabaseClaimKind.TableConfigured,
+                OwnerId = context.OwnerOf(invocation),
+                Evidence = EvidenceFor(context, invocation),
+                ShapeConfidence = FactResolution.Exact,
+                AnalyzerId = AnalyzerId,
+                EntityText = entityName,
+                ObjectText = tableName,
+                ObjectKind = DatabaseObjectKind.Table,
+            });
+        }
+    }
+
+    /// <summary>
+    /// The entity named by the nearest <c>Entity&lt;TEntity&gt;()</c> invocation in this expression's own
+    /// receiver chain. A configuration chain split across statements hides the entity from syntax, so it
+    /// returns <c>null</c> and the caller claims nothing rather than mis-attributing the configuration.
+    /// </summary>
+    private static string? ConfiguredEntityName(ExpressionSyntax expression)
+    {
+        var cursor = expression;
+        while (true)
+        {
+            switch (cursor)
+            {
+                case MemberAccessExpressionSyntax memberAccess:
+                    if (memberAccess.Name is GenericNameSyntax
+                        {
+                            Identifier.ValueText: "Entity",
+                            TypeArgumentList.Arguments: [var entityType],
+                        })
+                    {
+                        return SimpleTypeName(entityType);
+                    }
+
+                    cursor = memberAccess.Expression;
+                    break;
+                case InvocationExpressionSyntax nested:
+                    cursor = nested.Expression;
+                    break;
+                default:
+                    return null;
+            }
+        }
+    }
+
+    private static string? InvokedMemberName(InvocationExpressionSyntax invocation) =>
+        invocation.Expression is MemberAccessExpressionSyntax memberAccess
+            ? memberAccess.Name.Identifier.ValueText
+            : null;
+
+    private static string? FirstLiteralArgument(InvocationExpressionSyntax invocation) =>
+        invocation.ArgumentList.Arguments is [{ Expression: LiteralExpressionSyntax { Token.Value: string literal } }, ..]
+            ? literal
+            : null;
 
     /// <summary>
     /// Every <c>DbSet&lt;TEntity&gt;</c> property declared by a type whose base list names

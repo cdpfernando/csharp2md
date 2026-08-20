@@ -628,13 +628,13 @@ a `TableConfigured` claim.
 
 **Done when**:
 
-- [ ] `Entity<Order>().ToTable("tb_order")` yields a claim naming `Order` and `tb_order`
-- [ ] A non-literal `ToTable` argument yields no configured claim, so the convention path takes over
+- [x] `Entity<Order>().ToTable("tb_order")` yields a claim naming `Order` and `tb_order`
+- [x] A non-literal `ToTable` argument yields no configured claim, so the convention path takes over
       (spec Edge Case)
-- [ ] A `ToTable` reached through a fluent chain split across statements is handled or explicitly
+- [x] A `ToTable` reached through a fluent chain split across statements is handled or explicitly
       documented as unsupported — not silently mis-attributed
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
