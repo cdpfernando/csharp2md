@@ -866,12 +866,12 @@ assignment list.
 
 **Done when**:
 
-- [ ] `WHERE Id = @id AND Status = 'Paid'` yields `Id` and `Status`
-- [ ] A qualified identifier (`o.Id`) yields the column name with its alias handled deliberately, documented
+- [x] `WHERE Id = @id AND Status = 'Paid'` yields `Id` and `Status`
+- [x] A qualified identifier (`o.Id`) yields the column name with its alias handled deliberately, documented
       either way
-- [ ] A `WHERE` clause the reader cannot parse yields no columns rather than a guess
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] A `WHERE` clause the reader cannot parse yields no columns rather than a guess
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

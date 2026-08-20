@@ -175,6 +175,87 @@ public sealed class SqlStatementReaderTests
         Assert.Empty(statement.WrittenColumns);
     }
 
+    // DAD-26: columns compared against a parameter or a literal in a WHERE clause.
+    [Fact]
+    public void TryRead_WhereComparingColumnsToAParameterAndALiteral_YieldsBothColumns()
+    {
+        Assert.True(SqlStatementReader.TryRead(
+            "SELECT Id FROM Orders WHERE Id = @id AND Status = 'Paid'", out var statement));
+
+        Assert.Equal(["Id", "Status"], statement.FilterColumns.ToArray());
+    }
+
+    // DAD-26: the WHERE clause of a write statement is read on the same terms.
+    [Fact]
+    public void TryRead_DeleteWithAWhereClause_YieldsTheFilterColumn()
+    {
+        Assert.True(SqlStatementReader.TryRead(
+            "DELETE FROM Orders WHERE Id = @id", out var statement));
+
+        Assert.Equal(["Id"], statement.FilterColumns.ToArray());
+    }
+
+    // T25: an alias-qualified reference yields the column's own name; the alias is not part of it.
+    [Fact]
+    public void TryRead_AliasQualifiedFilterColumn_YieldsTheColumnNameWithoutTheAlias()
+    {
+        Assert.True(SqlStatementReader.TryRead(
+            "SELECT o.Id FROM Orders o WHERE o.Id = @id", out var statement));
+
+        Assert.Equal(["Id"], statement.FilterColumns.ToArray());
+    }
+
+    // DAD-26: every comparison operator the reader recognises proves the same filter.
+    [Theory]
+    [InlineData("SELECT Id FROM Orders WHERE Amount = 10")]
+    [InlineData("SELECT Id FROM Orders WHERE Amount <> 10")]
+    [InlineData("SELECT Id FROM Orders WHERE Amount != 10")]
+    [InlineData("SELECT Id FROM Orders WHERE Amount < 10")]
+    [InlineData("SELECT Id FROM Orders WHERE Amount > 10")]
+    [InlineData("SELECT Id FROM Orders WHERE Amount <= 10")]
+    [InlineData("SELECT Id FROM Orders WHERE Amount >= 10")]
+    public void TryRead_ComparisonOperator_YieldsTheComparedColumn(string sql)
+    {
+        Assert.True(SqlStatementReader.TryRead(sql, out var statement));
+
+        Assert.Equal(["Amount"], statement.FilterColumns.ToArray());
+    }
+
+    // DAD-26: one entry per filtered column, however many times the clause compares it.
+    [Fact]
+    public void TryRead_ColumnFilteredTwice_YieldsThatColumnOnce()
+    {
+        Assert.True(SqlStatementReader.TryRead(
+            "SELECT Id FROM Orders WHERE Id = @first OR Id = @second", out var statement));
+
+        Assert.Equal(["Id"], statement.FilterColumns.ToArray());
+    }
+
+    // T25: a WHERE clause the reader cannot parse yields no columns rather than a guess.
+    [Theory]
+    [InlineData("SELECT Id FROM Orders WHERE EXISTS (SELECT 1 FROM Payments)")]
+    [InlineData("SELECT Id FROM Orders WHERE (Amount + Tax) > 10")]
+    [InlineData("SELECT Id FROM Orders WHERE Status = Total")]
+    [InlineData("SELECT Id FROM Orders WHERE [Status] = 'Paid'")]
+    public void TryRead_UnreadableWhereClause_YieldsNoFilterColumns(string sql)
+    {
+        Assert.True(SqlStatementReader.TryRead(sql, out var statement));
+
+        Assert.Empty(statement.FilterColumns);
+    }
+
+    // T25: a statement with no WHERE clause proves no filter columns.
+    [Theory]
+    [InlineData("SELECT Id FROM Orders")]
+    [InlineData("INSERT INTO Orders (Id) VALUES (1)")]
+    [InlineData("EXEC usp_GetOrder")]
+    public void TryRead_StatementWithoutAWhereClause_YieldsNoFilterColumns(string sql)
+    {
+        Assert.True(SqlStatementReader.TryRead(sql, out var statement));
+
+        Assert.Empty(statement.FilterColumns);
+    }
+
     // T23: the reader keys off the first significant token only, so a sentence merely containing a
     // SQL verb is not a statement (spec Edge Case: a verb used as a message).
     [Theory]

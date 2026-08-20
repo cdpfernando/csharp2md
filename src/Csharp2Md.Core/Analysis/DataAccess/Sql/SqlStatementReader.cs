@@ -13,6 +13,7 @@ internal readonly record struct SqlStatement(
     string? Target)
 {
     private readonly ImmutableArray<string> _writtenColumns;
+    private readonly ImmutableArray<string> _filterColumns;
 
     /// <summary>
     /// DAD-24 and DAD-25: the columns the statement proves it writes - an <c>INSERT</c> column list or
@@ -22,6 +23,16 @@ internal readonly record struct SqlStatement(
     {
         get => _writtenColumns.IsDefault ? [] : _writtenColumns;
         init => _writtenColumns = value;
+    }
+
+    /// <summary>
+    /// DAD-26: the columns a <c>WHERE</c> clause proves it filters by, one entry per column. Empty
+    /// whenever there is no clause or none of its predicates is readable.
+    /// </summary>
+    public ImmutableArray<string> FilterColumns
+    {
+        get => _filterColumns.IsDefault ? [] : _filterColumns;
+        init => _filterColumns = value;
     }
 }
 
@@ -95,8 +106,39 @@ internal static class SqlStatementReader
         statement = new SqlStatement(operation, ObjectKindOfVerb(first.Text), target)
         {
             WrittenColumns = ReadWrittenColumns(first.Text, tokens, afterTarget),
+            FilterColumns = ReadFilterColumns(tokens),
         };
         return true;
+    }
+
+    /// <summary>
+    /// DAD-26: every column a <c>WHERE</c> predicate compares against a literal or a parameter. The
+    /// column is the identifier immediately left of the operator, which is why an alias-qualified
+    /// <c>o.Id</c> yields <c>Id</c>: the alias sits behind a separator token and is never the column.
+    /// A predicate of any other shape contributes nothing rather than a guess.
+    /// </summary>
+    private static ImmutableArray<string> ReadFilterColumns(List<SqlToken> tokens)
+    {
+        var index = IndexAfterKeyword(tokens, "WHERE");
+        if (index < 0)
+        {
+            return [];
+        }
+
+        var columns = ImmutableArray.CreateBuilder<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (var cursor = index; cursor + 2 < tokens.Count; cursor++)
+        {
+            if (tokens[cursor].Kind == SqlTokenKind.Word
+                && tokens[cursor + 1].Kind == SqlTokenKind.Operator
+                && tokens[cursor + 2].Kind is SqlTokenKind.Literal or SqlTokenKind.Parameter
+                && seen.Add(tokens[cursor].Text))
+            {
+                columns.Add(tokens[cursor].Text);
+            }
+        }
+
+        return columns.ToImmutable();
     }
 
     /// <summary>
