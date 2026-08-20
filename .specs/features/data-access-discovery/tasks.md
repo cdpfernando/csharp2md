@@ -598,12 +598,12 @@ documents that produced one, and emits a canonically ordered snapshot.
 
 **Done when**:
 
-- [ ] A `DbContext` subclass with two `DbSet<T>` properties yields exactly two claims with the right entity
+- [x] A `DbContext` subclass with two `DbSet<T>` properties yields exactly two claims with the right entity
       names
-- [ ] A `DbSet<T>` property on a type that does not derive from `DbContext` yields nothing (spec Edge Case)
-- [ ] A class named `OrderRepository` with no persistence API usage yields nothing (DAD-17)
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] A `DbSet<T>` property on a type that does not derive from `DbContext` yields nothing (spec Edge Case)
+- [x] A class named `OrderRepository` with no persistence API usage yields nothing (DAD-17)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
