@@ -478,10 +478,10 @@ analyzers attach without touching the collector.
 
 **Done when**:
 
-- [ ] Interface declared with the identity and `Analyze` members from design.md
-- [ ] A test double implementing it compiles and appends a claim, proving the seam is usable
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Interface declared with the identity and `Analyze` members from design.md
+- [x] A test double implementing it compiles and appends a claim, proving the seam is usable
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
