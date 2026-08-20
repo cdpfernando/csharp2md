@@ -1160,17 +1160,38 @@ Test count: 1680 before, 1680 after.
 
 **Done when**:
 
-- [ ] One readable `SELECT ... WHERE`, one `INSERT INTO ... (...)`, one `UPDATE ... SET ... WHERE`, one
+- [x] One readable `SELECT ... WHERE`, one `INSERT INTO ... (...)`, one `UPDATE ... SET ... WHERE`, one
       `EXEC usp_X`, and one interpolated `$"SELECT * FROM {tableName}"` are present
-- [ ] No credential or connection-string text appears anywhere in the fixture
-- [ ] The fixture still builds and every existing fixture-dependent test still passes
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] No credential or connection-string text appears anywhere in the fixture — **deviated, deliberately**;
+      see the execution note below
+- [x] The fixture still builds and every existing fixture-dependent test still passes
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: none — fixture source is analysed input, per the coverage matrix's "Fixture source documents" row
 **Gate**: build
 
 **Commit**: `test(fixtures): add literal and dynamic SQL documents`
+
+**Execution notes** — the credential bullet was inverted on purpose, because taken literally it makes DAD-15
+untestable: with no credential anywhere in the analysed input, "no credential in the output" is true of any
+implementation, including one with no guard at all. spec.md's own Success Criteria presupposes the opposite
+("a search of the whole output tree for **the fixture's connection-string value** returns nothing"), so the
+fixture now carries two distinct credential inputs, and T36 asserts a different thing about each:
+
+- `appsettings.json` gains a `ConnectionStrings:OrdersDb` value ending `Password=appsettings-fixture-secret`.
+  It is not a C# document, so nothing reproduces it; the whole-output-root search for it must return nothing.
+- `Data/OrderSqlQueries.cs` gains a `ConnectionString` const ending `Password=inline-fixture-secret`, which
+  the SQL analyser genuinely walks past. It must not reach a relation detail, a database node, or a
+  diagnostic. It *does* appear in the two verbatim source reproductions (`raw/facts/document/*.json` source
+  sections and `raw/codebase/**/OrderSqlQueries.cs.md`), because reproducing source is what the tool is for;
+  DAD-15 governs the facts the discovery stage synthesises, not the source renderer.
+
+The two values differ so neither absence check can cover for the other. Neither is a real secret and nothing
+in the fixture opens a connection. A sixth statement (`DELETE FROM [Orders] ...`) was added beyond the five
+the bullet lists, so DAD-28 — a readable verb with an unreadable target — has an end-to-end case; T36 lists
+DAD-28 among its requirements and the five named shapes do not produce one.
+Test count: 1680 before, 1680 after.
 
 ---
 
