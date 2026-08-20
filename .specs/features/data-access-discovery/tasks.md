@@ -1027,12 +1027,12 @@ solution-level fragment through the existing store.
 
 **Done when**:
 
-- [ ] The fragment validates cleanly with the retained extents from T14
-- [ ] A validation failure is surfaced as a structural failure exactly as a document fragment's is, with no
+- [x] The fragment validates cleanly with the retained extents from T14
+- [x] A validation failure is surfaced as a structural failure exactly as a document fragment's is, with no
       new failure semantics
-- [ ] The fragment appears in the manifest with a correct hash and byte length
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] The fragment appears in the manifest with a correct hash and byte length
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
