@@ -1,3 +1,5 @@
+using Csharp2Md.Core.Facts.Identity;
+
 namespace Csharp2Md.Core.Facts.Model;
 
 /// <summary>
@@ -41,6 +43,26 @@ public enum ColumnUsage
     Aggregate,
     Unknown,
 }
+
+/// <summary>
+/// A database object whose name was proven by a source literal or explicit configuration. A name that is
+/// only inferred never becomes a node, so this fact never carries a guessed <see cref="Name"/>.
+/// </summary>
+public sealed record DatabaseObjectFact(
+    FactHeader Header,
+    DatabaseObjectFactId ObjectId,
+    string ConnectionName,
+    DatabaseObjectKind Kind,
+    string Name) : IFact;
+
+/// <summary>
+/// A column of a <see cref="DatabaseObjectFact"/>, on the same proven-name terms.
+/// </summary>
+public sealed record DatabaseColumnFact(
+    FactHeader Header,
+    DatabaseColumnFactId ColumnId,
+    DatabaseObjectFactId ObjectId,
+    string Name) : IFact;
 
 /// <summary>
 /// Wire names for the persistence enums. Each mapping is written out rather than derived by lowercasing,

@@ -32,7 +32,7 @@
   },
   "$defs": {
     "fact_resolution": { "enum": ["exact", "partial", "syntactic", "heuristic", "candidate", "unresolved", "not-applicable"] },
-    "fact_kind": { "enum": ["solution", "project", "target", "document", "source-section", "symbol", "component", "relation"] },
+    "fact_kind": { "enum": ["solution", "project", "target", "document", "source-section", "symbol", "component", "relation", "database-object", "database-column"] },
     "relation_partition": { "enum": ["compile-time", "inheritance", "dependency-injection", "http", "grpc", "events", "structural"] },
     "fact_level": { "enum": ["solution", "project", "target", "document", "detector"] },
     "coverage_applicability": { "enum": ["applicable", "not-applicable"] },

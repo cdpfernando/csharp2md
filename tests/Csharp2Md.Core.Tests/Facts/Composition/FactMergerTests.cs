@@ -232,6 +232,62 @@ public sealed class FactMergerTests
             reversed.Facts.Select(static fact => fact.Header.Id));
     }
 
+    [Fact]
+    public void IdenticalDatabaseObjectClaims_MergeIntoOneFactWithoutAStructuralConflict()
+    {
+        var result = FactMerger.Merge([DatabaseObject(FactResolution.Exact)], [DatabaseObject(FactResolution.Exact)]);
+
+        Assert.True(result.IsValid);
+        var merged = Assert.IsType<DatabaseObjectFact>(Assert.Single(result.Facts));
+        Assert.Equal(TableId, merged.ObjectId);
+        Assert.Equal(FactKind.DatabaseObject, merged.Header.Kind);
+        Assert.Equal("tb_order", merged.Name);
+    }
+
+    [Fact]
+    public void DatabaseObjectClaim_AtHigherResolution_WinsAndUnionsProvenance()
+    {
+        var result = FactMerger.Merge(
+            [DatabaseObject(FactResolution.Heuristic, new FactProvenance("syntax", "1"))],
+            [DatabaseObject(FactResolution.Exact, new FactProvenance("configuration", "1"))]);
+
+        Assert.True(result.IsValid);
+        var merged = Assert.IsType<DatabaseObjectFact>(Assert.Single(result.Facts));
+        Assert.Equal(FactResolution.Exact, merged.Header.Resolution);
+        Assert.Equal(
+            [new FactProvenance("configuration", "1"), new FactProvenance("syntax", "1")],
+            merged.Header.Provenance.ToArray());
+    }
+
+    [Fact]
+    public void IdenticalDatabaseColumnClaims_MergeIntoOneFactWithoutAStructuralConflict()
+    {
+        var result = FactMerger.Merge([DatabaseColumn(FactResolution.Exact)], [DatabaseColumn(FactResolution.Exact)]);
+
+        Assert.True(result.IsValid);
+        var merged = Assert.IsType<DatabaseColumnFact>(Assert.Single(result.Facts));
+        Assert.Equal(TableId, merged.ObjectId);
+        Assert.Equal("order_status", merged.Name);
+    }
+
+    private static readonly DatabaseObjectFactId TableId =
+        DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, "tb_order");
+
+    private static readonly DatabaseColumnFactId ColumnId = DatabaseColumnFactId.Create(TableId, "order_status");
+
+    private static DatabaseObjectFact DatabaseObject(FactResolution resolution, FactProvenance? provenance = null) => new(
+        Header(TableId.ToFactId(), FactKind.DatabaseObject, resolution, provenance ?? new FactProvenance("syntax", "1")),
+        TableId,
+        DatabaseObjectFactId.UnknownConnection,
+        DatabaseObjectKind.Table,
+        "tb_order");
+
+    private static DatabaseColumnFact DatabaseColumn(FactResolution resolution) => new(
+        Header(ColumnId.ToFactId(), FactKind.DatabaseColumn, resolution, new FactProvenance("syntax", "1")),
+        ColumnId,
+        TableId,
+        "order_status");
+
     private static DocumentFact Document(ImmutableArray<SymbolFactId> symbols) => new(
         Header(DocumentId.ToFactId(), FactKind.Document, FactResolution.Syntactic, new("syntax", "1")),
         DocumentId,

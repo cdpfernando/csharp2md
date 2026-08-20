@@ -213,7 +213,11 @@ internal static class FactualJsonMapper
             evidence.EndLine, evidence.EndColumn);
 
     private static string Wire<T>(T value) where T : struct, Enum =>
-        value.ToString().Replace("SourceSection", "source-section", StringComparison.Ordinal).ToLowerInvariant();
+        value.ToString()
+            .Replace("SourceSection", "source-section", StringComparison.Ordinal)
+            .Replace("DatabaseObject", "database-object", StringComparison.Ordinal)
+            .Replace("DatabaseColumn", "database-column", StringComparison.Ordinal)
+            .ToLowerInvariant();
 
     internal static string WireRelationPartition(RelationPartition partition) => partition switch
     {

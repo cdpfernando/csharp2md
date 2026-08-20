@@ -292,12 +292,13 @@ than one path stops producing duplicate documents, fragments and coverage scopes
 
 **Done when**:
 
-- [ ] Both records implement `IFact` and carry their typed id plus the fields from design.md
-- [ ] `FactKind` gains `DatabaseObject` and `DatabaseColumn`
-- [ ] Every exhaustive `switch` over `FactKind` or `IFact` in the solution compiles — the build is the check,
-      and each site is handled deliberately rather than by a catch-all
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Both records implement `IFact` and carry their typed id plus the fields from design.md
+- [x] `FactKind` gains `DatabaseObject` and `DatabaseColumn`
+- [x] Every exhaustive `switch` over `FactKind` or `IFact` in the solution compiles — the build is the check,
+      and each site is handled deliberately rather than by a catch-all — `FactMerger.ClaimsEqual` and
+      `FactMerger.WithHeader` each gained explicit arms
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions) — 1430 -> 1436 (+6)
 
 **Tests**: unit
 **Gate**: build

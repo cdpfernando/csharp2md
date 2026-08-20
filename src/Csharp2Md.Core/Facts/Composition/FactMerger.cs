@@ -191,6 +191,15 @@ internal static class FactMerger
             && left.RelationKind == right.RelationKind
             && left.UnresolvedReason == right.UnresolvedReason
             && left.Details.SequenceEqual(right.Details),
+        (DatabaseObjectFact left, DatabaseObjectFact right) =>
+            left.ObjectId == right.ObjectId
+            && left.ConnectionName == right.ConnectionName
+            && left.Kind == right.Kind
+            && left.Name == right.Name,
+        (DatabaseColumnFact left, DatabaseColumnFact right) =>
+            left.ColumnId == right.ColumnId
+            && left.ObjectId == right.ObjectId
+            && left.Name == right.Name,
         _ => false,
     };
 
@@ -260,6 +269,8 @@ internal static class FactMerger
         SymbolFact value => value with { Header = header },
         ComponentFact value => value with { Header = header },
         RelationFact value => value with { Header = header },
+        DatabaseObjectFact value => value with { Header = header },
+        DatabaseColumnFact value => value with { Header = header },
         _ => throw new ArgumentOutOfRangeException(nameof(fact), fact.GetType(), "Unsupported factual type."),
     };
 

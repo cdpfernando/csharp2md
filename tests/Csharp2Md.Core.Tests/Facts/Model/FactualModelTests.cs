@@ -76,6 +76,7 @@ public sealed class FactualModelTests
         {
             typeof(SolutionFact), typeof(ProjectFact), typeof(TargetFact), typeof(DocumentFact),
             typeof(SourceSectionFact), typeof(SymbolFact), typeof(ComponentFact), typeof(RelationFact), typeof(CoverageFact),
+            typeof(DatabaseObjectFact), typeof(DatabaseColumnFact),
         };
 
         var forbiddenNamespacePrefixes = new[]
@@ -165,6 +166,58 @@ public sealed class FactualModelTests
         Assert.Equal(
             ["HardCoded", "Dynamic", "Unresolved", "NotApplicable"],
             Enum.GetNames<ConfigurationResolution>());
+    }
+
+    [Fact]
+    public void FactKind_DeclaresThePersistenceNodeMembers() =>
+        Assert.Equal(
+            ["Solution", "Project", "Target", "Document", "SourceSection", "Symbol", "Component", "Relation", "DatabaseObject", "DatabaseColumn"],
+            Enum.GetNames<FactKind>());
+
+    [Fact]
+    public void DatabaseObjectFact_IsAFactCarryingItsTypedIdentityConnectionKindAndProvenName()
+    {
+        var objectId = DatabaseObjectFactId.Create(
+            DatabaseObjectFactId.UnknownConnection,
+            DatabaseObjectKind.Table,
+            "tb_order");
+        var fact = new DatabaseObjectFact(
+            Header(objectId.ToFactId(), FactKind.DatabaseObject, FactResolution.Exact),
+            objectId,
+            DatabaseObjectFactId.UnknownConnection,
+            DatabaseObjectKind.Table,
+            "tb_order");
+
+        Assert.IsAssignableFrom<IFact>(fact);
+        Assert.Equal(objectId, fact.ObjectId);
+        Assert.Equal(objectId.ToFactId(), fact.Header.Id);
+        Assert.Equal(FactKind.DatabaseObject, fact.Header.Kind);
+        Assert.Equal("unknown", fact.ConnectionName);
+        Assert.Equal(DatabaseObjectKind.Table, fact.Kind);
+        Assert.Equal("tb_order", fact.Name);
+        Assert.Equal(FactResolution.Exact, fact.Header.Resolution);
+    }
+
+    [Fact]
+    public void DatabaseColumnFact_IsAFactReferencingItsOwningObjectAndProvenName()
+    {
+        var objectId = DatabaseObjectFactId.Create(
+            DatabaseObjectFactId.UnknownConnection,
+            DatabaseObjectKind.Table,
+            "tb_order");
+        var columnId = DatabaseColumnFactId.Create(objectId, "order_status");
+        var fact = new DatabaseColumnFact(
+            Header(columnId.ToFactId(), FactKind.DatabaseColumn, FactResolution.Exact),
+            columnId,
+            objectId,
+            "order_status");
+
+        Assert.IsAssignableFrom<IFact>(fact);
+        Assert.Equal(columnId, fact.ColumnId);
+        Assert.Equal(columnId.ToFactId(), fact.Header.Id);
+        Assert.Equal(FactKind.DatabaseColumn, fact.Header.Kind);
+        Assert.Equal(objectId, fact.ObjectId);
+        Assert.Equal("order_status", fact.Name);
     }
 
     [Fact]
