@@ -18,9 +18,6 @@ internal interface IAggregateFileWriter
 
 internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = null)
 {
-    private static readonly string[] RelationPartitions =
-        ["compile-time", "inheritance", "dependency-injection", "http", "grpc", "events"];
-
     private IAggregateFileWriter? _files = files;
 
     public AggregateWriteResult Write(
@@ -58,10 +55,15 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
 
         files.Write("raw/facts/solutions.json", Json(new AggregateEnvelope(2, "solutions", [])));
         var relationProjection = snapshot.Relations;
-        foreach (var partition in RelationPartitions)
+
+        // Projected over the enum, not a hand-kept name list: a new RelationPartition member cannot be
+        // silently left without an aggregate file, and the wire name comes from the same mapper the
+        // fragments are serialized with.
+        foreach (var partition in Enum.GetValues<RelationPartition>())
         {
-            var projected = relationProjection?.Partition(ParsePartition(partition));
-            files.Write($"raw/facts/relations/{partition}.json", Json(new RelationAggregate(2, partition, projected?.Relations ?? [])));
+            var wireName = FactualJsonMapper.WireRelationPartition(partition);
+            var projected = relationProjection?.Partition(partition);
+            files.Write($"raw/facts/relations/{wireName}.json", Json(new RelationAggregate(2, wireName, projected?.Relations ?? [])));
         }
 
         var honestCoverage = snapshot.HonestCoverage ?? CoverageProjectionResult.Empty;
@@ -162,18 +164,6 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
             .Replace("syntaxonly", "syntax-only", StringComparison.Ordinal)
             .Replace("notapplicable", "not-applicable", StringComparison.Ordinal)
             .Replace("notattempted", "not-attempted", StringComparison.Ordinal);
-
-    private static RelationPartition ParsePartition(string partition) => partition switch
-    {
-        "compile-time" => RelationPartition.CompileTime,
-        "inheritance" => RelationPartition.Inheritance,
-        "dependency-injection" => RelationPartition.DependencyInjection,
-        "http" => RelationPartition.Http,
-        "grpc" => RelationPartition.Grpc,
-        "events" => RelationPartition.Events,
-        "structural" => RelationPartition.Structural,
-        _ => throw new ArgumentOutOfRangeException(nameof(partition), partition, "Unsupported relation partition."),
-    };
 
     private sealed class LocalAggregateFileWriter(string root) : IAggregateFileWriter
     {

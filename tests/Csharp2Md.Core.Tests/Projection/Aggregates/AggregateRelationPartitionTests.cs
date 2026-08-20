@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.Analysis.Contracts;
+using Csharp2Md.Core.Facts.Model;
 using Csharp2Md.Core.Tests.Pipeline;
 using Csharp2Md.Core.Topic;
 
@@ -27,6 +28,29 @@ public sealed class AggregateRelationPartitionTests(AggregateRelationPartitionFi
         Assert.Contains(entries, entry => entry.GetProperty("relation_kind").GetString() == "http-call");
         Assert.Contains(entries, entry => entry.GetProperty("relation_kind").GetString() == "http-client");
         Assert.All(entries, entry => Assert.Equal("http", entry.GetProperty("partition").GetString()));
+    }
+
+    [Fact]
+    public void EveryRelationPartitionMember_HasItsOwnWrittenAggregateFile()
+    {
+        var written = fixture.WrittenPartitionNames();
+
+        Assert.Equal(Enum.GetValues<RelationPartition>().Length, written.Length);
+        Assert.Contains("structural", written, StringComparer.Ordinal);
+    }
+
+    [Fact]
+    public void StructuralPartitionFile_CarriesTheFixturesCallsCreatesAndReferencesRelations()
+    {
+        using var partition = fixture.ReadPartition("structural");
+
+        var kinds = partition.RootElement.GetProperty("entries").EnumerateArray()
+            .Select(entry => entry.GetProperty("relation_kind").GetString())
+            .ToArray();
+
+        Assert.Contains("calls", kinds, StringComparer.Ordinal);
+        Assert.Contains("creates", kinds, StringComparer.Ordinal);
+        Assert.Contains("references", kinds, StringComparer.Ordinal);
     }
 }
 
@@ -66,5 +90,13 @@ public sealed class AggregateRelationPartitionFixture : IAsyncLifetime
         JsonDocument.Parse(File.ReadAllText(PartitionPath(wireName)));
 
     public string PartitionPath(string wireName) =>
-        Path.Combine(TopicLayout.RawRoot(Output), "facts", "relations", wireName + ".json");
+        Path.Combine(PartitionDirectory, wireName + ".json");
+
+    public string PartitionDirectory => Path.Combine(TopicLayout.RawRoot(Output), "facts", "relations");
+
+    public string[] WrittenPartitionNames() =>
+        Directory.EnumerateFiles(PartitionDirectory, "*.json")
+            .Select(Path.GetFileNameWithoutExtension)
+            .Order(StringComparer.Ordinal)
+            .ToArray()!;
 }

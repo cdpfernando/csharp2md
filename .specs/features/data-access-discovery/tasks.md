@@ -174,12 +174,12 @@ projection over `RelationPartition`, so `structural` is written and no future me
 
 **Done when**:
 
-- [ ] A test asserting one written file per `RelationPartition` enum member is written first and observed to
+- [x] A test asserting one written file per `RelationPartition` enum member is written first and observed to
       FAIL (7 expected, 6 written)
-- [ ] `structural.json` is written and contains the fixture's `calls`/`creates`/`references` relations
-- [ ] The wire-name mapping is not duplicated — the writer and `FactStore` agree by construction
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] `structural.json` is written and contains the fixture's `calls`/`creates`/`references` relations
+- [x] The wire-name mapping is not duplicated — the writer and `FactStore` agree by construction
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: integration
 **Gate**: full

@@ -215,7 +215,7 @@ internal static class FactualJsonMapper
     private static string Wire<T>(T value) where T : struct, Enum =>
         value.ToString().Replace("SourceSection", "source-section", StringComparison.Ordinal).ToLowerInvariant();
 
-    private static string WireRelationPartition(RelationPartition partition) => partition switch
+    internal static string WireRelationPartition(RelationPartition partition) => partition switch
     {
         RelationPartition.CompileTime => "compile-time",
         RelationPartition.Inheritance => "inheritance",

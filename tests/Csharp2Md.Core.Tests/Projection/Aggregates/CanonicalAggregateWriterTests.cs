@@ -156,7 +156,7 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
         "raw/facts/diagnostics.json", "raw/facts/manifest.json", "raw/facts/relations/compile-time.json",
         "raw/facts/relations/dependency-injection.json", "raw/facts/relations/events.json",
         "raw/facts/relations/grpc.json", "raw/facts/relations/http.json", "raw/facts/relations/inheritance.json",
-        "raw/facts/solutions.json", "raw/log.md", "raw/topic.yaml",
+        "raw/facts/relations/structural.json", "raw/facts/solutions.json", "raw/log.md", "raw/topic.yaml",
     ];
 
     private static readonly string[] ExpectedDirectories =
