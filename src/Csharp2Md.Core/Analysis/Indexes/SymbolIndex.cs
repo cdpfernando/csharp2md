@@ -27,7 +27,66 @@ internal interface ISymbolIndex
     SymbolLookupResult FindCandidates(SymbolLookup lookup);
 
     ImmutableArray<AnalysisDiagnostic> Diagnostics { get; }
+
+    SymbolIndexMetrics Metrics { get; }
 }
+
+/// <summary>
+/// A display/filter-only classification of <see cref="SymbolFact.SymbolKind"/>. Kinds the spec does
+/// not name individually land in <see cref="Other"/> rather than being dropped, so every indexed
+/// symbol still counts exactly once.
+/// </summary>
+public enum IndexedSymbolKind
+{
+    Namespace,
+    Class,
+    Struct,
+    RecordClass,
+    RecordStruct,
+    Interface,
+    Enum,
+    Delegate,
+    Constructor,
+    Method,
+    Property,
+    Field,
+    Event,
+    Other,
+}
+
+/// <summary>
+/// The pure mapping from the wire string <c>SyntaxFactExtractor.DeclarationKind</c> produces onto
+/// <see cref="IndexedSymbolKind"/>. Total by construction: an unrecognised kind is
+/// <see cref="IndexedSymbolKind.Other"/>, never an error and never a dropped symbol.
+/// </summary>
+internal static class IndexedSymbolKindMap
+{
+    public static IndexedSymbolKind From(string symbolKind) => symbolKind switch
+    {
+        "namespace" => IndexedSymbolKind.Namespace,
+        "class" => IndexedSymbolKind.Class,
+        "struct" => IndexedSymbolKind.Struct,
+        "record" => IndexedSymbolKind.RecordClass,
+        "record-struct" => IndexedSymbolKind.RecordStruct,
+        "interface" => IndexedSymbolKind.Interface,
+        "enum" => IndexedSymbolKind.Enum,
+        "delegate" => IndexedSymbolKind.Delegate,
+        "constructor" => IndexedSymbolKind.Constructor,
+        "method" => IndexedSymbolKind.Method,
+        "property" => IndexedSymbolKind.Property,
+        "field" => IndexedSymbolKind.Field,
+        "event" => IndexedSymbolKind.Event,
+        _ => IndexedSymbolKind.Other,
+    };
+}
+
+/// <summary>Summary counts describing what an index ended up containing.</summary>
+public sealed record SymbolIndexMetrics(
+    int TotalSymbols,
+    ImmutableDictionary<FactResolution, int> ByResolution,
+    ImmutableDictionary<IndexedSymbolKind, int> ByKind,
+    int DuplicateIdCount,
+    int AmbiguousSimpleNameCount);
 
 /// <summary>
 /// The query shape for <see cref="ISymbolIndex.FindMethods"/>. <see cref="ArgumentCount"/> filters
@@ -112,8 +171,10 @@ internal sealed class SymbolIndex : ISymbolIndex
         FrozenDictionary<(string ContainingType, string Name), ImmutableArray<SymbolFact>> byMember,
         FrozenDictionary<string, SymbolFact> byIdValue,
         FrozenDictionary<DocumentFactId, string> projectByDocument,
-        ImmutableArray<AnalysisDiagnostic> diagnostics)
+        ImmutableArray<AnalysisDiagnostic> diagnostics,
+        SymbolIndexMetrics metrics)
     {
+        Metrics = metrics;
         _byId = byId;
         _byName = byName;
         _byQualifiedName = byQualifiedName;
@@ -128,6 +189,9 @@ internal sealed class SymbolIndex : ISymbolIndex
     /// the build: an inconsistent input degrades to an entry here and the index stays queryable.
     /// </summary>
     public ImmutableArray<AnalysisDiagnostic> Diagnostics { get; }
+
+    /// <summary>Summary counts for what this index contains, computed once when it was built.</summary>
+    public SymbolIndexMetrics Metrics { get; }
 
     /// <summary>Every indexed symbol, ordered by <see cref="SymbolFactId"/> ordinal.</summary>
     public ImmutableArray<SymbolFact> Symbols =>
@@ -329,6 +393,10 @@ internal sealed class SymbolIndex : ISymbolIndex
 /// </summary>
 internal static class SymbolIndexBuilder
 {
+    private const string DuplicatedSymbolIdCode = "C2M-SYMIDX-001";
+    private const string InvalidContainingSymbolCode = "C2M-SYMIDX-002";
+    private const string AmbiguousSymbolLookupCode = "C2M-SYMIDX-003";
+
     public static SymbolIndex Build(
         IEnumerable<SymbolFact> symbols,
         IEnumerable<ProjectFact> projects,
@@ -345,6 +413,7 @@ internal static class SymbolIndexBuilder
             .GroupBy(static symbol => symbol.SymbolId)
             .ToImmutableArray();
         var distinct = byIdentity.Select(static group => group.First()).ToImmutableArray();
+        var diagnostics = Diagnose(byIdentity, distinct);
 
         return new SymbolIndex(
             distinct.ToFrozenDictionary(static symbol => symbol.SymbolId),
@@ -362,8 +431,26 @@ internal static class SymbolIndexBuilder
                 .ToFrozenDictionary(
                     static group => group.Key,
                     static group => group.First().ProjectId.Value),
-            Diagnose(byIdentity, distinct));
+            diagnostics,
+            Measure(distinct, diagnostics));
     }
+
+    /// <summary>
+    /// The summary counts spec.md's P3 criterion 4 asks for, computed once from the same collapsed
+    /// symbol set and diagnostic list the index itself was built from.
+    /// </summary>
+    private static SymbolIndexMetrics Measure(
+        ImmutableArray<SymbolFact> distinct,
+        ImmutableArray<AnalysisDiagnostic> diagnostics) =>
+        new(distinct.Length,
+            distinct
+                .GroupBy(static symbol => symbol.Header.Resolution)
+                .ToImmutableDictionary(static group => group.Key, static group => group.Count()),
+            distinct
+                .GroupBy(static symbol => IndexedSymbolKindMap.From(symbol.SymbolKind))
+                .ToImmutableDictionary(static group => group.Key, static group => group.Count()),
+            diagnostics.Count(static diagnostic => diagnostic.Code == DuplicatedSymbolIdCode),
+            diagnostics.Count(static diagnostic => diagnostic.Code == AmbiguousSymbolLookupCode));
 
     /// <summary>
     /// Everything inconsistent about the supplied facts, scanned once here at build-completion time
@@ -379,7 +466,7 @@ internal static class SymbolIndexBuilder
         {
             var kept = collision.First();
             diagnostics.Add(Diagnostic(
-                "C2M-SYMIDX-001",
+                DuplicatedSymbolIdCode,
                 "duplicated-symbol-id",
                 DiagnosticSeverity.Warning,
                 kept.Header.Id,
@@ -394,7 +481,7 @@ internal static class SymbolIndexBuilder
             if (symbol.ContainingSymbolId is { } containing && !identities.Contains(containing))
             {
                 diagnostics.Add(Diagnostic(
-                    "C2M-SYMIDX-002",
+                    InvalidContainingSymbolCode,
                     "invalid-containing-symbol",
                     DiagnosticSeverity.Warning,
                     symbol.Header.Id,
@@ -414,7 +501,7 @@ internal static class SymbolIndexBuilder
         {
             var first = group.First();
             diagnostics.Add(Diagnostic(
-                "C2M-SYMIDX-003",
+                AmbiguousSymbolLookupCode,
                 "ambiguous-symbol-lookup",
                 DiagnosticSeverity.Information,
                 first.Header.Id,

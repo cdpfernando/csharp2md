@@ -552,6 +552,140 @@ public sealed class SymbolIndexTests
         Assert.Empty(index.Diagnostics);
     }
 
+    /// <summary>
+    /// Every string <c>SyntaxFactExtractor.DeclarationKind</c> can produce, paired with the one
+    /// <see cref="IndexedSymbolKind"/> it must map to. The kinds spec.md section 5 does not name
+    /// individually map to <c>Other</c> - bucketed, never dropped.
+    /// </summary>
+    public static TheoryData<string, IndexedSymbolKind> DeclarationKinds => new()
+    {
+        { "namespace", IndexedSymbolKind.Namespace },
+        { "class", IndexedSymbolKind.Class },
+        { "struct", IndexedSymbolKind.Struct },
+        { "record", IndexedSymbolKind.RecordClass },
+        { "record-struct", IndexedSymbolKind.RecordStruct },
+        { "interface", IndexedSymbolKind.Interface },
+        { "enum", IndexedSymbolKind.Enum },
+        { "delegate", IndexedSymbolKind.Delegate },
+        { "constructor", IndexedSymbolKind.Constructor },
+        { "method", IndexedSymbolKind.Method },
+        { "property", IndexedSymbolKind.Property },
+        { "field", IndexedSymbolKind.Field },
+        { "event", IndexedSymbolKind.Event },
+        { "destructor", IndexedSymbolKind.Other },
+        { "indexer", IndexedSymbolKind.Other },
+        { "operator", IndexedSymbolKind.Other },
+        { "conversion-operator", IndexedSymbolKind.Other },
+        { "enum-member", IndexedSymbolKind.Other },
+        { "member", IndexedSymbolKind.Other },
+    };
+
+    [Theory]
+    [MemberData(nameof(DeclarationKinds))]
+    public void IndexedSymbolKindMap_EveryDeclarationKind_MapsToExactlyOneIndexedSymbolKind(
+        string declarationKind,
+        IndexedSymbolKind expected) =>
+        Assert.Equal(expected, IndexedSymbolKindMap.From(declarationKind));
+
+    [Fact]
+    public void IndexedSymbolKindMap_CoversEveryKindTheExtractorActuallyProduces()
+    {
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/AllForms.cs", """
+            namespace Sample;
+
+            public delegate void Callback();
+
+            public enum Level { Low }
+
+            public interface IThing { }
+
+            public readonly record struct Point(int X);
+
+            public record Person(string Name);
+
+            public struct Box { public int Value; }
+
+            public class Everything : IThing
+            {
+                public int Field;
+                public event Callback? Changed;
+                public Everything() { }
+                ~Everything() { }
+                public int Property { get; set; }
+                public int this[int index] => index;
+                public void Method() { }
+                public static Everything operator +(Everything left, Everything right) => left;
+                public static explicit operator int(Everything value) => 0;
+            }
+            """);
+
+        var produced = extraction.Symbols
+            .Select(static symbol => symbol.SymbolKind)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        var mapped = DeclarationKinds.Select(static row => (string)row[0]).ToArray();
+
+        // The fixture really does exercise a broad spread of declaration forms...
+        Assert.True(produced.Length >= 18, $"fixture only produced {produced.Length} kinds: {string.Join(", ", produced)}");
+
+        // ...and not one of them falls outside the mapping table above.
+        Assert.All(produced, kind => Assert.Contains(kind, mapped));
+    }
+
+    [Fact]
+    public void Metrics_TotalSymbols_EqualsTheIndexedCountAfterDuplicatesCollapse()
+    {
+        var kept = Symbol("Duplicated", "global::Acme.Duplicated");
+        var collision = kept with { Signature = "class Duplicated /* second */" };
+        var other = Symbol("Solo", "global::Acme.Solo");
+
+        var index = SymbolIndexBuilder.Build([kept, collision, other], [], [], []);
+
+        Assert.Equal(2, index.Symbols.Length);
+        Assert.Equal(index.Symbols.Length, index.Metrics.TotalSymbols);
+    }
+
+    [Fact]
+    public void Metrics_ByResolutionAndByKind_EachSumToTotalSymbols()
+    {
+        var index = BuildFromSource("""
+            namespace Acme.Payments;
+            class PaymentsService
+            {
+                int _retries;
+                string AuthorizePayment(string orderId) => orderId;
+            }
+            """);
+
+        Assert.Equal(index.Metrics.TotalSymbols, index.Metrics.ByResolution.Values.Sum());
+        Assert.Equal(index.Metrics.TotalSymbols, index.Metrics.ByKind.Values.Sum());
+        Assert.Equal(1, index.Metrics.ByKind[IndexedSymbolKind.Class]);
+        Assert.Equal(1, index.Metrics.ByKind[IndexedSymbolKind.Method]);
+        Assert.Equal(1, index.Metrics.ByKind[IndexedSymbolKind.Field]);
+    }
+
+    [Fact]
+    public void Metrics_DuplicateAndAmbiguousCounts_MatchTheRecordedDiagnosticCountsExactly()
+    {
+        var kept = Symbol("PaymentService", "global::Company.Legacy.PaymentService", projectId: ProjectId)
+            with { Namespace = "Company.Legacy" };
+        var collision = kept with { Signature = "class PaymentService /* second */" };
+        var current = Symbol("PaymentService", "global::Company.Payments.PaymentService", projectId: OtherProjectId)
+            with { Namespace = "Company.Payments" };
+
+        var index = SymbolIndexBuilder.Build([kept, collision, current], [], [], []);
+
+        Assert.Equal(
+            index.Diagnostics.Count(diagnostic => diagnostic.Code == "C2M-SYMIDX-001"),
+            index.Metrics.DuplicateIdCount);
+        Assert.Equal(
+            index.Diagnostics.Count(diagnostic => diagnostic.Code == "C2M-SYMIDX-003"),
+            index.Metrics.AmbiguousSimpleNameCount);
+        Assert.Equal(1, index.Metrics.DuplicateIdCount);
+        Assert.Equal(1, index.Metrics.AmbiguousSimpleNameCount);
+    }
+
     private static DocumentFact Document(ProjectFactId projectId, string relativePath)
     {
         var documentId = DocumentFactId.Create(projectId, relativePath);

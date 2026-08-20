@@ -368,11 +368,11 @@ end of `Build`, exposed as `SymbolIndex.Metrics`.
 - Skill: NONE
 
 **Done when**:
-- [ ] Every one of `SyntaxFactExtractor.DeclarationKind`'s 16 possible string values maps to exactly one `IndexedSymbolKind` (asserted per value, not spot-checked) — the 5 unnamed-in-spec kinds map to `Other`
-- [ ] `Metrics.TotalSymbols` equals the indexed symbol count exactly (including duplicates collapsed per T9's rule)
-- [ ] `Metrics.ByResolution`/`ByKind` sum to `TotalSymbols`
-- [ ] `Metrics.DuplicateIdCount`/`AmbiguousSimpleNameCount` match T9's recorded diagnostic counts exactly, on the same fixture used in T9's tests
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Every one of `SyntaxFactExtractor.DeclarationKind`'s 16 possible string values maps to exactly one `IndexedSymbolKind` (asserted per value, not spot-checked) — the 5 unnamed-in-spec kinds map to `Other`
+- [x] `Metrics.TotalSymbols` equals the indexed symbol count exactly (including duplicates collapsed per T9's rule)
+- [x] `Metrics.ByResolution`/`ByKind` sum to `TotalSymbols`
+- [x] `Metrics.DuplicateIdCount`/`AmbiguousSimpleNameCount` match T9's recorded diagnostic counts exactly, on the same fixture used in T9's tests
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick

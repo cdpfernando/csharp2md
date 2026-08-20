@@ -244,7 +244,7 @@ without throwing, and the returned metrics report the expected total/duplicate/a
 | SYMIDX-19 | P3 (duplicated-symbol-id diagnostic) | Design | Implementing |
 | SYMIDX-20 | P3 (invalid-containing-symbol diagnostic) | Design | Implementing |
 | SYMIDX-21 | P3 (ambiguous-symbol-lookup diagnostic) | Design | Implementing |
-| SYMIDX-22 | P3 (index metrics) | Design | Pending |
+| SYMIDX-22 | P3 (index metrics) | Design | Implementing |
 | SYMIDX-23 | P3 (syntax-only mode has no precondition) | Design | Pending |
 
 **ID format:** `SYMIDX-[NUMBER]`
