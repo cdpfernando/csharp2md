@@ -323,8 +323,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DAD-02 | P1: EF Core persistence model and access | T27 | Verified |
 | DAD-03 | P1: EF Core persistence model and access | T27 | Verified |
 | DAD-04 | P1: EF Core persistence model and access | T27 | Verified |
-| DAD-05 | P1: EF Core persistence model and access | Design | Pending |
-| DAD-06 | P1: EF Core persistence model and access | Design | Pending |
+| DAD-05 | P1: EF Core persistence model and access | T28 | Verified |
+| DAD-06 | P1: EF Core persistence model and access | T28 | Verified |
 | DAD-07 | P1: EF Core persistence model and access | Design | Pending |
 | DAD-08 | P1: EF Core persistence model and access | Design | Pending |
 | DAD-09 | P1: EF Core persistence model and access | Design | Pending |

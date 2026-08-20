@@ -22,6 +22,8 @@ internal interface ISymbolIndex
 
     ImmutableArray<SymbolFact> FindMembers(string containingType, string memberName);
 
+    ImmutableArray<SymbolFact> FindMembers(string containingType);
+
     ImmutableArray<SymbolFact> FindMethods(MethodLookup lookup);
 
     SymbolLookupResult FindCandidates(SymbolLookup lookup);
@@ -161,6 +163,7 @@ internal sealed class SymbolIndex : ISymbolIndex
     private readonly FrozenDictionary<string, ImmutableArray<SymbolFact>> _byName;
     private readonly FrozenDictionary<string, ImmutableArray<SymbolFact>> _byQualifiedName;
     private readonly FrozenDictionary<(string ContainingType, string Name), ImmutableArray<SymbolFact>> _byMember;
+    private readonly FrozenDictionary<string, ImmutableArray<SymbolFact>> _byContainingType;
     private readonly FrozenDictionary<string, SymbolFact> _byIdValue;
     private readonly FrozenDictionary<DocumentFactId, string> _projectByDocument;
 
@@ -169,6 +172,7 @@ internal sealed class SymbolIndex : ISymbolIndex
         FrozenDictionary<string, ImmutableArray<SymbolFact>> byName,
         FrozenDictionary<string, ImmutableArray<SymbolFact>> byQualifiedName,
         FrozenDictionary<(string ContainingType, string Name), ImmutableArray<SymbolFact>> byMember,
+        FrozenDictionary<string, ImmutableArray<SymbolFact>> byContainingType,
         FrozenDictionary<string, SymbolFact> byIdValue,
         FrozenDictionary<DocumentFactId, string> projectByDocument,
         ImmutableArray<AnalysisDiagnostic> diagnostics,
@@ -179,6 +183,7 @@ internal sealed class SymbolIndex : ISymbolIndex
         _byName = byName;
         _byQualifiedName = byQualifiedName;
         _byMember = byMember;
+        _byContainingType = byContainingType;
         _byIdValue = byIdValue;
         _projectByDocument = projectByDocument;
         Diagnostics = diagnostics;
@@ -230,6 +235,17 @@ internal sealed class SymbolIndex : ISymbolIndex
         ArgumentException.ThrowIfNullOrWhiteSpace(containingType);
         ArgumentException.ThrowIfNullOrWhiteSpace(memberName);
         return _byMember.GetValueOrDefault((TypeNameNormalizer.Normalize(containingType), memberName), []);
+    }
+
+    /// <summary>
+    /// Every indexed member declared in <paramref name="containingType"/>, ordered by
+    /// <see cref="SymbolFactId"/> ordinal. Reachable by the type's fully qualified name or by its
+    /// simple name, exactly like the two-argument lookup. Zero members is a valid, empty outcome.
+    /// </summary>
+    public ImmutableArray<SymbolFact> FindMembers(string containingType)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(containingType);
+        return _byContainingType.GetValueOrDefault(TypeNameNormalizer.Normalize(containingType), []);
     }
 
     /// <summary>
@@ -425,6 +441,7 @@ internal static class SymbolIndexBuilder
                 .ToFrozenDictionary(
                     static group => group.Key,
                     static group => group.Select(static entry => entry.Symbol).ToImmutableArray()),
+            GroupByKey(distinct, static symbol => MemberKeys(symbol).Select(static key => key.ContainingType)),
             distinct.ToFrozenDictionary(static symbol => symbol.SymbolId.Value, StringComparer.Ordinal),
             documents
                 .GroupBy(static document => document.DocumentId)

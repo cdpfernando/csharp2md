@@ -963,13 +963,13 @@ to the convention mapping otherwise.
 
 **Done when**:
 
-- [ ] A `HasColumnName` yields a column node owned by the entity's object with resolution `Exact` (DAD-05)
-- [ ] A property with no configuration yields `maps-property-to-column` with `target_id` null and resolution
+- [x] A `HasColumnName` yields a column node owned by the entity's object with resolution `Exact` (DAD-05)
+- [x] A property with no configuration yields `maps-property-to-column` with `target_id` null and resolution
       `Heuristic` (DAD-06)
-- [ ] A configured column on an entity whose table is only convention-mapped is handled deliberately —
+- [x] A configured column on an entity whose table is only convention-mapped is handled deliberately —
       no column node without an owning object node
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

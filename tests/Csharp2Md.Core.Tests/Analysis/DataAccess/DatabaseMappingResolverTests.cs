@@ -220,6 +220,154 @@ public sealed class DatabaseMappingResolverTests
             ["Data/ArchiveConfiguration.cs", "Data/OrderConfiguration.cs"],
             node.Evidence.Select(evidence => evidence.RelativePath).Order(StringComparer.Ordinal));
     }
+
+    // DAD-05: a HasColumnName literal mints a column node owned by the entity's mapped object.
+    [Fact]
+    public void Resolve_ConfiguredColumnOnConfiguredEntity_MintsAnExactColumnOwnedByTheTableNode()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Status", "Order")),
+            ResolverScenario.ConfiguredTable("Order", "tb_order"),
+            ResolverScenario.ConfiguredColumn("Order", "Status", "order_status"));
+
+        var table = Assert.Single(resolution.Objects);
+        var column = Assert.Single(resolution.Columns);
+        Assert.Equal("order_status", column.Name);
+        Assert.Equal(table.ObjectId, column.ObjectId);
+        Assert.Equal(FactResolution.Exact, column.Resolution);
+        Assert.Equal(DatabaseColumnFactId.Create(table.ObjectId, "order_status"), column.ColumnId);
+    }
+
+    // DAD-05: the mapping relation is sourced at the property symbol and targets the column node.
+    [Fact]
+    public void Resolve_ConfiguredColumn_YieldsExactMapsPropertyToColumnSourcedAtTheProperty()
+    {
+        var property = ResolverScenario.EntityProperty("Status", "Order");
+
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(ResolverScenario.Entity("Order"), property),
+            ResolverScenario.ConfiguredTable("Order", "tb_order"),
+            ResolverScenario.ConfiguredColumn("Order", "Status", "order_status"));
+
+        var mapping = Assert.Single(
+            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
+        Assert.Equal(property.SymbolId.ToFactId(), mapping.SourceId);
+        Assert.Equal(Assert.Single(resolution.Columns).ColumnId.ToFactId(), mapping.TargetId);
+        Assert.Equal(FactResolution.Exact, mapping.Resolution);
+        Assert.Equal("order_status", ResolverScenario.Detail(mapping, "target_text"));
+        Assert.Equal("configured", ResolverScenario.Detail(mapping, "mapping"));
+        Assert.Null(mapping.UnresolvedReason);
+    }
+
+    // DAD-06: an unconfigured property of a mapped entity falls back to its own name at Heuristic.
+    [Fact]
+    public void Resolve_UnconfiguredPropertyOfMappedEntity_YieldsHeuristicMappingNamingTheProperty()
+    {
+        var property = ResolverScenario.EntityProperty("Status", "Order");
+
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(ResolverScenario.Entity("Order"), property),
+            ResolverScenario.EntitySet("Order", "Orders"));
+
+        var mapping = Assert.Single(
+            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
+        Assert.Equal(property.SymbolId.ToFactId(), mapping.SourceId);
+        Assert.Null(mapping.TargetId);
+        Assert.Equal(FactResolution.Heuristic, mapping.Resolution);
+        Assert.Equal("Status", ResolverScenario.Detail(mapping, "target_text"));
+        Assert.Equal("convention", ResolverScenario.Detail(mapping, "mapping"));
+        Assert.Equal("convention-mapping", mapping.UnresolvedReason);
+    }
+
+    // DAD-05 and DAD-06 together: configuration decides per property, not per entity.
+    [Fact]
+    public void Resolve_EntityWithOneConfiguredAndOneUnconfiguredProperty_YieldsOneMappingEach()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Status", "Order"),
+                ResolverScenario.EntityProperty("Amount", "Order")),
+            ResolverScenario.ConfiguredTable("Order", "tb_order"),
+            ResolverScenario.ConfiguredColumn("Order", "Status", "order_status"));
+
+        var mappings = resolution.Relations
+            .Where(relation => relation.RelationKind == "maps-property-to-column")
+            .ToDictionary(relation => ResolverScenario.Detail(relation, "target_text")!);
+
+        Assert.Equal(2, mappings.Count);
+        Assert.Equal(FactResolution.Exact, mappings["order_status"].Resolution);
+        Assert.Equal(FactResolution.Heuristic, mappings["Amount"].Resolution);
+        Assert.Null(mappings["Amount"].TargetId);
+    }
+
+    // A column node can never exist without an owning object node, so a configured column on a
+    // convention-mapped entity is recorded as an unresolved mapping rather than an orphan node.
+    [Fact]
+    public void Resolve_ConfiguredColumnOnConventionMappedEntity_MintsNoColumnAndStaysUnresolved()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Status", "Order")),
+            ResolverScenario.EntitySet("Order", "Orders"),
+            ResolverScenario.ConfiguredColumn("Order", "Status", "order_status"));
+
+        Assert.Empty(resolution.Columns);
+        var mapping = Assert.Single(
+            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
+        Assert.Null(mapping.TargetId);
+        Assert.Equal(FactResolution.Unresolved, mapping.Resolution);
+        Assert.Equal("unmapped-owning-object", mapping.UnresolvedReason);
+        Assert.Equal("order_status", ResolverScenario.Detail(mapping, "target_text"));
+    }
+
+    // DAD-06 applies to a mapped entity only; a type nothing maps produces no column mappings.
+    [Fact]
+    public void Resolve_PropertyOfUnmappedType_YieldsNoColumnMapping()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Status", "Order")),
+            ResolverScenario.ConfiguredTable("Invoice", "tb_invoice"));
+
+        Assert.DoesNotContain(
+            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
+    }
+
+    // The convention mapping is evidenced at the claim that proved the entity is mapped, which is the
+    // only document guaranteed to carry a retained extent for the solution-level fragment.
+    [Fact]
+    public void Resolve_UnconfiguredProperty_IsEvidencedAtTheDocumentThatProvedTheEntityMapping()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Status", "Order")),
+            ResolverScenario.EntitySet("Order", "Orders", "Data/OrderDbContext.cs"));
+
+        var mapping = Assert.Single(
+            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
+
+        Assert.Equal("Data/OrderDbContext.cs", mapping.Evidence.RelativePath);
+    }
+
+    // The literal still proves the column, but a mapping with no sourceable property is not emitted.
+    [Fact]
+    public void Resolve_ConfiguredColumnWhosePropertyIsAbsent_MintsTheColumnButEmitsNoMapping()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(ResolverScenario.Entity("Order")),
+            ResolverScenario.ConfiguredTable("Order", "tb_order"),
+            ResolverScenario.ConfiguredColumn("Order", "Status", "order_status"));
+
+        Assert.Single(resolution.Columns);
+        Assert.DoesNotContain(
+            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
+    }
 }
 
 /// <summary>
@@ -258,6 +406,12 @@ internal static class ResolverScenario
         string documentPath = "Model/Order.cs") =>
         Symbol(name, fullyQualifiedName ?? name, "class", documentPath, containingType: null);
 
+    public static SymbolFact EntityProperty(
+        string name,
+        string containingType,
+        string documentPath = "Model/Order.cs") =>
+        Symbol(name, $"{containingType}.{name}", "property", documentPath, containingType);
+
     public static string? Detail(ResolvedDatabaseRelation relation, string key) =>
         relation.Details.SingleOrDefault(detail => detail.Key == key).Value;
 
@@ -284,6 +438,20 @@ internal static class ResolverScenario
             EntityText = entityName,
             ObjectText = tableName,
             ObjectKind = DatabaseObjectKind.Table,
+        };
+
+    public static RawDatabaseClaim ConfiguredColumn(
+        string entityName,
+        string propertyName,
+        string columnName,
+        string documentPath = "Data/OrderConfiguration.cs",
+        int line = 7) =>
+        Claim(DatabaseClaimKind.ColumnConfigured, documentPath, line) with
+        {
+            ShapeConfidence = FactResolution.Exact,
+            EntityText = entityName,
+            PropertyText = propertyName,
+            ColumnText = columnName,
         };
 
     public static RawDatabaseClaim Claim(DatabaseClaimKind kind, string documentPath, int line) => new()
