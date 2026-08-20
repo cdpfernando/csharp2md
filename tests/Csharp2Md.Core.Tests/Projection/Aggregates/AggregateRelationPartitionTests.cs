@@ -62,19 +62,32 @@ public sealed class AggregateRelationPartitionTests(AggregateRelationPartitionFi
     {
         using var partition = fixture.ReadPartition("data");
 
-        // The fixture's OrderDbContext declares no ToTable, so its entity has no proven table: the
+        // The fixture's OrderLine has no ToTable anywhere in the run, so it has no proven table: the
         // mapping names the DbSet property, states it is a convention, and targets nothing.
-        var mapsTo = Assert.Single(
-            partition.RootElement.GetProperty("entries").EnumerateArray(),
-            entry => entry.GetProperty("relation_kind").GetString() == "maps-to");
+        var mapsTo = partition.RootElement.GetProperty("entries").EnumerateArray()
+            .Where(entry => entry.GetProperty("relation_kind").GetString() == "maps-to")
+            .Select(entry => (Entry: entry, Details: Details(entry)))
+            .ToArray();
 
-        Assert.Equal("convention-mapping", mapsTo.GetProperty("unresolved_reason").GetString());
-        Assert.False(mapsTo.TryGetProperty("target_id", out _));
-        var details = mapsTo.GetProperty("details").EnumerateArray()
-            .ToDictionary(detail => detail.GetProperty("key").GetString()!, detail => detail.GetProperty("value").GetString());
-        Assert.Equal("Orders", details["target_text"]);
-        Assert.Equal("convention", details["mapping"]);
+        var convention = Assert.Single(mapsTo, mapping => mapping.Details["mapping"] == "convention");
+        Assert.Equal("convention-mapping", convention.Entry.GetProperty("unresolved_reason").GetString());
+        Assert.False(convention.Entry.TryGetProperty("target_id", out _));
+        Assert.Equal("OrderLines", convention.Details["target_text"]);
+
+        // Order is configured in a different document, so its one mapping is the configured one -
+        // no second convention mapping is emitted beside it.
+        var configured = Assert.Single(mapsTo, mapping => mapping.Details["mapping"] == "configured");
+        Assert.Equal("exact", configured.Entry.GetProperty("header").GetProperty("resolution").GetString());
+        Assert.Equal("order_headers", configured.Details["target_text"]);
+        Assert.NotNull(configured.Entry.GetProperty("target_id").GetString());
+        Assert.False(configured.Entry.TryGetProperty("unresolved_reason", out _));
     }
+
+    private static Dictionary<string, string> Details(JsonElement entry) =>
+        entry.GetProperty("details").EnumerateArray().ToDictionary(
+            detail => detail.GetProperty("key").GetString()!,
+            detail => detail.GetProperty("value").GetString()!,
+            StringComparer.Ordinal);
 
     [Fact]
     public void StructuralPartitionFile_CarriesTheFixturesCallsCreatesAndReferencesRelations()

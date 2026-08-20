@@ -1119,17 +1119,29 @@ have real source to run against, including a `ToTable` in a different document f
 
 **Done when**:
 
-- [ ] The configuration document carries a `ToTable` and a `HasColumnName`, both string literals
-- [ ] A query service reproduces brief §7's shape and a write service reproduces brief §8's shape
-- [ ] A `*Repository`-named class with no persistence API is included, so DAD-17 has a negative case
-- [ ] The fixture still builds and every existing fixture-dependent test still passes
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] The configuration document carries a `ToTable` and a `HasColumnName`, both string literals
+- [x] A query service reproduces brief §7's shape and a write service reproduces brief §8's shape
+- [x] A `*Repository`-named class with no persistence API is included, so DAD-17 has a negative case
+- [x] The fixture still builds and every existing fixture-dependent test still passes
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: none — fixture source is analysed input, per the coverage matrix's "Fixture source documents" row
 **Gate**: build
 
 **Commit**: `test(fixtures): add EF Core configuration and query documents`
+
+**Execution notes** — the query and write services live in `Data/OrderDbContext.cs` rather than in their
+own documents, because the claim pass catalogues `DbSet` properties per document; a query whose context is
+declared elsewhere is not recognised. The entity gained the `Id`/`Status`/`Amount` property names brief §7
+and §8 name, which renamed `OrderRecord` to `Order` and forced a one-token follow-through in
+`Api/OrdersController.cs`. A second, deliberately unconfigured entity (`OrderLine`) was added so DAD-02's
+convention mapping and DAD-12's ambiguous attribution both have a fixture case; `Order` alone would leave
+them unexercisable. That change falsified the premise of the pre-existing
+`AggregateRelationPartitionTests.DataPartitionFile_RecordsTheFixturesUnconfiguredEntityAsAConventionMapping`
+("the fixture's `OrderDbContext` declares no `ToTable`"), which was rewritten **stricter**: it now pins both
+mappings - the configured one for `Order` and the convention one for `OrderLine` - instead of one.
+Test count: 1680 before, 1680 after.
 
 ---
 
