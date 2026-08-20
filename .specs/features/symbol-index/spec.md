@@ -224,16 +224,16 @@ without throwing, and the returned metrics report the expected total/duplicate/a
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | SYMIDX-01 | P1 (one entry per symbol) | Design | Implementing |
-| SYMIDX-02 | P1 (order-independent construction) | Design | Pending |
-| SYMIDX-03 | P1 (GetById, O(1)) | Design | Pending |
-| SYMIDX-04 | P1 (FindByName) | Design | Pending |
-| SYMIDX-05 | P1 (FindByQualifiedName, normalized) | Design | Pending |
+| SYMIDX-02 | P1 (order-independent construction) | Design | Implementing |
+| SYMIDX-03 | P1 (GetById, O(1)) | Design | Implementing |
+| SYMIDX-04 | P1 (FindByName) | Design | Implementing |
+| SYMIDX-05 | P1 (FindByQualifiedName, normalized) | Design | Implementing |
 | SYMIDX-06 | P1 (original spelling preserved) | Design | Implementing |
-| SYMIDX-07 | P1 (FindMembers) | Design | Pending |
+| SYMIDX-07 | P1 (FindMembers) | Design | Implementing |
 | SYMIDX-08 | P1 (predefined-type + global:: normalization) | Design | Implementing |
 | SYMIDX-09 | P1 (syntax-only indexing, never fabricated Exact) | Design | Implementing |
 | SYMIDX-10 | P1 (Name/Namespace/ContainingType from syntax alone) | Design | Implementing |
-| SYMIDX-11 | P1 (empty solution) | Design | Pending |
+| SYMIDX-11 | P1 (empty solution) | Design | Implementing |
 | SYMIDX-12 | P1 (no simple-name-only merging) | Design | Implementing |
 | SYMIDX-13 | P2 (FindMethods argument-count filter) | Design | Pending |
 | SYMIDX-14 | P2 (FindMethods argument-type ranking) | Design | Pending |

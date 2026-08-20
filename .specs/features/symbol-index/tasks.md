@@ -254,14 +254,14 @@ is the pure, order-independent construction entry point.
 - Skill: `dotnet-skills:csharp-type-design-performance` (FrozenDictionary/collection choices)
 
 **Done when**:
-- [ ] `GetById` returns the exact match via direct dictionary lookup (asserted by construction, not just behavior — no `.Where`/linear scan in the implementation)
-- [ ] `FindByName` returns every symbol sharing a simple name across projects, ordinal-ordered by `Id`, empty (not null/throw) when nothing matches
-- [ ] `FindByQualifiedName` matches via `TypeNameNormalizer.Normalize`, so `System.String`/`global::System.String`/`string`-declared symbols under the same qualified name all resolve together
-- [ ] `FindMembers(containingType, memberName)` returns every member regardless of its own `Resolution`
-- [ ] Two symbols with the same simple name but different namespace/containing type remain distinct entries (never merged) — SYMIDX-12
-- [ ] `Build` with zero input facts returns an empty, queryable index, not a throw — SYMIDX-11
-- [ ] `Build`'s output does not depend on input ordering (same facts, shuffled order, produce identical query results — asserted directly)
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] `GetById` returns the exact match via direct dictionary lookup (asserted by construction, not just behavior — no `.Where`/linear scan in the implementation)
+- [x] `FindByName` returns every symbol sharing a simple name across projects, ordinal-ordered by `Id`, empty (not null/throw) when nothing matches
+- [x] `FindByQualifiedName` matches via `TypeNameNormalizer.Normalize`, so `System.String`/`global::System.String`/`string`-declared symbols under the same qualified name all resolve together
+- [x] `FindMembers(containingType, memberName)` returns every member regardless of its own `Resolution`
+- [x] Two symbols with the same simple name but different namespace/containing type remain distinct entries (never merged) — SYMIDX-12
+- [x] `Build` with zero input facts returns an empty, queryable index, not a throw — SYMIDX-11
+- [x] `Build`'s output does not depend on input ordering (same facts, shuffled order, produce identical query results — asserted directly)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick
