@@ -449,11 +449,11 @@ Models section specifies.
 
 **Done when**:
 
-- [ ] `RawDatabaseClaim` carries every field from design.md, with required members enforced by the compiler
-- [ ] A test pins that `SqlText` longer than 2000 characters is rejected or truncated at construction, not
+- [x] `RawDatabaseClaim` carries every field from design.md, with required members enforced by the compiler
+- [x] A test pins that `SqlText` longer than 2000 characters is rejected or truncated at construction, not
       at serialization time
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
