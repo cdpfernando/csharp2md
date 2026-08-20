@@ -21,6 +21,8 @@ internal interface ISymbolIndex
     ImmutableArray<SymbolFact> FindMembers(string containingType, string memberName);
 
     ImmutableArray<SymbolFact> FindMethods(MethodLookup lookup);
+
+    SymbolLookupResult FindCandidates(SymbolLookup lookup);
 }
 
 /// <summary>
@@ -48,6 +50,41 @@ internal sealed record MethodLookup
 }
 
 /// <summary>
+/// The query shape for <see cref="ISymbolIndex.FindCandidates"/>. Every property beyond
+/// <see cref="Name"/> is a contextual hint that promotes a candidate up the priority sequence; none
+/// of them removes a candidate from the result.
+/// </summary>
+internal sealed record SymbolLookup
+{
+    public required string Name { get; init; }
+
+    public string? ContainingType { get; init; }
+
+    public string? Namespace { get; init; }
+
+    public string? ProjectId { get; init; }
+
+    public ImmutableArray<string> Imports { get; init; } = [];
+}
+
+/// <summary>
+/// Whether a lookup landed on exactly one best candidate, on a tie the caller must resolve, or on
+/// nothing at all. "Not found" and "ambiguous" stay distinguishable outcomes on purpose.
+/// </summary>
+internal enum SymbolLookupStatus
+{
+    Unique,
+    Ambiguous,
+    NotFound,
+}
+
+/// <summary>
+/// The outcome of <see cref="ISymbolIndex.FindCandidates"/>: every candidate found, ordered
+/// best-first, plus whether the best tier held one candidate or several.
+/// </summary>
+internal sealed record SymbolLookupResult(SymbolLookupStatus Status, ImmutableArray<SymbolFact> Candidates);
+
+/// <summary>
 /// A name-indexed, cross-project view of every symbol a run discovered, regardless of whether that
 /// symbol's semantic binding succeeded. Every lookup is a direct key lookup - never a scan of all
 /// symbols - and every list-returning lookup is ordered by <see cref="SymbolFactId"/> ordinal so
@@ -61,17 +98,23 @@ internal sealed class SymbolIndex : ISymbolIndex
     private readonly FrozenDictionary<string, ImmutableArray<SymbolFact>> _byName;
     private readonly FrozenDictionary<string, ImmutableArray<SymbolFact>> _byQualifiedName;
     private readonly FrozenDictionary<(string ContainingType, string Name), ImmutableArray<SymbolFact>> _byMember;
+    private readonly FrozenDictionary<string, SymbolFact> _byIdValue;
+    private readonly FrozenDictionary<DocumentFactId, string> _projectByDocument;
 
     internal SymbolIndex(
         FrozenDictionary<SymbolFactId, SymbolFact> byId,
         FrozenDictionary<string, ImmutableArray<SymbolFact>> byName,
         FrozenDictionary<string, ImmutableArray<SymbolFact>> byQualifiedName,
-        FrozenDictionary<(string ContainingType, string Name), ImmutableArray<SymbolFact>> byMember)
+        FrozenDictionary<(string ContainingType, string Name), ImmutableArray<SymbolFact>> byMember,
+        FrozenDictionary<string, SymbolFact> byIdValue,
+        FrozenDictionary<DocumentFactId, string> projectByDocument)
     {
         _byId = byId;
         _byName = byName;
         _byQualifiedName = byQualifiedName;
         _byMember = byMember;
+        _byIdValue = byIdValue;
+        _projectByDocument = projectByDocument;
     }
 
     /// <summary>Every indexed symbol, ordered by <see cref="SymbolFactId"/> ordinal.</summary>
@@ -167,6 +210,104 @@ internal sealed class SymbolIndex : ISymbolIndex
 
     private static string? Normalized(string? typeSpelling) =>
         string.IsNullOrWhiteSpace(typeSpelling) ? null : TypeNameNormalizer.Normalize(typeSpelling);
+
+    /// <summary>
+    /// Every candidate for <paramref name="lookup"/>, ordered best-first by the priority sequence,
+    /// with the status saying whether the best tier held one candidate or several. A tie is never
+    /// broken for the caller: it surfaces as <see cref="SymbolLookupStatus.Ambiguous"/> with every
+    /// tied candidate still listed.
+    /// </summary>
+    public SymbolLookupResult FindCandidates(SymbolLookup lookup)
+    {
+        ArgumentNullException.ThrowIfNull(lookup);
+
+        var ranked = CandidatePool(lookup.Name)
+            .Select(symbol => (Symbol: symbol, Tier: PriorityTier(symbol, lookup)))
+            .OrderBy(static entry => entry.Tier)
+            .ThenBy(static entry => entry.Symbol.SymbolId.Value, StringComparer.Ordinal)
+            .ToImmutableArray();
+
+        if (ranked.IsEmpty)
+        {
+            return new SymbolLookupResult(SymbolLookupStatus.NotFound, []);
+        }
+
+        var bestTier = ranked[0].Tier;
+        var tied = ranked.Count(entry => entry.Tier == bestTier);
+
+        return new SymbolLookupResult(
+            tied == 1 ? SymbolLookupStatus.Unique : SymbolLookupStatus.Ambiguous,
+            ranked.Select(static entry => entry.Symbol).ToImmutableArray());
+    }
+
+    /// <summary>
+    /// Everything the looked-up name could plausibly refer to: an exact identity, a qualified name,
+    /// or a simple name. Ranking - not pool membership - decides which of them wins.
+    /// </summary>
+    private ImmutableArray<SymbolFact> CandidatePool(string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        var pool = new List<SymbolFact>();
+        if (_byIdValue.TryGetValue(name, out var byIdentity))
+        {
+            pool.Add(byIdentity);
+        }
+
+        pool.AddRange(_byQualifiedName.GetValueOrDefault(TypeNameNormalizer.Normalize(name), []));
+        pool.AddRange(_byName.GetValueOrDefault(name, []));
+
+        return pool.Distinct().ToImmutableArray();
+    }
+
+    /// <summary>
+    /// Where a candidate sits in spec.md's priority sequence - lower is better: exact id, fully
+    /// qualified name, same containing type, same namespace, a namespace the caller imported, same
+    /// project, then any project at all.
+    /// </summary>
+    private int PriorityTier(SymbolFact symbol, SymbolLookup lookup)
+    {
+        if (string.Equals(symbol.SymbolId.Value, lookup.Name, StringComparison.Ordinal))
+        {
+            return 0;
+        }
+
+        if (Normalized(symbol.FullyQualifiedName) is { } qualified
+            && string.Equals(qualified, TypeNameNormalizer.Normalize(lookup.Name), StringComparison.Ordinal))
+        {
+            return 1;
+        }
+
+        if (SameNormalized(symbol.ContainingType, lookup.ContainingType))
+        {
+            return 2;
+        }
+
+        if (SameNormalized(symbol.Namespace, lookup.Namespace))
+        {
+            return 3;
+        }
+
+        if (!lookup.Imports.IsDefaultOrEmpty
+            && lookup.Imports.Any(import => SameNormalized(symbol.Namespace, import)))
+        {
+            return 4;
+        }
+
+        if (lookup.ProjectId is { } projectId
+            && _projectByDocument.TryGetValue(symbol.DocumentId, out var owning)
+            && string.Equals(owning, projectId, StringComparison.Ordinal))
+        {
+            return 5;
+        }
+
+        return 6;
+    }
+
+    private static bool SameNormalized(string? left, string? right) =>
+        Normalized(left) is { } normalizedLeft
+        && Normalized(right) is { } normalizedRight
+        && string.Equals(normalizedLeft, normalizedRight, StringComparison.Ordinal);
 }
 
 /// <summary>
@@ -202,7 +343,13 @@ internal static class SymbolIndexBuilder
                 .GroupBy(static entry => entry.Key)
                 .ToFrozenDictionary(
                     static group => group.Key,
-                    static group => group.Select(static entry => entry.Symbol).ToImmutableArray()));
+                    static group => group.Select(static entry => entry.Symbol).ToImmutableArray()),
+            distinct.ToFrozenDictionary(static symbol => symbol.SymbolId.Value, StringComparer.Ordinal),
+            documents
+                .GroupBy(static document => document.DocumentId)
+                .ToFrozenDictionary(
+                    static group => group.Key,
+                    static group => group.First().ProjectId.Value));
     }
 
     private static FrozenDictionary<string, ImmutableArray<SymbolFact>> GroupByKey(

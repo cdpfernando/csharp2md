@@ -311,11 +311,11 @@ collapsing a tie within one tier to a single winner.
 - Skill: NONE
 
 **Done when**:
-- [ ] A two-project fixture with `Company.Legacy.PaymentService` and `Company.Payments.PaymentService` (spec.md's own P2 Independent Test example) makes `FindCandidates` (and `FindByName`) report `Status = Ambiguous` with exactly those two candidates
-- [ ] The same fixture's `FindByQualifiedName("Company.Payments.PaymentService")` returns exactly one, unambiguous result — proving qualified-name lookup bypasses the simple-name ambiguity entirely
-- [ ] A lookup matching exactly one candidate at any priority tier reports `Status = Unique`, never `Ambiguous`
-- [ ] No lookup method ever returns a single arbitrarily-chosen symbol when the underlying data has more than one equally-ranked candidate (asserted directly against a constructed tie, not inferred from the ambiguous-fixture test alone)
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] A two-project fixture with `Company.Legacy.PaymentService` and `Company.Payments.PaymentService` (spec.md's own P2 Independent Test example) makes `FindCandidates` (and `FindByName`) report `Status = Ambiguous` with exactly those two candidates
+- [x] The same fixture's `FindByQualifiedName("Company.Payments.PaymentService")` returns exactly one, unambiguous result — proving qualified-name lookup bypasses the simple-name ambiguity entirely
+- [x] A lookup matching exactly one candidate at any priority tier reports `Status = Unique`, never `Ambiguous`
+- [x] No lookup method ever returns a single arbitrarily-chosen symbol when the underlying data has more than one equally-ranked candidate (asserted directly against a constructed tie, not inferred from the ambiguous-fixture test alone)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick

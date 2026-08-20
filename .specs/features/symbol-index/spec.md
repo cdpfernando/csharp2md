@@ -237,10 +237,10 @@ without throwing, and the returned metrics report the expected total/duplicate/a
 | SYMIDX-12 | P1 (no simple-name-only merging) | Design | Implementing |
 | SYMIDX-13 | P2 (FindMethods argument-count filter) | Design | Implementing |
 | SYMIDX-14 | P2 (FindMethods argument-type ranking) | Design | Implementing |
-| SYMIDX-15 | P2 (FindCandidates priority ordering) | Design | Pending |
-| SYMIDX-16 | P2 (ambiguity reporting) | Design | Pending |
-| SYMIDX-17 | P2 (no silent tie-break) | Design | Pending |
-| SYMIDX-18 | P2 (unique match reporting) | Design | Pending |
+| SYMIDX-15 | P2 (FindCandidates priority ordering) | Design | Implementing |
+| SYMIDX-16 | P2 (ambiguity reporting) | Design | Implementing |
+| SYMIDX-17 | P2 (no silent tie-break) | Design | Implementing |
+| SYMIDX-18 | P2 (unique match reporting) | Design | Implementing |
 | SYMIDX-19 | P3 (duplicated-symbol-id diagnostic) | Design | Pending |
 | SYMIDX-20 | P3 (invalid-containing-symbol diagnostic) | Design | Pending |
 | SYMIDX-21 | P3 (ambiguous-symbol-lookup diagnostic) | Design | Pending |

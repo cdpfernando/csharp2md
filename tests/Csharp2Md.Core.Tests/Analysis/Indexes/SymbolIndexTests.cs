@@ -356,6 +356,148 @@ public sealed class SymbolIndexTests
         }));
     }
 
+    [Fact]
+    public void FindCandidates_PaymentServiceDeclaredInTwoNamespaces_ReportsAmbiguousWithExactlyThoseTwoCandidates()
+    {
+        var legacy = Symbol("PaymentService", "global::Company.Legacy.PaymentService", projectId: ProjectId);
+        var current = Symbol("PaymentService", "global::Company.Payments.PaymentService", projectId: OtherProjectId);
+        var index = Build(legacy, current);
+
+        var result = index.FindCandidates(new SymbolLookup { Name = "PaymentService" });
+
+        Assert.Equal(SymbolLookupStatus.Ambiguous, result.Status);
+        Assert.Equal(
+            new[] { legacy, current }.Select(static symbol => symbol.SymbolId.Value).Order(StringComparer.Ordinal),
+            result.Candidates.Select(static symbol => symbol.SymbolId.Value));
+
+        // FindByName likewise surfaces both rather than picking one.
+        Assert.Equal(2, index.FindByName("PaymentService").Length);
+
+        // The qualified-name lookup bypasses the simple-name ambiguity entirely.
+        var qualified = Assert.Single(index.FindByQualifiedName("Company.Payments.PaymentService"));
+        Assert.Equal(current.SymbolId, qualified.SymbolId);
+    }
+
+    [Fact]
+    public void FindCandidates_ExactlyOneCandidateMatches_ReportsUniqueNeverAmbiguous()
+    {
+        var index = Build(
+            Symbol("PaymentsService", "global::Acme.Payments.PaymentsService"),
+            Symbol("OrderService", "global::Acme.Orders.OrderService"));
+
+        var result = index.FindCandidates(new SymbolLookup { Name = "OrderService" });
+
+        Assert.Equal(SymbolLookupStatus.Unique, result.Status);
+        Assert.Equal("OrderService", Assert.Single(result.Candidates).Name);
+    }
+
+    [Fact]
+    public void FindCandidates_TieWithinOnePriorityTier_ReportsAmbiguousAndReturnsBothNeverOneArbitraryWinner()
+    {
+        var first = Symbol("Handler", "global::Acme.Shared.Handler", documentPath: "First.cs");
+        var second = Symbol("Handler", "global::Acme.Shared.Handler", documentPath: "Second.cs");
+        var index = Build(first, second);
+
+        var result = index.FindCandidates(new SymbolLookup
+        {
+            Name = "Handler",
+            Namespace = "Acme.Shared",
+        });
+
+        Assert.Equal(SymbolLookupStatus.Ambiguous, result.Status);
+        Assert.Equal(2, result.Candidates.Length);
+        Assert.Equal(
+            new[] { first, second }.Select(static symbol => symbol.SymbolId.Value).Order(StringComparer.Ordinal),
+            result.Candidates.Select(static symbol => symbol.SymbolId.Value));
+    }
+
+    [Fact]
+    public void FindCandidates_NoCandidateAtAll_ReportsNotFoundWhichStaysDistinguishableFromAmbiguous()
+    {
+        var index = Build(Symbol("PaymentsService", "global::Acme.Payments.PaymentsService"));
+
+        var result = index.FindCandidates(new SymbolLookup { Name = "NothingNamedThis" });
+
+        Assert.Equal(SymbolLookupStatus.NotFound, result.Status);
+        Assert.Empty(result.Candidates);
+    }
+
+    [Fact]
+    public void FindCandidates_ContextualHints_OrderCandidatesByThePrioritySequence()
+    {
+        var inContainingType = Member("Handle", "global::Acme.Api.Gateway", FactResolution.Syntactic, "containing")
+            with { Namespace = "Acme.Api" };
+        var inNamespace = Member("Handle", "global::Acme.Api.Other", FactResolution.Syntactic, "namespace")
+            with { Namespace = "Acme.Api" };
+        var inImportedNamespace = Member("Handle", "global::Acme.Imported.Bus", FactResolution.Syntactic, "import")
+            with { Namespace = "Acme.Imported" };
+        var inSameProject = Member("Handle", "global::Zeta.Elsewhere.Box", FactResolution.Syntactic, "project")
+            with { Namespace = "Zeta.Elsewhere" };
+        var elsewhere = Member("Handle", "global::Other.Far.Box", FactResolution.Syntactic, "global") with
+        {
+            Namespace = "Other.Far",
+            DocumentId = DocumentFactId.Create(OtherProjectId, "Feature.cs"),
+        };
+
+        var documents = new[]
+        {
+            Document(ProjectId, "Feature.cs"),
+            Document(OtherProjectId, "Feature.cs"),
+        };
+        var index = SymbolIndexBuilder.Build(
+            [elsewhere, inSameProject, inImportedNamespace, inNamespace, inContainingType],
+            [],
+            documents,
+            []);
+
+        var result = index.FindCandidates(new SymbolLookup
+        {
+            Name = "Handle",
+            ContainingType = "Acme.Api.Gateway",
+            Namespace = "Acme.Api",
+            Imports = ["Acme.Imported"],
+            ProjectId = ProjectId.Value,
+        });
+
+        Assert.Equal(SymbolLookupStatus.Unique, result.Status);
+        Assert.Equal(
+            new[] { inContainingType, inNamespace, inImportedNamespace, inSameProject, elsewhere }
+                .Select(static symbol => symbol.SymbolId.Value),
+            result.Candidates.Select(static symbol => symbol.SymbolId.Value));
+    }
+
+    [Fact]
+    public void FindCandidates_ExactIdThenQualifiedName_OutrankTheGlobalSimpleNameTier()
+    {
+        var target = Symbol("Handler", "global::Acme.Api.Handler", projectId: ProjectId);
+        var qualifiedNameDecoy = Symbol("Acme.Api.Handler", "global::Decoy.Qualified", projectId: OtherProjectId);
+        var identityDecoy = Symbol(target.SymbolId.Value, "global::Decoy.Identity", projectId: OtherProjectId);
+        var index = Build(target, qualifiedNameDecoy, identityDecoy);
+
+        var byQualifiedName = index.FindCandidates(new SymbolLookup { Name = "Acme.Api.Handler" });
+        var byIdentity = index.FindCandidates(new SymbolLookup { Name = target.SymbolId.Value });
+
+        Assert.Equal(2, byQualifiedName.Candidates.Length);
+        Assert.Equal(target.SymbolId, byQualifiedName.Candidates[0].SymbolId);
+        Assert.Equal(SymbolLookupStatus.Unique, byQualifiedName.Status);
+
+        Assert.Equal(2, byIdentity.Candidates.Length);
+        Assert.Equal(target.SymbolId, byIdentity.Candidates[0].SymbolId);
+        Assert.Equal(SymbolLookupStatus.Unique, byIdentity.Status);
+    }
+
+    private static DocumentFact Document(ProjectFactId projectId, string relativePath)
+    {
+        var documentId = DocumentFactId.Create(projectId, relativePath);
+        return new DocumentFact(
+            FactHeader.Create(documentId.ToFactId(), FactKind.Document, FactResolution.Syntactic),
+            documentId,
+            projectId,
+            relativePath,
+            [],
+            []);
+    }
+
     private static string[] Ids(ImmutableArray<SymbolFact> symbols) =>
         symbols.Select(static symbol => symbol.SymbolId.Value).ToArray();
 
