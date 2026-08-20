@@ -108,6 +108,7 @@ public sealed class AnalysisEngine
 
         var store = new FactStore(request.OutputRoot);
         var storedFragments = ImmutableArray.CreateBuilder<StoredFactFragment>();
+        var validatedFragments = ImmutableArray.CreateBuilder<ValidatedFactFragment>();
         var coverageFacts = ImmutableArray.CreateBuilder<IFact>();
         var symbolFacts = ImmutableArray.CreateBuilder<SymbolFact>();
         var coverageOverrides = ImmutableArray.CreateBuilder<ScopeCoverageInput>();
@@ -133,9 +134,9 @@ public sealed class AnalysisEngine
                     try
                     {
                         var projectResult = await AnalyzeProjectAsync(
-                                request, project, store, storedFragments, coverageFacts, symbolFacts,
-                                coverageOverrides, analysisDiagnostics, resultDiagnostics, loadedExtensions,
-                                cancellationToken)
+                                request, project, store, storedFragments, validatedFragments, coverageFacts,
+                                symbolFacts, coverageOverrides, analysisDiagnostics, resultDiagnostics,
+                                loadedExtensions, cancellationToken)
                             .ConfigureAwait(false);
                         documentCount += projectResult.DocumentCount;
                         structuralFailure |= projectResult.StructuralFailure;
@@ -169,7 +170,7 @@ public sealed class AnalysisEngine
             request.Topic, request.Domain, "3.0.1", request.Options.Mode, effectiveMode, request.Options.Trust,
             loadedExtensions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray(),
             new ManifestCoverage(inventory.Services.Length, projectCount, documentCount),
-            storedFragments.ToImmutable(), honestCoverage);
+            storedFragments.ToImmutable(), honestCoverage, RelationProjector.Project(validatedFragments));
         new CanonicalAggregateWriter().WritePrepared(request.OutputRoot, snapshot, TimeProvider.System);
 
         return Result(
@@ -185,6 +186,7 @@ public sealed class AnalysisEngine
         InventoryProject project,
         FactStore store,
         ImmutableArray<StoredFactFragment>.Builder storedFragments,
+        ImmutableArray<ValidatedFactFragment>.Builder validatedFragments,
         ImmutableArray<IFact>.Builder coverageFacts,
         ImmutableArray<SymbolFact>.Builder symbolFacts,
         ImmutableArray<ScopeCoverageInput>.Builder coverageOverrides,
@@ -293,6 +295,7 @@ public sealed class AnalysisEngine
                 var fragment = validation.Fragment!;
                 var stored = store.Persist(fragment);
                 storedFragments.Add(stored);
+                validatedFragments.Add(fragment);
                 persistedDocumentIds.Add(documentFact.DocumentId);
                 coverageFacts.Add(fragment.Facts.OfType<DocumentFact>().Single());
                 symbolFacts.AddRange(fragment.Facts.OfType<SymbolFact>());
@@ -329,6 +332,7 @@ public sealed class AnalysisEngine
             {
                 var fragment = validation.Fragment!;
                 storedFragments.Add(store.Persist(fragment));
+                validatedFragments.Add(fragment);
                 coverageFacts.AddRange(fragment.Facts.Where(static fact => fact is ProjectFact or TargetFact));
             }
             else
