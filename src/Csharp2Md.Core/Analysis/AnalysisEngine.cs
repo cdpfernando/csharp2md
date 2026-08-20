@@ -1,5 +1,6 @@
 using System.Text;
 using Csharp2Md.Core.Analysis.Contracts;
+using Csharp2Md.Core.Analysis.DataAccess;
 using Csharp2Md.Core.Analysis.Indexes;
 using Csharp2Md.Core.Analysis.Inventory;
 using Csharp2Md.Core.Analysis.Relations;
@@ -113,6 +114,9 @@ public sealed class AnalysisEngine
         var symbolFacts = ImmutableArray.CreateBuilder<SymbolFact>();
         var coverageOverrides = ImmutableArray.CreateBuilder<ScopeCoverageInput>();
         var analysisDiagnostics = ImmutableArray.CreateBuilder<AnalysisDiagnostic>();
+        // Pass one of database access discovery accumulates here across the whole run; pass two reads
+        // the snapshot once the document loop is done.
+        var databaseClaims = new DatabaseClaimAccumulator();
         var resultDiagnostics = new List<string>(inventory.Diagnostics.Select(static diagnostic => diagnostic.Message));
         var loadedExtensions = ImmutableArray.CreateBuilder<string>();
         var analysedProjects = new HashSet<ProjectFactId>();
@@ -146,7 +150,7 @@ public sealed class AnalysisEngine
                         var projectResult = await AnalyzeProjectAsync(
                                 request, project, store, storedFragments, validatedFragments, coverageFacts,
                                 symbolFacts, coverageOverrides, analysisDiagnostics, resultDiagnostics,
-                                loadedExtensions, cancellationToken)
+                                loadedExtensions, databaseClaims, cancellationToken)
                             .ConfigureAwait(false);
                         documentCount += projectResult.DocumentCount;
                         structuralFailure |= projectResult.StructuralFailure;
@@ -203,6 +207,7 @@ public sealed class AnalysisEngine
         ImmutableArray<AnalysisDiagnostic>.Builder analysisDiagnostics,
         List<string> resultDiagnostics,
         ImmutableArray<string>.Builder loadedExtensions,
+        DatabaseClaimAccumulator databaseClaims,
         CancellationToken cancellationToken)
     {
         var projectId = ProjectFactId.Create(project.RelativePath);
@@ -243,6 +248,9 @@ public sealed class AnalysisEngine
             try
             {
                 var extraction = document.Source.Extraction;
+                // DAD-18: an analyzer that failed on this document is reported whether or not the
+                // document itself goes on to validate.
+                analysisDiagnostics.AddRange(extraction.DatabaseDiagnostics);
                 IFact[] syntacticFacts =
                 [
                     extraction.Document,
@@ -308,6 +316,11 @@ public sealed class AnalysisEngine
                 validatedFragments.Add(fragment);
                 persistedDocumentIds.Add(documentFact.DocumentId);
                 coverageFacts.Add(fragment.Facts.OfType<DocumentFact>().Single());
+                databaseClaims.Add(
+                    documentFact.DocumentId,
+                    relativePath,
+                    LineLengths(document.Source.SourceText).ToImmutableArray(),
+                    extraction.DatabaseClaims);
                 symbolFacts.AddRange(fragment.Facts.OfType<SymbolFact>());
                 coverageOverrides.Add(new ScopeCoverageInput(
                     documentFact.DocumentId.ToFactId(), CoverageApplicability.Applicable,

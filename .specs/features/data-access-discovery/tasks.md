@@ -567,13 +567,13 @@ documents that produced one, and emits a canonically ordered snapshot.
 
 **Done when**:
 
-- [ ] Only the call site and the owner-map handoff are added to the extractor; no persistence logic lands in
+- [x] Only the call site and the owner-map handoff are added to the extractor; no persistence logic lands in
       this file
-- [ ] A claim's `OwnerId` is the enclosing member's symbol id, falling back to the document id only for code
+- [x] A claim's `OwnerId` is the enclosing member's symbol id, falling back to the document id only for code
       with no enclosing member
-- [ ] With no analyzers registered, the extractor's existing behaviour and every existing test are unchanged
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] With no analyzers registered, the extractor's existing behaviour and every existing test are unchanged
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
