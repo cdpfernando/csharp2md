@@ -263,12 +263,12 @@ than one path stops producing duplicate documents, fragments and coverage scopes
 
 **Done when**:
 
-- [ ] `DatabaseObjectFactId.Create(connection, kind, name)` and
+- [x] `DatabaseObjectFactId.Create(connection, kind, name)` and
       `DatabaseColumnFactId.Create(objectId, name)` produce ids matching design.md's grammar exactly
-- [ ] Tests cover percent-encoding of a name needing it, ordinal case-sensitivity (`Orders` ≠ `orders`), and
+- [x] Tests cover percent-encoding of a name needing it, ordinal case-sensitivity (`Orders` ≠ `orders`), and
       rejection of non-canonical text
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions) — 1411 -> 1430 (+19)
 
 **Tests**: unit
 **Gate**: quick
