@@ -242,9 +242,11 @@ internal static class FactMerger
     {
         FactResolution.NotApplicable => 0,
         FactResolution.Unresolved => 1,
-        FactResolution.Syntactic => 2,
-        FactResolution.Partial => 3,
-        FactResolution.Exact => 4,
+        FactResolution.Candidate => 2,
+        FactResolution.Heuristic => 3,
+        FactResolution.Syntactic => 4,
+        FactResolution.Partial => 5,
+        FactResolution.Exact => 6,
         _ => throw new ArgumentOutOfRangeException(nameof(resolution), resolution, "Unknown fact resolution."),
     };
 

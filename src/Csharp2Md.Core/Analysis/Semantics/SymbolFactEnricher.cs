@@ -192,6 +192,9 @@ internal sealed class SymbolFactEnricher(
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToImmutableArray();
+        var parameterTypes = Parameters(symbol)
+            .Select(static parameter => TypeNameNormalizer.Normalize(DisplayType(parameter.Type)))
+            .ToImmutableArray();
 
         return syntactic with
         {
@@ -206,8 +209,58 @@ internal sealed class SymbolFactEnricher(
             Attributes = attributes.IsEmpty && containsError ? syntactic.Attributes : attributes,
             RelevantTypeReferences = relevantTypes.IsEmpty && containsError ? syntactic.RelevantTypeReferences : relevantTypes,
             Semantics = new SymbolSemanticDetails(implementedMemberIds, overriddenMemberId),
+            Name = containsError ? syntactic.Name : symbol.Name,
+            FullyQualifiedName = containsError
+                ? syntactic.FullyQualifiedName
+                : TypeNameNormalizer.Normalize(QualifiedSymbolName(symbol)),
+            Namespace = containsError ? syntactic.Namespace : SymbolNamespace(symbol),
+            ContainingType = containsError ? syntactic.ContainingType : SymbolContainingType(symbol),
+            ContainingSymbolId = containsError
+                ? syntactic.ContainingSymbolId
+                : FindLocalId(symbol.ContainingSymbol, candidates) ?? syntactic.ContainingSymbolId,
+            Arity = containsError ? syntactic.Arity : SymbolArity(symbol),
+            ParameterTypes = containsError ? syntactic.ParameterTypes : parameterTypes,
         };
     }
+
+    /// <summary>
+    /// The bound symbol's qualified name in the same shape <see cref="SyntaxFactExtractor"/> builds
+    /// from syntax alone - namespace segments plus enclosing type simple names, without generic
+    /// arguments - so one qualified-name lookup matches whether or not semantic binding ran.
+    /// </summary>
+    private static string QualifiedSymbolName(ISymbol symbol)
+    {
+        var segments = new Stack<string>();
+        segments.Push(symbol.Name);
+        for (var container = symbol.ContainingType; container is not null; container = container.ContainingType)
+        {
+            segments.Push(container.Name);
+        }
+
+        if (symbol.ContainingNamespace is { IsGlobalNamespace: false } @namespace)
+        {
+            segments.Push(@namespace.ToDisplayString());
+        }
+
+        return string.Join('.', segments);
+    }
+
+    private static string? SymbolNamespace(ISymbol symbol) =>
+        symbol.ContainingNamespace is { IsGlobalNamespace: false } @namespace
+            ? @namespace.ToDisplayString()
+            : null;
+
+    private static string? SymbolContainingType(ISymbol symbol) =>
+        symbol.ContainingType is { } containingType
+            ? TypeNameNormalizer.Normalize(QualifiedSymbolName(containingType))
+            : null;
+
+    private static int SymbolArity(ISymbol symbol) => symbol switch
+    {
+        INamedTypeSymbol named => named.Arity,
+        IMethodSymbol method => method.Arity,
+        _ => 0,
+    };
 
     private SymbolFactId ResolvedId(TargetFactId targetId, SymbolFact syntactic, ISymbol symbol)
     {
@@ -229,12 +282,7 @@ internal sealed class SymbolFactEnricher(
             IMethodSymbol method => method.TypeArguments.Select(DisplayType),
             _ => [],
         };
-        var arity = symbol switch
-        {
-            INamedTypeSymbol named => named.Arity,
-            IMethodSymbol method => method.Arity,
-            _ => 0,
-        };
+        var arity = SymbolArity(symbol);
 
         return CanonicalSymbolSignature.Create(
             symbolKind,

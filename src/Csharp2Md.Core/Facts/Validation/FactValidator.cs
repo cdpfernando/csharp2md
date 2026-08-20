@@ -77,6 +77,7 @@ internal static class FactValidator
         SymbolFact symbol => symbol.BaseAndInterfaceIds.Select(static id => id.ToFactId())
             .Concat(symbol.Semantics?.ImplementedMemberIds.Select(static id => id.ToFactId()) ?? [])
             .Concat(symbol.Semantics?.OverriddenMemberId is { } overridden ? [overridden.ToFactId()] : [])
+            .Concat(symbol.ContainingSymbolId is { } containing ? [containing.ToFactId()] : [])
             .Append(symbol.DocumentId.ToFactId()),
         ComponentFact component => component.ProjectIds.Select(static id => id.ToFactId()),
         RelationFact relation when relation.TargetId is { } target => [relation.SourceId, target],
@@ -119,12 +120,14 @@ internal static class FactValidator
 
     private static void ValidateRelation(RelationFact relation, List<AnalysisDiagnostic> errors)
     {
-        if (relation.IsRuntime && !relation.Header.Provenance.Any(static provenance => provenance.DetectorId is not null))
+        var requiresEvidence = !CompileTimeOnlyRelationKinds.Contains(relation.RelationKind);
+
+        if (requiresEvidence && !relation.Header.Provenance.Any(static provenance => provenance.DetectorId is not null))
         {
             errors.Add(Error(relation, "C2M-FV-005", "runtime-detector-provenance"));
         }
 
-        if (relation.IsRuntime && relation.Header.Evidence.IsEmpty)
+        if (requiresEvidence && relation.Header.Evidence.IsEmpty)
         {
             errors.Add(Error(relation, "C2M-FV-005", "runtime-evidence"));
         }

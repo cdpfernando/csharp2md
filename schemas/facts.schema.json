@@ -18,7 +18,7 @@
     "coverage"
   ],
   "properties": {
-    "schema_version": { "const": 2 },
+    "schema_version": { "const": 3 },
     "solutions": { "type": "array", "items": { "$ref": "#/$defs/solution_fact" } },
     "projects": { "type": "array", "items": { "$ref": "#/$defs/project_fact" } },
     "targets": { "type": "array", "items": { "$ref": "#/$defs/target_fact" } },
@@ -31,9 +31,9 @@
     "coverage": { "type": "array", "items": { "$ref": "#/$defs/coverage_fact" } }
   },
   "$defs": {
-    "fact_resolution": { "enum": ["exact", "partial", "syntactic", "unresolved", "not-applicable"] },
+    "fact_resolution": { "enum": ["exact", "partial", "syntactic", "heuristic", "candidate", "unresolved", "not-applicable"] },
     "fact_kind": { "enum": ["solution", "project", "target", "document", "source-section", "symbol", "component", "relation"] },
-    "relation_partition": { "enum": ["compile-time", "inheritance", "dependency-injection", "http", "grpc", "events"] },
+    "relation_partition": { "enum": ["compile-time", "inheritance", "dependency-injection", "http", "grpc", "events", "structural"] },
     "fact_level": { "enum": ["solution", "project", "target", "document", "detector"] },
     "coverage_applicability": { "enum": ["applicable", "not-applicable"] },
     "coverage_attempt": { "enum": ["not-attempted", "attempted"] },
@@ -50,7 +50,7 @@
     "target_evaluation": { "type": "object", "required": ["output_type", "assembly_name", "root_namespace", "compile_items", "project_references", "package_references", "references", "constants", "language_version", "nullable_mode", "compiled_extensions"] },
     "document_fact": { "type": "object", "required": ["header", "document_id", "project_id", "relative_path", "section_ids", "symbol_ids"] },
     "source_section_fact": { "type": "object", "required": ["header", "document_id", "section_kind", "occurrence_ordinal", "start_offset", "length", "source"] },
-    "symbol_fact": { "type": "object", "required": ["header", "symbol_id", "document_id", "symbol_kind", "contains_error_symbol", "base_and_interface_ids", "attributes", "relevant_type_references"], "properties": { "semantics": { "$ref": "#/$defs/symbol_semantics" } } },
+    "symbol_fact": { "type": "object", "required": ["header", "symbol_id", "document_id", "symbol_kind", "contains_error_symbol", "base_and_interface_ids", "attributes", "relevant_type_references", "name", "fully_qualified_name", "signature", "arity", "parameter_types"], "properties": { "semantics": { "$ref": "#/$defs/symbol_semantics" }, "namespace": { "type": "string" }, "containing_type": { "type": "string" }, "containing_symbol_id": { "type": "string" } } },
     "symbol_semantics": { "type": "object", "required": ["implemented_member_ids"] },
     "component_fact": { "type": "object", "required": ["header", "component_id", "component_kind", "project_ids"] },
     "relation_fact": { "type": "object", "required": ["header", "relation_id", "source_id", "partition", "relation_kind"], "properties": { "details": { "type": "array", "items": { "$ref": "#/$defs/relation_detail" } } } },

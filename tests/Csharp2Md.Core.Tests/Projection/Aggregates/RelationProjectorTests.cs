@@ -32,6 +32,7 @@ public sealed class RelationProjectorTests : IDisposable
     [InlineData(RelationPartition.Http)]
     [InlineData(RelationPartition.Grpc)]
     [InlineData(RelationPartition.Events)]
+    [InlineData(RelationPartition.Structural)]
     public void Project_PlacesEachLegalRelationInItsSingleDeclaredPartition(RelationPartition partition)
     {
         var relation = Relation(partition, $"{partition}-relation", Payments.ToFactId());
@@ -110,6 +111,20 @@ public sealed class RelationProjectorTests : IDisposable
         Assert.Contains(orders.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
         Assert.Contains(payments.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
         Assert.Contains("compile-time:project-reference", result.Mermaid, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Project_BuildsMermaidWithStructuralPrefixedEdgeLabelForResolvedStructuralRelation()
+    {
+        var relation = Relation(RelationPartition.Structural, "calls", Payments.ToFactId());
+        var orders = Component("service/web-api", Orders);
+        var payments = Component("library", Payments);
+
+        var result = RelationProjector.Project([Validated(relation, orders, payments)]);
+
+        Assert.Contains(orders.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
+        Assert.Contains(payments.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
+        Assert.Contains("structural:calls", result.Mermaid, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -220,14 +235,14 @@ public sealed class RelationProjectorTests : IDisposable
         ImmutableArray<RelationDetail> details = default)
     {
         var id = RelationFactId.Create(Orders.ToFactId(), kind, $"target={target?.Value ?? "none"}", 1);
-        var runtime = partition is RelationPartition.DependencyInjection or RelationPartition.Http or RelationPartition.Grpc or RelationPartition.Events;
+        var requiresEvidence = kind is not ("project-reference" or "package-reference");
         return new RelationFact(
             FactHeader.Create(
                 id.ToFactId(),
                 FactKind.Relation,
                 target is null ? FactResolution.Unresolved : FactResolution.Exact,
-                [new FactProvenance("test", "1", runtime ? Detector : null, runtime ? "1" : null)],
-                runtime ? [new Evidence(Document, "Client.cs", 1, 1, 1, 2)] : []),
+                [new FactProvenance("test", "1", requiresEvidence ? Detector : null, requiresEvidence ? "1" : null)],
+                requiresEvidence ? [new Evidence(Document, "Client.cs", 1, 1, 1, 2)] : []),
             id,
             Orders.ToFactId(),
             target,

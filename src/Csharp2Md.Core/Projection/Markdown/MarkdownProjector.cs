@@ -19,7 +19,7 @@ internal static class MarkdownProjector
         var builder = new StringBuilder()
             .Append("# ").Append(document.RelativePath).Append("\n\n");
 
-        AppendAnnotations(builder, document, fragment);
+        AppendAnalysis(builder, document, fragment);
         foreach (var section in sections)
         {
             builder.Append("## ").Append(Title(section.SectionKind)).Append("\n\n")
@@ -36,41 +36,75 @@ internal static class MarkdownProjector
         return builder.ToString();
     }
 
-    private static void AppendAnnotations(
+    private static void AppendAnalysis(
         StringBuilder builder,
         DocumentFact document,
         ValidatedFactFragment fragment)
     {
-        var symbols = fragment.Facts.OfType<SymbolFact>()
+        var symbolResolutions = fragment.Facts.OfType<SymbolFact>()
             .Where(symbol => symbol.DocumentId == document.DocumentId)
-            .OrderBy(static symbol => symbol.SymbolId.Value, StringComparer.Ordinal)
+            .Select(static symbol => symbol.Header.Resolution)
             .ToArray();
-        if (symbols.Length == 0 && fragment.Diagnostics.IsEmpty)
+        var relationResolutions = fragment.Facts.OfType<RelationFact>()
+            .Select(static relation => relation.Header.Resolution)
+            .ToArray();
+        if (symbolResolutions.Length == 0 && relationResolutions.Length == 0 && fragment.Diagnostics.IsEmpty)
         {
             return;
         }
 
-        builder.Append("## Factual annotations\n\n");
-        foreach (var symbol in symbols)
-        {
-            builder.Append("- `").Append(symbol.SymbolKind).Append("` — ")
-                .Append(symbol.Header.Resolution.ToString().ToLowerInvariant());
-            if (!symbol.Attributes.IsEmpty)
-            {
-                builder.Append("; attributes: ").Append(string.Join(", ", symbol.Attributes));
-            }
+        var diagnosticCounts = fragment.Diagnostics
+            .GroupBy(static diagnostic => diagnostic.Code, StringComparer.Ordinal)
+            .OrderBy(static group => group.Key, StringComparer.Ordinal)
+            .Select(static group => (Code: group.Key, Count: group.Count()))
+            .ToArray();
 
-            builder.Append('\n');
-        }
+        builder.Append("## Analysis\n\n```yaml\n")
+            .Append("resolution: ").Append(Wire(document.Header.Resolution)).Append('\n');
+        AppendResolutionCounts(builder, "symbols", symbolResolutions);
+        AppendResolutionCounts(builder, "relations", relationResolutions);
+        AppendDiagnosticCounts(builder, diagnosticCounts);
+        builder.Append("```\n\n");
+    }
 
-        foreach (var diagnostic in fragment.Diagnostics)
+    private static void AppendResolutionCounts(StringBuilder builder, string key, IReadOnlyCollection<FactResolution> resolutions)
+    {
+        var counts = resolutions
+            .GroupBy(static resolution => resolution)
+            .ToDictionary(static group => group.Key, static group => group.Count());
+        builder.Append(key).Append(':');
+        var present = Enum.GetValues<FactResolution>().Where(counts.ContainsKey).ToArray();
+        if (present.Length == 0)
         {
-            builder.Append("- diagnostic `").Append(diagnostic.Code).Append("`: ")
-                .Append(diagnostic.Message).Append('\n');
+            builder.Append(" {}\n");
+            return;
         }
 
         builder.Append('\n');
+        foreach (var kind in present)
+        {
+            builder.Append("  ").Append(Wire(kind)).Append(": ").Append(counts[kind]).Append('\n');
+        }
     }
+
+    private static void AppendDiagnosticCounts(StringBuilder builder, IReadOnlyCollection<(string Code, int Count)> counts)
+    {
+        builder.Append("diagnostics:");
+        if (counts.Count == 0)
+        {
+            builder.Append(" {}\n");
+            return;
+        }
+
+        builder.Append('\n');
+        foreach (var (code, count) in counts)
+        {
+            builder.Append("  ").Append(code).Append(": ").Append(count).Append('\n');
+        }
+    }
+
+    private static string Wire<T>(T value) where T : struct, Enum =>
+        value.ToString().ToLowerInvariant();
 
     private static void ValidatePartition(IReadOnlyList<SourceSectionFact> sections)
     {

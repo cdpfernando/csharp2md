@@ -1,5 +1,6 @@
 using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Analysis.Inventory;
+using Csharp2Md.Core.Analysis.Relations;
 using Csharp2Md.Core.Analysis.Semantics.MSBuild;
 using Csharp2Md.Core.Analysis.Semantics.Roslyn;
 using Csharp2Md.Core.Analysis.Syntax;
@@ -19,6 +20,7 @@ internal sealed record SemanticProcessedDocument(
     SemanticProjectDocument Source,
     bool Attempted,
     ImmutableArray<SymbolFact> EnrichedSymbols,
+    ImmutableArray<RelationFact> EnrichedRelations,
     ImmutableArray<SymbolFactId> LinkedSymbolIds,
     ImmutableArray<AnalysisDiagnostic> Diagnostics);
 
@@ -307,6 +309,15 @@ internal sealed class TrustedSemanticProjectProcessor(
                 state.LinkedSymbolIds.AddRange(enriched.Document.SymbolIds);
                 state.Diagnostics.AddRange(enriched.Diagnostics);
                 diagnostics.AddRange(enriched.Diagnostics);
+
+                if (binding.SemanticModel is { } model)
+                {
+                    state.EnrichedRelations.AddRange(RelationCollector.Refine(
+                        state.Source.Extraction.Document.DocumentId,
+                        state.Source.RelativePath,
+                        state.Source.Extraction.RelationCandidates,
+                        model));
+                }
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -391,6 +402,7 @@ internal sealed class TrustedSemanticProjectProcessor(
         public SemanticProjectDocument Source { get; } = source;
         public bool Attempted { get; set; }
         public ImmutableArray<SymbolFact>.Builder EnrichedSymbols { get; } = ImmutableArray.CreateBuilder<SymbolFact>();
+        public ImmutableArray<RelationFact>.Builder EnrichedRelations { get; } = ImmutableArray.CreateBuilder<RelationFact>();
         public ImmutableArray<SymbolFactId>.Builder LinkedSymbolIds { get; } = ImmutableArray.CreateBuilder<SymbolFactId>();
         public ImmutableArray<AnalysisDiagnostic>.Builder Diagnostics { get; } = ImmutableArray.CreateBuilder<AnalysisDiagnostic>();
 
@@ -398,6 +410,7 @@ internal sealed class TrustedSemanticProjectProcessor(
             Source,
             Attempted,
             EnrichedSymbols.ToImmutable(),
+            EnrichedRelations.ToImmutable(),
             LinkedSymbolIds.Distinct().OrderBy(static id => id.Value, StringComparer.Ordinal).ToImmutableArray(),
             Diagnostics.GroupBy(static diagnostic => diagnostic.Id).Select(static group => group.First()).Order().ToImmutableArray());
     }

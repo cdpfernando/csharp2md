@@ -180,7 +180,9 @@ internal static class FactualJsonMapper
             fact.Attributes, fact.RelevantTypeReferences,
             fact.Semantics is null ? null : new SymbolSemanticJson(
                 fact.Semantics.ImplementedMemberIds.Select(static id => id.Value).ToImmutableArray(),
-                fact.Semantics.OverriddenMemberId?.Value));
+                fact.Semantics.OverriddenMemberId?.Value),
+            fact.Name, fact.FullyQualifiedName, fact.Namespace, fact.ContainingType,
+            fact.ContainingSymbolId?.Value, fact.Signature, fact.Arity, fact.ParameterTypes);
 
     private static ComponentFactJson Map(ComponentFact fact) =>
         new(Map(fact.Header), fact.ComponentId.Value, fact.ComponentKind,
@@ -221,6 +223,7 @@ internal static class FactualJsonMapper
         RelationPartition.Http => "http",
         RelationPartition.Grpc => "grpc",
         RelationPartition.Events => "events",
+        RelationPartition.Structural => "structural",
         _ => throw new ArgumentOutOfRangeException(nameof(partition), partition, "Unsupported relation partition."),
     };
 }

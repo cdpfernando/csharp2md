@@ -1,6 +1,8 @@
 using System.Text;
 using Csharp2Md.Core.Analysis.Contracts;
+using Csharp2Md.Core.Analysis.Indexes;
 using Csharp2Md.Core.Analysis.Inventory;
+using Csharp2Md.Core.Analysis.Relations;
 using Csharp2Md.Core.Analysis.Semantics;
 using Csharp2Md.Core.Analysis.Semantics.MSBuild;
 using Csharp2Md.Core.Analysis.Semantics.Roslyn;
@@ -34,6 +36,7 @@ public sealed class AnalysisEngine
     private readonly IProjectEvaluationAdapter _evaluator;
     private readonly ISemanticCompilationAdapter _compilationAdapter;
     private readonly ISourceGeneratorAdapter _generatorAdapter;
+    private readonly Action<SymbolIndex>? _onSymbolIndexBuilt;
 
     public AnalysisEngine()
         : this(new InertInventory(), FactValidator.Validate, null,
@@ -50,9 +53,11 @@ public sealed class AnalysisEngine
     internal AnalysisEngine(
         InertInventory inventory,
         FragmentValidationFunc validate,
-        IAnalysisEngineObserver? observer)
+        IAnalysisEngineObserver? observer,
+        Action<SymbolIndex>? onSymbolIndexBuilt = null)
         : this(inventory, validate, observer,
-            new DotnetMsBuildEvaluator(), new SemanticCompilationAdapter(), new SourceGeneratorAdapter())
+            new DotnetMsBuildEvaluator(), new SemanticCompilationAdapter(), new SourceGeneratorAdapter(),
+            onSymbolIndexBuilt)
     {
     }
 
@@ -62,8 +67,10 @@ public sealed class AnalysisEngine
         IAnalysisEngineObserver? observer,
         IProjectEvaluationAdapter evaluator,
         ISemanticCompilationAdapter compilationAdapter,
-        ISourceGeneratorAdapter generatorAdapter)
+        ISourceGeneratorAdapter generatorAdapter,
+        Action<SymbolIndex>? onSymbolIndexBuilt = null)
     {
+        _onSymbolIndexBuilt = onSymbolIndexBuilt;
         _inventory = inventory;
         _validate = validate;
         _observer = observer;
@@ -102,6 +109,7 @@ public sealed class AnalysisEngine
         var store = new FactStore(request.OutputRoot);
         var storedFragments = ImmutableArray.CreateBuilder<StoredFactFragment>();
         var coverageFacts = ImmutableArray.CreateBuilder<IFact>();
+        var symbolFacts = ImmutableArray.CreateBuilder<SymbolFact>();
         var coverageOverrides = ImmutableArray.CreateBuilder<ScopeCoverageInput>();
         var analysisDiagnostics = ImmutableArray.CreateBuilder<AnalysisDiagnostic>();
         var resultDiagnostics = new List<string>(inventory.Diagnostics.Select(static diagnostic => diagnostic.Message));
@@ -125,8 +133,9 @@ public sealed class AnalysisEngine
                     try
                     {
                         var projectResult = await AnalyzeProjectAsync(
-                                request, project, store, storedFragments, coverageFacts, coverageOverrides,
-                                analysisDiagnostics, resultDiagnostics, loadedExtensions, cancellationToken)
+                                request, project, store, storedFragments, coverageFacts, symbolFacts,
+                                coverageOverrides, analysisDiagnostics, resultDiagnostics, loadedExtensions,
+                                cancellationToken)
                             .ConfigureAwait(false);
                         documentCount += projectResult.DocumentCount;
                         structuralFailure |= projectResult.StructuralFailure;
@@ -148,10 +157,16 @@ public sealed class AnalysisEngine
             ? AnalysisMode.Semantic
             : AnalysisMode.SyntaxOnly;
         resultDiagnostics.AddRange(analysisDiagnostics.Select(static diagnostic => diagnostic.Message));
+        var accumulated = coverageFacts.ToImmutable();
         var honestCoverage = CoverageProjector.Project(new CoverageProjectionRequest(
-            request.Options.Mode, coverageFacts.ToImmutable(), analysisDiagnostics.ToImmutable(), [], coverageOverrides.ToImmutable()));
+            request.Options.Mode, accumulated, analysisDiagnostics.ToImmutable(), [], coverageOverrides.ToImmutable()));
+        _onSymbolIndexBuilt?.Invoke(SymbolIndexBuilder.Build(
+            symbolFacts,
+            accumulated.OfType<ProjectFact>(),
+            accumulated.OfType<DocumentFact>(),
+            accumulated.OfType<TargetFact>()));
         var snapshot = new AggregateOutputSnapshot(
-            request.Topic, request.Domain, "3.0.0", request.Options.Mode, effectiveMode, request.Options.Trust,
+            request.Topic, request.Domain, "3.0.1", request.Options.Mode, effectiveMode, request.Options.Trust,
             loadedExtensions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray(),
             new ManifestCoverage(inventory.Services.Length, projectCount, documentCount),
             storedFragments.ToImmutable(), honestCoverage);
@@ -171,6 +186,7 @@ public sealed class AnalysisEngine
         FactStore store,
         ImmutableArray<StoredFactFragment>.Builder storedFragments,
         ImmutableArray<IFact>.Builder coverageFacts,
+        ImmutableArray<SymbolFact>.Builder symbolFacts,
         ImmutableArray<ScopeCoverageInput>.Builder coverageOverrides,
         ImmutableArray<AnalysisDiagnostic>.Builder analysisDiagnostics,
         List<string> resultDiagnostics,
@@ -245,10 +261,14 @@ public sealed class AnalysisEngine
                     .Where(static symbol => symbol.ContainsErrorSymbol)
                     .Select(static symbol => symbol.SymbolId)
                     .ToHashSet();
+                var relationFacts = RelationCollector.CreateFacts(
+                    extraction.Document.DocumentId, relativePath, extraction.RelationCandidates);
                 var baseline = new IFact[] { documentFact }
                     .Concat(extraction.Document.Sections)
-                    .Concat(extraction.Symbols.Where(symbol => !errorIds.Contains(symbol.SymbolId)));
-                var merged = FactMerger.Merge(baseline, document.EnrichedSymbols, document.Diagnostics);
+                    .Concat(extraction.Symbols.Where(symbol => !errorIds.Contains(symbol.SymbolId)))
+                    .Concat(relationFacts);
+                var enrichment = document.EnrichedSymbols.Cast<IFact>().Concat(document.EnrichedRelations);
+                var merged = FactMerger.Merge(baseline, enrichment, document.Diagnostics);
                 analysisDiagnostics.AddRange(merged.StructuralDiagnostics);
                 if (!merged.IsValid)
                 {
@@ -275,6 +295,7 @@ public sealed class AnalysisEngine
                 storedFragments.Add(stored);
                 persistedDocumentIds.Add(documentFact.DocumentId);
                 coverageFacts.Add(fragment.Facts.OfType<DocumentFact>().Single());
+                symbolFacts.AddRange(fragment.Facts.OfType<SymbolFact>());
                 coverageOverrides.Add(new ScopeCoverageInput(
                     documentFact.DocumentId.ToFactId(), CoverageApplicability.Applicable,
                     document.Attempted ? CoverageAttempt.Attempted : CoverageAttempt.NotAttempted));
@@ -325,7 +346,7 @@ public sealed class AnalysisEngine
         ImmutableArray<SemanticProjectDocument> sources) =>
         new(
             new ProjectFactEnrichmentResult(project, [], []),
-            sources.Select(static source => new SemanticProcessedDocument(source, false, [], [], [])).ToImmutableArray(),
+            sources.Select(static source => new SemanticProcessedDocument(source, false, [], [], [], [])).ToImmutableArray(),
             [], [], false);
 
     private static AnalysisResult Result(

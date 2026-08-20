@@ -49,6 +49,42 @@ public sealed class FactValidatorTests
     }
 
     [Fact]
+    public void Validate_ContainingSymbolIdPointingAtAFactInTheSameInput_IsAccepted()
+    {
+        var container = Symbol("Container", FactResolution.Syntactic);
+        var member = Symbol("Member", FactResolution.Syntactic, containingSymbolId: container.SymbolId);
+
+        var result = Validate([container, member]);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(2, result.Fragment!.Facts.Length);
+    }
+
+    [Fact]
+    public void Validate_ContainingSymbolIdAbsentFromTheInput_RejectsAndNamesMissingReference()
+    {
+        var absent = SymbolFactId.CreateSyntactic(Project, "Feature.cs", "class", "Absent");
+        var member = Symbol("Member", FactResolution.Syntactic, containingSymbolId: absent);
+
+        var result = Validate([member]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ValidationDiagnostics, diagnostic =>
+            diagnostic.Code == "C2M-FV-002"
+            && Rule(diagnostic) == "missing-reference"
+            && diagnostic.Data.Any(item => item.Key == "reference" && item.Value == absent.Value));
+    }
+
+    [Fact]
+    public void Validate_NullContainingSymbolId_AddsNoDiagnostic()
+    {
+        var result = Validate([Symbol("Standalone", FactResolution.Syntactic)]);
+
+        Assert.True(result.IsValid);
+        Assert.Empty(result.ValidationDiagnostics);
+    }
+
+    [Fact]
     public void Validate_ReferencePresentInBoundedAggregateCatalog_IsAccepted()
     {
         var relation = Relation(RelationPartition.CompileTime, "type-reference", Target.ToFactId(), FactResolution.Exact);
@@ -143,6 +179,46 @@ public sealed class FactValidatorTests
     }
 
     [Fact]
+    public void Validate_InheritanceRelationWithoutDetectorProvenance_IsNowRejected()
+    {
+        var relation = Relation(RelationPartition.Inheritance, "implements", Target.ToFactId(), FactResolution.Syntactic, detectorProvenance: false);
+
+        var result = Validate([relation]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ValidationDiagnostics, diagnostic => Rule(diagnostic) == "runtime-detector-provenance");
+    }
+
+    [Fact]
+    public void Validate_InheritanceRelationWithoutEvidence_IsNowRejected()
+    {
+        var relation = Relation(RelationPartition.Inheritance, "inherits", Target.ToFactId(), FactResolution.Syntactic, evidence: []);
+
+        var result = Validate([relation]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ValidationDiagnostics, diagnostic => Rule(diagnostic) == "runtime-evidence");
+    }
+
+    [Theory]
+    [InlineData("project-reference")]
+    [InlineData("package-reference")]
+    public void Validate_CompileTimeOnlyRelationWithoutEvidenceOrDetectorProvenance_StillValidatesCleanly(string relationKind)
+    {
+        var relation = Relation(
+            RelationPartition.CompileTime,
+            relationKind,
+            Target.ToFactId(),
+            FactResolution.Exact,
+            detectorProvenance: false,
+            evidence: []);
+
+        var result = Validate([relation]);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
     public void Validate_RuntimeRelationWithDetectorProvenanceAndEvidence_IsAccepted()
     {
         var relation = Relation(RelationPartition.Http, "http-request", Target.ToFactId(), FactResolution.Exact);
@@ -231,7 +307,8 @@ public sealed class FactValidatorTests
         FactResolution resolution,
         bool containsErrorSymbol = false,
         IEnumerable<Evidence>? evidence = null,
-        IEnumerable<DiagnosticId>? diagnosticIds = null)
+        IEnumerable<DiagnosticId>? diagnosticIds = null,
+        SymbolFactId? containingSymbolId = null)
     {
         var id = SymbolFactId.CreateSyntactic(Project, "Feature.cs", "class", signature);
         return new SymbolFact(
@@ -248,7 +325,16 @@ public sealed class FactValidatorTests
             containsErrorSymbol,
             [],
             [],
-            []);
+            [],
+            Semantics: null,
+            Name: signature,
+            FullyQualifiedName: $"global::{signature}",
+            Namespace: null,
+            ContainingType: null,
+            ContainingSymbolId: containingSymbolId,
+            Signature: signature,
+            Arity: 0,
+            ParameterTypes: []);
     }
 
     private static RelationFact Relation(

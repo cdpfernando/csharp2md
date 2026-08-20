@@ -108,7 +108,15 @@ public sealed record SymbolFactJson(
     [property: JsonPropertyOrder(5)] ImmutableArray<string> BaseAndInterfaceIds,
     [property: JsonPropertyOrder(6)] ImmutableArray<string> Attributes,
     [property: JsonPropertyOrder(7)] ImmutableArray<string> RelevantTypeReferences,
-    [property: JsonPropertyOrder(8)] SymbolSemanticJson? Semantics = null);
+    [property: JsonPropertyOrder(8)] SymbolSemanticJson? Semantics,
+    [property: JsonPropertyOrder(9)] string Name,
+    [property: JsonPropertyOrder(10)] string FullyQualifiedName,
+    [property: JsonPropertyOrder(11)] string? Namespace,
+    [property: JsonPropertyOrder(12)] string? ContainingType,
+    [property: JsonPropertyOrder(13)] string? ContainingSymbolId,
+    [property: JsonPropertyOrder(14)] string Signature,
+    [property: JsonPropertyOrder(15)] int Arity,
+    [property: JsonPropertyOrder(16)] ImmutableArray<string> ParameterTypes);
 
 public sealed record SymbolSemanticJson(
     [property: JsonPropertyOrder(0)] ImmutableArray<string> ImplementedMemberIds,

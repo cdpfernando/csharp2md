@@ -5,7 +5,7 @@ namespace Csharp2Md.Core.Facts.Serialization;
 
 public static class FactualJsonSerializer
 {
-    public const int SchemaVersion = 2;
+    public const int SchemaVersion = 3;
 
     public static byte[] Serialize(FactualJsonDocument document)
     {

@@ -10,6 +10,7 @@ public enum RelationPartition
     Http,
     Grpc,
     Events,
+    Structural,
 }
 
 public sealed record RelationFact(

@@ -36,14 +36,15 @@ public sealed class FactualSchemaSyncTests
     };
 
     [Fact]
-    public void RootRequiredProperties_MatchFactualDocumentExactlyAndSchemaVersionIsTwo()
+    public void RootRequiredProperties_MatchFactualDocumentExactlyAndSchemaVersionIsThree()
     {
         using var schema = OpenSchema();
         var required = Required(schema.RootElement);
         var contract = typeof(FactualJsonDocument).GetProperties().Select(static property => Snake(property.Name)).Order().ToArray();
 
         Assert.Equal(contract, required);
-        Assert.Equal(2, schema.RootElement.GetProperty("properties").GetProperty("schema_version").GetProperty("const").GetInt32());
+        Assert.Equal(3, schema.RootElement.GetProperty("properties").GetProperty("schema_version").GetProperty("const").GetInt32());
+        Assert.Equal(FactualJsonSerializer.SchemaVersion, schema.RootElement.GetProperty("properties").GetProperty("schema_version").GetProperty("const").GetInt32());
     }
 
     [Theory]

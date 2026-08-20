@@ -193,6 +193,32 @@ public sealed class FactMergerTests
     }
 
     [Fact]
+    public void SyntacticResolution_OutranksHeuristicResolutionSharingIdentity()
+    {
+        var heuristic = Symbol(FirstId, FactResolution.Heuristic, attributes: ["Heuristic"]);
+        var syntactic = Symbol(FirstId, FactResolution.Syntactic, attributes: ["Syntactic"]);
+
+        var result = FactMerger.Merge([heuristic], [syntactic]);
+
+        var merged = Assert.IsType<SymbolFact>(Assert.Single(result.Facts));
+        Assert.Equal(FactResolution.Syntactic, merged.Header.Resolution);
+        Assert.Equal(["Syntactic"], merged.Attributes.ToArray());
+    }
+
+    [Fact]
+    public void HeuristicResolution_OutranksCandidateResolutionSharingIdentity()
+    {
+        var candidate = Symbol(FirstId, FactResolution.Candidate, attributes: ["Candidate"]);
+        var heuristic = Symbol(FirstId, FactResolution.Heuristic, attributes: ["Heuristic"]);
+
+        var result = FactMerger.Merge([candidate], [heuristic]);
+
+        var merged = Assert.IsType<SymbolFact>(Assert.Single(result.Facts));
+        Assert.Equal(FactResolution.Heuristic, merged.Header.Resolution);
+        Assert.Equal(["Heuristic"], merged.Attributes.ToArray());
+    }
+
+    [Fact]
     public void ResultOrdering_IsCanonicalAcrossInputOrder()
     {
         IFact[] first = [Document([FirstId, SecondId]), Symbol(FirstId, FactResolution.Exact), Symbol(SecondId, FactResolution.Exact)];
@@ -234,7 +260,16 @@ public sealed class FactMergerTests
         ContainsErrorSymbol: resolution is FactResolution.Unresolved,
         [],
         attributes.IsDefault ? [] : attributes,
-        []);
+        [],
+        Semantics: null,
+        Name: "C",
+        FullyQualifiedName: "global::C",
+        Namespace: null,
+        ContainingType: null,
+        ContainingSymbolId: null,
+        Signature: "class C",
+        Arity: 0,
+        ParameterTypes: []);
 
     private static FactHeader Header(FactId id, FactKind kind, FactResolution resolution, FactProvenance provenance) =>
         FactHeader.Create(id, kind, resolution, [provenance]);
