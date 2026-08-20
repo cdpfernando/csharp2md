@@ -227,11 +227,11 @@ spelling"; semantic binding does not change it).
 - Skill: `dotnet-skills:csharp-coding-standards`
 
 **Done when**:
-- [ ] A symbol with successful semantic binding reports `Resolution = Exact` and `Namespace`/`ContainingType`/`FullyQualifiedName`/`ParameterTypes` matching the Roslyn `ISymbol`'s real, normalized shape (not the syntax-only guess from T2)
-- [ ] A symbol whose semantic binding contains an error symbol keeps its syntax-only field values (consistent with how `Attributes`/`RelevantTypeReferences` already behave in this method's `containsError` branch)
-- [ ] `ParameterTypes` for a predefined-type parameter (e.g. `int x`) normalizes to `global::System.Int32`, not the Roslyn-default `"int"` — proving `TypeNameNormalizer` is actually applied here, not assumed already-normalized
-- [ ] `ContainingSymbolId` for a member resolves to its containing type's real resolved `SymbolFactId` via `FindLocalId`, falling back to the syntax-only value when the containing type wasn't part of this enrichment batch
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] A symbol with successful semantic binding reports `Resolution = Exact` and `Namespace`/`ContainingType`/`FullyQualifiedName`/`ParameterTypes` matching the Roslyn `ISymbol`'s real, normalized shape (not the syntax-only guess from T2)
+- [x] A symbol whose semantic binding contains an error symbol keeps its syntax-only field values (consistent with how `Attributes`/`RelevantTypeReferences` already behave in this method's `containsError` branch)
+- [x] `ParameterTypes` for a predefined-type parameter (e.g. `int x`) normalizes to `global::System.Int32`, not the Roslyn-default `"int"` — proving `TypeNameNormalizer` is actually applied here, not assumed already-normalized
+- [x] `ContainingSymbolId` for a member resolves to its containing type's real resolved `SymbolFactId` via `FindLocalId`, falling back to the syntax-only value when the containing type wasn't part of this enrichment batch
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
 
 **Tests**: unit
 **Gate**: quick

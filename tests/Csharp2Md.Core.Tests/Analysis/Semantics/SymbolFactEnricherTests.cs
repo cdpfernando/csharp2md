@@ -214,6 +214,166 @@ public sealed class SymbolFactEnricherTests
         Assert.Null(implementation.Semantics.OverriddenMemberId);
     }
 
+    [Fact]
+    public void BoundSymbol_ReportsExactResolutionAndTheRoslynShapeOfEveryIdentityField()
+    {
+        var result = Enrich("""
+            namespace Acme.Payments;
+            public sealed class PaymentsService
+            {
+                public string AuthorizePayment(string orderId, decimal amount) => orderId;
+            }
+            """);
+
+        var type = result.Symbols.Single(static symbol => symbol.SymbolKind == "class");
+        var method = result.Symbols.Single(static symbol => symbol.SymbolKind == "method");
+
+        Assert.Equal(FactResolution.Exact, method.Header.Resolution);
+        Assert.Equal("AuthorizePayment", method.Name);
+        Assert.Equal("Acme.Payments", method.Namespace);
+        Assert.Equal("global::Acme.Payments.PaymentsService", method.ContainingType);
+        Assert.Equal("global::Acme.Payments.PaymentsService.AuthorizePayment", method.FullyQualifiedName);
+        Assert.Equal(["global::System.String", "global::System.Decimal"], method.ParameterTypes.ToArray());
+        Assert.Equal("global::Acme.Payments.PaymentsService", type.FullyQualifiedName);
+        Assert.Null(type.ContainingType);
+    }
+
+    [Fact]
+    public void BoundSymbol_IdentityFieldsAreTheResolvedShapeNotTheSyntaxOnlyGuess()
+    {
+        const string source = """
+            namespace Acme.Payments;
+            using Alias = System.String;
+            public sealed class PaymentsService
+            {
+                public void Take(Alias aliased, int count) { }
+            }
+            """;
+
+        var syntaxOnly = SyntaxFactExtractor.Extract(ProjectId, "Probe.cs", source).Symbols
+            .Single(static symbol => symbol.Name == "Take");
+        var enriched = Enrich(source).Symbols.Single(static symbol => symbol.Name == "Take");
+
+        // The syntax-only path can only echo the source spelling of a user-defined using alias;
+        // semantic binding resolves it to the real type. Both paths agree on the predefined keyword.
+        Assert.Equal(["global::Alias", "global::System.Int32"], syntaxOnly.ParameterTypes.ToArray());
+        Assert.Equal(["global::System.String", "global::System.Int32"], enriched.ParameterTypes.ToArray());
+        Assert.Equal(FactResolution.Exact, enriched.Header.Resolution);
+    }
+
+    [Fact]
+    public void BoundPredefinedTypeParameter_NormalizesToItsSystemMetadataNameNotTheCSharpKeyword()
+    {
+        var result = Enrich("namespace Acme; public class Api { public void Run(int count, string name) { } }");
+
+        var method = result.Symbols.Single(static symbol => symbol.SymbolKind == "method");
+
+        Assert.Equal(["global::System.Int32", "global::System.String"], method.ParameterTypes.ToArray());
+        Assert.DoesNotContain("global::int", method.ParameterTypes);
+        Assert.DoesNotContain("global::string", method.ParameterTypes);
+    }
+
+    [Fact]
+    public void BoundSymbol_ParameterTypesMatchTheSyntaxOnlyPathForPredefinedKeywordSpellings()
+    {
+        const string source = "namespace Acme; public class Api { public void Run(int count, string name) { } }";
+
+        var syntaxOnly = SyntaxFactExtractor.Extract(ProjectId, "Probe.cs", source).Symbols
+            .Single(static symbol => symbol.Name == "Run");
+        var enriched = Enrich(source).Symbols.Single(static symbol => symbol.Name == "Run");
+
+        Assert.Equal(syntaxOnly.ParameterTypes.ToArray(), enriched.ParameterTypes.ToArray());
+        Assert.Equal(syntaxOnly.FullyQualifiedName, enriched.FullyQualifiedName);
+        Assert.Equal(syntaxOnly.ContainingType, enriched.ContainingType);
+    }
+
+    [Fact]
+    public void BoundGenericTypeAndMethod_ReportTheirRoslynArity()
+    {
+        var result = Enrich("namespace Acme; public class Box<T> { public T Map<TValue, TOther>(TValue value) => default!; }");
+
+        var type = result.Symbols.Single(static symbol => symbol.SymbolKind == "class");
+        var method = result.Symbols.Single(static symbol => symbol.SymbolKind == "method");
+
+        Assert.Equal(1, type.Arity);
+        Assert.Equal(2, method.Arity);
+        Assert.Equal("global::Acme.Box", type.FullyQualifiedName);
+    }
+
+    [Fact]
+    public void BoundMember_ContainingSymbolIdIsItsContainingTypesResolvedIdentity()
+    {
+        var result = Enrich("namespace Acme; public class Api { public void Run() { } }");
+
+        var type = result.Symbols.Single(static symbol => symbol.SymbolKind == "class");
+        var method = result.Symbols.Single(static symbol => symbol.SymbolKind == "method");
+
+        Assert.Equal(type.SymbolId, method.ContainingSymbolId);
+        Assert.Contains("T%3AAcme.Api", type.SymbolId.Value, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BoundMemberWhoseContainerIsNotInTheEnrichmentBatch_KeepsTheSyntaxOnlyContainingSymbolId()
+    {
+        const string source = "namespace Acme; public class Api { public void Run() { } }";
+
+        var syntaxOnly = SyntaxFactExtractor.Extract(ProjectId, "Probe.cs", source).Symbols
+            .Single(static symbol => symbol.Name == "Run");
+        var method = Enrich(source, declaredSymbols: new MembersOnlyDeclaredSymbolProvider()).Symbols
+            .Single(static symbol => symbol.Name == "Run");
+
+        Assert.Equal(FactResolution.Exact, method.Header.Resolution);
+        Assert.NotNull(syntaxOnly.ContainingSymbolId);
+        Assert.Equal(syntaxOnly.ContainingSymbolId, method.ContainingSymbolId);
+    }
+
+    [Fact]
+    public void ErrorBearingBinding_KeepsEverySyntaxOnlyIdentityFieldValue()
+    {
+        const string source = "namespace Acme; public class Api { public Missing Run(Missing value) => value; }";
+
+        var syntaxOnly = SyntaxFactExtractor.Extract(ProjectId, "Probe.cs", source).Symbols
+            .Single(static symbol => symbol.Name == "Run");
+        var method = Enrich(source).Symbols.Single(static symbol => symbol.Name == "Run");
+
+        Assert.True(method.ContainsErrorSymbol);
+        Assert.NotEqual(FactResolution.Exact, method.Header.Resolution);
+        Assert.Equal(syntaxOnly.Name, method.Name);
+        Assert.Equal(syntaxOnly.FullyQualifiedName, method.FullyQualifiedName);
+        Assert.Equal(syntaxOnly.Namespace, method.Namespace);
+        Assert.Equal(syntaxOnly.ContainingType, method.ContainingType);
+        Assert.Equal(syntaxOnly.ContainingSymbolId, method.ContainingSymbolId);
+        Assert.Equal(syntaxOnly.Arity, method.Arity);
+        Assert.Equal(syntaxOnly.ParameterTypes.ToArray(), method.ParameterTypes.ToArray());
+    }
+
+    [Fact]
+    public void BoundSymbol_SignatureKeepsTheSyntaxOnlyOriginalSpelling()
+    {
+        const string source = "namespace Acme; public class Api { public void Run(int count) { } }";
+
+        var syntaxOnly = SyntaxFactExtractor.Extract(ProjectId, "Probe.cs", source).Symbols
+            .Single(static symbol => symbol.Name == "Run");
+        var method = Enrich(source).Symbols.Single(static symbol => symbol.Name == "Run");
+
+        Assert.Equal(syntaxOnly.Signature, method.Signature);
+        Assert.Contains("int", method.Signature, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Binds members but never type declarations, so a member's containing type is absent from the
+    /// enrichment batch and <c>ContainingSymbolId</c> has to fall back to its syntax-only value.
+    /// </summary>
+    private sealed class MembersOnlyDeclaredSymbolProvider : IDeclaredSymbolProvider
+    {
+        public ISymbol? GetDeclaredSymbol(
+            SemanticModel semanticModel,
+            MemberDeclarationSyntax declaration,
+            CancellationToken cancellationToken) => declaration is BaseTypeDeclarationSyntax or BaseNamespaceDeclarationSyntax
+                ? null
+                : semanticModel.GetDeclaredSymbol(declaration, cancellationToken);
+    }
+
     private static SymbolFactEnrichmentResult Enrich(
         string source,
         ISymbolDocumentationIdProvider? documentationIds = null,
