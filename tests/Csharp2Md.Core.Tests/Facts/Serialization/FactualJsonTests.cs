@@ -29,6 +29,8 @@ public sealed class FactualJsonTests
         Assert.Single(restored.Symbols);
         Assert.Single(restored.Components);
         Assert.Single(restored.Relations);
+        Assert.Single(restored.DatabaseObjects);
+        Assert.Single(restored.DatabaseColumns);
         Assert.Single(restored.Diagnostics);
         Assert.Single(restored.Coverage);
     }
@@ -167,6 +169,116 @@ public sealed class FactualJsonTests
     }
 
     [Fact]
+    public void SerializeAndDeserialize_DatabaseNodeFields_RoundTripEveryProperty()
+    {
+        var restored = FactualJsonSerializer.Deserialize(FactualJsonSerializer.Serialize(EveryFamilyDocument()));
+
+        var databaseObject = Assert.Single(restored.DatabaseObjects);
+        Assert.Equal("id1:database-object;connection=unknown;kind=table;name=tb_order", databaseObject.ObjectId);
+        Assert.Equal("unknown", databaseObject.ConnectionName);
+        Assert.Equal("table", databaseObject.Kind);
+        Assert.Equal("tb_order", databaseObject.Name);
+        Assert.Equal("database-object", databaseObject.Header.Kind);
+
+        var databaseColumn = Assert.Single(restored.DatabaseColumns);
+        Assert.Equal("id1:database-column;object=x;name=order_status", databaseColumn.ColumnId);
+        Assert.Equal("id1:database-object;connection=unknown;kind=table;name=tb_order", databaseColumn.ObjectId);
+        Assert.Equal("order_status", databaseColumn.Name);
+        Assert.Equal("database-column", databaseColumn.Header.Kind);
+    }
+
+    [Fact]
+    public void Serialize_DatabaseNodeFields_UseTheSnakeCaseWirePropertyNamesInDeclaredOrder()
+    {
+        using var json = JsonDocument.Parse(FactualJsonSerializer.Serialize(EveryFamilyDocument()));
+
+        var databaseObject = json.RootElement.GetProperty("database_objects").EnumerateArray().Single();
+        Assert.Equal(
+            ["header", "object_id", "connection_name", "kind", "name"],
+            databaseObject.EnumerateObject().Select(static property => property.Name).ToArray());
+        Assert.Equal("unknown", databaseObject.GetProperty("connection_name").GetString());
+        Assert.Equal("table", databaseObject.GetProperty("kind").GetString());
+        Assert.Equal("tb_order", databaseObject.GetProperty("name").GetString());
+
+        var databaseColumn = json.RootElement.GetProperty("database_columns").EnumerateArray().Single();
+        Assert.Equal(
+            ["header", "column_id", "object_id", "name"],
+            databaseColumn.EnumerateObject().Select(static property => property.Name).ToArray());
+        Assert.Equal("order_status", databaseColumn.GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public void Serialize_UnorderedDatabaseNodes_UsesCanonicalFactIdOrder()
+    {
+        var later = DatabaseObject("id1:database-object;connection=unknown;kind=table;name=b", "b");
+        var earlier = DatabaseObject("id1:database-object;connection=unknown;kind=table;name=a", "a");
+        var laterColumn = DatabaseColumn("id1:database-column;object=x;name=b", "b");
+        var earlierColumn = DatabaseColumn("id1:database-column;object=x;name=a", "a");
+        var document = EmptyDocument() with
+        {
+            DatabaseObjects = [later, earlier],
+            DatabaseColumns = [laterColumn, earlierColumn],
+        };
+
+        using var json = JsonDocument.Parse(FactualJsonSerializer.Serialize(document));
+
+        Assert.Equal(
+            ["a", "b"],
+            json.RootElement.GetProperty("database_objects").EnumerateArray()
+                .Select(static item => item.GetProperty("name").GetString()!).ToArray());
+        Assert.Equal(
+            ["a", "b"],
+            json.RootElement.GetProperty("database_columns").EnumerateArray()
+                .Select(static item => item.GetProperty("name").GetString()!).ToArray());
+    }
+
+    [Fact]
+    public void Map_DatabaseFacts_CarryTheirTypedIdsConnectionAndWireKindOntoTheContract()
+    {
+        var objectId = DatabaseObjectFactId.Create(
+            DatabaseObjectFactId.UnknownConnection,
+            DatabaseObjectKind.Procedure,
+            "usp_ship_order");
+        var columnId = DatabaseColumnFactId.Create(objectId, "order_status");
+        var fragment = new ValidatedFactFragment(
+            [
+                new DatabaseObjectFact(
+                    FactHeader.Create(objectId.ToFactId(), FactKind.DatabaseObject, FactResolution.Exact),
+                    objectId,
+                    DatabaseObjectFactId.UnknownConnection,
+                    DatabaseObjectKind.Procedure,
+                    "usp_ship_order"),
+                new DatabaseColumnFact(
+                    FactHeader.Create(columnId.ToFactId(), FactKind.DatabaseColumn, FactResolution.Exact),
+                    columnId,
+                    objectId,
+                    "order_status"),
+            ],
+            []);
+
+        var mapped = FactualJsonMapper.Map(fragment);
+
+        var mappedObject = Assert.Single(mapped.DatabaseObjects);
+        Assert.Equal(objectId.Value, mappedObject.ObjectId);
+        Assert.Equal("unknown", mappedObject.ConnectionName);
+        Assert.Equal("procedure", mappedObject.Kind);
+        Assert.Equal("usp_ship_order", mappedObject.Name);
+        Assert.Equal("database-object", mappedObject.Header.Kind);
+
+        var mappedColumn = Assert.Single(mapped.DatabaseColumns);
+        Assert.Equal(columnId.Value, mappedColumn.ColumnId);
+        Assert.Equal(objectId.Value, mappedColumn.ObjectId);
+        Assert.Equal("order_status", mappedColumn.Name);
+        Assert.Equal("database-column", mappedColumn.Header.Kind);
+    }
+
+    private static DatabaseObjectFactJson DatabaseObject(string id, string name) =>
+        new(Header(id, "database-object"), id, "unknown", "table", name);
+
+    private static DatabaseColumnFactJson DatabaseColumn(string id, string name) =>
+        new(Header(id, "database-column"), id, "id1:database-object;connection=unknown;kind=table;name=tb_order", name);
+
+    [Fact]
     public void Serialize_SchemaVersionOtherThanThree_IsRejected() =>
         Assert.Throws<ArgumentException>(() => FactualJsonSerializer.Serialize(EmptyDocument() with { SchemaVersion = 2 }));
 
@@ -185,6 +297,8 @@ public sealed class FactualJsonTests
         Assert.Contains(typeof(ImmutableArray<SymbolFactJson>), propertyTypes);
         Assert.Contains(typeof(ImmutableArray<ComponentFactJson>), propertyTypes);
         Assert.Contains(typeof(ImmutableArray<RelationFactJson>), propertyTypes);
+        Assert.Contains(typeof(ImmutableArray<DatabaseObjectFactJson>), propertyTypes);
+        Assert.Contains(typeof(ImmutableArray<DatabaseColumnFactJson>), propertyTypes);
         Assert.Contains(typeof(ImmutableArray<AnalysisDiagnosticJson>), propertyTypes);
         Assert.Contains(typeof(ImmutableArray<CoverageFactJson>), propertyTypes);
     }
@@ -211,6 +325,8 @@ public sealed class FactualJsonTests
         const string componentId = "id1:component;kind=library;owners=x";
         const string relationId = "id1:relation;owner=x;kind=http;claim=get;ordinal=1";
         const string diagnosticId = "id1:diagnostic;stage=document;scope=x;code=C2M1;fingerprint=f";
+        const string databaseObjectId = "id1:database-object;connection=unknown;kind=table;name=tb_order";
+        const string databaseColumnId = "id1:database-column;object=x;name=order_status";
         var evidence = new EvidenceJson(documentId, "Feature.cs", 1, 1, 1, 8);
         var provenance = new FactProvenanceJson("csharp2md", "3.0.0", null, null);
 
@@ -225,13 +341,15 @@ public sealed class FactualJsonTests
                 null, "Feature", "global::App.Feature", "App", "global::App.Outer", containingSymbolId, "class Feature", 1, ["global::System.String"])],
             [new(Header(componentId, "component"), componentId, "library", [projectId])],
             [new(new FactHeaderJson(relationId, "relation", "unresolved", [new("csharp2md", "3.0.0", "id1:detector;name=io.csharp2md.http", "1.0.0")], [evidence], [diagnosticId]), relationId, documentId, null, "http", "http-request", "No target proved.")],
+            [new(new FactHeaderJson(databaseObjectId, "database-object", "exact", [provenance], [evidence], []), databaseObjectId, "unknown", "table", "tb_order")],
+            [new(new FactHeaderJson(databaseColumnId, "database-column", "exact", [provenance], [evidence], []), databaseColumnId, databaseObjectId, "order_status")],
             [new(diagnosticId, "C2M1", "warning", "document", documentId, "Binding degraded", [new("reason", "missing target")], [evidence], null)],
             [new(documentId, "document", null, "applicable", "attempted", "syntactic", [diagnosticId])]);
     }
 
     private static FactualJsonDocument EmptyDocument() => new(
         FactualJsonSerializer.SchemaVersion,
-        [], [], [], [], [], [], [], [], [], []);
+        [], [], [], [], [], [], [], [], [], [], [], []);
 
     private static ProjectFactJson Project(string id, string relativePath) => new(
         Header(id, "project"),

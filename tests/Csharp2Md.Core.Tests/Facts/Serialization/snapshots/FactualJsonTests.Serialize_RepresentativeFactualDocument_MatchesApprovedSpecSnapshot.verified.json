@@ -29,6 +29,8 @@
   "symbols": [],
   "components": [],
   "relations": [],
+  "database_objects": [],
+  "database_columns": [],
   "diagnostics": [],
   "coverage": []
 }

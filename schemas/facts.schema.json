@@ -14,6 +14,8 @@
     "symbols",
     "components",
     "relations",
+    "database_objects",
+    "database_columns",
     "diagnostics",
     "coverage"
   ],
@@ -27,12 +29,15 @@
     "symbols": { "type": "array", "items": { "$ref": "#/$defs/symbol_fact" } },
     "components": { "type": "array", "items": { "$ref": "#/$defs/component_fact" } },
     "relations": { "type": "array", "items": { "$ref": "#/$defs/relation_fact" } },
+    "database_objects": { "type": "array", "items": { "$ref": "#/$defs/database_object_fact" } },
+    "database_columns": { "type": "array", "items": { "$ref": "#/$defs/database_column_fact" } },
     "diagnostics": { "type": "array", "items": { "$ref": "#/$defs/analysis_diagnostic" } },
     "coverage": { "type": "array", "items": { "$ref": "#/$defs/coverage_fact" } }
   },
   "$defs": {
     "fact_resolution": { "enum": ["exact", "partial", "syntactic", "heuristic", "candidate", "unresolved", "not-applicable"] },
     "fact_kind": { "enum": ["solution", "project", "target", "document", "source-section", "symbol", "component", "relation", "database-object", "database-column"] },
+    "database_object_kind": { "enum": ["table", "view", "procedure", "function", "unknown"] },
     "relation_partition": { "enum": ["compile-time", "inheritance", "dependency-injection", "http", "grpc", "events", "structural"] },
     "fact_level": { "enum": ["solution", "project", "target", "document", "detector"] },
     "coverage_applicability": { "enum": ["applicable", "not-applicable"] },
@@ -55,6 +60,8 @@
     "component_fact": { "type": "object", "required": ["header", "component_id", "component_kind", "project_ids"] },
     "relation_fact": { "type": "object", "required": ["header", "relation_id", "source_id", "partition", "relation_kind"], "properties": { "details": { "type": "array", "items": { "$ref": "#/$defs/relation_detail" } } } },
     "relation_detail": { "type": "object", "required": ["key", "value"] },
+    "database_object_fact": { "type": "object", "required": ["header", "object_id", "connection_name", "kind", "name"], "properties": { "kind": { "$ref": "#/$defs/database_object_kind" } } },
+    "database_column_fact": { "type": "object", "required": ["header", "column_id", "object_id", "name"] },
     "analysis_diagnostic": { "type": "object", "required": ["id", "code", "severity", "stage", "scope_id", "message", "data", "evidence"] },
     "coverage_fact": { "type": "object", "required": ["scope_id", "fact_level", "applicability", "attempt", "resolution", "diagnostic_ids"] }
   }

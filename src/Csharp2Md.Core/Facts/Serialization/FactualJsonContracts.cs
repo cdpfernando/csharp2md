@@ -142,6 +142,19 @@ public sealed record RelationDetailJson(
     [property: JsonPropertyOrder(0)] string Key,
     [property: JsonPropertyOrder(1)] string Value);
 
+public sealed record DatabaseObjectFactJson(
+    [property: JsonPropertyOrder(0)] FactHeaderJson Header,
+    [property: JsonPropertyOrder(1)] string ObjectId,
+    [property: JsonPropertyOrder(2)] string ConnectionName,
+    [property: JsonPropertyOrder(3)] string Kind,
+    [property: JsonPropertyOrder(4)] string Name);
+
+public sealed record DatabaseColumnFactJson(
+    [property: JsonPropertyOrder(0)] FactHeaderJson Header,
+    [property: JsonPropertyOrder(1)] string ColumnId,
+    [property: JsonPropertyOrder(2)] string ObjectId,
+    [property: JsonPropertyOrder(3)] string Name);
+
 public sealed record CoverageFactJson(
     [property: JsonPropertyOrder(0)] string ScopeId,
     [property: JsonPropertyOrder(1)] string FactLevel,
@@ -161,5 +174,7 @@ public sealed record FactualJsonDocument(
     [property: JsonPropertyOrder(6)] ImmutableArray<SymbolFactJson> Symbols,
     [property: JsonPropertyOrder(7)] ImmutableArray<ComponentFactJson> Components,
     [property: JsonPropertyOrder(8)] ImmutableArray<RelationFactJson> Relations,
-    [property: JsonPropertyOrder(9)] ImmutableArray<AnalysisDiagnosticJson> Diagnostics,
-    [property: JsonPropertyOrder(10)] ImmutableArray<CoverageFactJson> Coverage);
+    [property: JsonPropertyOrder(9)] ImmutableArray<DatabaseObjectFactJson> DatabaseObjects,
+    [property: JsonPropertyOrder(10)] ImmutableArray<DatabaseColumnFactJson> DatabaseColumns,
+    [property: JsonPropertyOrder(11)] ImmutableArray<AnalysisDiagnosticJson> Diagnostics,
+    [property: JsonPropertyOrder(12)] ImmutableArray<CoverageFactJson> Coverage);

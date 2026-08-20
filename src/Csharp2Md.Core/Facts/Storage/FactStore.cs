@@ -130,6 +130,8 @@ internal static class FactualJsonMapper
             facts.OfType<SymbolFact>().Select(Map).ToImmutableArray(),
             facts.OfType<ComponentFact>().Select(Map).ToImmutableArray(),
             facts.OfType<RelationFact>().Select(MapRelation).ToImmutableArray(),
+            facts.OfType<DatabaseObjectFact>().Select(Map).ToImmutableArray(),
+            facts.OfType<DatabaseColumnFact>().Select(Map).ToImmutableArray(),
             fragment.Diagnostics.Select(Map).ToImmutableArray(),
             []);
     }
@@ -194,6 +196,12 @@ internal static class FactualJsonMapper
             fact.Details.IsDefaultOrEmpty
                 ? null
                 : fact.Details.Order().Select(static detail => new RelationDetailJson(detail.Key, detail.Value)).ToImmutableArray());
+
+    private static DatabaseObjectFactJson Map(DatabaseObjectFact fact) =>
+        new(Map(fact.Header), fact.ObjectId.Value, fact.ConnectionName, DatabaseFactWire.Name(fact.Kind), fact.Name);
+
+    private static DatabaseColumnFactJson Map(DatabaseColumnFact fact) =>
+        new(Map(fact.Header), fact.ColumnId.Value, fact.ObjectId.Value, fact.Name);
 
     private static AnalysisDiagnosticJson Map(AnalysisDiagnostic diagnostic) =>
         new(diagnostic.Id.Value, diagnostic.Code, Wire(diagnostic.Severity), Wire(diagnostic.Stage),

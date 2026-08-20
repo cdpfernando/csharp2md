@@ -354,12 +354,13 @@ confirm evidence-range validation applies to them.
 
 **Done when**:
 
-- [ ] Round-trip serialize/deserialize tests cover every field on both new contracts
-- [ ] Property order is explicit and deterministic, matching the existing contracts' style
-- [ ] The three files change together because the source-generated context and the mapper cannot compile
-      apart from the contract — this is one wire shape, not three deliverables
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Round-trip serialize/deserialize tests cover every field on both new contracts
+- [x] Property order is explicit and deterministic, matching the existing contracts' style
+- [x] The three files change together because the source-generated context and the mapper cannot compile
+      apart from the contract — this is one wire shape, not three deliverables. `FactualJsonContext` needed
+      no edit: it declares only `FactualJsonDocument` and the generator walks nested contracts transitively
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions) — 1441 -> 1448 (+7)
 
 **Tests**: unit
 **Gate**: quick
