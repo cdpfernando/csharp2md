@@ -235,10 +235,10 @@ than one path stops producing duplicate documents, fragments and coverage scopes
 
 **Done when**:
 
-- [ ] All three enums declared with the full P1 + P2 value sets from design.md's Data Models
-- [ ] A test asserts every member maps to a distinct, lower-case wire name
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] All three enums declared with the full P1 + P2 value sets from design.md's Data Models
+- [x] A test asserts every member maps to a distinct, lower-case wire name
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions) — 1383 -> 1411 (+28)
 
 **Tests**: unit
 **Gate**: quick

@@ -168,6 +168,83 @@ public sealed class FactualModelTests
     }
 
     [Fact]
+    public void DatabaseObjectKind_DeclaresTheFullPersistenceValueSet() =>
+        Assert.Equal(
+            ["Table", "View", "Procedure", "Function", "Unknown"],
+            Enum.GetNames<DatabaseObjectKind>());
+
+    [Fact]
+    public void DatabaseOperation_DeclaresTheFullPersistenceValueSet() =>
+        Assert.Equal(
+            ["Read", "Insert", "Update", "Delete", "Execute", "Unknown"],
+            Enum.GetNames<DatabaseOperation>());
+
+    [Fact]
+    public void ColumnUsage_DeclaresTheFullPersistenceValueSet() =>
+        Assert.Equal(
+            ["Read", "Write", "Filter", "Join", "Order", "Group", "Aggregate", "Unknown"],
+            Enum.GetNames<ColumnUsage>());
+
+    [Theory]
+    [InlineData(DatabaseObjectKind.Table, "table")]
+    [InlineData(DatabaseObjectKind.View, "view")]
+    [InlineData(DatabaseObjectKind.Procedure, "procedure")]
+    [InlineData(DatabaseObjectKind.Function, "function")]
+    [InlineData(DatabaseObjectKind.Unknown, "unknown")]
+    public void DatabaseObjectKind_WireName_IsTheSpecifiedLiteral(DatabaseObjectKind kind, string expected) =>
+        Assert.Equal(expected, DatabaseFactWire.Name(kind));
+
+    [Theory]
+    [InlineData(DatabaseOperation.Read, "read")]
+    [InlineData(DatabaseOperation.Insert, "insert")]
+    [InlineData(DatabaseOperation.Update, "update")]
+    [InlineData(DatabaseOperation.Delete, "delete")]
+    [InlineData(DatabaseOperation.Execute, "execute")]
+    [InlineData(DatabaseOperation.Unknown, "unknown")]
+    public void DatabaseOperation_WireName_IsTheSpecifiedLiteral(DatabaseOperation operation, string expected) =>
+        Assert.Equal(expected, DatabaseFactWire.Name(operation));
+
+    [Theory]
+    [InlineData(ColumnUsage.Read, "read")]
+    [InlineData(ColumnUsage.Write, "write")]
+    [InlineData(ColumnUsage.Filter, "filter")]
+    [InlineData(ColumnUsage.Join, "join")]
+    [InlineData(ColumnUsage.Order, "order")]
+    [InlineData(ColumnUsage.Group, "group")]
+    [InlineData(ColumnUsage.Aggregate, "aggregate")]
+    [InlineData(ColumnUsage.Unknown, "unknown")]
+    public void ColumnUsage_WireName_IsTheSpecifiedLiteral(ColumnUsage usage, string expected) =>
+        Assert.Equal(expected, DatabaseFactWire.Name(usage));
+
+    public static TheoryData<string[]> PersistenceWireNames => new()
+    {
+        Enum.GetValues<DatabaseObjectKind>().Select(DatabaseFactWire.Name).ToArray(),
+        Enum.GetValues<DatabaseOperation>().Select(DatabaseFactWire.Name).ToArray(),
+        Enum.GetValues<ColumnUsage>().Select(DatabaseFactWire.Name).ToArray(),
+    };
+
+    [Theory]
+    [MemberData(nameof(PersistenceWireNames))]
+    public void PersistenceEnum_EveryMember_MapsToADistinctLowerCaseWireName(string[] wireNames)
+    {
+        Assert.Distinct(wireNames, StringComparer.Ordinal);
+        Assert.All(wireNames, wireName => Assert.Equal(wireName.ToLowerInvariant(), wireName, StringComparer.Ordinal));
+        Assert.All(wireNames, wireName => Assert.NotEmpty(wireName));
+    }
+
+    [Fact]
+    public void DatabaseObjectKind_UndeclaredMember_IsRejectedRatherThanNamed() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => DatabaseFactWire.Name((DatabaseObjectKind)99));
+
+    [Fact]
+    public void DatabaseOperation_UndeclaredMember_IsRejectedRatherThanNamed() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => DatabaseFactWire.Name((DatabaseOperation)99));
+
+    [Fact]
+    public void ColumnUsage_UndeclaredMember_IsRejectedRatherThanNamed() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => DatabaseFactWire.Name((ColumnUsage)99));
+
+    [Fact]
     public void CoverageFact_TracksDiagnosticReferencesForInventoriedScope()
     {
         var diagnostic = DiagnosticId.Create("compilation", Target.ToFactId(), "C2M3001", "unavailable");
