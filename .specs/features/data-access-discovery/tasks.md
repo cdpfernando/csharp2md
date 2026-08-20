@@ -896,17 +896,17 @@ and marks interpolated or concatenated expressions `Unresolved` without inventin
 
 **Done when**:
 
-- [ ] `$"SELECT * FROM {tableName}"` yields an `Unresolved` access with `target_text` `dynamic-table` and no
+- [x] `$"SELECT * FROM {tableName}"` yields an `Unresolved` access with `target_text` `dynamic-table` and no
       object claim (DAD-27)
-- [ ] A readable literal whose target cannot be read yields an `Unresolved` access preserving the statement
+- [x] A readable literal whose target cannot be read yields an `Unresolved` access preserving the statement
       (DAD-28)
-- [ ] SQL text is truncated at 2000 characters (DAD-16)
-- [ ] A connection-string-shaped literal is not treated as SQL, so no credential text can reach a claim
+- [x] SQL text is truncated at 2000 characters (DAD-16)
+- [x] A connection-string-shaped literal is not treated as SQL, so no credential text can reach a claim
       (DAD-15's guard at the point of capture)
-- [ ] A SQL-verb-leading literal used as a log message still yields an access at `Syntactic` resolution, per
+- [x] A SQL-verb-leading literal used as a log message still yields an access at `Syntactic` resolution, per
       the spec's Edge Case, rather than being dropped
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

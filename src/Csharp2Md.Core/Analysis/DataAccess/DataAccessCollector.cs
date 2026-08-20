@@ -1,4 +1,5 @@
 using Csharp2Md.Core.Analysis.DataAccess.EfCore;
+using Csharp2Md.Core.Analysis.DataAccess.Sql;
 using Csharp2Md.Core.Facts.Metadata;
 
 namespace Csharp2Md.Core.Analysis.DataAccess;
@@ -23,11 +24,9 @@ internal static class DataAccessCollector
 {
     private const string FailureCode = "C2M-DA-001";
 
-    /// <summary>
-    /// The analyzers every collection runs. Phase 4 registers the SQL analyzer alongside the EF Core one.
-    /// </summary>
+    /// <summary>The analyzers every collection runs, in a fixed canonical order.</summary>
     public static ImmutableArray<IDataAccessAnalyzer> RegisteredAnalyzers { get; } =
-        Canonicalize([new EfCoreAnalyzer()]);
+        Canonicalize([new EfCoreAnalyzer(), new SqlTextAnalyzer()]);
 
     public static DataAccessCollection Collect(DataAccessContext context) =>
         Collect(context, RegisteredAnalyzers);
