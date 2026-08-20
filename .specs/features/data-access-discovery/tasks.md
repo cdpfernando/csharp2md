@@ -1057,12 +1057,12 @@ snapshot's fragments so it reaches the manifest and the relation projection.
 
 **Done when**:
 
-- [ ] `raw/facts/relations/data.json` is non-empty after a real run over a fixture containing EF Core code
-- [ ] A run over a codebase with no persistence code produces an empty `data.json` and no fragment, with no
+- [x] `raw/facts/relations/data.json` is non-empty after a real run over a fixture containing EF Core code
+- [x] A run over a codebase with no persistence code produces an empty `data.json` and no fragment, with no
       diagnostic (spec Edge Case)
-- [ ] `AnalysisResult`'s public shape is unchanged
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] `AnalysisResult`'s public shape is unchanged
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: integration
 **Gate**: full

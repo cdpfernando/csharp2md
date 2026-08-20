@@ -171,15 +171,33 @@ public sealed class AnalysisEngine
         var effectiveMode = request.Options.Mode is AnalysisMode.Semantic && semanticSuccess
             ? AnalysisMode.Semantic
             : AnalysisMode.SyntaxOnly;
-        resultDiagnostics.AddRange(analysisDiagnostics.Select(static diagnostic => diagnostic.Message));
         var accumulated = coverageFacts.ToImmutable();
-        var honestCoverage = CoverageProjector.Project(new CoverageProjectionRequest(
-            request.Options.Mode, accumulated, analysisDiagnostics.ToImmutable(), [], coverageOverrides.ToImmutable()));
-        _onSymbolIndexBuilt?.Invoke(SymbolIndexBuilder.Build(
+        var symbolIndex = SymbolIndexBuilder.Build(
             symbolFacts,
             accumulated.OfType<ProjectFact>(),
             accumulated.OfType<DocumentFact>(),
-            accumulated.OfType<TargetFact>()));
+            accumulated.OfType<TargetFact>());
+        _onSymbolIndexBuilt?.Invoke(symbolIndex);
+
+        // Pass two of database access discovery. It runs here and not per document because the
+        // configuration naming an entity's table commonly lives in another document, and
+        // configured-over-convention precedence is undecidable until every document has been seen.
+        var database = DatabaseFragmentBuilder.Build(
+            DatabaseMappingResolver.Resolve(databaseClaims.ToSnapshot(), symbolIndex), _validate);
+        analysisDiagnostics.AddRange(database.Diagnostics);
+        if (database.Fragment is { } databaseFragment)
+        {
+            storedFragments.Add(store.Persist(databaseFragment));
+            validatedFragments.Add(databaseFragment);
+        }
+        else if (!database.Diagnostics.IsEmpty)
+        {
+            structuralFailure = true;
+        }
+
+        resultDiagnostics.AddRange(analysisDiagnostics.Select(static diagnostic => diagnostic.Message));
+        var honestCoverage = CoverageProjector.Project(new CoverageProjectionRequest(
+            request.Options.Mode, accumulated, analysisDiagnostics.ToImmutable(), [], coverageOverrides.ToImmutable()));
         var snapshot = new AggregateOutputSnapshot(
             request.Topic, request.Domain, "3.0.1", request.Options.Mode, effectiveMode, request.Options.Trust,
             loadedExtensions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray(),

@@ -41,7 +41,7 @@ public sealed class AggregateRelationPartitionTests(AggregateRelationPartitionFi
     }
 
     [Fact]
-    public void DataPartitionFile_IsWrittenByARealRunAndCarriesNoEntriesYet()
+    public void DataPartitionFile_CarriesThePersistenceRelationsPassTwoResolved()
     {
         Assert.True(File.Exists(fixture.PartitionPath("data")));
 
@@ -49,7 +49,31 @@ public sealed class AggregateRelationPartitionTests(AggregateRelationPartitionFi
 
         Assert.Equal("data", partition.RootElement.GetProperty("kind").GetString());
         Assert.Equal(2, partition.RootElement.GetProperty("schema_version").GetInt32());
-        Assert.Empty(partition.RootElement.GetProperty("entries").EnumerateArray());
+        var entries = partition.RootElement.GetProperty("entries").EnumerateArray().ToArray();
+        Assert.NotEmpty(entries);
+        Assert.All(entries, entry => Assert.Equal("data", entry.GetProperty("partition").GetString()));
+        Assert.All(entries, entry =>
+            Assert.NotEmpty(entry.GetProperty("header").GetProperty("evidence").EnumerateArray()));
+        Assert.Contains(entries, entry => entry.GetProperty("relation_kind").GetString() == "exposes");
+    }
+
+    [Fact]
+    public void DataPartitionFile_RecordsTheFixturesUnconfiguredEntityAsAConventionMapping()
+    {
+        using var partition = fixture.ReadPartition("data");
+
+        // The fixture's OrderDbContext declares no ToTable, so its entity has no proven table: the
+        // mapping names the DbSet property, states it is a convention, and targets nothing.
+        var mapsTo = Assert.Single(
+            partition.RootElement.GetProperty("entries").EnumerateArray(),
+            entry => entry.GetProperty("relation_kind").GetString() == "maps-to");
+
+        Assert.Equal("convention-mapping", mapsTo.GetProperty("unresolved_reason").GetString());
+        Assert.False(mapsTo.TryGetProperty("target_id", out _));
+        var details = mapsTo.GetProperty("details").EnumerateArray()
+            .ToDictionary(detail => detail.GetProperty("key").GetString()!, detail => detail.GetProperty("value").GetString());
+        Assert.Equal("Orders", details["target_text"]);
+        Assert.Equal("convention", details["mapping"]);
     }
 
     [Fact]

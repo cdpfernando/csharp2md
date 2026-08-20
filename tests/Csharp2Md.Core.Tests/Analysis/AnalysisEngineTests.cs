@@ -174,6 +174,94 @@ public sealed class AnalysisEngineTests : IDisposable
             diagnostic.Contains("Acme.Shared.Contracts", StringComparison.Ordinal));
     }
 
+    // Pass two runs after the document loop, so a table configured in one document resolves an entity
+    // declared in another and the data partition is actually written.
+    [Fact]
+    public async Task AnalyzeAsync_EfCoreProject_WritesTheResolvedDataRelationPartition()
+    {
+        CreateProjectWithFiles("Orders", EfCoreDocuments());
+
+        var result = await new AnalysisEngine().AnalyzeAsync(Request());
+
+        Assert.Equal(0, result.ExitCode);
+        using var data = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(_output, "raw", "facts", "relations", "data.json")));
+        var kinds = data.RootElement.GetProperty("entries").EnumerateArray()
+            .Select(entry => entry.GetProperty("relation_kind").GetString())
+            .ToArray();
+        Assert.Contains("maps-to", kinds);
+        Assert.Contains("exposes", kinds);
+        Assert.Contains("reads", kinds);
+    }
+
+    // The persistence fragment enters the manifest like any other, hash and length included.
+    [Fact]
+    public async Task AnalyzeAsync_EfCoreProject_PersistsThePersistenceFragmentIntoTheManifest()
+    {
+        CreateProjectWithFiles("Orders", EfCoreDocuments());
+
+        _ = await new AnalysisEngine().AnalyzeAsync(Request());
+
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(_output, "raw", "facts", "manifest.json")));
+        var fragment = Assert.Single(
+            manifest.RootElement.GetProperty("fragments").EnumerateArray(),
+            entry => entry.GetProperty("fact_id").GetString()!
+                .StartsWith("id1:database-", StringComparison.Ordinal));
+
+        Assert.Equal(64, fragment.GetProperty("sha256").GetString()!.Length);
+        Assert.True(fragment.GetProperty("byte_length").GetInt32() > 0);
+    }
+
+    // Spec Edge Case: a codebase with no persistence API usage records nothing and complains about nothing.
+    [Fact]
+    public async Task AnalyzeAsync_ProjectWithoutPersistenceCode_WritesAnEmptyDataPartitionAndNoDiagnostic()
+    {
+        CreateProject("App", "class OrderRepository { void Run() { } }");
+
+        var result = await new AnalysisEngine().AnalyzeAsync(Request());
+
+        Assert.Equal(0, result.ExitCode);
+        using var data = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(_output, "raw", "facts", "relations", "data.json")));
+        Assert.Empty(data.RootElement.GetProperty("entries").EnumerateArray());
+        var diagnostics = File.ReadAllText(Path.Combine(_output, "raw", "facts", "diagnostics.json"));
+        Assert.DoesNotContain("C2M-DA-", diagnostics, StringComparison.Ordinal);
+        Assert.DoesNotContain("C2M-FV-", diagnostics, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The entity, the context exposing and querying it, and a configuration in a third document -
+    /// the cross-document shape that forced pass two to run after the document loop. The query sits
+    /// beside its context because the claim pass catalogues entity sets per document.
+    /// </summary>
+    private static (string File, string Source)[] EfCoreDocuments() =>
+    [
+        ("Order.cs", "public class Order { public int Id { get; set; } public string Status { get; set; } }"),
+        ("OrderDbContext.cs", """
+            public class OrderDbContext : DbContext
+            {
+                public DbSet<Order> Orders { get; set; }
+            }
+
+            public class OrderQueries
+            {
+                private OrderDbContext _context;
+
+                public object Get(int id) => _context.Orders.Where(order => order.Id == id);
+            }
+            """),
+        ("OrderConfiguration.cs", """
+            public class OrderConfiguration
+            {
+                public void Configure(ModelBuilder builder)
+                {
+                    builder.Entity<Order>().ToTable("tb_order");
+                    builder.Entity<Order>().Property(order => order.Status).HasColumnName("order_status");
+                }
+            }
+            """),
+    ];
+
     private AnalysisRequest Request(AnalysisOptions? options = null) =>
         Assert.IsType<AnalysisRequest>(AnalysisRequest.Create(_input, _output, options: options).Request);
 
@@ -183,6 +271,17 @@ public sealed class AnalysisEngineTests : IDisposable
         Directory.CreateDirectory(directory);
         File.WriteAllText(Path.Combine(directory, $"{name}.csproj"), "<Project Sdk=\"Microsoft.NET.Sdk\" />");
         File.WriteAllText(Path.Combine(directory, "C.cs"), source);
+    }
+
+    private void CreateProjectWithFiles(string name, params (string File, string Source)[] documents)
+    {
+        var directory = Path.Combine(_input, name);
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(Path.Combine(directory, $"{name}.csproj"), "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+        foreach (var (file, source) in documents)
+        {
+            File.WriteAllText(Path.Combine(directory, file), source);
+        }
     }
 
     private sealed class RecordingExecutableObserver : IInventoryExecutionObserver

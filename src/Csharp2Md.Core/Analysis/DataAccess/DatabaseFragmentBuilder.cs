@@ -46,8 +46,10 @@ internal static partial class DatabaseFragmentBuilder
         var validation = validate(FactValidationInput.Create(
             facts.ToImmutable(),
             documents: resolution.Documents,
-            // Relation sources are symbols and documents that live in the fragments already persisted
-            // for their own documents; the solution-level fragment references them without redeclaring.
+            // A relation's source is a symbol or document already persisted in its own fragment, so
+            // C2M-FV-002 cannot see it from here - the same reason the engine declares a document
+            // fragment's project id known. The resolver is what keeps a source real: it comes either
+            // from a symbol-index lookup or from the extractor's owner map, never from a name.
             knownFactIds: resolution.Relations.Select(static relation => relation.SourceId).Distinct()));
 
         return new DatabaseFragmentResult(validation.Fragment, validation.ValidationDiagnostics);
