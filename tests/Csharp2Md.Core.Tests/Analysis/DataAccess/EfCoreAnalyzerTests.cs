@@ -270,6 +270,78 @@ public sealed class EfCoreAnalyzerTests
         Assert.Empty(claims);
     }
 
+    // DAD-07 / DAD-08: the brief's query reads the set and projects three columns.
+    [Fact]
+    public void Analyze_EntitySetReadFlowingIntoAProjection_YieldsAReadAccessAndOneReadColumnPerProjectedProperty()
+    {
+        const string Source = """
+            class OrderDbContext : DbContext
+            {
+                public DbSet<Order> Orders { get; set; }
+            }
+
+            class OrderService
+            {
+                private OrderDbContext _context;
+
+                public Task<OrderDto> GetOrder(int orderId)
+                {
+                    return _context.Orders
+                        .Where(x => x.Id == orderId)
+                        .Select(x => new OrderDto { Id = x.Id, Status = x.Status, Amount = x.Amount })
+                        .FirstOrDefaultAsync();
+                }
+            }
+            """;
+
+        var claims = EfCoreAnalysis.Claims(Source);
+
+        var access = Assert.Single(claims.Where(claim => claim.Kind == DatabaseClaimKind.Access));
+        Assert.Equal(DatabaseOperation.Read, access.Operation);
+        Assert.Equal("Order", access.EntityText);
+        Assert.Equal("Orders", access.PropertyText);
+        Assert.Equal(EfCoreAnalysis.SymbolIdOfMethodDeclaration(Source, "GetOrder"), access.OwnerId);
+
+        // DAD-08 scopes `read` to properties referenced outside a Where lambda.
+        var columns = claims
+            .Where(claim => claim.Kind == DatabaseClaimKind.ColumnAccess && claim.Usage == ColumnUsage.Read)
+            .ToList();
+        Assert.Equal(3, columns.Count);
+        Assert.Equal("Id", columns[0].PropertyText);
+        Assert.Equal("Status", columns[1].PropertyText);
+        Assert.Equal("Amount", columns[2].PropertyText);
+        Assert.All(columns, column => Assert.Equal(ColumnUsage.Read, column.Usage));
+        Assert.All(columns, column => Assert.Equal("Order", column.EntityText));
+        Assert.All(
+            columns,
+            column => Assert.Equal(
+                EfCoreAnalysis.SymbolIdOfMethodDeclaration(Source, "GetOrder"), column.OwnerId));
+    }
+
+    // DAD-07: the access stands on its own - no LINQ chain means no columns, not no access.
+    [Fact]
+    public void Analyze_EntitySetReadWithNoLinqChain_YieldsTheAccessClaimAndNoColumnClaims()
+    {
+        var claims = EfCoreAnalysis.Claims(
+            """
+            class OrderDbContext : DbContext
+            {
+                public DbSet<Order> Orders { get; set; }
+            }
+
+            class OrderService
+            {
+                private OrderDbContext _context;
+
+                public object All() => _context.Orders;
+            }
+            """);
+
+        var access = Assert.Single(claims.Where(claim => claim.Kind == DatabaseClaimKind.Access));
+        Assert.Equal(DatabaseOperation.Read, access.Operation);
+        Assert.Empty(claims.Where(claim => claim.Kind == DatabaseClaimKind.ColumnAccess));
+    }
+
     // DAD-01 is only reachable on a real run if the analyzer is one the collector actually runs.
     [Fact]
     public void RegisteredAnalyzers_IncludeTheEfCoreAnalyzer()

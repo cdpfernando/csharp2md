@@ -689,11 +689,11 @@ claim per entity property referenced outside a `Where` lambda.
 
 **Done when**:
 
-- [ ] Brief §7's exact query yields a `read` access plus `Id`, `Status`, `Amount` column claims with usage
+- [x] Brief §7's exact query yields a `read` access plus `Id`, `Status`, `Amount` column claims with usage
       `read`
-- [ ] A `DbSet` read with no LINQ chain still yields the access claim with no column claims
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] A `DbSet` read with no LINQ chain still yields the access claim with no column claims
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

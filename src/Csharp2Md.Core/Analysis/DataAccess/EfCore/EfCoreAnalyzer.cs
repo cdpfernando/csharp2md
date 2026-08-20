@@ -15,6 +15,12 @@ internal readonly record struct DiscoveredEntitySet(
     string PropertyName,
     string EntityName);
 
+/// <summary>One entity property a LINQ chain references, and how it was used.</summary>
+internal readonly record struct ColumnReference(
+    string PropertyName,
+    ColumnUsage Usage,
+    MemberAccessExpressionSyntax Reference);
+
 /// <summary>
 /// Recognises the EF Core shapes P1 covers and appends one raw claim per observation. Nothing here
 /// resolves a target: the configuration that names an entity's table commonly lives in another document,
@@ -38,12 +44,8 @@ internal sealed class EfCoreAnalyzer : IDataAccessAnalyzer
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(claims);
 
-        foreach (var invocation in context.Root.DescendantNodes().OfType<InvocationExpressionSyntax>())
-        {
-            AnalyzeInvocation(context, invocation, claims);
-        }
-
-        foreach (var entitySet in DiscoverEntitySets(context))
+        var entitySets = DiscoverEntitySets(context);
+        foreach (var entitySet in entitySets)
         {
             // DAD-01: sourced at the declaring context type, evidenced at the property that proves it.
             claims.Add(new RawDatabaseClaim
@@ -57,7 +59,158 @@ internal sealed class EfCoreAnalyzer : IDataAccessAnalyzer
                 PropertyText = entitySet.PropertyName,
             });
         }
+
+        foreach (var invocation in context.Root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            AnalyzeInvocation(context, invocation, claims);
+        }
+
+        AnalyzeEntitySetAccesses(context, EntityByEntitySetName(entitySets), claims);
     }
+
+    /// <summary>
+    /// Every read of a discovered <c>DbSet</c> property, plus the entity properties the LINQ chain built
+    /// on it references. Only a qualified <c>receiver.Set</c> access counts: a bare identifier cannot be
+    /// told from an unrelated local of the same name without semantics.
+    /// </summary>
+    private static void AnalyzeEntitySetAccesses(
+        DataAccessContext context,
+        IReadOnlyDictionary<string, string> entityByEntitySetName,
+        ImmutableArray<RawDatabaseClaim>.Builder claims)
+    {
+        if (entityByEntitySetName.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var access in context.Root.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
+        {
+            var entitySetName = access.Name.Identifier.ValueText;
+            if (!entityByEntitySetName.TryGetValue(entitySetName, out var entityName))
+            {
+                continue;
+            }
+
+            var chain = ChainFrom(access);
+            claims.Add(new RawDatabaseClaim
+            {
+                Kind = DatabaseClaimKind.Access,
+                OwnerId = context.OwnerOf(access),
+                Evidence = EvidenceFor(context, access),
+                ShapeConfidence = FactResolution.Syntactic,
+                AnalyzerId = AnalyzerId,
+                EntityText = entityName,
+                PropertyText = entitySetName,
+                Operation = DatabaseOperation.Read,
+            });
+
+            foreach (var column in ChainColumns(chain))
+            {
+                claims.Add(new RawDatabaseClaim
+                {
+                    Kind = DatabaseClaimKind.ColumnAccess,
+                    OwnerId = context.OwnerOf(column.Reference),
+                    Evidence = EvidenceFor(context, column.Reference),
+                    ShapeConfidence = FactResolution.Syntactic,
+                    AnalyzerId = AnalyzerId,
+                    EntityText = entityName,
+                    PropertyText = column.PropertyName,
+                    Usage = column.Usage,
+                });
+            }
+        }
+    }
+
+    /// <summary>
+    /// One entity per <c>DbSet</c> property name. The first declaration wins, so a document declaring two
+    /// contexts with a same-named set resolves in declaration order rather than arbitrarily.
+    /// </summary>
+    private static Dictionary<string, string> EntityByEntitySetName(
+        ImmutableArray<DiscoveredEntitySet> entitySets)
+    {
+        var byName = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var entitySet in entitySets)
+        {
+            byName.TryAdd(entitySet.PropertyName, entitySet.EntityName);
+        }
+
+        return byName;
+    }
+
+    /// <summary>The invocations chained directly onto an expression, outermost last.</summary>
+    private static ImmutableArray<InvocationExpressionSyntax> ChainFrom(ExpressionSyntax expression)
+    {
+        var chain = ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
+        var current = (ExpressionSyntax)expression;
+        while (current.Parent is MemberAccessExpressionSyntax parent
+            && ReferenceEquals(parent.Expression, current)
+            && parent.Parent is InvocationExpressionSyntax invocation)
+        {
+            chain.Add(invocation);
+            current = invocation;
+        }
+
+        return chain.ToImmutable();
+    }
+
+    /// <summary>
+    /// DAD-08: every entity property a chain operator's lambda references, in chain order, de-duplicated
+    /// per property and usage so a property named twice in one projection is one column claim.
+    /// </summary>
+    private static ImmutableArray<ColumnReference> ChainColumns(
+        ImmutableArray<InvocationExpressionSyntax> chain)
+    {
+        var columns = ImmutableArray.CreateBuilder<ColumnReference>();
+        var seen = new HashSet<(string PropertyName, ColumnUsage Usage)>();
+        foreach (var invocation in chain)
+        {
+            foreach (var argument in invocation.ArgumentList.Arguments)
+            {
+                if (argument.Expression is not LambdaExpressionSyntax lambda)
+                {
+                    continue;
+                }
+
+                foreach (var reference in LambdaPropertyReferences(lambda))
+                {
+                    var column = new ColumnReference(
+                        reference.Name.Identifier.ValueText, ColumnUsage.Read, reference);
+                    if (seen.Add((column.PropertyName, column.Usage)))
+                    {
+                        columns.Add(column);
+                    }
+                }
+            }
+        }
+
+        return columns.ToImmutable();
+    }
+
+    /// <summary>Every <c>parameter.Property</c> access inside a lambda's body.</summary>
+    private static IEnumerable<MemberAccessExpressionSyntax> LambdaPropertyReferences(
+        LambdaExpressionSyntax lambda)
+    {
+        var parameters = LambdaParameterNames(lambda);
+        if (parameters.Count == 0 || lambda.Body is null)
+        {
+            return [];
+        }
+
+        return lambda.Body.DescendantNodesAndSelf()
+            .OfType<MemberAccessExpressionSyntax>()
+            .Where(access => access.Expression is IdentifierNameSyntax identifier
+                && parameters.Contains(identifier.Identifier.ValueText));
+    }
+
+    private static IReadOnlyCollection<string> LambdaParameterNames(LambdaExpressionSyntax lambda) =>
+        lambda switch
+        {
+            SimpleLambdaExpressionSyntax simple => [simple.Parameter.Identifier.ValueText],
+            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Parameters
+                .Select(static parameter => parameter.Identifier.ValueText)
+                .ToArray(),
+            _ => [],
+        };
 
     private static void AnalyzeInvocation(
         DataAccessContext context,
