@@ -506,14 +506,14 @@ analyzer failure into a `C2M-DA-001` diagnostic instead of letting it escape.
 
 **Done when**:
 
-- [ ] A throwing analyzer produces one `C2M-DA-001` warning naming the document and the analyzer, and its
+- [x] A throwing analyzer produces one `C2M-DA-001` warning naming the document and the analyzer, and its
       partial claims are discarded
-- [ ] A throwing analyzer does not prevent the other analyzers' claims from being returned
-- [ ] `OperationCanceledException` propagates rather than being swallowed, matching `DetectorHost`
-- [ ] Every returned claim carries evidence — a claim without it is rejected at construction (DAD-13)
-- [ ] Analyzer order is canonical and stable across two collections over the same input
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] A throwing analyzer does not prevent the other analyzers' claims from being returned
+- [x] `OperationCanceledException` propagates rather than being swallowed, matching `DetectorHost`
+- [x] Every returned claim carries evidence — a claim without it is rejected at construction (DAD-13)
+- [x] Analyzer order is canonical and stable across two collections over the same input
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
