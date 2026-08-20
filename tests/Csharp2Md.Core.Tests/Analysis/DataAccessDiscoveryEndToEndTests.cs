@@ -9,11 +9,12 @@ using Csharp2Md.Core.Topic;
 namespace Csharp2Md.Core.Tests.Analysis;
 
 /// <summary>
-/// T35: spec.md's P1 EF Core Independent Test, restated against a real default-mode
-/// <see cref="AnalysisEngine.AnalyzeAsync"/> run over <c>fixtures/SyntheticSolution</c> - the same
-/// fixture-and-run structure <c>RelationCollectorEndToEndTests</c> uses. Every assertion here maps to a
-/// <c>DAD-NN</c> acceptance criterion, so the criteria are proven against the emitted files rather than
-/// against a hand-built resolver input.
+/// Both of spec.md's P1 Independent Tests - the EF Core one and the literal-SQL one - restated against a
+/// real default-mode <see cref="AnalysisEngine.AnalyzeAsync"/> run over <c>fixtures/SyntheticSolution</c>,
+/// in the fixture-and-run structure <c>RelationCollectorEndToEndTests</c> uses. Every assertion here maps
+/// to a <c>DAD-NN</c> acceptance criterion, so the criteria are proven against the emitted files rather
+/// than against a hand-built resolver input. The secret-absence invariant and the determinism guarantee
+/// are pinned over the same run.
 /// </summary>
 [Trait("Category", "Integration")]
 public sealed class DataAccessDiscoveryEndToEndTests(DataAccessDiscoveryFixture fixture)
@@ -262,6 +263,217 @@ public sealed class DataAccessDiscoveryEndToEndTests(DataAccessDiscoveryFixture 
             fixture.Database.Objects.Length);
     }
 
+    // DAD-21: the verb decides the coarse direction and the precise operation, for every shape the
+    // fixture's SQL document carries.
+    [Theory]
+    [InlineData("SelectOrder", "reads", "read")]
+    [InlineData("InsertOrder", "writes", "insert")]
+    [InlineData("UpdateOrderStatus", "writes", "update")]
+    [InlineData("RebuildTotals", "executes", "execute")]
+    [InlineData("DeleteArchived", "writes", "delete")]
+    public void DAD21_RecognisedVerb_DerivesTheAccessKindAndOperationFromTheStatement(
+        string member, string relationKind, string operation)
+    {
+        var access = Assert.Single(fixture.DataRelations, relation =>
+            AccessKinds.Contains(relation.RelationKind) && SourcedAt(relation, member));
+
+        Assert.Equal(relationKind, access.RelationKind);
+        Assert.Equal(operation, Detail(access, "operation"));
+    }
+
+    // DAD-22: a plain identifier after the verb's anchor keyword is proof of a name, so it mints a node
+    // and the access points at it.
+    [Theory]
+    [InlineData("SelectOrder")]
+    [InlineData("InsertOrder")]
+    [InlineData("UpdateOrderStatus")]
+    public void DAD22_ReadableTargetIdentifier_MintsAnExactNodeTheAccessPointsAt(string member)
+    {
+        var orders = Assert.Single(fixture.Database.Objects, node => node.Name == "Orders");
+        Assert.Equal("exact", orders.Header.Resolution);
+
+        var access = Assert.Single(fixture.DataRelations, relation =>
+            AccessKinds.Contains(relation.RelationKind) && SourcedAt(relation, member));
+
+        Assert.Equal(orders.ObjectId, access.TargetId);
+        Assert.Equal("Orders", Detail(access, "target_text"));
+    }
+
+    // DAD-23: EXEC proves a procedure; no other verb proves what kind of object it touched.
+    [Fact]
+    public void DAD23_ExecVerb_MintsAProcedureNode_AndEveryOtherVerbMintsAnUnknownKind()
+    {
+        var procedure = Assert.Single(fixture.Database.Objects, node => node.Name == "usp_RebuildOrderTotals");
+        Assert.Equal("procedure", procedure.Kind);
+
+        var orders = Assert.Single(fixture.Database.Objects, node => node.Name == "Orders");
+        Assert.Equal("unknown", orders.Kind);
+
+        var execute = Assert.Single(fixture.DataRelations, relation => relation.RelationKind == "executes");
+        Assert.Equal(procedure.ObjectId, execute.TargetId);
+    }
+
+    // DAD-24: the INSERT column list is proof of every column it names.
+    [Fact]
+    public void DAD24_InsertColumnList_EmitsOneWritesColumnPerListedColumn()
+    {
+        var columns = fixture.DataRelations
+            .Where(relation => relation.RelationKind == "writes-column" && SourcedAt(relation, "InsertOrder"))
+            .ToArray();
+
+        Assert.Equal(
+            ["Amount", "Id", "Status"],
+            columns.Select(relation => Detail(relation, "target_text")).Order(StringComparer.Ordinal));
+        Assert.All(columns, relation => Assert.Equal("write", Detail(relation, "usage")));
+        Assert.All(columns, relation => Assert.NotNull(relation.TargetId));
+    }
+
+    // DAD-25: the UPDATE ... SET assignment list is proof of every column it assigns, and of nothing else.
+    [Fact]
+    public void DAD25_UpdateSetList_EmitsOneWritesColumnPerAssignedColumn()
+    {
+        var column = Assert.Single(fixture.DataRelations, relation =>
+            relation.RelationKind == "writes-column" && SourcedAt(relation, "UpdateOrderStatus"));
+
+        Assert.Equal("Status", Detail(column, "target_text"));
+        Assert.Equal("write", Detail(column, "usage"));
+        Assert.NotNull(column.TargetId);
+    }
+
+    // DAD-26: both readable right-hand sides the criterion names - a parameter and a literal.
+    [Theory]
+    [InlineData("SelectOrder", "Id")]
+    [InlineData("DeleteArchived", "Status")]
+    public void DAD26_WhereComparisonAgainstALiteralOrParameter_EmitsAFiltersByForThatColumn(
+        string member, string column)
+    {
+        var filter = Assert.Single(fixture.DataRelations, relation =>
+            relation.RelationKind == "filters-by" && SourcedAt(relation, member));
+
+        Assert.Equal(column, Detail(filter, "target_text"));
+        Assert.Equal("filter", Detail(filter, "usage"));
+    }
+
+    // DAD-27: an interpolated statement proves a verb and nothing else. Its access survives; no node is
+    // invented for the table it does not name.
+    [Fact]
+    public void DAD27_InterpolatedStatement_StaysUnresolvedWithNoNodeAndItsSqlPreserved()
+    {
+        var dynamicAccess = Assert.Single(fixture.DataRelations, relation => SourcedAt(relation, "SelectAllFrom"));
+
+        Assert.Equal("reads", dynamicAccess.RelationKind);
+        Assert.Equal("unresolved", dynamicAccess.Header.Resolution);
+        Assert.Null(dynamicAccess.TargetId);
+        Assert.Equal("dynamic-sql", dynamicAccess.UnresolvedReason);
+        Assert.Equal("dynamic-table", Detail(dynamicAccess, "target_text"));
+        Assert.Equal("$\"SELECT * FROM {tableName}\"", Detail(dynamicAccess, "sql"));
+        Assert.DoesNotContain(
+            fixture.Database.Objects,
+            node => node.Name is "dynamic-table" or "tableName" or "{tableName}");
+    }
+
+    // DAD-28: the verb is readable and the target is not, so the statement itself is what survives.
+    [Fact]
+    public void DAD28_ReadableVerbWithUnreadableTarget_StaysUnresolvedWithItsStatementPreserved()
+    {
+        var access = Assert.Single(fixture.DataRelations, relation =>
+            AccessKinds.Contains(relation.RelationKind) && SourcedAt(relation, "DeleteArchived"));
+
+        Assert.Equal("unresolved", access.Header.Resolution);
+        Assert.Null(access.TargetId);
+        Assert.Equal("unreadable-sql-target", access.UnresolvedReason);
+        Assert.Equal("DELETE FROM [Orders] WHERE Status = 'Archived'", Detail(access, "sql"));
+        Assert.DoesNotContain(fixture.Database.Objects, node => node.Name == "[Orders]");
+    }
+
+    /// <summary>
+    /// DAD-15. The fixture carries two different credential values on purpose, and each one proves a
+    /// different half of the invariant: the one that never enters a C# document must reach no output file
+    /// at all, and the one the SQL analyser genuinely walks past must reach no relation detail, no node
+    /// and no diagnostic. The second value does survive in the two places the tool reproduces source
+    /// verbatim, which is what the tool is for; DAD-15 governs the facts this stage synthesises.
+    /// </summary>
+    [Fact]
+    public void DAD15_NoCredentialText_ReachesTheFactsTheDiscoveryStageProduces()
+    {
+        // Without a credential in the analysed input, every assertion below would hold of an
+        // implementation with no guard at all.
+        Assert.Contains(
+            ConfigCredential,
+            File.ReadAllText(TestPaths.SyntheticSolution(Path.Combine("Acme.Orders", "appsettings.json"))),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            InlineCredential,
+            File.ReadAllText(TestPaths.SyntheticSolution(Path.Combine("Acme.Orders", "Data", "OrderSqlQueries.cs"))),
+            StringComparison.Ordinal);
+
+        Assert.Empty(FilesContaining(EveryOutputFile(fixture.Output), ConfigCredential));
+
+        var discoveryOutputs = DiscoveryOutputs(TopicLayout.RawRoot(fixture.Output));
+        Assert.Empty(FilesContaining(discoveryOutputs, InlineCredential));
+        Assert.Empty(FilesContaining(discoveryOutputs, "Password="));
+        Assert.DoesNotContain(
+            fixture.DataRelations.SelectMany(relation => relation.Details ?? []),
+            detail => detail.Value.Contains("Password", StringComparison.OrdinalIgnoreCase));
+    }
+
+    // DAD-20: the same unchanged input analysed twice writes the same persistence bytes.
+    [Fact]
+    public void DAD20_TwoRunsOverUnchangedInput_ProduceByteIdenticalPersistenceOutput()
+    {
+        var rawA = TopicLayout.RawRoot(fixture.Output);
+        var rawB = TopicLayout.RawRoot(fixture.OutputB);
+
+        var relativeA = PersistenceFiles(rawA);
+        var relativeB = PersistenceFiles(rawB);
+
+        Assert.NotEmpty(relativeA);
+        Assert.Equal(relativeA, relativeB);
+        foreach (var relative in relativeA)
+        {
+            var bytesA = File.ReadAllBytes(Path.Combine(rawA, relative));
+            var bytesB = File.ReadAllBytes(Path.Combine(rawB, relative));
+            Assert.True(bytesA.AsSpan().SequenceEqual(bytesB), $"persistence output differs between runs: {relative}");
+        }
+    }
+
+    /// <summary>DAD-15: the fixture's credential value that only ever lives in configuration.</summary>
+    private const string ConfigCredential = "appsettings-fixture-secret";
+
+    /// <summary>DAD-15: the fixture's credential value the SQL analyser walks past in C# source.</summary>
+    private const string InlineCredential = "inline-fixture-secret";
+
+    /// <summary>The relation kinds an access can be emitted under, per design.md's relation table.</summary>
+    private static readonly string[] AccessKinds = ["reads", "writes", "executes", "accesses"];
+
+    /// <summary>Everything the discovery stage writes: the partitions, the catalogue, its fragment, and
+    /// the diagnostics any analyser could have raised.</summary>
+    private static string[] DiscoveryOutputs(string raw) =>
+    [
+        Path.Combine(raw, "facts", "database.json"),
+        Path.Combine(raw, "facts", "diagnostics.json"),
+        .. Directory.EnumerateFiles(Path.Combine(raw, "facts", "relations"), "*.json"),
+        .. Directory.EnumerateFiles(
+            Path.Combine(raw, "facts", "database-column"), "*.json", SearchOption.AllDirectories),
+    ];
+
+    /// <summary>The persistence files DAD-20 pins, as paths relative to the raw root.</summary>
+    private static string[] PersistenceFiles(string raw) =>
+    [
+        Path.Combine("facts", "relations", "data.json"),
+        Path.Combine("facts", "database.json"),
+        .. Directory.EnumerateFiles(
+                Path.Combine(raw, "facts", "database-column"), "*.json", SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(raw, path))
+            .Order(StringComparer.Ordinal),
+    ];
+
+    private static IEnumerable<string> EveryOutputFile(string outputRoot) =>
+        Directory.EnumerateFiles(outputRoot, "*", SearchOption.AllDirectories);
+
+    private static string[] FilesContaining(IEnumerable<string> files, string text) =>
+        files.Where(path => File.ReadAllText(path).Contains(text, StringComparison.Ordinal)).ToArray();
+
     private static bool SourcedAt(RelationFactJson relation, string memberName) =>
         relation.SourceId.Contains(memberName, StringComparison.Ordinal);
 
@@ -270,8 +482,9 @@ public sealed class DataAccessDiscoveryEndToEndTests(DataAccessDiscoveryFixture 
 }
 
 /// <summary>
-/// One default-mode analysis run over the three restorable fixture services, plus typed access to the
-/// two files the persistence stage writes.
+/// Two default-mode analysis runs over the same three restorable fixture services, plus typed access to
+/// the files the persistence stage writes. The second run exists for DAD-20: it is the same unchanged
+/// input, so its persistence bytes must match the first run's exactly.
 /// </summary>
 public sealed class DataAccessDiscoveryFixture : IAsyncLifetime
 {
@@ -279,6 +492,8 @@ public sealed class DataAccessDiscoveryFixture : IAsyncLifetime
         [SyntheticFixtureRun.Orders, SyntheticFixtureRun.Payments, SyntheticFixtureRun.SharedContracts];
 
     public string Output { get; } = Path.Combine(Path.GetTempPath(), $"csharp2md-dad-e2e-{Guid.NewGuid():N}");
+
+    public string OutputB { get; } = Path.Combine(Path.GetTempPath(), $"csharp2md-dad-e2e-{Guid.NewGuid():N}");
 
     public ImmutableArray<RelationFactJson> DataRelations { get; private set; }
 
@@ -291,6 +506,7 @@ public sealed class DataAccessDiscoveryFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await RunAsync(Output);
+        await RunAsync(OutputB);
 
         var raw = TopicLayout.RawRoot(Output);
         Manifest = Deserialize(
@@ -323,9 +539,12 @@ public sealed class DataAccessDiscoveryFixture : IAsyncLifetime
 
     public Task DisposeAsync()
     {
-        if (Directory.Exists(Output))
+        foreach (var output in new[] { Output, OutputB })
         {
-            Directory.Delete(Output, recursive: true);
+            if (Directory.Exists(output))
+            {
+                Directory.Delete(output, recursive: true);
+            }
         }
 
         return Task.CompletedTask;

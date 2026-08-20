@@ -333,20 +333,20 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | DAD-12 | P1: EF Core persistence model and access | T29 | Verified |
 | DAD-13 | P1: EF Core persistence model and access | T30 | Verified |
 | DAD-14 | P1: EF Core persistence model and access | T29 | Verified |
-| DAD-15 | P1: EF Core persistence model and access | Design | Pending |
-| DAD-16 | P1: EF Core persistence model and access | Design | Pending |
+| DAD-15 | P1: EF Core persistence model and access | T36 | Verified |
+| DAD-16 | P1: EF Core persistence model and access | T26 | Verified |
 | DAD-17 | P1: EF Core persistence model and access | T35 | Verified |
-| DAD-18 | P1: EF Core persistence model and access | Design | Pending |
+| DAD-18 | P1: EF Core persistence model and access | T13 | Verified |
 | DAD-19 | P1: EF Core persistence model and access | T35 | Verified |
-| DAD-20 | P1: EF Core persistence model and access | Design | Pending |
-| DAD-21 | P1: Literal SQL statements | Design | Pending |
-| DAD-22 | P1: Literal SQL statements | Design | Pending |
-| DAD-23 | P1: Literal SQL statements | Design | Pending |
-| DAD-24 | P1: Literal SQL statements | Design | Pending |
-| DAD-25 | P1: Literal SQL statements | Design | Pending |
-| DAD-26 | P1: Literal SQL statements | Design | Pending |
-| DAD-27 | P1: Literal SQL statements | Design | Pending |
-| DAD-28 | P1: Literal SQL statements | Design | Pending |
+| DAD-20 | P1: EF Core persistence model and access | T36 | Verified |
+| DAD-21 | P1: Literal SQL statements | T36 | Verified |
+| DAD-22 | P1: Literal SQL statements | T36 | Verified |
+| DAD-23 | P1: Literal SQL statements | T36 | Verified |
+| DAD-24 | P1: Literal SQL statements | T36 | Verified |
+| DAD-25 | P1: Literal SQL statements | T36 | Verified |
+| DAD-26 | P1: Literal SQL statements | T36 | Verified |
+| DAD-27 | P1: Literal SQL statements | T36 | Verified |
+| DAD-28 | P1: Literal SQL statements | T36 | Verified |
 | DAD-29 | P2: Dapper and ADO.NET call sites | - | Pending |
 | DAD-30 | P2: Dapper and ADO.NET call sites | - | Pending |
 | DAD-31 | P2: Dapper and ADO.NET call sites | - | Pending |
@@ -362,7 +362,10 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 38 total, 0 mapped to tasks, 38 unmapped ⚠️
+**Coverage:** 38 total. All 28 P1 rows (`DAD-01`..`DAD-28`) are mapped to a task and `Verified`
+with located `file:line` evidence. The remaining 10 are `Pending` by design: P2 (`DAD-29`..`DAD-35`)
+and P3 (`DAD-36`..`DAD-38`) are explicitly outside this task list's scope and attach behind the same
+`IDataAccessAnalyzer` seam in a later pass.
 
 ---
 

@@ -1267,19 +1267,48 @@ whole output tree.
 
 **Done when**:
 
-- [ ] Each of the five SQL shapes produces the operation, node, columns and resolution the spec names
-- [ ] The interpolated case produces an `Unresolved` access with no node and its SQL preserved
-- [ ] A search of every file under the output root finds no credential-shaped text (DAD-15)
-- [ ] Two consecutive runs over unchanged input produce byte-identical persistence output (DAD-20)
-- [ ] All 28 P1 requirement rows in spec.md's traceability table are flipped to `Verified`
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then
+- [x] Each of the five SQL shapes produces the operation, node, columns and resolution the spec names
+- [x] The interpolated case produces an `Unresolved` access with no node and its SQL preserved
+- [x] A search of every file under the output root finds no credential-shaped text (DAD-15) — holds
+      literally for the configuration-only credential; the C#-source credential is asserted over every file
+      the discovery stage writes, per T34's execution note
+- [x] Two consecutive runs over unchanged input produce byte-identical persistence output (DAD-20)
+- [x] All 28 P1 requirement rows in spec.md's traceability table are flipped to `Verified`
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then
       `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: integration
 **Gate**: build
 
 **Commit**: `test(dataaccess): verify SQL discovery, determinism and secret absence`
+
+**Evidence** — `tests/Csharp2Md.Core.Tests/Analysis/DataAccessDiscoveryEndToEndTests.cs`:
+
+| AC | `file:line` — assertion |
+| --- | --- |
+| DAD-21 | `:280`/`:281` — `Assert.Equal(relationKind, access.RelationKind)` and `Assert.Equal(operation, Detail(access, "operation"))` over five verbs (`read`, `insert`, `update`, `execute`, `delete`) |
+| DAD-22 | `:293` — `Assert.Equal("exact", orders.Header.Resolution)`; `:298` — `Assert.Equal(orders.ObjectId, access.TargetId)` |
+| DAD-23 | `:307` — `Assert.Equal("procedure", procedure.Kind)`; `:310` — `Assert.Equal("unknown", orders.Kind)` |
+| DAD-24 | `:324` — `Assert.Equal(["Amount", "Id", "Status"], …)`; `:327` — `usage == "write"` |
+| DAD-25 | `:338` — `Assert.Equal("Status", Detail(column, "target_text"))`; `:339` — `usage == "write"` |
+| DAD-26 | `:353`/`:354` — one `filters-by` per column, `usage == "filter"`, for both a parameter and a literal right-hand side |
+| DAD-27 | `:365` — `"unresolved"`; `:366` — `Assert.Null(TargetId)`; `:367` — `"dynamic-sql"`; `:369` — the SQL is preserved verbatim; `:370` — no node minted |
+| DAD-28 | `:382`–`:385` — `"unresolved"`, no target, `"unreadable-sql-target"`, statement preserved; `:386` — no node for `[Orders]` |
+| DAD-15 | `:401`/`:405` — the guard: both credentials really are in the analysed input; `:410` — no output file carries the configuration credential; `:413`/`:414`/`:415` — no discovery output and no relation detail carries the source credential or `Password=` |
+| DAD-20 | `:431` — the same persistence files exist in both runs; `:436` — `Assert.True(bytesA.AsSpan().SequenceEqual(bytesB))` per file |
+
+**Rows closed outside this task's tests.** DAD-16 and DAD-18 have no honest end-to-end case: a >2000-character
+SQL literal and a throwing analyzer would both be artificial fixture source. Their located evidence is the
+unit layer, and their traceability rows point at the task that proved them rather than at T36 —
+DAD-16 at `tests/…/DataAccess/SqlTextAnalyzerTests.cs:72` (`Assert.Equal(2000, claim.SqlText!.Length)`) and
+`DataAccessContractsTests.cs:83`, DAD-18 at `tests/…/DataAccess/DataAccessCollectorTests.cs:36`
+(`Assert.Equal("C2M-DA-001", diagnostic.Code)`).
+
+`DataAccessCollector.Refine(context, SemanticModel)` stays unimplemented. No criterion in T33–T36 needs
+semantic refinement: every P1 assertion above is met by the syntax pass alone, on a default untrusted run.
+
+Test count: 1696 before, 1713 after (17 added, 0 deleted or skipped).
 
 ---
 
