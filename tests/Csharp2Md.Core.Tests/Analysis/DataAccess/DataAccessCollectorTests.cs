@@ -5,6 +5,23 @@ namespace Csharp2Md.Core.Tests.Analysis.DataAccess;
 
 public sealed class DataAccessCollectorTests
 {
+    // Spec Edge Case: a document with no persistence API usage is silent - no claims, and no
+    // diagnostic either. Runs the real registered analyzers rather than a stub.
+    [Fact]
+    public void Collect_DocumentWithNoPersistenceApiUsage_YieldsNoClaimsAndNoDiagnostics()
+    {
+        var collection = DataAccessCollector.Collect(DataAccessTestFacts.Context(
+            """
+            class OrderRepository
+            {
+                public string Describe(Order order) => order.ToString();
+            }
+            """));
+
+        Assert.Empty(collection.Claims);
+        Assert.Empty(collection.Diagnostics);
+    }
+
     // DAD-18: the failure is recorded against the document and the analyzer, and nothing escapes.
     [Fact]
     public void Collect_WhenAnAnalyzerThrows_RecordsOneC2MDA001WarningNamingTheDocumentAndAnalyzer()

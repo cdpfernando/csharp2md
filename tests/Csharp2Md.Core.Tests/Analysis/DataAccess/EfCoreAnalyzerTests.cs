@@ -493,6 +493,31 @@ public sealed class EfCoreAnalyzerTests
         Assert.Empty(claims);
     }
 
+    // Spec Edge Case: two contexts exposing the same entity expose it once each, under their own names.
+    [Fact]
+    public void Analyze_TwoContextsExposingTheSameEntity_YieldsOneClaimPerContext()
+    {
+        var claims = EfCoreAnalysis.Claims(
+            """
+            class WriteDbContext : DbContext
+            {
+                public DbSet<Order> Orders { get; set; }
+            }
+
+            class ReadDbContext : DbContext
+            {
+                public DbSet<Order> ArchivedOrders { get; set; }
+            }
+            """);
+
+        Assert.Equal(2, claims.Length);
+        Assert.All(claims, claim => Assert.Equal(DatabaseClaimKind.EntitySetExposed, claim.Kind));
+        Assert.All(claims, claim => Assert.Equal("Order", claim.EntityText));
+        Assert.Equal("Orders", claims[0].PropertyText);
+        Assert.Equal("ArchivedOrders", claims[1].PropertyText);
+        Assert.NotEqual(claims[0].OwnerId, claims[1].OwnerId);
+    }
+
     // DAD-01 is only reachable on a real run if the analyzer is one the collector actually runs.
     [Fact]
     public void RegisteredAnalyzers_IncludeTheEfCoreAnalyzer()
