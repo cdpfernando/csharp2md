@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Csharp2Md.Core.Analysis.Relations;
 using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
@@ -92,16 +93,17 @@ internal sealed class EfCoreAnalyzer : IDataAccessAnalyzer
             }
 
             var chain = ChainFrom(access);
+            var write = WriteOperationOn(access);
             claims.Add(new RawDatabaseClaim
             {
                 Kind = DatabaseClaimKind.Access,
                 OwnerId = context.OwnerOf(access),
-                Evidence = EvidenceFor(context, access),
+                Evidence = EvidenceFor(context, write?.Invocation ?? (SyntaxNode)access),
                 ShapeConfidence = FactResolution.Syntactic,
                 AnalyzerId = AnalyzerId,
                 EntityText = entityName,
                 PropertyText = entitySetName,
-                Operation = DatabaseOperation.Read,
+                Operation = write?.Operation ?? DatabaseOperation.Read,
             });
 
             foreach (var column in ChainColumns(chain))
@@ -136,6 +138,34 @@ internal sealed class EfCoreAnalyzer : IDataAccessAnalyzer
 
         return byName;
     }
+
+    /// <summary>
+    /// DAD-10: the <c>DbSet</c> methods that prove a write, and the operation each one performs.
+    /// </summary>
+    private static readonly FrozenDictionary<string, DatabaseOperation> WriteOperations =
+        new Dictionary<string, DatabaseOperation>(StringComparer.Ordinal)
+        {
+            ["Add"] = DatabaseOperation.Insert,
+            ["AddAsync"] = DatabaseOperation.Insert,
+            ["AddRange"] = DatabaseOperation.Insert,
+            ["Update"] = DatabaseOperation.Update,
+            ["UpdateRange"] = DatabaseOperation.Update,
+            ["Remove"] = DatabaseOperation.Delete,
+            ["RemoveRange"] = DatabaseOperation.Delete,
+        }.ToFrozenDictionary(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The write this entity set access performs, when the access is itself the receiver of one of the
+    /// write-family methods. The same method name on any other receiver proves nothing.
+    /// </summary>
+    private static (DatabaseOperation Operation, InvocationExpressionSyntax Invocation)? WriteOperationOn(
+        MemberAccessExpressionSyntax access) =>
+        access.Parent is MemberAccessExpressionSyntax parent
+            && ReferenceEquals(parent.Expression, access)
+            && parent.Parent is InvocationExpressionSyntax invocation
+            && WriteOperations.TryGetValue(parent.Name.Identifier.ValueText, out var operation)
+                ? (operation, invocation)
+                : null;
 
     /// <summary>The invocations chained directly onto an expression, outermost last.</summary>
     private static ImmutableArray<InvocationExpressionSyntax> ChainFrom(ExpressionSyntax expression)

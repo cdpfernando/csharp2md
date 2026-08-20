@@ -747,10 +747,10 @@ method families.
 
 **Done when**:
 
-- [ ] All seven method names from DAD-10 map to the correct operation, each with a test
-- [ ] A same-named method on a non-`DbSet` receiver yields nothing
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] All seven method names from DAD-10 map to the correct operation, each with a test
+- [x] A same-named method on a non-`DbSet` receiver yields nothing
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

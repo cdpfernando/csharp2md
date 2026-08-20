@@ -396,6 +396,37 @@ public sealed class EfCoreAnalyzerTests
         Assert.Contains(idColumns, column => column.Usage == ColumnUsage.Read);
     }
 
+    // DAD-10: all seven DbSet write methods, each mapped to its own operation.
+    [Theory]
+    [InlineData("Add", DatabaseOperation.Insert)]
+    [InlineData("AddAsync", DatabaseOperation.Insert)]
+    [InlineData("AddRange", DatabaseOperation.Insert)]
+    [InlineData("Update", DatabaseOperation.Update)]
+    [InlineData("UpdateRange", DatabaseOperation.Update)]
+    [InlineData("Remove", DatabaseOperation.Delete)]
+    [InlineData("RemoveRange", DatabaseOperation.Delete)]
+    public void Analyze_EntitySetWriteFamilyCall_ClaimsTheMatchingOperation(
+        string method, DatabaseOperation expected)
+    {
+        var claims = EfCoreAnalysis.Claims(
+            EfCoreAnalysis.EntitySetCallDocument("_context.Orders." + method + "(order)"));
+
+        var access = Assert.Single(claims.Where(claim => claim.Kind == DatabaseClaimKind.Access));
+        Assert.Equal(expected, access.Operation);
+        Assert.Equal("Order", access.EntityText);
+        Assert.Equal("Orders", access.PropertyText);
+    }
+
+    // DAD-17: the method name is not the evidence - the receiver has to be a discovered entity set.
+    [Fact]
+    public void Analyze_WriteFamilyMethodOnANonEntitySetReceiver_YieldsNoAccessClaim()
+    {
+        var claims = EfCoreAnalysis.Claims(
+            EfCoreAnalysis.EntitySetCallDocument("_items.Add(order)"));
+
+        Assert.Empty(claims.Where(claim => claim.Kind == DatabaseClaimKind.Access));
+    }
+
     // DAD-01 is only reachable on a real run if the analyzer is one the collector actually runs.
     [Fact]
     public void RegisteredAnalyzers_IncludeTheEfCoreAnalyzer()
@@ -415,6 +446,24 @@ internal static class EfCoreAnalysis
         new EfCoreAnalyzer().Analyze(DataAccessTestFacts.Context(source), claims);
         return claims.ToImmutable();
     }
+
+    /// <summary>
+    /// A document exposing one entity set, whose single member evaluates <paramref name="expression"/>.
+    /// </summary>
+    public static string EntitySetCallDocument(string expression) =>
+        $$"""
+        class OrderDbContext : DbContext
+        {
+            public DbSet<Order> Orders { get; set; }
+        }
+
+        class OrderService
+        {
+            private OrderDbContext _context;
+
+            public void Save(Order order) => {{expression}};
+        }
+        """;
 
     public static FactId SymbolIdOfTypeDeclaration(string source, string typeName) =>
         SymbolIdOf(CSharpSyntaxTree.ParseText(source).GetRoot()
