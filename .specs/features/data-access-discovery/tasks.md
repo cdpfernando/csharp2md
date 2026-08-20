@@ -385,13 +385,14 @@ confirm evidence-range validation applies to them.
 
 **Done when**:
 
-- [ ] `FactualSchemaSyncTests` passes against version 4 with both new arrays required
-- [ ] Every approved snapshot whose content shifted is re-approved deliberately, with the diff reviewed —
-      not bulk-accepted
-- [ ] The serializer still rejects a document declaring any other schema version
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then
+- [x] `FactualSchemaSyncTests` passes against version 4 with both new arrays required
+- [x] Every approved snapshot whose content shifted is re-approved deliberately, with the diff reviewed —
+      not bulk-accepted — one snapshot embeds a fragment and moved 3 -> 4; the other five embed aggregate
+      envelopes, which stay at 2
+- [x] The serializer still rejects a document declaring any other schema version — now pinned for 2, 3 and 5
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then
       `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Test count recorded before and after (no silent deletions) — 1448 -> 1450 (+2)
 
 **Tests**: unit
 **Gate**: build

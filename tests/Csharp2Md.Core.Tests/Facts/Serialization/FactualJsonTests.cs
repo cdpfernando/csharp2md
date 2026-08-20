@@ -102,7 +102,7 @@ public sealed class FactualJsonTests
         Assert.Equal(
             ["global::System.String"],
             symbol.GetProperty("parameter_types").EnumerateArray().Select(static item => item.GetString()!).ToArray());
-        Assert.Equal(3, json.RootElement.GetProperty("schema_version").GetInt32());
+        Assert.Equal(4, json.RootElement.GetProperty("schema_version").GetInt32());
     }
 
     [Fact]
@@ -278,9 +278,13 @@ public sealed class FactualJsonTests
     private static DatabaseColumnFactJson DatabaseColumn(string id, string name) =>
         new(Header(id, "database-column"), id, "id1:database-object;connection=unknown;kind=table;name=tb_order", name);
 
-    [Fact]
-    public void Serialize_SchemaVersionOtherThanThree_IsRejected() =>
-        Assert.Throws<ArgumentException>(() => FactualJsonSerializer.Serialize(EmptyDocument() with { SchemaVersion = 2 }));
+    [Theory]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(5)]
+    public void Serialize_SchemaVersionOtherThanFour_IsRejected(int schemaVersion) =>
+        Assert.Throws<ArgumentException>(() =>
+            FactualJsonSerializer.Serialize(EmptyDocument() with { SchemaVersion = schemaVersion }));
 
     [Fact]
     public void SourceGeneratedContext_ContainsRootAndEveryTransitiveFamilyContract()

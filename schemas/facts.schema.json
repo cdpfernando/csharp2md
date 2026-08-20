@@ -20,7 +20,7 @@
     "coverage"
   ],
   "properties": {
-    "schema_version": { "const": 3 },
+    "schema_version": { "const": 4 },
     "solutions": { "type": "array", "items": { "$ref": "#/$defs/solution_fact" } },
     "projects": { "type": "array", "items": { "$ref": "#/$defs/project_fact" } },
     "targets": { "type": "array", "items": { "$ref": "#/$defs/target_fact" } },
