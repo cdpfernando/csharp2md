@@ -397,10 +397,18 @@ fires. After the main double loop completes, call `SymbolIndexBuilder.Build(...)
 - Skill: `dotnet-skills:csharp-concurrency-patterns` (confirm the accumulation stays safe under this method's existing sequential-await structure — no new concurrency introduced, but worth a pattern check)
 
 **Done when**:
-- [ ] Running `AnalysisEngine.AnalyzeAsync` against `fixtures/SyntheticSolution` in default (syntax-only) mode, captured via `onSymbolIndexBuilt`, gives a `SymbolIndex` where `FindByName("PaymentsService")` finds the real type and `FindMembers("PaymentsService", "AuthorizePayment")` finds the real method, both `Resolution = Syntactic`
+- [x] Running `AnalysisEngine.AnalyzeAsync` against `fixtures/SyntheticSolution` in default (syntax-only) mode, captured via `onSymbolIndexBuilt`, gives a `SymbolIndex` where `FindByName("PaymentsService")` finds the real type and `FindMembers("PaymentsService", "AuthorizePayment")` finds the real method, both `Resolution = Syntactic`
 - [ ] The same run in trusted-solution mode gives `Resolution = Exact` for both lookups
-- [ ] Public `AnalysisResult`'s shape is unchanged (no new public property) — confirmed by reading the diff, not just by tests passing
-- [ ] Gate check passes: `dotnet test csharp2md.slnx --filter "Category=Integration"` then the full suite `dotnet test csharp2md.slnx`
+      **NOT SATISFIABLE ON THIS FIXTURE.** `PaymentsService` derives from the gRPC-generated
+      `Payments.PaymentsBase` and `AuthorizePayment` takes `Grpc.Core` parameter types; the fixture
+      compilation references none of them, so both bind to error symbols and are indexed
+      `Unresolved` (`ContainsErrorSymbol = true`), which is what spec.md P1 criterion 9 requires
+      ("never `Exact`"). Covered instead by two tests: `Resolution = Exact` is proven through the
+      live trusted-mode index on `SwaggerOperationDefaultsFilter`/`Apply` (a type and member that do
+      bind), and the actual `Unresolved` outcome for the two symbols spec.md named is pinned
+      explicitly. Escalated rather than forced.
+- [x] Public `AnalysisResult`'s shape is unchanged (no new public property) — confirmed by reading the diff, not just by tests passing
+- [x] Gate check passes: `dotnet test csharp2md.slnx --filter "Category=Integration"` then the full suite `dotnet test csharp2md.slnx`
 
 **Tests**: integration
 **Gate**: full

@@ -223,29 +223,29 @@ without throwing, and the returned metrics report the expected total/duplicate/a
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| SYMIDX-01 | P1 (one entry per symbol) | Design | Implementing |
-| SYMIDX-02 | P1 (order-independent construction) | Design | Implementing |
-| SYMIDX-03 | P1 (GetById, O(1)) | Design | Implementing |
-| SYMIDX-04 | P1 (FindByName) | Design | Implementing |
-| SYMIDX-05 | P1 (FindByQualifiedName, normalized) | Design | Implementing |
-| SYMIDX-06 | P1 (original spelling preserved) | Design | Implementing |
-| SYMIDX-07 | P1 (FindMembers) | Design | Implementing |
-| SYMIDX-08 | P1 (predefined-type + global:: normalization) | Design | Implementing |
-| SYMIDX-09 | P1 (syntax-only indexing, never fabricated Exact) | Design | Implementing |
-| SYMIDX-10 | P1 (Name/Namespace/ContainingType from syntax alone) | Design | Implementing |
-| SYMIDX-11 | P1 (empty solution) | Design | Implementing |
-| SYMIDX-12 | P1 (no simple-name-only merging) | Design | Implementing |
-| SYMIDX-13 | P2 (FindMethods argument-count filter) | Design | Implementing |
-| SYMIDX-14 | P2 (FindMethods argument-type ranking) | Design | Implementing |
-| SYMIDX-15 | P2 (FindCandidates priority ordering) | Design | Implementing |
-| SYMIDX-16 | P2 (ambiguity reporting) | Design | Implementing |
-| SYMIDX-17 | P2 (no silent tie-break) | Design | Implementing |
-| SYMIDX-18 | P2 (unique match reporting) | Design | Implementing |
-| SYMIDX-19 | P3 (duplicated-symbol-id diagnostic) | Design | Implementing |
-| SYMIDX-20 | P3 (invalid-containing-symbol diagnostic) | Design | Implementing |
-| SYMIDX-21 | P3 (ambiguous-symbol-lookup diagnostic) | Design | Implementing |
-| SYMIDX-22 | P3 (index metrics) | Design | Implementing |
-| SYMIDX-23 | P3 (syntax-only mode has no precondition) | Design | Pending |
+| SYMIDX-01 | P1 (one entry per symbol) | Design | Verified |
+| SYMIDX-02 | P1 (order-independent construction) | Design | Verified |
+| SYMIDX-03 | P1 (GetById, O(1)) | Design | Verified |
+| SYMIDX-04 | P1 (FindByName) | Design | Verified |
+| SYMIDX-05 | P1 (FindByQualifiedName, normalized) | Design | Verified |
+| SYMIDX-06 | P1 (original spelling preserved) | Design | Verified |
+| SYMIDX-07 | P1 (FindMembers) | Design | Verified |
+| SYMIDX-08 | P1 (predefined-type + global:: normalization) | Design | Verified |
+| SYMIDX-09 | P1 (syntax-only indexing, never fabricated Exact) | Design | Verified |
+| SYMIDX-10 | P1 (Name/Namespace/ContainingType from syntax alone) | Design | Verified |
+| SYMIDX-11 | P1 (empty solution) | Design | Verified |
+| SYMIDX-12 | P1 (no simple-name-only merging) | Design | Verified |
+| SYMIDX-13 | P2 (FindMethods argument-count filter) | Design | Verified |
+| SYMIDX-14 | P2 (FindMethods argument-type ranking) | Design | Verified |
+| SYMIDX-15 | P2 (FindCandidates priority ordering) | Design | Verified |
+| SYMIDX-16 | P2 (ambiguity reporting) | Design | Verified |
+| SYMIDX-17 | P2 (no silent tie-break) | Design | Verified |
+| SYMIDX-18 | P2 (unique match reporting) | Design | Verified |
+| SYMIDX-19 | P3 (duplicated-symbol-id diagnostic) | Design | Verified |
+| SYMIDX-20 | P3 (invalid-containing-symbol diagnostic) | Design | Verified |
+| SYMIDX-21 | P3 (ambiguous-symbol-lookup diagnostic) | Design | Verified |
+| SYMIDX-22 | P3 (index metrics) | Design | Verified |
+| SYMIDX-23 | P3 (syntax-only mode has no precondition) | Design | Verified |
 
 **ID format:** `SYMIDX-[NUMBER]`
 

@@ -426,13 +426,17 @@ public sealed class SymbolIndexTests
     public void FindCandidates_ContextualHints_OrderCandidatesByThePrioritySequence()
     {
         var inContainingType = Member("Handle", "global::Acme.Api.Gateway", FactResolution.Syntactic, "containing")
-            with { Namespace = "Acme.Api" };
+            with
+        { Namespace = "Acme.Api" };
         var inNamespace = Member("Handle", "global::Acme.Api.Other", FactResolution.Syntactic, "namespace")
-            with { Namespace = "Acme.Api" };
+            with
+        { Namespace = "Acme.Api" };
         var inImportedNamespace = Member("Handle", "global::Acme.Imported.Bus", FactResolution.Syntactic, "import")
-            with { Namespace = "Acme.Imported" };
+            with
+        { Namespace = "Acme.Imported" };
         var inSameProject = Member("Handle", "global::Zeta.Elsewhere.Box", FactResolution.Syntactic, "project")
-            with { Namespace = "Zeta.Elsewhere" };
+            with
+        { Namespace = "Zeta.Elsewhere" };
         var elsewhere = Member("Handle", "global::Other.Far.Box", FactResolution.Syntactic, "global") with
         {
             Namespace = "Other.Far",
@@ -529,9 +533,11 @@ public sealed class SymbolIndexTests
     public void Build_SimpleNameWithCandidatesInTwoNamespaces_RecordsAmbiguousSymbolLookupWithoutAnyQuery()
     {
         var legacy = Symbol("PaymentService", "global::Company.Legacy.PaymentService", projectId: ProjectId)
-            with { Namespace = "Company.Legacy" };
+            with
+        { Namespace = "Company.Legacy" };
         var current = Symbol("PaymentService", "global::Company.Payments.PaymentService", projectId: OtherProjectId)
-            with { Namespace = "Company.Payments" };
+            with
+        { Namespace = "Company.Payments" };
 
         // Read straight off the freshly built index - no Find* call precedes this.
         var index = SymbolIndexBuilder.Build([legacy, current], [], [], []);
@@ -669,10 +675,12 @@ public sealed class SymbolIndexTests
     public void Metrics_DuplicateAndAmbiguousCounts_MatchTheRecordedDiagnosticCountsExactly()
     {
         var kept = Symbol("PaymentService", "global::Company.Legacy.PaymentService", projectId: ProjectId)
-            with { Namespace = "Company.Legacy" };
+            with
+        { Namespace = "Company.Legacy" };
         var collision = kept with { Signature = "class PaymentService /* second */" };
         var current = Symbol("PaymentService", "global::Company.Payments.PaymentService", projectId: OtherProjectId)
-            with { Namespace = "Company.Payments" };
+            with
+        { Namespace = "Company.Payments" };
 
         var index = SymbolIndexBuilder.Build([kept, collision, current], [], [], []);
 
