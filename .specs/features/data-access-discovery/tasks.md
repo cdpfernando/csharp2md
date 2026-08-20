@@ -994,15 +994,15 @@ maps allow and the ambiguity rules where they do not.
 
 **Done when**:
 
-- [ ] An assigned property matching exactly one exposed entity yields `writes-column` at `Heuristic`
+- [x] An assigned property matching exactly one exposed entity yields `writes-column` at `Heuristic`
       (DAD-11)
-- [ ] An assigned property matching more than one yields `target_id` null at `Candidate` (DAD-12)
-- [ ] An assigned property matching none yields no relation, per the spec's Edge Case
-- [ ] Every unresolved access still produces a relation carrying `unresolved_reason` and `target_text`
+- [x] An assigned property matching more than one yields `target_id` null at `Candidate` (DAD-12)
+- [x] An assigned property matching none yields no relation, per the spec's Edge Case
+- [x] Every unresolved access still produces a relation carrying `unresolved_reason` and `target_text`
       (DAD-14) — nothing is dropped
-- [ ] Relation kind and the `operation` / `usage` details follow design.md's relation table exactly
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] Relation kind and the `operation` / `usage` details follow design.md's relation table exactly
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

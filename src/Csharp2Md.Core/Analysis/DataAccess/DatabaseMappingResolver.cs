@@ -70,9 +70,19 @@ internal static class DatabaseMappingResolver
     internal const string ExposesKind = "exposes";
     internal const string MapsToKind = "maps-to";
     internal const string MapsPropertyToColumnKind = "maps-property-to-column";
+    internal const string ReadsKind = "reads";
+    internal const string WritesKind = "writes";
+    internal const string ExecutesKind = "executes";
+    internal const string AccessesKind = "accesses";
+    internal const string ReadsColumnKind = "reads-column";
+    internal const string WritesColumnKind = "writes-column";
+    internal const string FiltersByKind = "filters-by";
 
     internal const string TargetTextKey = "target_text";
     internal const string MappingKey = "mapping";
+    internal const string OperationKey = "operation";
+    internal const string UsageKey = "usage";
+    internal const string SqlKey = "sql";
 
     internal const string ConfiguredMapping = "configured";
     internal const string ConventionMapping = "convention";
@@ -88,6 +98,15 @@ internal static class DatabaseMappingResolver
     /// convention: a column node can never exist without an owning object node.
     /// </summary>
     internal const string UnmappedOwningObjectReason = "unmapped-owning-object";
+
+    /// <summary>DAD-12: the property named several exposed entities, so no single one can be claimed.</summary>
+    internal const string AmbiguousEntityReason = "ambiguous-entity-attribution";
+
+    /// <summary>
+    /// DAD-14's floor: a relation with no target always states a reason. Only a claim that reached pass
+    /// two without one of its own lands here.
+    /// </summary>
+    internal const string UnresolvedTargetReason = "unresolved-target";
 
     private const string PropertyDeclarationKind = "property";
 
@@ -111,6 +130,9 @@ internal static class DatabaseMappingResolver
         EmitEntitySetExposures(snapshot, relations);
         var mappedEntities = EmitEntityMappings(snapshot, symbols, objectByEntity, relations);
         EmitPropertyMappings(snapshot, symbols, mappedEntities, columnByProperty, relations);
+        var sqlObjectByStatement = EmitAccesses(snapshot, objectByEntity, objects, relations);
+        EmitColumnAccesses(
+            snapshot, symbols, columnByProperty, sqlObjectByStatement, columns, relations);
 
         return new DatabaseResolution(
             objects.ToImmutable(), columns.ToImmutable(), relations.ToImmutable(), snapshot.Documents);
@@ -333,6 +355,239 @@ internal static class DatabaseMappingResolver
             .ToArray();
         return candidates is [var single] ? single.SymbolId.ToFactId() : null;
     }
+
+    /// <summary>
+    /// DAD-07, DAD-10, DAD-14 and DAD-21..DAD-23, DAD-27, DAD-28: every access claim becomes a relation
+    /// whose coarse kind carries the direction and whose <c>operation</c> detail carries the precise
+    /// verb. An EF access resolves through the entity map; a SQL access mints its own node, but only
+    /// when the reader proved the object's name - which is exactly what a non-null <c>ObjectKind</c>
+    /// records. Returns the object each readable statement resolved to, so its columns can be hung on it.
+    /// </summary>
+    private static Dictionary<Evidence, DatabaseObjectFactId> EmitAccesses(
+        DatabaseClaimSnapshot snapshot,
+        Dictionary<string, DatabaseObjectFactId> objectByEntity,
+        ObjectCatalogue objects,
+        ImmutableArray<ResolvedDatabaseRelation>.Builder relations)
+    {
+        var sqlObjectByStatement = new Dictionary<Evidence, DatabaseObjectFactId>();
+        foreach (var claim in snapshot.Claims)
+        {
+            if (claim.Kind is not DatabaseClaimKind.Access)
+            {
+                continue;
+            }
+
+            if (claim is { EntityText: { } entityName, PropertyText: { } setName })
+            {
+                var mapped = objectByEntity.TryGetValue(entityName, out var objectId);
+                relations.Add(new ResolvedDatabaseRelation(
+                    claim.OwnerId,
+                    mapped ? objectId.ToFactId() : null,
+                    AccessKind(claim.Operation),
+                    mapped ? FactResolution.Exact : FactResolution.Heuristic,
+                    mapped ? null : ConventionMappingReason,
+                    [
+                        new RelationDetail(OperationKey, DatabaseFactWire.Name(claim.Operation)),
+                        new RelationDetail(TargetTextKey, setName),
+                    ],
+                    claim.Evidence,
+                    claim.AnalyzerId));
+                continue;
+            }
+
+            // DAD-22 and DAD-27: a name the reader proved carries a kind; a placeholder carries none,
+            // and mints nothing.
+            DatabaseObjectFactId? sqlObjectId = claim is { ObjectText: { } objectName, ObjectKind: { } kind }
+                ? objects.Mint(kind, objectName, FactResolution.Exact, claim)
+                : null;
+            if (sqlObjectId is { } minted)
+            {
+                sqlObjectByStatement[claim.Evidence] = minted;
+            }
+
+            relations.Add(new ResolvedDatabaseRelation(
+                claim.OwnerId,
+                sqlObjectId?.ToFactId(),
+                AccessKind(claim.Operation),
+                claim.ShapeConfidence,
+                sqlObjectId is null ? Reason(claim) : null,
+                AccessDetails(claim),
+                claim.Evidence,
+                claim.AnalyzerId));
+        }
+
+        return sqlObjectByStatement;
+    }
+
+    private static ImmutableArray<RelationDetail> AccessDetails(RawDatabaseClaim claim)
+    {
+        var details = ImmutableArray.CreateBuilder<RelationDetail>();
+        details.Add(new RelationDetail(OperationKey, DatabaseFactWire.Name(claim.Operation)));
+        if (claim.ObjectText is { } objectText)
+        {
+            details.Add(new RelationDetail(TargetTextKey, objectText));
+        }
+
+        // DAD-28: the statement survives as evidence a human can resolve. It is null whenever the
+        // capture guard withheld it, which is a missing detail rather than an error.
+        if (claim.SqlText is { } sqlText)
+        {
+            details.Add(new RelationDetail(SqlKey, sqlText));
+        }
+
+        return details.ToImmutable();
+    }
+
+    /// <summary>
+    /// DAD-08, DAD-09, DAD-11, DAD-12 and DAD-24..DAD-26: every column claim becomes a relation whose
+    /// coarse kind carries the direction and whose <c>usage</c> detail carries the precise use. A
+    /// tracked write names no entity, so pass two attributes it against the entities the run's contexts
+    /// expose - one match is heuristic, several are a candidate, none is silence.
+    /// </summary>
+    private static void EmitColumnAccesses(
+        DatabaseClaimSnapshot snapshot,
+        ISymbolIndex symbols,
+        Dictionary<(string Entity, string Property), DatabaseColumnFactId> columnByProperty,
+        Dictionary<Evidence, DatabaseObjectFactId> sqlObjectByStatement,
+        ColumnCatalogue columns,
+        ImmutableArray<ResolvedDatabaseRelation>.Builder relations)
+    {
+        var exposedEntities = snapshot.Claims
+            .Where(static claim => claim.Kind is DatabaseClaimKind.EntitySetExposed)
+            .Select(static claim => claim.EntityText)
+            .OfType<string>()
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToImmutableArray();
+
+        foreach (var claim in snapshot.Claims)
+        {
+            if (claim.Kind is not DatabaseClaimKind.ColumnAccess)
+            {
+                continue;
+            }
+
+            if (claim is { EntityText: { } entityName, PropertyText: { } propertyName })
+            {
+                // DAD-08 and DAD-09: the reference is proven, but its column is only as resolved as the
+                // entity's own mapping - a convention name never becomes a target.
+                var mapped = ColumnOf(entityName, propertyName);
+                EmitColumnAccess(
+                    claim,
+                    mapped,
+                    propertyName,
+                    mapped is null ? FactResolution.Heuristic : FactResolution.Exact,
+                    mapped is null ? ConventionMappingReason : null,
+                    relations);
+                continue;
+            }
+
+            if (claim is { PropertyText: { } assignedProperty, ColumnText: { } observedText })
+            {
+                EmitTrackedWrite(claim, assignedProperty, observedText);
+                continue;
+            }
+
+            if (claim.ColumnText is not { } columnName)
+            {
+                continue;
+            }
+
+            // DAD-24..DAD-26: a SQL column is proven by the same literal its statement was, so it mints
+            // a node whenever that statement resolved to an object to own it.
+            var columnId = sqlObjectByStatement.TryGetValue(claim.Evidence, out var owner)
+                ? columns.Mint(owner, columnName, FactResolution.Exact, claim)
+                : (DatabaseColumnFactId?)null;
+            EmitColumnAccess(
+                claim,
+                columnId,
+                columnName,
+                claim.ShapeConfidence,
+                columnId is null ? Reason(claim) : null,
+                relations);
+        }
+
+        DatabaseColumnFactId? ColumnOf(string entityName, string propertyName) =>
+            columnByProperty.TryGetValue((entityName, propertyName), out var columnId) ? columnId : null;
+
+        void EmitTrackedWrite(RawDatabaseClaim claim, string propertyName, string observedText)
+        {
+            var matches = exposedEntities
+                .Where(entity => symbols.FindMembers(entity, propertyName)
+                    .Any(static symbol => symbol.SymbolKind == PropertyDeclarationKind))
+                .ToArray();
+            if (matches is [])
+            {
+                return;
+            }
+
+            // DAD-11: one match attributes the write heuristically - the entity is inferred from a name
+            // match, never proven. DAD-12: several matches stay a candidate rather than a coin flip.
+            var columnId = matches is [var single] ? ColumnOf(single, propertyName) : null;
+            relations.Add(new ResolvedDatabaseRelation(
+                claim.OwnerId,
+                columnId?.ToFactId(),
+                ColumnKind(claim.Usage),
+                matches is [_] ? FactResolution.Heuristic : FactResolution.Candidate,
+                columnId is null
+                    ? matches is [_] ? ConventionMappingReason : AmbiguousEntityReason
+                    : null,
+                [
+                    new RelationDetail(UsageKey, DatabaseFactWire.Name(claim.Usage)),
+                    new RelationDetail(TargetTextKey, observedText),
+                ],
+                claim.Evidence,
+                claim.AnalyzerId));
+        }
+    }
+
+    private static void EmitColumnAccess(
+        RawDatabaseClaim claim,
+        DatabaseColumnFactId? columnId,
+        string observedText,
+        FactResolution resolution,
+        string? unresolvedReason,
+        ImmutableArray<ResolvedDatabaseRelation>.Builder relations) =>
+        relations.Add(new ResolvedDatabaseRelation(
+            claim.OwnerId,
+            columnId?.ToFactId(),
+            ColumnKind(claim.Usage),
+            resolution,
+            unresolvedReason,
+            [
+                new RelationDetail(UsageKey, DatabaseFactWire.Name(claim.Usage)),
+                new RelationDetail(TargetTextKey, observedText),
+            ],
+            claim.Evidence,
+            claim.AnalyzerId));
+
+    /// <summary>DAD-14: the claim's own reason, or the resolver's floor when it carried none.</summary>
+    private static string Reason(RawDatabaseClaim claim) =>
+        string.IsNullOrWhiteSpace(claim.UnresolvedReason) ? UnresolvedTargetReason : claim.UnresolvedReason;
+
+    /// <summary>
+    /// The coarse direction an operation reads as. The relation kind stays a short, closed set so
+    /// "which tables does this service write?" is one predicate; the precise verb rides as a detail.
+    /// </summary>
+    private static string AccessKind(DatabaseOperation operation) => operation switch
+    {
+        DatabaseOperation.Read => ReadsKind,
+        DatabaseOperation.Insert or DatabaseOperation.Update or DatabaseOperation.Delete => WritesKind,
+        DatabaseOperation.Execute => ExecutesKind,
+        _ => AccessesKind,
+    };
+
+    /// <summary>
+    /// The coarse direction a column usage reads as. P1's analyzers emit only read, write and filter;
+    /// the P2 usages (join, order, group, aggregate) are all read-shaped, and the precise value always
+    /// rides as the <c>usage</c> detail.
+    /// </summary>
+    private static string ColumnKind(ColumnUsage usage) => usage switch
+    {
+        ColumnUsage.Write => WritesColumnKind,
+        ColumnUsage.Filter => FiltersByKind,
+        _ => ReadsColumnKind,
+    };
 
     /// <summary>
     /// The single indexed type this entity name denotes, or <c>null</c> when the run holds none or

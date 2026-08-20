@@ -368,6 +368,308 @@ public sealed class DatabaseMappingResolverTests
         Assert.DoesNotContain(
             resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
     }
+
+    // DAD-07: a DbSet read targets the entity's mapped object and names the precise operation.
+    [Fact]
+    public void Resolve_EntitySetRead_YieldsReadsSourcedAtTheMemberTargetingTheMappedObject()
+    {
+        var access = ResolverScenario.EntitySetAccess("Order", "Orders", DatabaseOperation.Read);
+
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(ResolverScenario.Entity("Order")),
+            ResolverScenario.ConfiguredTable("Order", "tb_order"),
+            access);
+
+        var reads = Assert.Single(resolution.Relations, relation => relation.RelationKind == "reads");
+        Assert.Equal(access.OwnerId, reads.SourceId);
+        Assert.Equal(Assert.Single(resolution.Objects).ObjectId.ToFactId(), reads.TargetId);
+        Assert.Equal("read", ResolverScenario.Detail(reads, "operation"));
+        Assert.Equal("Orders", ResolverScenario.Detail(reads, "target_text"));
+        Assert.Null(reads.UnresolvedReason);
+    }
+
+    // DAD-14: an access whose entity is only convention-mapped is kept, not dropped.
+    [Fact]
+    public void Resolve_EntitySetReadOnConventionMappedEntity_KeepsTheAccessUnresolved()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(ResolverScenario.Entity("Order")),
+            ResolverScenario.EntitySet("Order", "Orders"),
+            ResolverScenario.EntitySetAccess("Order", "Orders", DatabaseOperation.Read));
+
+        var reads = Assert.Single(resolution.Relations, relation => relation.RelationKind == "reads");
+        Assert.Null(reads.TargetId);
+        Assert.Equal("Orders", ResolverScenario.Detail(reads, "target_text"));
+        Assert.Equal(FactResolution.Heuristic, reads.Resolution);
+        Assert.Equal("convention-mapping", reads.UnresolvedReason);
+    }
+
+    // DAD-10: the write family maps onto one coarse kind carrying the precise operation.
+    [Theory]
+    [InlineData(DatabaseOperation.Insert, "insert")]
+    [InlineData(DatabaseOperation.Update, "update")]
+    [InlineData(DatabaseOperation.Delete, "delete")]
+    public void Resolve_EntitySetWrite_YieldsWritesCarryingThePreciseOperation(
+        DatabaseOperation operation,
+        string expected)
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(ResolverScenario.Entity("Order")),
+            ResolverScenario.ConfiguredTable("Order", "tb_order"),
+            ResolverScenario.EntitySetAccess("Order", "Orders", operation));
+
+        var writes = Assert.Single(resolution.Relations, relation => relation.RelationKind == "writes");
+
+        Assert.Equal(expected, ResolverScenario.Detail(writes, "operation"));
+    }
+
+    // DAD-08: a projected entity property becomes a reads-column carrying usage read.
+    [Fact]
+    public void Resolve_ProjectedColumn_YieldsReadsColumnTargetingTheConfiguredColumn()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Status", "Order")),
+            ResolverScenario.ConfiguredTable("Order", "tb_order"),
+            ResolverScenario.ConfiguredColumn("Order", "Status", "order_status"),
+            ResolverScenario.LinqColumn("Order", "Status", ColumnUsage.Read));
+
+        var read = Assert.Single(resolution.Relations, relation => relation.RelationKind == "reads-column");
+        Assert.Equal("read", ResolverScenario.Detail(read, "usage"));
+        Assert.Equal("Status", ResolverScenario.Detail(read, "target_text"));
+        Assert.Equal(Assert.Single(resolution.Columns).ColumnId.ToFactId(), read.TargetId);
+    }
+
+    // DAD-09: a Where lambda's property becomes a filters-by carrying usage filter.
+    [Fact]
+    public void Resolve_FilteredColumn_YieldsFiltersByCarryingUsageFilter()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Id", "Order")),
+            ResolverScenario.EntitySet("Order", "Orders"),
+            ResolverScenario.LinqColumn("Order", "Id", ColumnUsage.Filter));
+
+        var filter = Assert.Single(resolution.Relations, relation => relation.RelationKind == "filters-by");
+        Assert.Equal("filter", ResolverScenario.Detail(filter, "usage"));
+        Assert.Equal("Id", ResolverScenario.Detail(filter, "target_text"));
+        Assert.Null(filter.TargetId);
+        Assert.Equal(FactResolution.Heuristic, filter.Resolution);
+        Assert.Equal("convention-mapping", filter.UnresolvedReason);
+    }
+
+    // DAD-11: a tracked write whose property names exactly one exposed entity is attributed to it.
+    [Fact]
+    public void Resolve_TrackedWriteMatchingOneExposedEntity_YieldsHeuristicWritesColumnOnItsColumn()
+    {
+        var write = ResolverScenario.TrackedWrite("Status", "order.Status");
+
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Status", "Order")),
+            ResolverScenario.EntitySet("Order", "Orders"),
+            ResolverScenario.ConfiguredTable("Order", "tb_order"),
+            ResolverScenario.ConfiguredColumn("Order", "Status", "order_status"),
+            write);
+
+        var written = Assert.Single(
+            resolution.Relations, relation => relation.RelationKind == "writes-column");
+        Assert.Equal(write.OwnerId, written.SourceId);
+        Assert.Equal(Assert.Single(resolution.Columns).ColumnId.ToFactId(), written.TargetId);
+        Assert.Equal("write", ResolverScenario.Detail(written, "usage"));
+        Assert.Equal(FactResolution.Heuristic, written.Resolution);
+    }
+
+    // DAD-12: the same property on two exposed entities is ambiguous, never a coin flip.
+    [Fact]
+    public void Resolve_TrackedWriteMatchingTwoExposedEntities_YieldsCandidateWithTheObservedText()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Status", "Order"),
+                ResolverScenario.Entity("Invoice", documentPath: "Model/Invoice.cs"),
+                ResolverScenario.EntityProperty("Status", "Invoice", "Model/Invoice.cs")),
+            ResolverScenario.EntitySet("Order", "Orders"),
+            ResolverScenario.EntitySet("Invoice", "Invoices"),
+            ResolverScenario.TrackedWrite("Status", "entity.Status"));
+
+        var written = Assert.Single(
+            resolution.Relations, relation => relation.RelationKind == "writes-column");
+        Assert.Null(written.TargetId);
+        Assert.Equal(FactResolution.Candidate, written.Resolution);
+        Assert.Equal("entity.Status", ResolverScenario.Detail(written, "target_text"));
+        Assert.Equal("ambiguous-entity-attribution", written.UnresolvedReason);
+    }
+
+    // Spec Edge Case: a property no exposed entity declares yields no writes-column at all.
+    [Fact]
+    public void Resolve_TrackedWriteMatchingNoExposedEntity_YieldsNoWritesColumn()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Status", "Order")),
+            ResolverScenario.EntitySet("Order", "Orders"),
+            ResolverScenario.TrackedWrite("Nickname", "person.Nickname"));
+
+        Assert.DoesNotContain(
+            resolution.Relations, relation => relation.RelationKind == "writes-column");
+    }
+
+    // DAD-22: a literal-proven SQL target mints a node and the access points at it.
+    [Fact]
+    public void Resolve_ReadableSqlAccess_MintsTheNamedObjectAndTargetsIt()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(),
+            ResolverScenario.SqlAccess("Orders", DatabaseObjectKind.Unknown, DatabaseOperation.Read));
+
+        var node = Assert.Single(resolution.Objects);
+        Assert.Equal("Orders", node.Name);
+        Assert.Equal(DatabaseObjectKind.Unknown, node.Kind);
+        var reads = Assert.Single(resolution.Relations, relation => relation.RelationKind == "reads");
+        Assert.Equal(node.ObjectId.ToFactId(), reads.TargetId);
+        Assert.Equal("read", ResolverScenario.Detail(reads, "operation"));
+    }
+
+    // DAD-23: an EXEC target is a procedure, and its access is an executes relation.
+    [Fact]
+    public void Resolve_ProcedureSqlAccess_MintsAProcedureNodeAndYieldsExecutes()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(),
+            ResolverScenario.SqlAccess("usp_Sync", DatabaseObjectKind.Procedure, DatabaseOperation.Execute));
+
+        Assert.Equal(DatabaseObjectKind.Procedure, Assert.Single(resolution.Objects).Kind);
+        var executes = Assert.Single(resolution.Relations, relation => relation.RelationKind == "executes");
+        Assert.Equal("execute", ResolverScenario.Detail(executes, "operation"));
+    }
+
+    // DAD-27: dynamic SQL never invents a destination, and never mints a node.
+    [Fact]
+    public void Resolve_DynamicSqlAccess_MintsNoNodeAndStaysUnresolved()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(),
+            ResolverScenario.SqlAccess("dynamic-table", null, DatabaseOperation.Read) with
+            {
+                ShapeConfidence = FactResolution.Unresolved,
+                UnresolvedReason = "dynamic-sql",
+            });
+
+        Assert.Empty(resolution.Objects);
+        var reads = Assert.Single(resolution.Relations, relation => relation.RelationKind == "reads");
+        Assert.Null(reads.TargetId);
+        Assert.Equal("dynamic-table", ResolverScenario.Detail(reads, "target_text"));
+        Assert.Equal(FactResolution.Unresolved, reads.Resolution);
+        Assert.Equal("dynamic-sql", reads.UnresolvedReason);
+    }
+
+    // DAD-28: an unreadable target keeps the statement text as evidence a human can resolve.
+    [Fact]
+    public void Resolve_UnreadableSqlTarget_PreservesTheStatementAsASqlDetail()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(),
+            ResolverScenario.SqlAccess(null, null, DatabaseOperation.Update) with
+            {
+                ShapeConfidence = FactResolution.Unresolved,
+                UnresolvedReason = "unreadable-sql-target",
+                SqlText = "UPDATE (SELECT 1) SET x = 1",
+            });
+
+        var writes = Assert.Single(resolution.Relations, relation => relation.RelationKind == "writes");
+        Assert.Null(writes.TargetId);
+        Assert.Equal("UPDATE (SELECT 1) SET x = 1", ResolverScenario.Detail(writes, "sql"));
+        Assert.Equal("unreadable-sql-target", writes.UnresolvedReason);
+    }
+
+    // DAD-24 and DAD-25: a written SQL column becomes a writes-column on the statement's object.
+    [Fact]
+    public void Resolve_SqlWrittenColumn_YieldsWritesColumnOnTheStatementsObject()
+    {
+        var access = ResolverScenario.SqlAccess("Orders", DatabaseObjectKind.Unknown, DatabaseOperation.Insert);
+
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(),
+            access,
+            ResolverScenario.SqlColumn(access, "Status", ColumnUsage.Write));
+
+        var column = Assert.Single(resolution.Columns);
+        Assert.Equal("Status", column.Name);
+        Assert.Equal(Assert.Single(resolution.Objects).ObjectId, column.ObjectId);
+        var written = Assert.Single(resolution.Relations, relation => relation.RelationKind == "writes-column");
+        Assert.Equal(column.ColumnId.ToFactId(), written.TargetId);
+        Assert.Equal("write", ResolverScenario.Detail(written, "usage"));
+    }
+
+    // DAD-26: a filtered SQL column becomes a filters-by carrying usage filter.
+    [Fact]
+    public void Resolve_SqlFilterColumn_YieldsFiltersByCarryingUsageFilter()
+    {
+        var access = ResolverScenario.SqlAccess("Orders", DatabaseObjectKind.Unknown, DatabaseOperation.Read);
+
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(),
+            access,
+            ResolverScenario.SqlColumn(access, "Id", ColumnUsage.Filter));
+
+        var filter = Assert.Single(resolution.Relations, relation => relation.RelationKind == "filters-by");
+        Assert.Equal("filter", ResolverScenario.Detail(filter, "usage"));
+        Assert.Equal("Id", ResolverScenario.Detail(filter, "target_text"));
+    }
+
+    // A column of an unresolved statement has no object to hang on, so it mints nothing.
+    [Fact]
+    public void Resolve_SqlColumnOfUnresolvedStatement_MintsNoColumnAndKeepsTheRelation()
+    {
+        var access = ResolverScenario.SqlAccess(null, null, DatabaseOperation.Update) with
+        {
+            ShapeConfidence = FactResolution.Unresolved,
+            UnresolvedReason = "unreadable-sql-target",
+        };
+
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(),
+            access,
+            ResolverScenario.SqlColumn(access, "Status", ColumnUsage.Write) with
+            {
+                ObjectText = null,
+                ShapeConfidence = FactResolution.Unresolved,
+            });
+
+        Assert.Empty(resolution.Columns);
+        var written = Assert.Single(resolution.Relations, relation => relation.RelationKind == "writes-column");
+        Assert.Null(written.TargetId);
+        Assert.False(string.IsNullOrWhiteSpace(written.UnresolvedReason));
+    }
+
+    // DAD-14: no relation ever leaves pass two with a null target and no stated reason.
+    [Fact]
+    public void Resolve_MixedSnapshot_LeavesEveryUntargetedRelationWithAReason()
+    {
+        var access = ResolverScenario.SqlAccess("Orders", DatabaseObjectKind.Unknown, DatabaseOperation.Read);
+
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Status", "Order")),
+            ResolverScenario.EntitySet("Order", "Orders"),
+            ResolverScenario.EntitySetAccess("Order", "Orders", DatabaseOperation.Read),
+            ResolverScenario.LinqColumn("Order", "Status", ColumnUsage.Read),
+            ResolverScenario.TrackedWrite("Status", "order.Status"),
+            access,
+            ResolverScenario.SqlColumn(access, "Id", ColumnUsage.Filter));
+
+        Assert.NotEmpty(resolution.Relations.Where(relation => relation.TargetId is null));
+        Assert.All(
+            resolution.Relations.Where(relation => relation.TargetId is null),
+            relation => Assert.False(string.IsNullOrWhiteSpace(relation.UnresolvedReason)));
+    }
 }
 
 /// <summary>
@@ -452,6 +754,76 @@ internal static class ResolverScenario
             EntityText = entityName,
             PropertyText = propertyName,
             ColumnText = columnName,
+        };
+
+    /// <summary>A DbSet read or write, as <c>EfCoreAnalyzer</c> claims one.</summary>
+    public static RawDatabaseClaim EntitySetAccess(
+        string entityName,
+        string setName,
+        DatabaseOperation operation,
+        string documentPath = "Services/OrderService.cs",
+        int line = 11) =>
+        Claim(DatabaseClaimKind.Access, documentPath, line) with
+        {
+            EntityText = entityName,
+            PropertyText = setName,
+            Operation = operation,
+        };
+
+    /// <summary>An entity property a LINQ chain referenced, as <c>EfCoreAnalyzer</c> claims one.</summary>
+    public static RawDatabaseClaim LinqColumn(
+        string entityName,
+        string propertyName,
+        ColumnUsage usage,
+        string documentPath = "Services/OrderService.cs",
+        int line = 12) =>
+        Claim(DatabaseClaimKind.ColumnAccess, documentPath, line) with
+        {
+            EntityText = entityName,
+            PropertyText = propertyName,
+            Usage = usage,
+        };
+
+    /// <summary>
+    /// A property assignment inside a member that also calls SaveChanges. The entity is deliberately
+    /// absent: syntax cannot prove which entity the receiver held, so attribution is pass two's job.
+    /// </summary>
+    public static RawDatabaseClaim TrackedWrite(
+        string propertyName,
+        string receiverText,
+        string documentPath = "Services/OrderService.cs",
+        int line = 20) =>
+        Claim(DatabaseClaimKind.ColumnAccess, documentPath, line) with
+        {
+            PropertyText = propertyName,
+            ColumnText = receiverText,
+            Usage = ColumnUsage.Write,
+        };
+
+    public static RawDatabaseClaim SqlAccess(
+        string? objectText,
+        DatabaseObjectKind? objectKind,
+        DatabaseOperation operation,
+        string documentPath = "Data/OrderQueries.cs",
+        int line = 9) =>
+        Claim(DatabaseClaimKind.Access, documentPath, line) with
+        {
+            AnalyzerId = DataAccessAnalyzerId.Create("csharp2md.dataaccess.sql"),
+            ObjectText = objectText,
+            ObjectKind = objectKind,
+            Operation = operation,
+        };
+
+    /// <summary>A column of <paramref name="access"/>, carrying that statement's evidence and target.</summary>
+    public static RawDatabaseClaim SqlColumn(
+        RawDatabaseClaim access,
+        string columnName,
+        ColumnUsage usage) =>
+        access with
+        {
+            Kind = DatabaseClaimKind.ColumnAccess,
+            ColumnText = columnName,
+            Usage = usage,
         };
 
     public static RawDatabaseClaim Claim(DatabaseClaimKind kind, string documentPath, int line) => new()
