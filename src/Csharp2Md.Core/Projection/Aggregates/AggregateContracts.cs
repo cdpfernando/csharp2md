@@ -25,6 +25,16 @@ internal sealed record RelationAggregate(
     [property: JsonPropertyOrder(1)] string Kind,
     [property: JsonPropertyOrder(2)] ImmutableArray<RelationFactJson> Entries);
 
+/// <summary>
+/// The database node catalogue: object and column entries are separate arrays because they are
+/// separate fact families, and every entry is one node id.
+/// </summary>
+internal sealed record DatabaseAggregate(
+    [property: JsonPropertyOrder(0)] int SchemaVersion,
+    [property: JsonPropertyOrder(1)] string Kind,
+    [property: JsonPropertyOrder(2)] ImmutableArray<DatabaseObjectFactJson> Objects,
+    [property: JsonPropertyOrder(3)] ImmutableArray<DatabaseColumnFactJson> Columns);
+
 internal sealed record ManifestAnalysis(
     [property: JsonPropertyOrder(0)] string Requested,
     [property: JsonPropertyOrder(1)] string Effective);
@@ -63,6 +73,7 @@ internal sealed record AggregateOutputSnapshot(
     ManifestCoverage Coverage,
     ImmutableArray<StoredFactFragment> Fragments,
     CoverageProjectionResult? HonestCoverage = null,
-    RelationProjectionResult? Relations = null);
+    RelationProjectionResult? Relations = null,
+    DatabaseProjectionResult? Database = null);
 
 internal sealed record AggregateWriteResult(string RawRoot, string ManifestPath);

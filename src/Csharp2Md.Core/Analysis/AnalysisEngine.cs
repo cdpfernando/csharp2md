@@ -195,6 +195,9 @@ public sealed class AnalysisEngine
             structuralFailure = true;
         }
 
+        var databaseAggregate = DatabaseAggregateProjector.Project(validatedFragments);
+        analysisDiagnostics.AddRange(databaseAggregate.Diagnostics);
+
         resultDiagnostics.AddRange(analysisDiagnostics.Select(static diagnostic => diagnostic.Message));
         var honestCoverage = CoverageProjector.Project(new CoverageProjectionRequest(
             request.Options.Mode, accumulated, analysisDiagnostics.ToImmutable(), [], coverageOverrides.ToImmutable()));
@@ -202,7 +205,8 @@ public sealed class AnalysisEngine
             request.Topic, request.Domain, "3.0.1", request.Options.Mode, effectiveMode, request.Options.Trust,
             loadedExtensions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray(),
             new ManifestCoverage(inventory.Services.Length, projectCount, documentCount),
-            storedFragments.ToImmutable(), honestCoverage, RelationProjector.Project(validatedFragments));
+            storedFragments.ToImmutable(), honestCoverage, RelationProjector.Project(validatedFragments),
+            databaseAggregate);
         new CanonicalAggregateWriter().WritePrepared(request.OutputRoot, snapshot, TimeProvider.System);
 
         return Result(

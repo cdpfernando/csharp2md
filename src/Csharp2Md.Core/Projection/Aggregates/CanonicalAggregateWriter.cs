@@ -66,6 +66,9 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
             files.Write($"raw/facts/relations/{wireName}.json", Json(new RelationAggregate(2, wireName, projected?.Relations ?? [])));
         }
 
+        var database = snapshot.Database ?? DatabaseProjectionResult.Empty;
+        files.Write("raw/facts/database.json", Json(new DatabaseAggregate(2, "database", database.Objects, database.Columns)));
+
         var honestCoverage = snapshot.HonestCoverage ?? CoverageProjectionResult.Empty;
         files.Write("raw/facts/diagnostics.json", Json(new DiagnosticAggregate(2, "diagnostics", honestCoverage.Diagnostics)));
         files.Write("raw/facts/coverage.json", Json(new CoverageAggregate(
@@ -130,6 +133,7 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
     private static byte[] Json(DiagnosticAggregate value) => Serialize(value, AggregateJsonContext.Default.DiagnosticAggregate);
     private static byte[] Json(CoverageAggregate value) => Serialize(value, AggregateJsonContext.Default.CoverageAggregate);
     private static byte[] Json(RelationAggregate value) => Serialize(value, AggregateJsonContext.Default.RelationAggregate);
+    private static byte[] Json(DatabaseAggregate value) => Serialize(value, AggregateJsonContext.Default.DatabaseAggregate);
     private static byte[] Json(FactualManifest value) => Serialize(value, AggregateJsonContext.Default.FactualManifest);
 
     private static byte[] Serialize<T>(T value, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo)

@@ -152,7 +152,8 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
 
     private static readonly string[] ExpectedFiles =
     [
-        ".csharp2md-output", "raw/CLAUDE.md", "raw/codebase/components.md", "raw/dependencies.mmd", "raw/facts/coverage.json",
+        ".csharp2md-output", "raw/CLAUDE.md", "raw/codebase/components.md", "raw/dependencies.mmd",
+        "raw/facts/coverage.json", "raw/facts/database.json",
         "raw/facts/diagnostics.json", "raw/facts/manifest.json", "raw/facts/relations/compile-time.json",
         "raw/facts/relations/data.json", "raw/facts/relations/dependency-injection.json", "raw/facts/relations/events.json",
         "raw/facts/relations/grpc.json", "raw/facts/relations/http.json", "raw/facts/relations/inheritance.json",

@@ -212,6 +212,27 @@ public sealed class AnalysisEngineTests : IDisposable
         Assert.True(fragment.GetProperty("byte_length").GetInt32() > 0);
     }
 
+    // The node catalogue is written from the same run, listing every literal-proven table and column.
+    [Fact]
+    public async Task AnalyzeAsync_EfCoreProject_WritesTheConfiguredTableAndColumnToTheNodeCatalogue()
+    {
+        CreateProjectWithFiles("Orders", EfCoreDocuments());
+
+        _ = await new AnalysisEngine().AnalyzeAsync(Request());
+
+        using var catalogue = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(_output, "raw", "facts", "database.json")));
+        Assert.Equal("database", catalogue.RootElement.GetProperty("kind").GetString());
+        Assert.Equal(2, catalogue.RootElement.GetProperty("schema_version").GetInt32());
+        var table = Assert.Single(catalogue.RootElement.GetProperty("objects").EnumerateArray());
+        Assert.Equal("tb_order", table.GetProperty("name").GetString());
+        Assert.Equal("table", table.GetProperty("kind").GetString());
+        Assert.Equal("unknown", table.GetProperty("connection_name").GetString());
+        var column = Assert.Single(catalogue.RootElement.GetProperty("columns").EnumerateArray());
+        Assert.Equal("order_status", column.GetProperty("name").GetString());
+        Assert.Equal(table.GetProperty("object_id").GetString(), column.GetProperty("object_id").GetString());
+    }
+
     // Spec Edge Case: a codebase with no persistence API usage records nothing and complains about nothing.
     [Fact]
     public async Task AnalyzeAsync_ProjectWithoutPersistenceCode_WritesAnEmptyDataPartitionAndNoDiagnostic()

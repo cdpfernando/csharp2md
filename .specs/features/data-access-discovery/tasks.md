@@ -1088,13 +1088,13 @@ only by case.
 
 **Done when**:
 
-- [ ] A node emitted by three documents yields exactly one aggregate entry with all three evidence spans
+- [x] A node emitted by three documents yields exactly one aggregate entry with all three evidence spans
       (DAD-19)
-- [ ] The higher-confidence resolution wins when two contributions disagree
-- [ ] `Orders` and `orders` remain two entries and produce one `C2M-DA-002` informational diagnostic
-- [ ] Output ordering is canonical and stable
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded before and after (no silent deletions)
+- [x] The higher-confidence resolution wins when two contributions disagree
+- [x] `Orders` and `orders` remain two entries and produce one `C2M-DA-002` informational diagnostic
+- [x] Output ordering is canonical and stable
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded before and after (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
