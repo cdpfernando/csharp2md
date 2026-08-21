@@ -154,6 +154,14 @@
 - **Date**: 2026-08-21
 - **Status**: active
 
+### AD-020
+- **Decision**: `relation-resolver` does not attempt to make `raw/dependencies.mmd` carry a real edge, even though spec.md's own P1 Success Criteria and T30's Done-when list both name it. `RelationResolverEndToEndTests` proves the other five P1 Independent Tests plus that `dependencies.mmd` is written and non-empty; it does not assert an edge.
+- **Reason**: Two independent, pre-existing gaps make an edge unreachable regardless of how well relations resolve. First, no production code path anywhere constructs a `ComponentFact` (`grep -rln "new ComponentFact(" src/Csharp2Md.Core/` returns nothing) — the entire `Detection/` tree that would presumably produce one is orphaned from `AnalyzeAsync`, as AD-015 already documented. Second, and separately, `RelationProjector.Mermaid` builds `componentByProject` keyed by `ComponentIndexEntry.ProjectIds` (project-shaped `FactId`s) but looks candidate edges up by `relation.SourceId`/`TargetId` (symbol- or document-shaped `FactId`s) — a key-shape mismatch that would still miss every lookup even if `ComponentFact`s existed. design.md's Reuse table assumed `Mermaid`'s existing `TargetId is not null` filter was the only blocker and would "start passing" once relations resolve; that assumption is false on both counts. Confirmed by a real end-to-end run over `fixtures/SyntheticSolution`: `raw/dependencies.mmd` is `"flowchart LR\n"` with zero edges even with real, resolved relation targets in place. User confirmed (2026-08-21, in response to an explicit AskUserQuestion) to drop the edge assertion and record this as an open finding rather than expand scope to fix `Mermaid`'s lookup or wire up component detection.
+- **Trade-off**: spec.md's P1 Success Criteria line ("a non-empty `raw/dependencies.mmd` with at least one edge outside the `data` partition") stays unmet by this feature. A future feature must both wire some producer of `ComponentFact` (finishing or replacing the orphaned `Detection/` tree per AD-015) and fix `RelationProjector.Mermaid`'s project-vs-symbol/document key mismatch before that criterion is achievable.
+- **Scope**: `RelationResolverEndToEndTests`'s coverage of spec.md's dependencies.mmd Success Criterion only. Does not touch `RelationProjector`, `Detection/`, or component detection. Extends AD-015's open question about the orphaned `Detection/` tree with a second, independent blocker in `RelationProjector.Mermaid` itself.
+- **Date**: 2026-08-21
+- **Status**: active
+
 ## Handoff
 
 - **Feature**: RelationResolver (`.specs/features/relation-resolver/`) — **planned, not started.** The stage

@@ -1105,14 +1105,18 @@ fixture.
 
 **Done when**:
 
-- [ ] The cross-project `calls` relation carries the `PaymentClient.Authorize` symbol id and `syntactic`
-- [ ] The ambiguous relation carries a null target, `candidate`, both ids, and a `C2M-RELR-002` entry in `diagnostics.json`
-- [ ] Two runs into two output roots produce byte-identical relation partition files
-- [ ] The configured, convention and dynamic database relations each carry their expected method, with the convention one's header resolution still `Heuristic`
-- [ ] The `resolution.json` totals equal the partition files, summed by the test rather than restated
-- [ ] `raw/dependencies.mmd` contains at least one edge outside the `data` partition
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] The cross-project `calls` relation carries the `PaymentClient.Authorize` symbol id and `syntactic`
+- [x] The ambiguous relation carries a null target, `candidate`, both ids, and a `C2M-RELR-002` entry in `diagnostics.json`
+- [x] Two runs into two output roots produce byte-identical relation partition files
+- [x] The configured, convention and dynamic database relations each carry their expected method, with the convention one's header resolution still `Heuristic`
+- [x] The `resolution.json` totals equal the partition files, summed by the test rather than restated
+- [x] `raw/dependencies.mmd` is written and non-empty (see AD-020: an edge is unreachable regardless of
+      resolution quality — no production path mints a `ComponentFact`, and `RelationProjector.Mermaid`'s
+      project-keyed lookup would miss a symbol/document-shaped `SourceId`/`TargetId` even if one existed;
+      both are pre-existing gaps outside this feature's scope, confirmed by a real run and by code
+      inspection, and the user confirmed dropping the edge assertion rather than expanding scope)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: integration
 **Gate**: full
