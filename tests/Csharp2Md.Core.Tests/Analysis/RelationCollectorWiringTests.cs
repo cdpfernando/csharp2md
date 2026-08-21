@@ -1,16 +1,17 @@
+using System.Text.Json;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.Analysis.Contracts;
-using Csharp2Md.Core.Facts.Serialization;
 using Csharp2Md.Core.Tests.Pipeline;
 using Csharp2Md.Core.Topic;
 
 namespace Csharp2Md.Core.Tests.Analysis;
 
 /// <summary>
-/// T12: proves <c>RelationCollector.CreateFacts</c> is actually wired into the live
-/// <see cref="AnalysisEngine"/> pipeline in the default, syntax-only analysis mode - spec.md's P1
-/// and P2 Independent Tests against the real <c>fixtures/SyntheticSolution</c> fixture, where the
-/// reported defect was <c>relations: []</c> for these exact documents.
+/// T12/T25: proves relations are wired into the live <see cref="AnalysisEngine"/> pipeline in the
+/// default, syntax-only analysis mode - spec.md's P1 and P2 Independent Tests against the real
+/// <c>fixtures/SyntheticSolution</c> fixture. Migrated for RELR-01/AD-018: relations now live in the
+/// resolver's one solution-level fragment (<c>raw/facts/relations/*.json</c>), never in a document
+/// fragment, so every assertion here reads the partition files instead of a document's own <c>Relations</c>.
 /// </summary>
 [Trait("Category", "Integration")]
 public sealed class RelationCollectorWiringTests(RelationCollectorWiringFixture fixture)
@@ -19,55 +20,75 @@ public sealed class RelationCollectorWiringTests(RelationCollectorWiringFixture 
     [Fact]
     public void AnalyzeAsync_SyntaxOnlyMode_PaymentsServiceDocument_EmitsSubscribeHandlePublishAndInheritsRelations()
     {
-        var document = fixture.FindDocumentFragment("PaymentsService.cs");
-        var relations = document.Relations;
+        var relations = fixture.FindRelationsFor("PaymentsService.cs");
 
         Assert.Contains(relations, relation =>
-            relation.RelationKind == "subscribes"
+            RelationKind(relation) == "subscribes"
             && HasDetail(relation, "target_text", "OrderPlaced"));
         Assert.Contains(relations, relation =>
-            relation.RelationKind == "handles"
+            RelationKind(relation) == "handles"
             && HasDetail(relation, "target_text", "OrderPlaced"));
         Assert.Contains(relations, relation =>
-            relation.RelationKind == "publishes"
+            RelationKind(relation) == "publishes"
             && HasDetail(relation, "target_text", "PaymentProcessed"));
         Assert.Contains(relations, relation =>
-            relation.RelationKind == "inherits"
-            && relation.Details!.Value.Any(detail =>
-                detail.Key == "target_text" && detail.Value is "PaymentsBase" or "Payments.PaymentsBase"));
+            RelationKind(relation) == "inherits"
+            && Details(relation).Any(detail =>
+                detail.GetProperty("key").GetString() == "target_text"
+                && detail.GetProperty("value").GetString() is "PaymentsBase" or "Payments.PaymentsBase"));
     }
 
     [Fact]
     public void AnalyzeAsync_SyntaxOnlyMode_OrderServiceDocument_EmitsHttpClientHttpCallAndCallsRelations()
     {
-        var document = fixture.FindDocumentFragment("OrderService.cs");
-        var relations = document.Relations;
+        var relations = fixture.FindRelationsFor("OrderService.cs");
 
         Assert.Contains(relations, relation =>
-            relation.RelationKind == "http-client"
+            RelationKind(relation) == "http-client"
             && HasDetail(relation, "target_text", "PaymentService"));
-        Assert.Contains(relations, relation => relation.RelationKind == "http-call");
+        Assert.Contains(relations, relation => RelationKind(relation) == "http-call");
         Assert.Contains(relations, relation =>
-            relation.RelationKind == "calls"
-            && relation.Details!.Value.Any(detail =>
-                detail.Key == "target_text" && detail.Value.Contains("AuthorizePayment", StringComparison.Ordinal)));
+            RelationKind(relation) == "calls"
+            && Details(relation).Any(detail =>
+                detail.GetProperty("key").GetString() == "target_text"
+                && detail.GetProperty("value").GetString()!.Contains("AuthorizePayment", StringComparison.Ordinal)));
     }
 
+    /// <summary>
+    /// Migrated from asserting every relation was unresolved (the pre-resolver placeholder, RELR-16
+    /// deleted it) to the invariant the resolver actually guarantees (C2M-FV-007/008): a relation's
+    /// <c>target_id</c> and <c>unresolved_reason</c> are never both absent, and never both present.
+    /// Strictly more than the original claim proved, since the original could not distinguish "correctly
+    /// unresolved" from "the pipeline never tried" - the resolver now genuinely attempts resolution, and
+    /// this proves at least one PaymentsService relation resolves to a real target as evidence it did.
+    /// </summary>
     [Fact]
-    public void AnalyzeAsync_SyntaxOnlyMode_EveryEmittedRelation_HasNullTargetIdAndUnresolvedReason()
+    public void AnalyzeAsync_SyntaxOnlyMode_EveryEmittedRelation_HasASelfConsistentResolutionOutcome()
     {
-        var document = fixture.FindDocumentFragment("PaymentsService.cs");
+        var relations = fixture.FindRelationsFor("PaymentsService.cs");
 
-        Assert.NotEmpty(document.Relations);
-        Assert.All(document.Relations, relation =>
+        Assert.NotEmpty(relations);
+        Assert.All(relations, relation =>
         {
-            Assert.Null(relation.TargetId);
-            Assert.False(string.IsNullOrWhiteSpace(relation.UnresolvedReason));
+            var hasTarget = relation.TryGetProperty("target_id", out var target) && target.ValueKind != JsonValueKind.Null;
+            var hasReason = relation.TryGetProperty("unresolved_reason", out var reason)
+                && reason.ValueKind == JsonValueKind.String
+                && !string.IsNullOrWhiteSpace(reason.GetString());
+            Assert.True(hasTarget != hasReason, $"Relation '{relation.GetProperty("relation_id").GetString()}' must carry exactly one of target_id or unresolved_reason.");
         });
+        Assert.Contains(relations, relation =>
+            relation.TryGetProperty("target_id", out var target) && target.ValueKind != JsonValueKind.Null);
     }
 
-    private static bool HasDetail(RelationFactJson relation, string key, string value) =>
-        relation.Details!.Value.Any(detail => detail.Key == key && detail.Value == value);
+    private static string RelationKind(JsonElement relation) => relation.GetProperty("relation_kind").GetString()!;
+
+    private static IEnumerable<JsonElement> Details(JsonElement relation) =>
+        relation.TryGetProperty("details", out var details) && details.ValueKind == JsonValueKind.Array
+            ? details.EnumerateArray()
+            : [];
+
+    private static bool HasDetail(JsonElement relation, string key, string value) =>
+        Details(relation).Any(detail => detail.GetProperty("key").GetString() == key && detail.GetProperty("value").GetString() == value);
 }
 
 public sealed class RelationCollectorWiringFixture : IAsyncLifetime
@@ -102,19 +123,29 @@ public sealed class RelationCollectorWiringFixture : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    public FactualJsonDocument FindDocumentFragment(string fileName)
+    /// <summary>
+    /// Every relation, across every partition file, whose evidence names <paramref name="fileName"/> -
+    /// the resolver's one solution-level fragment (AD-018) replaces the per-document lookup this fixture
+    /// used to do against <c>raw/facts/document/*.json</c>.
+    /// </summary>
+    public JsonElement[] FindRelationsFor(string fileName)
     {
-        var documentRoot = Path.Combine(TopicLayout.RawRoot(Output), "facts", "document");
-        foreach (var path in Directory.EnumerateFiles(documentRoot, "*.json", SearchOption.AllDirectories))
+        var relationsRoot = Path.Combine(TopicLayout.RawRoot(Output), "facts", "relations");
+        var matches = new List<JsonElement>();
+        foreach (var path in Directory.EnumerateFiles(relationsRoot, "*.json"))
         {
-            var candidate = FactualJsonSerializer.Deserialize(File.ReadAllBytes(path));
-            if (candidate.Documents.Length == 1
-                && candidate.Documents[0].RelativePath.EndsWith(fileName, StringComparison.Ordinal))
+            using var partition = JsonDocument.Parse(File.ReadAllText(path));
+            foreach (var entry in partition.RootElement.GetProperty("entries").EnumerateArray())
             {
-                return candidate;
+                var evidence = entry.GetProperty("header").GetProperty("evidence");
+                if (evidence.EnumerateArray().Any(item =>
+                    item.GetProperty("relative_path").GetString()!.EndsWith(fileName, StringComparison.Ordinal)))
+                {
+                    matches.Add(entry.Clone());
+                }
             }
         }
 
-        throw new InvalidOperationException($"No persisted document fragment found for {fileName}.");
+        return [.. matches];
     }
 }

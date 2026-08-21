@@ -956,14 +956,14 @@ unrelated flakes (`DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPath
 
 **Done when**:
 
-- [ ] Every migrated assertion is at least as strict as the one it replaces; any that becomes stricter is called out in the commit body
-- [ ] No test is deleted, skipped, or weakened to accommodate the move
-- [ ] `RelationCollectorWiringTests` and `RelationCollectorTrustedWiringTests` assert the claim path and still cover what they covered before
-- [ ] `DataAccessDiscoveryEndToEndTests.cs` (all 27 cases) and `AnalysisEngineTests.AnalyzeAsync_EfCoreProject_WritesTheResolvedDataRelationPartition` pass again against the resolver's fragment, unweakened
-- [ ] Both `AggregateRelationPartitionTests.DataPartitionFile_*` cases pass again
-- [ ] Each re-approved snapshot diff is reviewed line by line
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every migrated assertion is at least as strict as the one it replaces; any that becomes stricter is called out in the commit body
+- [x] No test is deleted, skipped, or weakened to accommodate the move
+- [x] `RelationCollectorWiringTests` and `RelationCollectorTrustedWiringTests` assert the claim path and still cover what they covered before
+- [x] `DataAccessDiscoveryEndToEndTests.cs` (all 27 cases) and `AnalysisEngineTests.AnalyzeAsync_EfCoreProject_WritesTheResolvedDataRelationPartition` pass again against the resolver's fragment, unweakened
+- [x] Both `AggregateRelationPartitionTests.DataPartitionFile_*` cases pass again
+- [x] Each re-approved snapshot diff is reviewed line by line
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: integration
 **Gate**: build

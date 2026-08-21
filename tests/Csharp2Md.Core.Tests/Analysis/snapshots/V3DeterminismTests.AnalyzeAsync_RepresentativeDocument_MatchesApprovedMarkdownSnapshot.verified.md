@@ -7,7 +7,7 @@ classifications: []
 analysis_summary:
   resolution: syntactic
   symbol_count: 6
-  relation_count: 9
+  relation_count: 0
   diagnostic_count: 0
 diagnostics: []
 facts_ref: "facts/document/45/4532df7bd67a908fab160445df45ff9201f190a3d382cadfce97b89a521a185a.json"
@@ -21,9 +21,7 @@ facts_ref: "facts/document/45/4532df7bd67a908fab160445df45ff9201f190a3d382cadfce
 resolution: syntactic
 symbols:
   syntactic: 6
-relations:
-  syntactic: 6
-  unresolved: 3
+relations: {}
 diagnostics: {}
 ```
 
