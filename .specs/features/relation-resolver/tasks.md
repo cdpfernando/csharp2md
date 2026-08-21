@@ -1076,11 +1076,11 @@ declared set, and never changes the exit code on its own.
 
 **Done when**:
 
-- [ ] `OrderService` calls `PaymentClient.Authorize` across a project boundary through a constructor-injected receiver
-- [ ] One type name exists in two namespaces and is referenced from a third project, producing a genuine tie
-- [ ] Field, property, constructor-parameter, primary-constructor-parameter, pattern-variable and `var`-local receivers each appear once
-- [ ] The fixture still builds and every pre-existing fixture assertion still passes
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
+- [x] `OrderService` calls `PaymentClient.Authorize` across a project boundary through a constructor-injected receiver
+- [x] One type name exists in two namespaces and is referenced from a third project, producing a genuine tie
+- [x] Field, property, constructor-parameter, primary-constructor-parameter, pattern-variable and `var`-local receivers each appear once
+- [x] The fixture still builds and every pre-existing fixture assertion still passes
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
 
 **Tests**: none
 **Gate**: build

@@ -6,7 +6,7 @@ component_ids: []
 classifications: []
 analysis_summary:
   resolution: syntactic
-  symbol_count: 6
+  symbol_count: 7
   relation_count: 0
   diagnostic_count: 0
 diagnostics: []
@@ -20,7 +20,7 @@ facts_ref: "facts/document/45/4532df7bd67a908fab160445df45ff9201f190a3d382cadfce
 ```yaml
 resolution: syntactic
 symbols:
-  syntactic: 6
+  syntactic: 7
 relations: {}
 diagnostics: {}
 ```
@@ -45,7 +45,7 @@ namespace Acme.Orders;
 ```csharp
 
 public sealed class OrderService(
-    IHttpClientFactory httpClientFactory, IEventBus eventBus, PaymentsClient paymentsClient)
+    IHttpClientFactory httpClientFactory, IEventBus eventBus, PaymentsClient paymentsClient, PaymentClient crossProjectPaymentClient)
 {
 ```
 
@@ -55,6 +55,19 @@ public sealed class OrderService(
     /// <summary>Unary gRPC call into Acme.Payments' Payments service.</summary>
     public Task<string> AuthorizePaymentAsync(Guid orderId, decimal amount) =>
         paymentsClient.AuthorizePayment(orderId.ToString(), amount);
+```
+
+## Method
+
+```csharp
+
+    /// <summary>
+    /// RELR-04/T29 (spec.md's first P1 Independent Test): calls PaymentClient.Authorize (declared in
+    /// Acme.Shared.Contracts, a different project from OrderService's own Acme.Orders) through a
+    /// primary-constructor-parameter receiver.
+    /// </summary>
+    public Task<string> AuthorizeViaPaymentClientAsync(Guid orderId, decimal amount) =>
+        crossProjectPaymentClient.Authorize(orderId, amount);
 ```
 
 ## Method

@@ -5,11 +5,19 @@ using Microsoft.Extensions.Http;
 namespace Acme.Orders;
 
 public sealed class OrderService(
-    IHttpClientFactory httpClientFactory, IEventBus eventBus, PaymentsClient paymentsClient)
+    IHttpClientFactory httpClientFactory, IEventBus eventBus, PaymentsClient paymentsClient, PaymentClient crossProjectPaymentClient)
 {
     /// <summary>Unary gRPC call into Acme.Payments' Payments service.</summary>
     public Task<string> AuthorizePaymentAsync(Guid orderId, decimal amount) =>
         paymentsClient.AuthorizePayment(orderId.ToString(), amount);
+
+    /// <summary>
+    /// RELR-04/T29 (spec.md's first P1 Independent Test): calls PaymentClient.Authorize (declared in
+    /// Acme.Shared.Contracts, a different project from OrderService's own Acme.Orders) through a
+    /// primary-constructor-parameter receiver.
+    /// </summary>
+    public Task<string> AuthorizeViaPaymentClientAsync(Guid orderId, decimal amount) =>
+        crossProjectPaymentClient.Authorize(orderId, amount);
 
     public async Task PlaceOrderAsync(Guid orderId, decimal amount, CancellationToken cancellationToken)
     {
