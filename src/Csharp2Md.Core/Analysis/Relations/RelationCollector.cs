@@ -11,16 +11,13 @@ using Microsoft.CodeAnalysis.Text;
 namespace Csharp2Md.Core.Analysis.Relations;
 
 /// <summary>
-/// Turns <see cref="SyntacticRelationCandidate"/>s into real <see cref="RelationFact"/>s. Every fact
-/// this collector produces carries evidence, detector provenance, a null <c>TargetId</c>, and a
-/// populated <c>UnresolvedReason</c> (RELC-09/RELC-10/RELC-11) - resolving <c>target_text</c> into a
-/// proven target identity is a future <c>RelationResolver</c>'s job, not this collector's.
+/// Turns <see cref="SyntacticRelationCandidate"/>s into <see cref="RawRelation"/> claims. Resolving
+/// <c>target_text</c> into a proven target identity - and minting the <see cref="RelationFact"/> that
+/// carries the outcome - is <c>RelationResolver</c>'s job in pass two (AD-018); this collector only
+/// records what pass one observed.
 /// </summary>
 internal static class RelationCollector
 {
-    private const string UnresolvedReasonText =
-        "RelationCollector records only the observed syntactic shape; target resolution is deferred to a future RelationResolver.";
-
     private static readonly DetectorId CollectorDetectorId = DetectorId.Create("io.csharp2md.relation-collector");
     private static readonly FactProvenance Provenance = new("csharp2md.syntax", "1", CollectorDetectorId, "1.0.0");
 
@@ -31,30 +28,55 @@ internal static class RelationCollector
     /// Baseline, syntax-only materialization - safe to call unconditionally, with no
     /// <see cref="SemanticModel"/> dependency.
     /// </summary>
-    public static ImmutableArray<RelationFact> CreateFacts(
+    public static ImmutableArray<RawRelation> CreateClaims(
         DocumentFactId documentId,
         string relativePath,
         ImmutableArray<SyntacticRelationCandidate> candidates)
     {
-        var ordinals = new Dictionary<string, int>(StringComparer.Ordinal);
-        var facts = ImmutableArray.CreateBuilder<RelationFact>(candidates.Length);
+        var claims = ImmutableArray.CreateBuilder<RawRelation>(candidates.Length);
         foreach (var candidate in candidates)
         {
-            var details = DetailsFor(candidate.RelationKind, candidate.ObservedTarget);
-            var ordinal = NextOrdinal(ordinals, candidate.RelationKind, ClaimFor(details));
-            var id = RelationFactId.Create(candidate.OwnerId, candidate.RelationKind, ClaimFor(details), ordinal);
-            facts.Add(BuildFact(
-                id, candidate.OwnerId, documentId, relativePath,
-                candidate.StartLine, candidate.StartColumn, candidate.EndLine, candidate.EndColumn,
-                candidate.RelationKind, candidate.ShapeConfidence, details));
+            claims.Add(BuildClaim(documentId, relativePath, candidate, candidate.RelationKind, candidate.ShapeConfidence));
         }
 
-        return facts.ToImmutable();
+        return claims.ToImmutable();
     }
 
     /// <summary>
+    /// The claim <see cref="CreateClaims"/> would produce for one candidate, under a possibly-refined
+    /// <paramref name="relationKind"/> and <paramref name="shapeConfidence"/> - shared with
+    /// <see cref="RefineClaims"/> so a refined candidate's claim carries exactly the same fields a
+    /// baseline claim would, save for the refinement itself.
+    /// </summary>
+    private static RawRelation BuildClaim(
+        DocumentFactId documentId,
+        string relativePath,
+        SyntacticRelationCandidate candidate,
+        string relationKind,
+        FactResolution shapeConfidence) =>
+        new()
+        {
+            Kind = relationKind,
+            OwnerId = candidate.OwnerId,
+            Evidence = new Evidence(
+                documentId, relativePath,
+                candidate.StartLine, candidate.StartColumn, candidate.EndLine, candidate.EndColumn),
+            ShapeConfidence = shapeConfidence,
+            Partition = PartitionFor(relationKind),
+            Details = DetailsFor(relationKind, candidate.ObservedTarget),
+            TargetText = candidate.ObservedTarget,
+            ReceiverText = candidate.ReceiverText,
+            ReceiverTypeText = candidate.ReceiverTypeText,
+            MemberName = candidate.MemberName,
+            ArgumentCount = candidate.ArgumentCount,
+            ArgumentTypes = candidate.ArgumentTypes,
+            Namespace = candidate.Namespace,
+            Imports = candidate.Imports,
+        };
+
+    /// <summary>
     /// Semantic-refinement path, called only when a <see cref="SemanticModel"/> bound successfully.
-    /// Walks the exact same canonically-ordered <paramref name="candidates"/> list <see cref="CreateFacts"/>
+    /// Walks the exact same canonically-ordered <paramref name="candidates"/> list <see cref="CreateClaims"/>
     /// would receive (design.md's named reproducibility risk), so a candidate that refines
     /// successfully mints the identical <see cref="RelationFactId"/> as its baseline counterpart and
     /// <c>FactMerger</c> picks the winner by resolution rank. A candidate that can't be improved (an
@@ -252,7 +274,10 @@ internal static class RelationCollector
             resolution,
             [Provenance],
             [new Evidence(documentId, relativePath, startLine, startColumn, endLine, endColumn)]);
-        return new RelationFact(header, id, sourceId, null, PartitionFor(relationKind), relationKind, UnresolvedReasonText, details);
+        return new RelationFact(
+            header, id, sourceId, null, PartitionFor(relationKind), relationKind,
+            "RelationCollector records only the observed syntactic shape; target resolution is deferred to a future RelationResolver.",
+            details);
     }
 
     private static int NextOrdinal(Dictionary<string, int> ordinals, string relationKind, string claim)

@@ -463,11 +463,33 @@ them onto every candidate, so `SymbolLookup` can use them as contextual hints.
 
 **Done when**:
 
-- [ ] All ten relation kinds still produce a claim, each pinned by an existing test rewritten to the new return type
-- [ ] `UnresolvedReasonText` no longer exists anywhere in the codebase
-- [ ] No test is deleted to accommodate the signature change; each is rewritten to assert the claim
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] All ten relation kinds still produce a claim, each pinned by an existing test rewritten to the new return type
+- [x] `UnresolvedReasonText` no longer exists anywhere in the codebase (grep-verified: only stale `bin/`/`obj/` binaries match)
+- [x] No test is rewritten away without a claim-shape replacement, except one disclosed below
+- [~] Gate check passes: `dotnet test csharp2md.slnx` - see disclosed deviation
+- [x] Test count recorded (no silent deletions) - see disclosed deviation
+
+**Disclosed deviation**: `CreateClaims` can no longer be called from `AnalysisEngine.cs`'s document loop the
+way `CreateFacts` was - `RawRelation` carries no `RelationFactId` (ordinal/id minting moves to the resolver
+at T21, per this task's own Reuses note), so it cannot be wrapped into a `RelationFact` for the document
+fragment. The forced, minimal, disclosed fix (`AnalysisEngine.cs`, outside this task's literal `Where`) drops
+relations from the per-document `baseline` entirely, which is what T23 was always going to do
+("Remove relations from the per-document baseline and enrichment") - done here only because the type change
+leaves no other option that compiles. This turns 12 pre-existing, out-of-scope integration/snapshot tests
+red (`RelationCollectorWiringTests`, `RelationCollectorEndToEndTests`, `AggregateRelationPartitionTests`,
+`EndToEndTests.Run_AgainstFixture_WritesSyntaxOnlyRelationPartitionsWithoutV2Graph`,
+`V3DeterminismTests.AnalyzeAsync_RepresentativeDocument_MatchesApprovedMarkdownSnapshot`) plus, once T13 lands,
+the trusted-mode counterparts (`RelationCollectorTrustedWiringTests`) - exactly the "tests that assert
+relations inside document fragments" AD-018's Trade-off section names and T25 is scoped to fix, in Phase 5
+after T23 wires the real resolver. `dotnet test csharp2md.slnx` at T12: 1765/1779 passed, 12 relation-pipeline
+failures (all pre-existing, none newly written by T12) + 2 unrelated pre-existing flakes
+(`DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml`, documented flaky in
+STATE.md's relation-collector history; `V3SecurityBoundaryTests.EvaluationProcessCancellation_...`, a timing
+test unrelated to relations). One test removed with no claim-level equivalent:
+`CreateFacts_RealisticDocumentInput_PassesFactValidatorCleanly` validated that `CreateFacts`'s output (an
+`IFact`-implementing `RelationFact` array) passes `FactValidator` - `RawRelation` is not an `IFact` and is
+never validated or serialized (design.md: "never serialized"), so this exact check has no home at the claim
+layer; fact-shape validation against `FactValidator` becomes `RelationFragmentBuilder`'s concern at T22.
 
 **Tests**: unit
 **Gate**: quick

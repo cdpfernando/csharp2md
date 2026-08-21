@@ -307,12 +307,9 @@ public sealed class AnalysisEngine
                     .Where(static symbol => symbol.ContainsErrorSymbol)
                     .Select(static symbol => symbol.SymbolId)
                     .ToHashSet();
-                var relationFacts = RelationCollector.CreateFacts(
-                    extraction.Document.DocumentId, relativePath, extraction.RelationCandidates);
                 var baseline = new IFact[] { documentFact }
                     .Concat(extraction.Document.Sections)
-                    .Concat(extraction.Symbols.Where(symbol => !errorIds.Contains(symbol.SymbolId)))
-                    .Concat(relationFacts);
+                    .Concat(extraction.Symbols.Where(symbol => !errorIds.Contains(symbol.SymbolId)));
                 var enrichment = document.EnrichedSymbols.Cast<IFact>().Concat(document.EnrichedRelations);
                 var merged = FactMerger.Merge(baseline, enrichment, document.Diagnostics);
                 analysisDiagnostics.AddRange(merged.StructuralDiagnostics);
