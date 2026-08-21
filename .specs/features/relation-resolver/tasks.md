@@ -290,11 +290,11 @@ ordering and extents retained only for documents that produced a claim.
 
 **Done when**:
 
-- [ ] Two collections that add the same claims in different document orders produce an identical snapshot
-- [ ] A document that produced no claim contributes no `DocumentExtent`, proven by a test
-- [ ] `AddResolved` accepts already-targeted claims without an extent, for the database resolver's output
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Two collections that add the same claims in different document orders produce an identical snapshot
+- [x] A document that produced no claim contributes no `DocumentExtent`, proven by a test
+- [x] `AddResolved` accepts already-targeted claims without an extent, for the database resolver's output
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
