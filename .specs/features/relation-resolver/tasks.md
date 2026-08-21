@@ -847,11 +847,11 @@ the existing `FragmentValidationFunc` path with source and target ids declared k
 
 **Done when**:
 
-- [ ] Every `Evidence`, `RelationDetail` and `FactProvenance` the claim carried is present on the fact, with the resolver's own provenance appended
-- [ ] A zero-relation resolution yields no fragment and no diagnostics
-- [ ] A validation failure is a structural failure with the validator's own diagnostics, matching the database fragment's behaviour
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every `Evidence`, `RelationDetail` and `FactProvenance` the claim carried is present on the fact, with the resolver's own provenance appended
+- [x] A zero-relation resolution yields no fragment and no diagnostics
+- [x] A validation failure is a structural failure with the validator's own diagnostics, matching the database fragment's behaviour
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

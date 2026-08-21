@@ -3,18 +3,23 @@ using Csharp2Md.Core.Analysis.Indexes;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
+using Csharp2Md.Core.Facts.Validation;
 
 namespace Csharp2Md.Core.Analysis.Relations.Resolution;
 
 /// <summary>
 /// Everything one run of the resolver produced: every claim turned into exactly one <see cref="RelationFact"/>
-/// (RELR-12), plus every diagnostic a strategy or the resolver itself raised along the way.
+/// (RELR-12), plus every diagnostic a strategy or the resolver itself raised along the way, plus the
+/// claim snapshot's own <see cref="DocumentExtent"/>s carried forward unchanged - <c>RelationFragmentBuilder</c>
+/// (T22) needs them to validate evidence against, since a solution-level fragment has no document
+/// facts of its own to derive them from.
 /// </summary>
 internal sealed record RelationResolution(
     ImmutableArray<RelationFact> Facts,
-    ImmutableArray<AnalysisDiagnostic> Diagnostics)
+    ImmutableArray<AnalysisDiagnostic> Diagnostics,
+    ImmutableArray<DocumentExtent> Documents)
 {
-    public static RelationResolution Empty { get; } = new([], []);
+    public static RelationResolution Empty { get; } = new([], [], []);
 }
 
 /// <summary>
@@ -28,10 +33,15 @@ internal sealed class RelationResolver
 {
     private const string EngineId = "csharp2md.relations";
     private const string EngineVersion = "1";
+    private const string AnalyzerVersion = "1.0.0";
     private const string StrategyFailureCode = "C2M-RELR-006";
     private const DiagnosticStage Stage = DiagnosticStage.Detector;
 
-    private static readonly FactProvenance Provenance = new(EngineId, EngineVersion);
+    // C2M-FV-005 requires every runtime-evidenced relation to carry a provenance entry naming a
+    // detector - matching the pre-refactor RelationCollector's own CollectorDetectorId - or every
+    // relation this resolver mints fails fragment validation.
+    private static readonly DetectorId ResolverDetectorId = DetectorId.Create("io.csharp2md.relation-resolver");
+    private static readonly FactProvenance Provenance = new(EngineId, EngineVersion, ResolverDetectorId, AnalyzerVersion);
     private static readonly Regex WhitespaceRun = new(@"\s+", RegexOptions.Compiled);
 
     /// <summary>
@@ -130,7 +140,8 @@ internal sealed class RelationResolver
 
         return new RelationResolution(
             facts.OrderBy(static fact => fact.RelationId.Value, StringComparer.Ordinal).ToImmutableArray(),
-            diagnostics.Order().ToImmutableArray());
+            diagnostics.Order().ToImmutableArray(),
+            claims.Documents);
     }
 
     /// <summary>
