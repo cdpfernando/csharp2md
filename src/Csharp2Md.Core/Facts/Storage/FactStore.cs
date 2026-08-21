@@ -130,6 +130,8 @@ internal static class FactualJsonMapper
             facts.OfType<SymbolFact>().Select(Map).ToImmutableArray(),
             facts.OfType<ComponentFact>().Select(Map).ToImmutableArray(),
             facts.OfType<RelationFact>().Select(MapRelation).ToImmutableArray(),
+            facts.OfType<DatabaseObjectFact>().Select(MapDatabaseObject).ToImmutableArray(),
+            facts.OfType<DatabaseColumnFact>().Select(MapDatabaseColumn).ToImmutableArray(),
             fragment.Diagnostics.Select(Map).ToImmutableArray(),
             []);
     }
@@ -195,6 +197,12 @@ internal static class FactualJsonMapper
                 ? null
                 : fact.Details.Order().Select(static detail => new RelationDetailJson(detail.Key, detail.Value)).ToImmutableArray());
 
+    internal static DatabaseObjectFactJson MapDatabaseObject(DatabaseObjectFact fact) =>
+        new(Map(fact.Header), fact.ObjectId.Value, fact.ConnectionName, DatabaseFactWire.Name(fact.Kind), fact.Name);
+
+    internal static DatabaseColumnFactJson MapDatabaseColumn(DatabaseColumnFact fact) =>
+        new(Map(fact.Header), fact.ColumnId.Value, fact.ObjectId.Value, fact.Name);
+
     private static AnalysisDiagnosticJson Map(AnalysisDiagnostic diagnostic) =>
         new(diagnostic.Id.Value, diagnostic.Code, Wire(diagnostic.Severity), Wire(diagnostic.Stage),
             diagnostic.ScopeId.Value, diagnostic.Message,
@@ -213,9 +221,13 @@ internal static class FactualJsonMapper
             evidence.EndLine, evidence.EndColumn);
 
     private static string Wire<T>(T value) where T : struct, Enum =>
-        value.ToString().Replace("SourceSection", "source-section", StringComparison.Ordinal).ToLowerInvariant();
+        value.ToString()
+            .Replace("SourceSection", "source-section", StringComparison.Ordinal)
+            .Replace("DatabaseObject", "database-object", StringComparison.Ordinal)
+            .Replace("DatabaseColumn", "database-column", StringComparison.Ordinal)
+            .ToLowerInvariant();
 
-    private static string WireRelationPartition(RelationPartition partition) => partition switch
+    internal static string WireRelationPartition(RelationPartition partition) => partition switch
     {
         RelationPartition.CompileTime => "compile-time",
         RelationPartition.Inheritance => "inheritance",
@@ -224,6 +236,7 @@ internal static class FactualJsonMapper
         RelationPartition.Grpc => "grpc",
         RelationPartition.Events => "events",
         RelationPartition.Structural => "structural",
+        RelationPartition.Data => "data",
         _ => throw new ArgumentOutOfRangeException(nameof(partition), partition, "Unsupported relation partition."),
     };
 }

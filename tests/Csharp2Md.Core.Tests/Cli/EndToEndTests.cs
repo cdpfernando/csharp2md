@@ -69,13 +69,27 @@ public sealed class EndToEndTests : IAsyncLifetime
 
             var rawRoot = TopicLayout.RawRoot(outputPath);
             Assert.False(File.Exists(Path.Combine(rawRoot, "dependencies.json")));
-            string[] partitions = ["compile-time", "inheritance", "dependency-injection", "http", "grpc", "events"];
+            // The fixture produces inheritance, http and events relations in syntax-only mode; the
+            // remaining partitions have no syntax-only producer. Every partition being empty was the
+            // unwired-projector defect, not the contract.
+            (string Partition, bool Populated)[] partitions =
+            [
+                ("compile-time", false), ("inheritance", true), ("dependency-injection", false),
+                ("http", true), ("grpc", false), ("events", true),
+            ];
 
-            Assert.All(partitions, partition =>
+            Assert.All(partitions, entry =>
             {
-                var json = File.ReadAllText(Path.Combine(rawRoot, "facts", "relations", partition + ".json"));
-                Assert.Contains($"\"kind\": \"{partition}\"", json, StringComparison.Ordinal);
-                Assert.Contains("\"entries\": []", json, StringComparison.Ordinal);
+                var json = File.ReadAllText(Path.Combine(rawRoot, "facts", "relations", entry.Partition + ".json"));
+                Assert.Contains($"\"kind\": \"{entry.Partition}\"", json, StringComparison.Ordinal);
+                if (entry.Populated)
+                {
+                    Assert.Contains($"\"partition\": \"{entry.Partition}\"", json, StringComparison.Ordinal);
+                }
+                else
+                {
+                    Assert.Contains("\"entries\": []", json, StringComparison.Ordinal);
+                }
             });
 
         }

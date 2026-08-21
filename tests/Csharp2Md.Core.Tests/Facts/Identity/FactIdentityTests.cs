@@ -1,4 +1,5 @@
 using Csharp2Md.Core.Facts.Identity;
+using Csharp2Md.Core.Facts.Model;
 
 namespace Csharp2Md.Core.Tests.Facts.Identity;
 
@@ -174,6 +175,103 @@ public sealed class FactIdentityTests
         Assert.StartsWith("id1:diagnostic;stage=validation;scope=", diagnostic.Value, StringComparison.Ordinal);
         Assert.EndsWith(";code=FACT012;fingerprint=duplicate%20id", diagnostic.Value, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void DatabaseObjectId_ConfiguredTable_UsesNormativeGrammarWithTheConnectionComponentPresent() =>
+        Assert.Equal(
+            "id1:database-object;connection=unknown;kind=table;name=tb_order",
+            DatabaseObjectFactId.Create(
+                DatabaseObjectFactId.UnknownConnection,
+                DatabaseObjectKind.Table,
+                "tb_order").Value);
+
+    [Fact]
+    public void DatabaseColumnId_NestsThePercentEncodedOwningObjectId() =>
+        Assert.Equal(
+            "id1:database-column;object=id1%3Adatabase-object%3Bconnection%3Dunknown%3Bkind%3Dtable%3Bname%3Dtb_order;name=order_status",
+            DatabaseColumnFactId.Create(
+                DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, "tb_order"),
+                "order_status").Value);
+
+    [Fact]
+    public void DatabaseObjectId_NameNeedingEscapes_IsPercentEncoded() =>
+        Assert.Equal(
+            "id1:database-object;connection=unknown;kind=table;name=Order%20Items%20%5Bv2%5D",
+            DatabaseObjectFactId.Create(
+                DatabaseObjectFactId.UnknownConnection,
+                DatabaseObjectKind.Table,
+                "Order Items [v2]").Value);
+
+    [Fact]
+    public void DatabaseColumnId_NameNeedingEscapes_IsPercentEncoded() =>
+        Assert.EndsWith(
+            ";name=order%20status",
+            DatabaseColumnFactId.Create(
+                DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, "tb_order"),
+                "order status").Value,
+            StringComparison.Ordinal);
+
+    [Fact]
+    public void DatabaseObjectId_CaseDifferingNames_AreOrdinallyDistinctIdentities()
+    {
+        var upper = DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, "Orders");
+        var lower = DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, "orders");
+
+        Assert.NotEqual(upper, lower);
+        Assert.EndsWith(";name=Orders", upper.Value, StringComparison.Ordinal);
+        Assert.EndsWith(";name=orders", lower.Value, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DatabaseColumnId_CaseDifferingNames_AreOrdinallyDistinctIdentities()
+    {
+        var table = DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, "Orders");
+
+        Assert.NotEqual(
+            DatabaseColumnFactId.Create(table, "Status"),
+            DatabaseColumnFactId.Create(table, "status"));
+    }
+
+    [Fact]
+    public void DatabaseObjectId_KindAndConnection_ParticipateInIdentity()
+    {
+        var table = DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, "Orders");
+        var procedure = DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Procedure, "Orders");
+        var namedConnection = DatabaseObjectFactId.Create("OrdersDb", DatabaseObjectKind.Table, "Orders");
+
+        Assert.NotEqual(table, procedure);
+        Assert.NotEqual(table, namedConnection);
+        Assert.Equal("id1:database-object;connection=unknown;kind=procedure;name=Orders", procedure.Value);
+        Assert.Equal("id1:database-object;connection=OrdersDb;kind=table;name=Orders", namedConnection.Value);
+    }
+
+    [Theory]
+    [InlineData(" Orders")]
+    [InlineData("Orders ")]
+    [InlineData("Order  Items")]
+    [InlineData("Orders\n")]
+    [InlineData("Orders\t")]
+    public void DatabaseObjectId_NonCanonicalName_IsRejected(string name) =>
+        Assert.Throws<ArgumentException>(() =>
+            DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, name));
+
+    [Theory]
+    [InlineData(" unknown")]
+    [InlineData("orders  db")]
+    [InlineData("orders\ndb")]
+    public void DatabaseObjectId_NonCanonicalConnection_IsRejected(string connection) =>
+        Assert.Throws<ArgumentException>(() =>
+            DatabaseObjectFactId.Create(connection, DatabaseObjectKind.Table, "Orders"));
+
+    [Theory]
+    [InlineData(" Status")]
+    [InlineData("Status ")]
+    [InlineData("order  status")]
+    [InlineData("Status\r")]
+    public void DatabaseColumnId_NonCanonicalName_IsRejected(string name) =>
+        Assert.Throws<ArgumentException>(() => DatabaseColumnFactId.Create(
+            DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, "Orders"),
+            name));
 
     [Fact]
     public void ArtifactReference_LongId_UsesLowercaseSha256AndPortablePath()

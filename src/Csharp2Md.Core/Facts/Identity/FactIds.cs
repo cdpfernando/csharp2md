@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Csharp2Md.Core.Facts.Model;
 
 namespace Csharp2Md.Core.Facts.Identity;
 
@@ -144,6 +145,51 @@ public readonly record struct RelationFactId
     }
 
     private RelationFactId(FactId id) => _id = id;
+
+    public FactId ToFactId() => _id;
+
+    public override string ToString() => Value;
+}
+
+public readonly record struct DatabaseObjectFactId
+{
+    /// <summary>
+    /// The connection component is present from the start so that resolving a real connection later fills
+    /// a component the grammar already has, instead of invalidating every previously minted node id.
+    /// </summary>
+    public const string UnknownConnection = "unknown";
+
+    private readonly FactId _id;
+
+    public string Value => _id.Value;
+
+    public static DatabaseObjectFactId Create(string connection, DatabaseObjectKind kind, string name) =>
+        new(FactIdGrammar.Create(
+            "database-object",
+            ("connection", FactIdGrammar.RequireCanonicalText(connection, nameof(connection))),
+            ("kind", DatabaseFactWire.Name(kind)),
+            ("name", FactIdGrammar.RequireCanonicalText(name, nameof(name)))));
+
+    private DatabaseObjectFactId(FactId id) => _id = id;
+
+    public FactId ToFactId() => _id;
+
+    public override string ToString() => Value;
+}
+
+public readonly record struct DatabaseColumnFactId
+{
+    private readonly FactId _id;
+
+    public string Value => _id.Value;
+
+    public static DatabaseColumnFactId Create(DatabaseObjectFactId objectId, string name) =>
+        new(FactIdGrammar.Create(
+            "database-column",
+            ("object", objectId.Value),
+            ("name", FactIdGrammar.RequireCanonicalText(name, nameof(name)))));
+
+    private DatabaseColumnFactId(FactId id) => _id = id;
 
     public FactId ToFactId() => _id;
 

@@ -296,6 +296,91 @@ public sealed class FactValidatorTests
             diagnostic.Code == "C2M-FV-002" && diagnostic.Data.Any(item => item.Value == missing.Value));
     }
 
+    [Fact]
+    public void Validate_DatabaseColumnWhoseOwningObjectIsAbsent_RejectsAndNamesMissingReference()
+    {
+        var result = Validate([DatabaseColumn()]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ValidationDiagnostics, diagnostic =>
+            diagnostic.Code == "C2M-FV-002"
+            && Rule(diagnostic) == "missing-reference"
+            && diagnostic.Data.Any(item => item.Key == "reference" && item.Value == TableId.Value));
+    }
+
+    [Fact]
+    public void Validate_DatabaseColumnWhoseOwningObjectIsPresent_IsAccepted()
+    {
+        var result = Validate([DatabaseObject(), DatabaseColumn()]);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(2, result.Fragment!.Facts.Length);
+        Assert.Empty(result.ValidationDiagnostics);
+    }
+
+    [Fact]
+    public void Validate_DatabaseObjectWithEvidencePastDocumentLineRange_IsRejected()
+    {
+        var result = Validate([DatabaseObject(evidence: [new Evidence(Document, "Feature.cs", 2, 1, 3, 1)])]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ValidationDiagnostics, diagnostic =>
+            diagnostic.Code == "C2M-FV-004" && Rule(diagnostic) == "invalid-evidence-range");
+    }
+
+    [Fact]
+    public void Validate_DatabaseColumnWithEvidencePastDocumentLineRange_IsRejected()
+    {
+        var result = Validate([
+            DatabaseObject(),
+            DatabaseColumn(evidence: [new Evidence(Document, "Feature.cs", 1, 1, 1, 99)]),
+        ]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ValidationDiagnostics, diagnostic =>
+            diagnostic.Code == "C2M-FV-004" && Rule(diagnostic) == "invalid-evidence-range");
+    }
+
+    [Fact]
+    public void Validate_DatabaseNodesWithInRangeEvidence_AreAccepted()
+    {
+        var result = Validate([
+            DatabaseObject(evidence: [new Evidence(Document, "Feature.cs", 1, 1, 1, 21)]),
+            DatabaseColumn(evidence: [new Evidence(Document, "Feature.cs", 2, 1, 2, 11)]),
+        ]);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(2, result.Fragment!.Facts.Length);
+    }
+
+    private static readonly DatabaseObjectFactId TableId =
+        DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, "tb_order");
+
+    private static readonly DatabaseColumnFactId ColumnId = DatabaseColumnFactId.Create(TableId, "order_status");
+
+    private static DatabaseObjectFact DatabaseObject(IEnumerable<Evidence>? evidence = null) => new(
+        FactHeader.Create(
+            TableId.ToFactId(),
+            FactKind.DatabaseObject,
+            FactResolution.Exact,
+            [new FactProvenance("csharp2md", "3.0.0")],
+            evidence),
+        TableId,
+        DatabaseObjectFactId.UnknownConnection,
+        DatabaseObjectKind.Table,
+        "tb_order");
+
+    private static DatabaseColumnFact DatabaseColumn(IEnumerable<Evidence>? evidence = null) => new(
+        FactHeader.Create(
+            ColumnId.ToFactId(),
+            FactKind.DatabaseColumn,
+            FactResolution.Exact,
+            [new FactProvenance("csharp2md", "3.0.0")],
+            evidence),
+        ColumnId,
+        TableId,
+        "order_status");
+
     private static FactValidationResult Validate(IEnumerable<IFact> facts, IEnumerable<FactId>? knownIds = null) =>
         FactValidator.Validate(FactValidationInput.Create(
             facts,

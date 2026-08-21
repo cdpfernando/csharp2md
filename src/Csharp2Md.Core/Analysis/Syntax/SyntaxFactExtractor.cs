@@ -1,3 +1,4 @@
+using Csharp2Md.Core.Analysis.DataAccess;
 using Csharp2Md.Core.Analysis.Relations;
 using Csharp2Md.Core.Analysis.Semantics;
 using Csharp2Md.Core.Facts.Identity;
@@ -24,13 +25,23 @@ internal sealed record SyntaxFactExtraction(
     DocumentFact Document,
     ImmutableArray<SymbolFact> Symbols,
     ImmutableArray<SyntacticRelationCandidate> RelationCandidates,
-    ImmutableDictionary<SymbolFactId, ImmutableArray<string>> XmlProse);
+    ImmutableDictionary<SymbolFactId, ImmutableArray<string>> XmlProse,
+    ImmutableArray<RawDatabaseClaim> DatabaseClaims,
+    ImmutableArray<AnalysisDiagnostic> DatabaseDiagnostics);
 
 internal static class SyntaxFactExtractor
 {
     private static readonly FactProvenance Provenance = new("csharp2md.syntax", "1");
 
-    public static SyntaxFactExtraction Extract(ProjectFactId projectId, string relativePath, string source)
+    /// <param name="analyzers">
+    /// The data access analyzers to run over this document. Production passes nothing and gets the
+    /// registered set; tests supply their own to exercise the handoff.
+    /// </param>
+    public static SyntaxFactExtraction Extract(
+        ProjectFactId projectId,
+        string relativePath,
+        string source,
+        IEnumerable<IDataAccessAnalyzer>? analyzers = null)
     {
         var document = SourceSectionExtractor.Extract(projectId, relativePath, source);
         var root = CSharpSyntaxTree.ParseText(source).GetRoot();
@@ -121,6 +132,13 @@ internal static class SyntaxFactExtractor
             }
         }
 
+        // Pass one of database access discovery rides this walk: here, and only here, the enclosing
+        // member of every node is already known. The collector owns what a claim is; this file only
+        // hands it the document and that map.
+        var dataAccess = DataAccessCollector.Collect(
+            DataAccessContext.Create(document.DocumentId, relativePath, root, ownerByDeclaration),
+            analyzers ?? DataAccessCollector.RegisteredAnalyzers);
+
         var consumedObjectCreations = new HashSet<ObjectCreationExpressionSyntax>();
 
         foreach (var invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
@@ -210,7 +228,13 @@ internal static class SyntaxFactExtractor
             SymbolIds = canonicalSymbols.Select(static symbol => symbol.SymbolId).ToImmutableArray(),
         };
 
-        return new SyntaxFactExtraction(completedDocument, canonicalSymbols, canonicalCandidates, prose.ToImmutable());
+        return new SyntaxFactExtraction(
+            completedDocument,
+            canonicalSymbols,
+            canonicalCandidates,
+            prose.ToImmutable(),
+            dataAccess.Claims,
+            dataAccess.Diagnostics);
     }
 
     internal static string DeclarationKind(MemberDeclarationSyntax declaration) => declaration switch
@@ -257,7 +281,7 @@ internal static class SyntaxFactExtractor
                 continue;
             }
 
-            tokens.Add(token.Text);
+            tokens.Add(IsCredentialLiteral(kind, token.Text) ? RedactedLiteralText : token.Text);
             parenthesisDepth += kind switch
             {
                 SyntaxKind.OpenParenToken => 1,
@@ -288,6 +312,18 @@ internal static class SyntaxFactExtractor
         var sanitizedHeader = SanitizeCanonicalText(rawHeader);
         return prefix.Length == 0 ? sanitizedHeader : $"{prefix}/{sanitizedHeader}";
     }
+
+    /// <summary>DAD-15: the placeholder a credential-shaped literal token is replaced with.</summary>
+    private const string RedactedLiteralText = "\"<redacted>\"";
+
+    /// <summary>
+    /// DAD-15: whether this token is a string literal whose own text assigns a credential, e.g.
+    /// <c>"...Password=hunter2;"</c>. The signature must never carry the value verbatim, since it and
+    /// the symbol id derived from it are facts.
+    /// </summary>
+    private static bool IsCredentialLiteral(SyntaxKind kind, string text) =>
+        kind is SyntaxKind.StringLiteralToken or SyntaxKind.Utf8StringLiteralToken
+        && CredentialText.Carries(text);
 
     private static string SanitizeCanonicalText(string value)
     {

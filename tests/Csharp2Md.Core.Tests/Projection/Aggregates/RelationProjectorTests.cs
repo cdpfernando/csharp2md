@@ -33,6 +33,7 @@ public sealed class RelationProjectorTests : IDisposable
     [InlineData(RelationPartition.Grpc)]
     [InlineData(RelationPartition.Events)]
     [InlineData(RelationPartition.Structural)]
+    [InlineData(RelationPartition.Data)]
     public void Project_PlacesEachLegalRelationInItsSingleDeclaredPartition(RelationPartition partition)
     {
         var relation = Relation(partition, $"{partition}-relation", Payments.ToFactId());

@@ -5,7 +5,7 @@ namespace Csharp2Md.Core.Facts.Serialization;
 
 public static class FactualJsonSerializer
 {
-    public const int SchemaVersion = 3;
+    public const int SchemaVersion = 4;
 
     public static byte[] Serialize(FactualJsonDocument document)
     {
@@ -35,6 +35,8 @@ public static class FactualJsonSerializer
         Symbols = document.Symbols.OrderBy(static fact => fact.Header.Id, StringComparer.Ordinal).ToImmutableArray(),
         Components = document.Components.OrderBy(static fact => fact.Header.Id, StringComparer.Ordinal).ToImmutableArray(),
         Relations = document.Relations.OrderBy(static fact => fact.Header.Id, StringComparer.Ordinal).ToImmutableArray(),
+        DatabaseObjects = document.DatabaseObjects.OrderBy(static fact => fact.Header.Id, StringComparer.Ordinal).ToImmutableArray(),
+        DatabaseColumns = document.DatabaseColumns.OrderBy(static fact => fact.Header.Id, StringComparer.Ordinal).ToImmutableArray(),
         Diagnostics = document.Diagnostics.OrderBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal).ToImmutableArray(),
         Coverage = document.Coverage
             .OrderBy(static coverage => coverage.ScopeId, StringComparer.Ordinal)

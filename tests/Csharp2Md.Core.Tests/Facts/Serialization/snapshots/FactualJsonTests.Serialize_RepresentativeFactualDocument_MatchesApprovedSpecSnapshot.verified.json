@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "solutions": [],
   "projects": [
     {
@@ -29,6 +29,8 @@
   "symbols": [],
   "components": [],
   "relations": [],
+  "database_objects": [],
+  "database_columns": [],
   "diagnostics": [],
   "coverage": []
 }

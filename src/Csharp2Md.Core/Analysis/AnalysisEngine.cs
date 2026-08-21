@@ -1,5 +1,6 @@
 using System.Text;
 using Csharp2Md.Core.Analysis.Contracts;
+using Csharp2Md.Core.Analysis.DataAccess;
 using Csharp2Md.Core.Analysis.Indexes;
 using Csharp2Md.Core.Analysis.Inventory;
 using Csharp2Md.Core.Analysis.Relations;
@@ -37,6 +38,7 @@ public sealed class AnalysisEngine
     private readonly ISemanticCompilationAdapter _compilationAdapter;
     private readonly ISourceGeneratorAdapter _generatorAdapter;
     private readonly Action<SymbolIndex>? _onSymbolIndexBuilt;
+    private readonly IEnumerable<IDataAccessAnalyzer>? _dataAccessAnalyzers;
 
     public AnalysisEngine()
         : this(new InertInventory(), FactValidator.Validate, null,
@@ -54,10 +56,11 @@ public sealed class AnalysisEngine
         InertInventory inventory,
         FragmentValidationFunc validate,
         IAnalysisEngineObserver? observer,
-        Action<SymbolIndex>? onSymbolIndexBuilt = null)
+        Action<SymbolIndex>? onSymbolIndexBuilt = null,
+        IEnumerable<IDataAccessAnalyzer>? dataAccessAnalyzers = null)
         : this(inventory, validate, observer,
             new DotnetMsBuildEvaluator(), new SemanticCompilationAdapter(), new SourceGeneratorAdapter(),
-            onSymbolIndexBuilt)
+            onSymbolIndexBuilt, dataAccessAnalyzers)
     {
     }
 
@@ -68,9 +71,11 @@ public sealed class AnalysisEngine
         IProjectEvaluationAdapter evaluator,
         ISemanticCompilationAdapter compilationAdapter,
         ISourceGeneratorAdapter generatorAdapter,
-        Action<SymbolIndex>? onSymbolIndexBuilt = null)
+        Action<SymbolIndex>? onSymbolIndexBuilt = null,
+        IEnumerable<IDataAccessAnalyzer>? dataAccessAnalyzers = null)
     {
         _onSymbolIndexBuilt = onSymbolIndexBuilt;
+        _dataAccessAnalyzers = dataAccessAnalyzers;
         _inventory = inventory;
         _validate = validate;
         _observer = observer;
@@ -108,12 +113,17 @@ public sealed class AnalysisEngine
 
         var store = new FactStore(request.OutputRoot);
         var storedFragments = ImmutableArray.CreateBuilder<StoredFactFragment>();
+        var validatedFragments = ImmutableArray.CreateBuilder<ValidatedFactFragment>();
         var coverageFacts = ImmutableArray.CreateBuilder<IFact>();
         var symbolFacts = ImmutableArray.CreateBuilder<SymbolFact>();
         var coverageOverrides = ImmutableArray.CreateBuilder<ScopeCoverageInput>();
         var analysisDiagnostics = ImmutableArray.CreateBuilder<AnalysisDiagnostic>();
+        // Pass one of database access discovery accumulates here across the whole run; pass two reads
+        // the snapshot once the document loop is done.
+        var databaseClaims = new DatabaseClaimAccumulator();
         var resultDiagnostics = new List<string>(inventory.Diagnostics.Select(static diagnostic => diagnostic.Message));
         var loadedExtensions = ImmutableArray.CreateBuilder<string>();
+        var analysedProjects = new HashSet<ProjectFactId>();
         var structuralFailure = false;
         var semanticSuccess = false;
         var documentCount = 0;
@@ -128,14 +138,23 @@ public sealed class AnalysisEngine
                 foreach (var project in service.Projects)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+
+                    // A shared project listed by more than one solution is reached once per path. That is
+                    // normal, not an anomaly, so the repeat is skipped silently: analysing it again would
+                    // duplicate its documents, fragments and coverage scopes.
+                    if (!analysedProjects.Add(ProjectFactId.Create(project.RelativePath)))
+                    {
+                        continue;
+                    }
+
                     projectCount++;
                     ScopeStarted($"project:{project.RelativePath}");
                     try
                     {
                         var projectResult = await AnalyzeProjectAsync(
-                                request, project, store, storedFragments, coverageFacts, symbolFacts,
-                                coverageOverrides, analysisDiagnostics, resultDiagnostics, loadedExtensions,
-                                cancellationToken)
+                                request, project, store, storedFragments, validatedFragments, coverageFacts,
+                                symbolFacts, coverageOverrides, analysisDiagnostics, resultDiagnostics,
+                                loadedExtensions, databaseClaims, cancellationToken)
                             .ConfigureAwait(false);
                         documentCount += projectResult.DocumentCount;
                         structuralFailure |= projectResult.StructuralFailure;
@@ -156,20 +175,42 @@ public sealed class AnalysisEngine
         var effectiveMode = request.Options.Mode is AnalysisMode.Semantic && semanticSuccess
             ? AnalysisMode.Semantic
             : AnalysisMode.SyntaxOnly;
-        resultDiagnostics.AddRange(analysisDiagnostics.Select(static diagnostic => diagnostic.Message));
         var accumulated = coverageFacts.ToImmutable();
-        var honestCoverage = CoverageProjector.Project(new CoverageProjectionRequest(
-            request.Options.Mode, accumulated, analysisDiagnostics.ToImmutable(), [], coverageOverrides.ToImmutable()));
-        _onSymbolIndexBuilt?.Invoke(SymbolIndexBuilder.Build(
+        var symbolIndex = SymbolIndexBuilder.Build(
             symbolFacts,
             accumulated.OfType<ProjectFact>(),
             accumulated.OfType<DocumentFact>(),
-            accumulated.OfType<TargetFact>()));
+            accumulated.OfType<TargetFact>());
+        _onSymbolIndexBuilt?.Invoke(symbolIndex);
+
+        // Pass two of database access discovery. It runs here and not per document because the
+        // configuration naming an entity's table commonly lives in another document, and
+        // configured-over-convention precedence is undecidable until every document has been seen.
+        var database = DatabaseFragmentBuilder.Build(
+            DatabaseMappingResolver.Resolve(databaseClaims.ToSnapshot(), symbolIndex), _validate);
+        analysisDiagnostics.AddRange(database.Diagnostics);
+        if (database.Fragment is { } databaseFragment)
+        {
+            storedFragments.Add(store.Persist(databaseFragment));
+            validatedFragments.Add(databaseFragment);
+        }
+        else if (!database.Diagnostics.IsEmpty)
+        {
+            structuralFailure = true;
+        }
+
+        var databaseAggregate = DatabaseAggregateProjector.Project(validatedFragments);
+        analysisDiagnostics.AddRange(databaseAggregate.Diagnostics);
+
+        resultDiagnostics.AddRange(analysisDiagnostics.Select(static diagnostic => diagnostic.Message));
+        var honestCoverage = CoverageProjector.Project(new CoverageProjectionRequest(
+            request.Options.Mode, accumulated, analysisDiagnostics.ToImmutable(), [], coverageOverrides.ToImmutable()));
         var snapshot = new AggregateOutputSnapshot(
             request.Topic, request.Domain, "3.0.1", request.Options.Mode, effectiveMode, request.Options.Trust,
             loadedExtensions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray(),
             new ManifestCoverage(inventory.Services.Length, projectCount, documentCount),
-            storedFragments.ToImmutable(), honestCoverage);
+            storedFragments.ToImmutable(), honestCoverage, RelationProjector.Project(validatedFragments),
+            databaseAggregate);
         new CanonicalAggregateWriter().WritePrepared(request.OutputRoot, snapshot, TimeProvider.System);
 
         return Result(
@@ -185,12 +226,14 @@ public sealed class AnalysisEngine
         InventoryProject project,
         FactStore store,
         ImmutableArray<StoredFactFragment>.Builder storedFragments,
+        ImmutableArray<ValidatedFactFragment>.Builder validatedFragments,
         ImmutableArray<IFact>.Builder coverageFacts,
         ImmutableArray<SymbolFact>.Builder symbolFacts,
         ImmutableArray<ScopeCoverageInput>.Builder coverageOverrides,
         ImmutableArray<AnalysisDiagnostic>.Builder analysisDiagnostics,
         List<string> resultDiagnostics,
         ImmutableArray<string>.Builder loadedExtensions,
+        DatabaseClaimAccumulator databaseClaims,
         CancellationToken cancellationToken)
     {
         var projectId = ProjectFactId.Create(project.RelativePath);
@@ -202,7 +245,7 @@ public sealed class AnalysisEngine
             sources.Add(new SemanticProjectDocument(
                 relativeSourcePath,
                 source,
-                SyntaxFactExtractor.Extract(projectId, relativeSourcePath, source)));
+                SyntaxFactExtractor.Extract(projectId, relativeSourcePath, source, _dataAccessAnalyzers)));
         }
 
         var syntacticProject = new ProjectFact(
@@ -231,6 +274,9 @@ public sealed class AnalysisEngine
             try
             {
                 var extraction = document.Source.Extraction;
+                // DAD-18: an analyzer that failed on this document is reported whether or not the
+                // document itself goes on to validate.
+                analysisDiagnostics.AddRange(extraction.DatabaseDiagnostics);
                 IFact[] syntacticFacts =
                 [
                     extraction.Document,
@@ -293,8 +339,14 @@ public sealed class AnalysisEngine
                 var fragment = validation.Fragment!;
                 var stored = store.Persist(fragment);
                 storedFragments.Add(stored);
+                validatedFragments.Add(fragment);
                 persistedDocumentIds.Add(documentFact.DocumentId);
                 coverageFacts.Add(fragment.Facts.OfType<DocumentFact>().Single());
+                databaseClaims.Add(
+                    documentFact.DocumentId,
+                    relativePath,
+                    LineLengths(document.Source.SourceText).ToImmutableArray(),
+                    extraction.DatabaseClaims);
                 symbolFacts.AddRange(fragment.Facts.OfType<SymbolFact>());
                 coverageOverrides.Add(new ScopeCoverageInput(
                     documentFact.DocumentId.ToFactId(), CoverageApplicability.Applicable,
@@ -329,6 +381,7 @@ public sealed class AnalysisEngine
             {
                 var fragment = validation.Fragment!;
                 storedFragments.Add(store.Persist(fragment));
+                validatedFragments.Add(fragment);
                 coverageFacts.AddRange(fragment.Facts.Where(static fact => fact is ProjectFact or TargetFact));
             }
             else

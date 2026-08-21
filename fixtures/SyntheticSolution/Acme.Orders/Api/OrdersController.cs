@@ -24,6 +24,6 @@ namespace Acme.Orders.Api
         public OrdersController(Data.OrderDbContext orders) => _orders = orders;
 
         public string GetOrderStatus(Guid orderId) =>
-            _orders.Orders.Find(record => record.OrderId == orderId)?.Status.ToString() ?? "Unknown";
+            _orders.Orders.Find(record => record.Id == orderId)?.Status.ToString() ?? "Unknown";
     }
 }

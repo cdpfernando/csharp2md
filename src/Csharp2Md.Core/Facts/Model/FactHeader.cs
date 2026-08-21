@@ -13,6 +13,8 @@ public enum FactKind
     Symbol,
     Component,
     Relation,
+    DatabaseObject,
+    DatabaseColumn,
 }
 
 public sealed record FactHeader
