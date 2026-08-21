@@ -636,10 +636,10 @@ new test, `Build_ResolutionWithOnlyRelationsAndNoObjectsOrColumns_YieldsNoFragme
 
 **Done when**:
 
-- [ ] `RelationResolutionOutcome.None` expresses "declined" distinctly from "handled with no target"
-- [ ] The context exposes the index and the known-fact-id set, and nothing that would let a strategy do I/O
-- [ ] The `SemanticModel` omission is documented on the type, not left to be rediscovered
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
+- [x] `RelationResolutionOutcome.None` expresses "declined" distinctly from "handled with no target"
+- [x] The context exposes the index and the known-fact-id set, and nothing that would let a strategy do I/O
+- [x] The `SemanticModel` omission is documented on the type, not left to be rediscovered
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
 
 **Tests**: none
 **Gate**: build
