@@ -20,7 +20,7 @@ internal sealed record SemanticProcessedDocument(
     SemanticProjectDocument Source,
     bool Attempted,
     ImmutableArray<SymbolFact> EnrichedSymbols,
-    ImmutableArray<RelationFact> EnrichedRelations,
+    ImmutableArray<RawRelation> EnrichedRelations,
     ImmutableArray<SymbolFactId> LinkedSymbolIds,
     ImmutableArray<AnalysisDiagnostic> Diagnostics);
 
@@ -312,7 +312,7 @@ internal sealed class TrustedSemanticProjectProcessor(
 
                 if (binding.SemanticModel is { } model)
                 {
-                    state.EnrichedRelations.AddRange(RelationCollector.Refine(
+                    state.EnrichedRelations.AddRange(RelationCollector.RefineClaims(
                         state.Source.Extraction.Document.DocumentId,
                         state.Source.RelativePath,
                         state.Source.Extraction.RelationCandidates,
@@ -402,7 +402,7 @@ internal sealed class TrustedSemanticProjectProcessor(
         public SemanticProjectDocument Source { get; } = source;
         public bool Attempted { get; set; }
         public ImmutableArray<SymbolFact>.Builder EnrichedSymbols { get; } = ImmutableArray.CreateBuilder<SymbolFact>();
-        public ImmutableArray<RelationFact>.Builder EnrichedRelations { get; } = ImmutableArray.CreateBuilder<RelationFact>();
+        public ImmutableArray<RawRelation>.Builder EnrichedRelations { get; } = ImmutableArray.CreateBuilder<RawRelation>();
         public ImmutableArray<SymbolFactId>.Builder LinkedSymbolIds { get; } = ImmutableArray.CreateBuilder<SymbolFactId>();
         public ImmutableArray<AnalysisDiagnostic>.Builder Diagnostics { get; } = ImmutableArray.CreateBuilder<AnalysisDiagnostic>();
 

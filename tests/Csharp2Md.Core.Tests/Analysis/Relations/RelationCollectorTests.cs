@@ -132,10 +132,11 @@ public sealed class RelationCollectorTests
         string relationKind, string observedTarget, FactResolution resolution, int startLine = 1) =>
         new(OwnerId, relationKind, observedTarget, resolution, startLine, 1, startLine, 10);
 
-    // T13: RelationCollector.Refine - semantic refinement sharing RelationFactId with CreateFacts.
+    // T13: RelationCollector.RefineClaims - semantic refinement merged into the baseline claim by
+    // FactResolutionAlgebra.Stronger (AD-018), replacing the old fact-level rank merge.
 
     [Fact]
-    public void Refine_PublishAsyncThroughVariable_ProducesPublishesFactWithInferredTargetTextThatCreateFactsCannot()
+    public void RefineClaims_PublishAsyncThroughVariable_DiscoversAPublishesClaimThatCreateClaimsCannot()
     {
         const string source = """
             using Acme.Contracts;
@@ -159,42 +160,43 @@ public sealed class RelationCollectorTests
         var baseline = RelationCollector.CreateClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates);
         Assert.DoesNotContain(baseline, claim => claim.Kind == "publishes");
 
-        var refined = RelationCollector.Refine(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
+        var refined = RelationCollector.RefineClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
 
-        var publish = Assert.Single(refined, fact => fact.RelationKind == "publishes");
+        var publish = Assert.Single(refined, claim => claim.Kind == "publishes");
         Assert.Contains(publish.Details, detail => detail is { Key: "target_text", Value: "PaymentProcessed" });
     }
 
     [Fact]
-    public void Refine_AndCreateFacts_MintIdenticalRelationFactIdsForTheSameCandidateList()
+    public void RefineClaims_FirstBaseListEntryNamedLikeAnInterfaceButActuallyAClass_ReplacesTheHeuristicGuessAndKeepsTheStrongerShapeConfidence()
     {
+        // "IRepository" satisfies the syntax-only naming heuristic (starts with I + uppercase), so the
+        // baseline guesses "implements" at FactResolution.Heuristic even though it is really a class -
+        // exactly the case semantic refinement exists to correct.
         const string source = """
             namespace App;
 
-            public class Base { }
-            public interface IMarker { }
+            public class IRepository { }
 
-            public sealed class Worker : Base, IMarker
+            public sealed class Worker : IRepository
             {
             }
             """;
         var (extraction, model) = Compile(source);
 
         var baseline = RelationCollector.CreateClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates);
-        var refined = RelationCollector.Refine(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
+        var refined = RelationCollector.RefineClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
 
-        Assert.Equal(2, baseline.Length);
-        Assert.Equal(2, refined.Length);
-        // T13 gives this correspondence its real shape (RefineClaims merges into the baseline claim
-        // directly); for now, source+kind is the same correspondence RelationFactId minting used.
-        Assert.All(refined, refinedFact =>
-            Assert.Contains(baseline, baselineClaim =>
-                baselineClaim.OwnerId == refinedFact.SourceId && baselineClaim.Kind == refinedFact.RelationKind));
-        Assert.All(refined, refinedFact => Assert.Equal(FactResolution.Syntactic, refinedFact.Header.Resolution));
+        var baselineClaim = Assert.Single(baseline);
+        Assert.Equal("implements", baselineClaim.Kind);
+        Assert.Equal(FactResolution.Heuristic, baselineClaim.ShapeConfidence);
+
+        var refinedClaim = Assert.Single(refined);
+        Assert.Equal("inherits", refinedClaim.Kind);
+        Assert.Equal(FactResolution.Syntactic, refinedClaim.ShapeConfidence);
     }
 
     [Fact]
-    public void Refine_UnresolvedBaseListEntry_ProducesNoEnrichmentAndDoesNotThrow()
+    public void RefineClaims_UnresolvedBaseListEntry_LeavesTheBaselineClaimUntouchedRatherThanDroppingIt()
     {
         const string source = """
             namespace App;
@@ -205,9 +207,15 @@ public sealed class RelationCollectorTests
             """;
         var (extraction, model) = Compile(source);
 
-        var refined = RelationCollector.Refine(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
+        var baseline = RelationCollector.CreateClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates);
+        var refined = RelationCollector.RefineClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
 
-        Assert.Empty(refined);
+        var baselineClaim = Assert.Single(baseline);
+        var refinedClaim = Assert.Single(refined);
+        Assert.Equal(baselineClaim.Kind, refinedClaim.Kind);
+        Assert.Equal(baselineClaim.Partition, refinedClaim.Partition);
+        Assert.Equal(baselineClaim.ShapeConfidence, refinedClaim.ShapeConfidence);
+        Assert.True(baselineClaim.Details.SequenceEqual(refinedClaim.Details));
     }
 
     private static (SyntaxFactExtraction Extraction, SemanticModel Model) Compile(string workerSource, string relativePath = "Worker.cs")

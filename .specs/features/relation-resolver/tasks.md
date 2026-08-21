@@ -514,11 +514,23 @@ layer; fact-shape validation against `FactValidator` becomes `RelationFragmentBu
 
 **Done when**:
 
-- [ ] A refined `inherits`/`implements` claim replaces its baseline counterpart and keeps the stronger `ShapeConfidence`
-- [ ] The inferred-publish path still discovers a `PublishAsync(message)` call the syntax pass could read no target from
-- [ ] A candidate that cannot be refined leaves its baseline claim untouched rather than dropping it
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A refined `inherits`/`implements` claim replaces its baseline counterpart and keeps the stronger `ShapeConfidence`
+- [x] The inferred-publish path still discovers a `PublishAsync(message)` call the syntax pass could read no target from
+- [x] A candidate that cannot be refined leaves its baseline claim untouched rather than dropping it
+- [~] Gate check passes: `dotnet test csharp2md.slnx` - same disclosed deviation as T12, now +1
+- [x] Test count recorded (no silent deletions) - 18 tests in RelationCollectorTests.cs before and after (3 `Refine_*` tests rewritten 1:1 to 3 `RefineClaims_*` tests)
+
+**Disclosed deviation (continues T12's)**: `TrustedSemanticProjectProcessor.cs`'s call to `RelationCollector.Refine`
+(not in this task's literal `Where`, forced by the signature change to `RefineClaims`) is updated to call
+`RefineClaims` and its `EnrichedRelations` field is retyped to `ImmutableArray<RawRelation>`, but
+`AnalysisEngine.cs`'s `enrichment` no longer concatenates it (`RawRelation` is not an `IFact`) - the same
+minimal, disclosed, T23-anticipating fix as T12. This surfaces one additional pre-existing, out-of-scope
+integration test red: `RelationCollectorTrustedRefinementWiringTests.AnalyzeAsync_TrustedMode_PublishAsyncThroughAVariable_ResolvesTargetTextThroughTheRealPipeline`
+(the trusted-mode counterpart of the inferred-publish path, asserted end-to-end through the real pipeline).
+`dotnet test csharp2md.slnx` after T13: 1763/1779 passed, 15 relation-pipeline failures (14 from T12's set +
+this 1 new one) + 1 unrelated pre-existing flake (`DotnetMsBuildEvaluatorTests...`; the other flake from T12's
+run, `V3SecurityBoundaryTests...`, did not reproduce this run - confirming it is non-deterministic and
+unrelated). All still exactly the class of test AD-018 and T25 name.
 
 **Tests**: unit
 **Gate**: quick

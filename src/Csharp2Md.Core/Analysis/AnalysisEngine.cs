@@ -310,7 +310,7 @@ public sealed class AnalysisEngine
                 var baseline = new IFact[] { documentFact }
                     .Concat(extraction.Document.Sections)
                     .Concat(extraction.Symbols.Where(symbol => !errorIds.Contains(symbol.SymbolId)));
-                var enrichment = document.EnrichedSymbols.Cast<IFact>().Concat(document.EnrichedRelations);
+                var enrichment = document.EnrichedSymbols.Cast<IFact>();
                 var merged = FactMerger.Merge(baseline, enrichment, document.Diagnostics);
                 analysisDiagnostics.AddRange(merged.StructuralDiagnostics);
                 if (!merged.IsValid)
