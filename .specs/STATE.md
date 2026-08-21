@@ -120,7 +120,7 @@
 - **Trade-off**: Two code paths now exist for "how a relation fact gets produced" — this feature's kinds live in `Analysis/Syntax` + `Analysis/Relations`, while `GrpcRelationDetector`/`CompileTimeReferenceDetector`/`DependencyInjectionDetector`/`AspNetCoreDetector` remain in `Detection/*`, still unwired, still orphaned. `DetectorHost` and those four detectors are not removed (still used/tested in isolation) but their fate — finish wiring them the same way, port them to the new pattern, or retire them — is an explicit open question for a future feature, not resolved here.
 - **Scope**: Relation-fact production for `RelationCollector`'s ten kinds; the `Detection`/`DetectorHost` abstraction's future is out of scope for this decision.
 - **Date**: 2026-08-19
-- **Status**: active
+- **Status**: partially superseded by AD-018 (relation enrichment merge point only; the pass-one wiring stands)
 
 ### AD-016
 - **Decision**: Persistence discovery introduces a new fact family (`DatabaseObjectFact`, `DatabaseColumnFact`) whose identity is minted **only** from a name proven by a source string literal or explicit configuration (`ToTable("tb_order")`, `HasColumnName("order_status")`, a table name the SQL tokenizer read out of a literal statement). A name reached by EF convention, by interpolated or concatenated SQL, or by any other inference never mints a node: its relation keeps `target_id: null`, carries the observed `target_text`, an `unresolved_reason` where applicable, and a non-`Exact` resolution (`Heuristic` for convention, `Candidate` for ambiguous, `Unresolved` for unreadable).
@@ -138,7 +138,88 @@
 - **Date**: 2026-08-20
 - **Status**: active
 
+### AD-018
+- **Decision**: `RelationCollector` emits `RawRelation` **claims** rather than facts. A `RelationClaimAccumulator` buffers them together with the `DocumentExtent`s their evidence will be validated against, and `RelationResolver` is the only component that mints a `RelationFact` — in pass two, once `SymbolIndex` exists. Document fragments no longer carry relations; every relation in a run lives in one solution-level fragment. The factual fragment schema moves from version 4 to version 5.
+- **Reason**: `SymbolIndex` is built after the document loop completes, so a relation persisted during the loop can never have been resolved against it. Every alternative either lets a resolved aggregate contradict an unresolved fragment, or rewrites artifacts already written to content-addressed paths. Making the collector produce claims is what `data-access-discovery` already does with `RawDatabaseClaim` (documented there as "never serialized"), and it makes "the resolver is the sole writer of `RelationFact`" structural instead of a convention that a later contributor can quietly break.
+- **Trade-off**: Resolution context (receiver text, member name, argument types, declaration bindings) is held in memory for the whole run and never appears in the output, so a wrong edge cannot be diagnosed from the artifacts alone — only from a re-run. The alternative, serializing that context as `RelationDetail` entries, was rejected because details feed the identity fingerprint and would have churned every `relation_id`. A set of existing tests and snapshots that assert relations inside document fragments must be rewritten to the new location.
+- **Scope**: Relation production and persistence, and the factual fragment wire contract. Partially supersedes AD-015: relation enrichment is merged at the claim level by `FactResolutionAlgebra.Stronger` instead of at the fact level by `FactMerger`'s same-identity/`ResolutionRank` logic. The pass-one wiring AD-015 chose (`SyntaxFactExtractor.Extract` plus `TrustedSemanticProjectProcessor.BindDocuments`, not `DetectorHost`) is unchanged, as is AD-015's statement about the orphaned `Detection/` tree.
+- **Date**: 2026-08-21
+- **Status**: active
+
+### AD-019
+- **Decision**: A relation carries a `ResolutionMethod` (`exact`, `candidate`, `syntactic`, `configured`, `convention`, `dynamic`, `heuristic`, `unresolved`) alongside — not instead of — its header's `FactResolution`. No part of a fact's identity may derive from its resolution outcome, so resolution state is a first-class field and never a `RelationDetail`.
+- **Reason**: `FactResolution` answers "how proven is this fact?" and is aggregated across every fact family by `FactResolutionAlgebra`; `ResolutionMethod` answers "by what route did we reach this target?" and is meaningful only on a relation. Extending `FactResolution` with `Configured`/`Convention`/`Dynamic` would drag those states into every symbol, document and project header and would supersede AD-016's convention-to-`Heuristic` mapping for no gain. The field-not-detail rule is mechanically forced: `RelationFactId` is minted from a fingerprint of the details, so a resolution-bearing detail would change a relation's identity every time its resolution improved.
+- **Trade-off**: Two resolution vocabularies now coexist on one fact, and a consumer must learn which question each answers. Collapsing them into one enum would have been conceptually tidier at the cost of a breaking change across every fact family.
+- **Scope**: The relation fact's wire contract and the identity rule for all fact families. Conforms to AD-011 and AD-016: a target is still proven only by a semantic binding, an index match, or a source literal.
+- **Date**: 2026-08-21
+- **Status**: active
+
 ## Handoff
+
+- **Feature**: RelationResolver (`.specs/features/relation-resolver/`) — **planned, not started.** The stage
+  that turns the pipeline's relation stubs into proven edges: every relation the pipeline emits today carries
+  `target_id: null`, so `raw/dependencies.mmd` has zero edges outside the `data` partition even though
+  `SymbolIndex` has been sitting there unused since the `symbol-index` feature shipped.
+- **Phase / Task**: Specify, Design and Tasks are **complete and user-approved**. Execute has **not begun** —
+  no code written, nothing committed. The user approved the 32-task breakdown on 2026-08-21 and chose to run
+  Execute in a later session.
+- **Branch**: still `feat/data-access-discovery`, HEAD `024b2fe`. **Open decision for whoever starts Execute:**
+  this feature is breaking (fragment schema 4 -> 5), so AD-007 requires its own feature branch. That branch
+  does not exist yet, and `feat/data-access-discovery` is still unpushed and unmerged — decide whether
+  `feat/relation-resolver` cuts from `master` (and waits on the DAD PR) or from `feat/data-access-discovery`
+  before writing the first task.
+- **Artifacts written this session (2026-08-21), all uncommitted**:
+  - `.specs/features/relation-resolver/spec.md` — 49 requirements. P1 `RELR-01`..`RELR-39` across five
+    stories; P2 `RELR-40`..`RELR-45` (HTTP / events / configuration nodes); P3 `RELR-46`..`RELR-49`
+    (confidence, attempts, cross-relation enrichment). `validate_spec.py` exit 0.
+  - `.specs/features/relation-resolver/design.md` — approved. Five-strategy chain, claim-based seam, risks.
+  - `.specs/features/relation-resolver/tasks.md` — approved. 32 tasks, 6 phases (4/7/3/7/4/7).
+    `validate_tasks.py` exit 0 with 5 justified warnings.
+  - `.specs/STATE.md` — AD-018 and AD-019 appended; AD-015 flipped to partially superseded.
+- **Four decisions the user made during Specify and Design**, all recorded in `spec.md`'s Assumptions table:
+  (1) relations are persisted in a pass-two fragment of their own, not in the document fragment;
+  (2) the eight-state resolution vocabulary is a relation-scoped `ResolutionMethod`, not an extension of
+  `FactResolution`; (3) new target-node families only for names a source string literal proved, and events
+  resolve to the message type's existing `SymbolFactId` rather than a new family; (4) P1 is the core pipeline
+  only — HTTP, events, DI and configuration resolvers are P2. A fifth, asked at Design: the collector-to-resolver
+  seam carries context as buffered `RawRelation` claims (the `RawDatabaseClaim` pattern), not as serialized
+  `RelationDetail` entries.
+- **Three findings from the codebase walk that reshaped the scope**, none of them previously recorded:
+  - `SemanticModel` and `SyntaxNode` are disposed with the compilation at the end of pass one, so the user's
+    original `SemanticResolver` / `CandidateSymbolResolver` strategies cannot exist as pass-two strategies.
+    What the semantic pass knows must be *captured* onto the claim during collection instead.
+  - The entire `Detection/` tree (`GrpcRelationDetector`, `DependencyInjectionDetector`, `AspNetCoreDetector`,
+    `CompileTimeReferenceDetector`, `DetectorHost`) still has no production caller — tests only, exactly as
+    AD-015 recorded. So `grpc-call`, `registers` and `resolves-to` relations never reach a resolver, and the
+    gRPC and DI strategies are out of scope for want of an input.
+  - `DatabaseMappingResolver` already resolves entity-to-table and property-to-column with
+    configured-over-convention precedence, and already writes a `mapping` detail holding `configured` /
+    `convention`. Spec sections 18-21 are therefore already shipped; the remaining work is exposing which of
+    the two produced a target, not resolving it.
+- **Three named risks carried into the tasks**, each with a task that proves rather than argues it:
+  - Relation ordinals are per-document today (`RelationCollector.cs:39`). A run-wide resolver keyed only on
+    `kind + claim` would silently renumber relations. T21's gate is a test comparing every minted id against
+    the pre-change collector's id for the same claim.
+  - `DeclaredReceiverTypeName` (`SyntaxFactExtractor.cs:627`) covers only method parameters and non-`var`
+    locals. T8/T9/T10 extend it to fields, properties, constructor and primary-constructor parameters, and
+    pattern variables; `var` locals stay unresolvable by syntax and are documented as such.
+  - Existing tests and snapshots assert relations inside document fragments. T25 migrates them with an
+    explicit no-deletion, no-weakening criterion.
+- **In-progress** (file:line): none.
+- **Next step**: resolve the branch question above, then start Execute at Phase 1 / T1. The user's chosen
+  packing was not settled — they were offered one worker per phase (their `data-access-discovery` choice),
+  ~7-task batches, or inline, and deferred the whole question by choosing to review first and execute later.
+  Ask before dispatching.
+- **Blockers**: None.
+- **Uncommitted files**: everything listed under "Artifacts written this session" above, plus the same
+  long-standing untracked paths carried by every prior handoff: `.agents/`, `.claude/`, `.cursor/`,
+  `.windsurf/`, `.specs/features/csharp2md-v3/context.md`, `.specs/features/data-access-discovery/context.md`
+  and `design.md`, `.specs/features/relation-collector/context.md` and `design.md`, both dated Markdown files,
+  `AGENTS.md`, `CLAUDE.md`, `fixtures/launch-manifest.json`, `research/`, `src/Csharp2Md.Cli/Properties/`, and
+  the pre-existing line-ending-only working-copy modification to `DatabaseFragmentBuilder.cs` that carries no
+  content diff.
+
+## Historical Handoff — Database Access Discovery
 
 - **Feature**: Database Access Discovery (`.specs/features/data-access-discovery/`) — **done.** A stage that
   maps every interaction the analysed code has with a database: EF Core entities/tables/columns and literal
