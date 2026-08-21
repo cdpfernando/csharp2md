@@ -137,12 +137,12 @@ public sealed record RelationFactJson(
     [property: JsonPropertyOrder(5)] string RelationKind,
     [property: JsonPropertyOrder(6)] string? UnresolvedReason,
     [property: JsonPropertyOrder(7)] ImmutableArray<RelationDetailJson>? Details = null,
-    // SPEC_DEVIATION: kept nullable (rather than the schema-required plain `string` design.md implies) so
-    // FactualSchemaSyncTests' contract-vs-schema "required" check stays in sync with the still-v4 schema
-    // through T2/T3. T4 flips this to non-nullable in lockstep with the schema bump and the required-list
-    // addition (relation-resolver/tasks.md T4). A null value is omitted from the wire output
-    // (DefaultIgnoreCondition.WhenWritingNull), so this addition is invisible to every existing snapshot.
-    [property: JsonPropertyOrder(8)] string? ResolutionMethod = null,
+    // Non-nullable and required as of schema v5 (T4). Defaults to "exact" rather than "unresolved" so a
+    // relation whose mapper does not yet set this field explicitly (FactStore.MapRelation does not read
+    // RelationFact.Method until a later phase wires the resolver) never contradicts its own target_id: every
+    // relation reaching this mapper today with a non-null target_id is genuinely exact-resolved (see
+    // RelationFact.Method's matching SPEC_DEVIATION note in Facts/Model/RelationFact.cs).
+    [property: JsonPropertyOrder(8)] string ResolutionMethod = "exact",
     [property: JsonPropertyOrder(9)] ImmutableArray<string>? Candidates = null);
 
 public sealed record RelationDetailJson(

@@ -231,12 +231,12 @@ update every assertion and snapshot that names version 4.
 
 **Done when**:
 
-- [ ] `FactualSchemaSyncTests` asserts 5 and still cross-checks the serializer constant against the schema file
-- [ ] Every version assertion found in `FactualJsonTests`, `SymbolFactEnricherTests` and `FactStoreTests` names 5, including test-method names that spell the number
-- [ ] Aggregate envelope assertions still name 2 and are untouched
-- [ ] Each re-approved snapshot diff is reviewed line by line and reported in the commit body
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] `FactualSchemaSyncTests` asserts 5 and still cross-checks the serializer constant against the schema file
+- [x] Every version assertion found in `FactualJsonTests`, `SymbolFactEnricherTests` and `FactStoreTests` names 5, including test-method names that spell the number
+- [x] Aggregate envelope assertions still name 2 and are untouched
+- [x] Each re-approved snapshot diff is reviewed line by line and reported in the commit body
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: build

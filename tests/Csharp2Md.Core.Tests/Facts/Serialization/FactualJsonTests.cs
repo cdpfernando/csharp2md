@@ -102,7 +102,7 @@ public sealed class FactualJsonTests
         Assert.Equal(
             ["global::System.String"],
             symbol.GetProperty("parameter_types").EnumerateArray().Select(static item => item.GetString()!).ToArray());
-        Assert.Equal(4, json.RootElement.GetProperty("schema_version").GetInt32());
+        Assert.Equal(5, json.RootElement.GetProperty("schema_version").GetInt32());
     }
 
     [Fact]
@@ -359,8 +359,8 @@ public sealed class FactualJsonTests
     [Theory]
     [InlineData(2)]
     [InlineData(3)]
-    [InlineData(5)]
-    public void Serialize_SchemaVersionOtherThanFour_IsRejected(int schemaVersion) =>
+    [InlineData(4)]
+    public void Serialize_SchemaVersionOtherThanFive_IsRejected(int schemaVersion) =>
         Assert.Throws<ArgumentException>(() =>
             FactualJsonSerializer.Serialize(EmptyDocument() with { SchemaVersion = schemaVersion }));
 
