@@ -786,13 +786,13 @@ and an interpolated-SQL target onto `dynamic`.
 
 **Done when**:
 
-- [ ] A `ToTable`-configured target yields `configured`; a convention-named one yields `convention` and `C2M-RELR-005`
-- [ ] No database target is ever marked `exact`
-- [ ] An interpolated-SQL target yields `dynamic` with a null target, the observed text kept, and `C2M-RELR-004`
-- [ ] The claim's `DatabaseOperation` and relation kind are unchanged by the strategy
-- [ ] No `DatabaseObjectFact` or `DatabaseColumnFact` is created, altered or deleted anywhere in the strategy
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A `ToTable`-configured target yields `configured`; a convention-named one yields `convention` and `C2M-RELR-005`
+- [x] No database target is ever marked `exact`
+- [x] An interpolated-SQL target yields `dynamic` with a null target, the observed text kept, and `C2M-RELR-004`
+- [x] The claim's `DatabaseOperation` and relation kind are unchanged by the strategy
+- [x] No `DatabaseObjectFact` or `DatabaseColumnFact` is created, altered or deleted anywhere in the strategy
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
