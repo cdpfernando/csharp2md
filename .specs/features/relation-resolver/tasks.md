@@ -319,11 +319,11 @@ ordering and extents retained only for documents that produced a claim.
 
 **Done when**:
 
-- [ ] `target_text` keeps its exact current value, so no relation identity changes — asserted by a test
-- [ ] `ArgumentTypes` holds simple type names, with `null` for an argument whose type syntax cannot be read
-- [ ] A test covers a call with zero arguments, one with typed arguments, and one with an unreadable argument type
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] `target_text` keeps its exact current value, so no relation identity changes — asserted by a test
+- [x] `ArgumentTypes` holds simple type names, with `null` for an argument whose type syntax cannot be read
+- [x] A test covers a call with zero arguments, one with typed arguments, and one with an unreadable argument type
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

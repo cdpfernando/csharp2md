@@ -19,7 +19,22 @@ internal sealed record SyntacticRelationCandidate(
     int StartLine,
     int StartColumn,
     int EndLine,
-    int EndColumn);
+    int EndColumn)
+{
+    /// <summary>The receiver expression's own source text, populated only for a <c>calls</c> candidate.</summary>
+    public string? ReceiverText { get; init; }
+
+    /// <summary>The receiver's declared type name, when <see cref="DeclaredReceiverTypeName"/> could read one.</summary>
+    public string? ReceiverTypeText { get; init; }
+
+    /// <summary>The invoked member's name, populated only for a <c>calls</c> candidate.</summary>
+    public string? MemberName { get; init; }
+
+    public int? ArgumentCount { get; init; }
+
+    /// <summary>Simple type names, one per argument; an entry is <c>null</c> when its type syntax cannot be read.</summary>
+    public ImmutableArray<string?> ArgumentTypes { get; init; } = [];
+}
 
 internal sealed record SyntaxFactExtraction(
     DocumentFact Document,
@@ -690,15 +705,97 @@ internal static class SyntaxFactExtractor
             return null;
         }
 
-        var receiverTypeName = DeclaredReceiverTypeName(memberAccess.Expression)
+        var declaredReceiverType = DeclaredReceiverTypeName(memberAccess.Expression);
+        var receiverTypeName = declaredReceiverType
             ?? (memberAccess.Expression is IdentifierNameSyntax identifier ? identifier.Identifier.ValueText : null);
         if (receiverTypeName is not null && RelationNoiseFilter.IsLikelyFrameworkType(receiverTypeName))
         {
             return null;
         }
 
-        var targetText = $"{NormalizeNode(memberAccess.Expression)}.{memberAccess.Name.Identifier.ValueText}";
-        return MakeCandidate(ownerId, "calls", targetText, FactResolution.Syntactic, invocation, tree);
+        var memberName = memberAccess.Name.Identifier.ValueText;
+        var targetText = $"{NormalizeNode(memberAccess.Expression)}.{memberName}";
+        return MakeCandidate(ownerId, "calls", targetText, FactResolution.Syntactic, invocation, tree) with
+        {
+            ReceiverText = NormalizeNode(memberAccess.Expression),
+            ReceiverTypeText = declaredReceiverType,
+            MemberName = memberName,
+            ArgumentCount = invocation.ArgumentList.Arguments.Count,
+            ArgumentTypes = ArgumentTypesFor(invocation.ArgumentList.Arguments),
+        };
+    }
+
+    /// <summary>
+    /// One simple type name per argument, read from the argument expression's own syntax alone (no
+    /// <see cref="SemanticModel"/>): a literal's implied type, an object-creation's or cast's or
+    /// <c>default(...)</c>'s named type. An argument whose type cannot be read this way (e.g. a bare
+    /// identifier) yields <c>null</c> rather than a guess.
+    /// </summary>
+    private static ImmutableArray<string?> ArgumentTypesFor(SeparatedSyntaxList<ArgumentSyntax> arguments) =>
+        arguments.Select(static argument => ArgumentTypeName(argument.Expression)).ToImmutableArray();
+
+    private static string? ArgumentTypeName(ExpressionSyntax expression) => expression switch
+    {
+        LiteralExpressionSyntax literal => LiteralTypeName(literal),
+        ObjectCreationExpressionSyntax creation => SimpleTypeName(creation.Type),
+        CastExpressionSyntax cast => SimpleTypeName(cast.Type),
+        DefaultExpressionSyntax defaultExpression => SimpleTypeName(defaultExpression.Type),
+        _ => null,
+    };
+
+    private static string? LiteralTypeName(LiteralExpressionSyntax literal) => literal.Kind() switch
+    {
+        SyntaxKind.StringLiteralExpression or SyntaxKind.Utf8StringLiteralExpression => "string",
+        SyntaxKind.CharacterLiteralExpression => "char",
+        SyntaxKind.TrueLiteralExpression or SyntaxKind.FalseLiteralExpression => "bool",
+        SyntaxKind.NumericLiteralExpression => NumericLiteralTypeName(literal.Token.Text),
+        _ => null,
+    };
+
+    /// <summary>
+    /// A numeric literal's implied type from its own suffix/shape - the same rule the C# language
+    /// applies, read from the token text rather than a bound type.
+    /// </summary>
+    private static string NumericLiteralTypeName(string text)
+    {
+        if (text.EndsWith("m", StringComparison.OrdinalIgnoreCase))
+        {
+            return "decimal";
+        }
+
+        if (text.EndsWith("f", StringComparison.OrdinalIgnoreCase))
+        {
+            return "float";
+        }
+
+        if (text.EndsWith("d", StringComparison.OrdinalIgnoreCase))
+        {
+            return "double";
+        }
+
+        var isHexOrBinary = text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            || text.StartsWith("0b", StringComparison.OrdinalIgnoreCase);
+        if (!isHexOrBinary && text.Contains('.', StringComparison.Ordinal))
+        {
+            return "double";
+        }
+
+        if (text.EndsWith("ul", StringComparison.OrdinalIgnoreCase) || text.EndsWith("lu", StringComparison.OrdinalIgnoreCase))
+        {
+            return "ulong";
+        }
+
+        if (text.EndsWith("u", StringComparison.OrdinalIgnoreCase))
+        {
+            return "uint";
+        }
+
+        if (text.EndsWith("l", StringComparison.OrdinalIgnoreCase))
+        {
+            return "long";
+        }
+
+        return "int";
     }
 
     private static SyntacticRelationCandidate MakeCandidate(

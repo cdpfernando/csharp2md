@@ -367,8 +367,49 @@ public sealed class SyntaxFactExtractorTests
         var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
 
         var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        // RELR-05/RELR-21: target_text (ObservedTarget) is still exactly what it was before shape
+        // capture existed, so no relation identity changes.
         Assert.Equal("paymentsClient.AuthorizePayment", candidate.ObservedTarget);
         Assert.Equal(FactResolution.Syntactic, candidate.ShapeConfidence);
+        Assert.Equal("paymentsClient", candidate.ReceiverText);
+        Assert.Equal("PaymentsClient", candidate.ReceiverTypeText);
+        Assert.Equal("AuthorizePayment", candidate.MemberName);
+        Assert.Equal(2, candidate.ArgumentCount);
+        Assert.Equal<string?>(["string", "decimal"], candidate.ArgumentTypes);
+    }
+
+    [Fact]
+    public void Extract_CallsInvocationWithNoArguments_ReportsZeroArgumentCountAndNoArgumentTypes()
+    {
+        const string source = """
+            class OrderService
+            {
+                void Run(PaymentsClient paymentsClient) => paymentsClient.Ping();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal(0, candidate.ArgumentCount);
+        Assert.Empty(candidate.ArgumentTypes);
+    }
+
+    [Fact]
+    public void Extract_CallsInvocationWithAnIdentifierArgument_ReportsNullForTheUnreadableArgumentType()
+    {
+        const string source = """
+            class OrderService
+            {
+                void Run(PaymentsClient paymentsClient, decimal amount) => paymentsClient.Authorize(amount);
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal(1, candidate.ArgumentCount);
+        Assert.Equal<string?>([null], candidate.ArgumentTypes);
     }
 
     [Fact]
