@@ -201,11 +201,11 @@ order 7.
 
 **Done when**:
 
-- [ ] Every legal combination validates and every illegal one produces `C2M-FV-008`, each pinned by its own test case
-- [ ] The diagnostic scope is the offending relation's fact id
-- [ ] No existing validator rule changes behaviour
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every legal combination validates and every illegal one produces `C2M-FV-008`, each pinned by its own test case
+- [x] The diagnostic scope is the offending relation's fact id
+- [x] No existing validator rule changes behaviour
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
