@@ -1140,15 +1140,15 @@ fixture.
 
 **Done when**:
 
-- [ ] An empty symbol index yields every relation unresolved and no throw
-- [ ] A zero-relation run persists no fragment and still writes `resolution.json` at zero
-- [ ] A missing source fact id yields `C2M-RELR-007` and the relation is still emitted
-- [ ] A whitespace `target_text` is left unresolved with no index query, asserted with a recording index double
-- [ ] A duplicate `RelationFactId` fails structurally
-- [ ] The same type name in two non-referencing projects yields candidates rather than a same-project preference
-- [ ] Cancellation mid-resolution propagates and produces no diagnostic
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] An empty symbol index yields every relation unresolved and no throw
+- [x] A zero-relation run persists no fragment and still writes `resolution.json` at zero
+- [x] A missing source fact id yields `C2M-RELR-007` and the relation is still emitted
+- [x] A whitespace `target_text` is left unresolved with no index query, asserted with a recording index double
+- [x] A duplicate `RelationFactId` fails structurally
+- [x] The same type name in two non-referencing projects yields candidates rather than a same-project preference
+- [x] Cancellation mid-resolution propagates and produces no diagnostic
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
