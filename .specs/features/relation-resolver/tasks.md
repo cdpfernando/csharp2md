@@ -434,11 +434,11 @@ them onto every candidate, so `SymbolLookup` can use them as contextual hints.
 
 **Done when**:
 
-- [ ] File-scoped and block-scoped namespace declarations both captured
-- [ ] Global usings present in the document are captured; a document with no usings yields an empty array, never null
-- [ ] Capture happens once per document, not once per candidate
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] File-scoped and block-scoped namespace declarations both captured
+- [x] Global usings present in the document are captured; a document with no usings yields an empty array, never null
+- [x] Capture happens once per document, not once per candidate
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

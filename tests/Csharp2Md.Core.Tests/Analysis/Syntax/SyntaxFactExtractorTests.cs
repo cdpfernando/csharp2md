@@ -581,6 +581,111 @@ public sealed class SyntaxFactExtractorTests
     }
 
     [Fact]
+    public void Extract_FileScopedNamespaceWithUsings_CapturesNamespaceAndImportsOnEveryCandidate()
+    {
+        const string source = """
+            using System;
+            using Acme.Payments;
+
+            namespace Acme.Orders;
+
+            class OrderService
+            {
+                void Run(PaymentsClient paymentsClient) => paymentsClient.Authorize();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal("Acme.Orders", candidate.Namespace);
+        Assert.Equal<string>(["Acme.Payments", "System"], candidate.Imports);
+    }
+
+    [Fact]
+    public void Extract_BlockScopedNamespace_CapturesNamespace()
+    {
+        const string source = """
+            namespace Acme.Orders
+            {
+                class OrderService
+                {
+                    void Run(PaymentsClient paymentsClient) => paymentsClient.Authorize();
+                }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal("Acme.Orders", candidate.Namespace);
+    }
+
+    [Fact]
+    public void Extract_DocumentWithNoNamespaceOrUsings_LeavesNamespaceNullAndImportsEmptyNeverNull()
+    {
+        const string source = """
+            class OrderService
+            {
+                void Run(PaymentsClient paymentsClient) => paymentsClient.Authorize();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Null(candidate.Namespace);
+        Assert.False(candidate.Imports.IsDefault);
+        Assert.Empty(candidate.Imports);
+    }
+
+    [Fact]
+    public void Extract_UsingStaticAndAliasDirectives_AreExcludedFromImports()
+    {
+        const string source = """
+            using System;
+            using static System.Math;
+            using Payments = Acme.Payments;
+
+            class OrderService
+            {
+                void Run(PaymentsClient paymentsClient) => paymentsClient.Authorize();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal<string>(["System"], candidate.Imports);
+    }
+
+    [Fact]
+    public void Extract_MultipleCandidatesInOneDocument_ShareTheSameCapturedNamespaceAndImports()
+    {
+        const string source = """
+            using Acme.Payments;
+
+            namespace Acme.Orders;
+
+            class OrderService
+            {
+                void Run(PaymentsClient paymentsClient)
+                {
+                    paymentsClient.Authorize();
+                    var authorizer = new PaymentAuthorizer();
+                }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var callsCandidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        var createsCandidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "creates");
+        Assert.Equal(callsCandidate.Namespace, createsCandidate.Namespace);
+        Assert.Equal<string>(callsCandidate.Imports, createsCandidate.Imports);
+    }
+
+    [Fact]
     public void Extract_NewOfDenylistedFrameworkType_EmitsNoCreates()
     {
         const string source = """

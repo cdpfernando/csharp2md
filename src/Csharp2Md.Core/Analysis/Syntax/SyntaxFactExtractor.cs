@@ -34,6 +34,12 @@ internal sealed record SyntacticRelationCandidate(
 
     /// <summary>Simple type names, one per argument; an entry is <c>null</c> when its type syntax cannot be read.</summary>
     public ImmutableArray<string?> ArgumentTypes { get; init; } = [];
+
+    /// <summary>The enclosing document's namespace, captured once per document and shared by every candidate.</summary>
+    public string? Namespace { get; init; }
+
+    /// <summary>The enclosing document's using directives, captured once per document and shared by every candidate.</summary>
+    public ImmutableArray<string> Imports { get; init; } = [];
 }
 
 internal sealed record SyntaxFactExtraction(
@@ -232,8 +238,13 @@ internal static class SyntaxFactExtractor
         var canonicalSymbols = symbols
             .OrderBy(static symbol => symbol.SymbolId.Value, StringComparer.Ordinal)
             .ToImmutableArray();
+        // RELR-04: captured once here, not once per candidate, then shared by every candidate below -
+        // SymbolIndexStrategy/ReceiverTypeStrategy use them as contextual hints, never as a filter.
+        var documentNamespace = DocumentNamespace(root);
+        var documentImports = DocumentImports(root);
         var canonicalCandidates = candidates
             .Distinct()
+            .Select(candidate => candidate with { Namespace = documentNamespace, Imports = documentImports })
             .OrderBy(static candidate => candidate.OwnerId.Value, StringComparer.Ordinal)
             .ThenBy(static candidate => candidate.RelationKind, StringComparer.Ordinal)
             .ThenBy(static candidate => candidate.ObservedTarget, StringComparer.Ordinal)
@@ -392,6 +403,31 @@ internal static class SyntaxFactExtractor
         var joined = string.Join('.', names);
         return joined.Length == 0 ? null : joined;
     }
+
+    /// <summary>
+    /// The document's own namespace (RELR-04), from its first namespace declaration - file-scoped
+    /// (<c>namespace A;</c>) and block-scoped (<c>namespace A { }</c>) both derive from the same
+    /// <see cref="BaseNamespaceDeclarationSyntax"/> base - or <c>null</c> for a document with none.
+    /// </summary>
+    private static string? DocumentNamespace(SyntaxNode root) =>
+        root.DescendantNodes().OfType<BaseNamespaceDeclarationSyntax>().FirstOrDefault() is { } declaration
+            ? declaration.Name.ToString()
+            : null;
+
+    /// <summary>
+    /// Every plain namespace import in the document (RELR-04) - <c>using static</c> directives and
+    /// aliases are excluded, since neither names an importable namespace a symbol lookup can use as a
+    /// hint. A document with none yields an empty array, never <c>null</c>.
+    /// </summary>
+    private static ImmutableArray<string> DocumentImports(SyntaxNode root) =>
+        root.DescendantNodes()
+            .OfType<UsingDirectiveSyntax>()
+            .Where(static directive => directive.Alias is null && !directive.StaticKeyword.IsKind(SyntaxKind.StaticKeyword))
+            .Select(static directive => directive.Name?.ToString())
+            .OfType<string>()
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToImmutableArray();
 
     /// <summary>
     /// The names of the type declarations a declaration is nested inside, outer-first - the chain a
