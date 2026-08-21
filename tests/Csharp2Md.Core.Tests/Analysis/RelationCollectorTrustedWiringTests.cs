@@ -164,6 +164,7 @@ public sealed class RelationCollectorTrustedRefinementWiringTests : IDisposable
         // <T>, no object-creation argument) - only the real semantic-refinement wiring can produce it.
         var relationsRoot = Path.Combine(TopicLayout.RawRoot(_output), "facts", "relations");
         var relations = Directory.EnumerateFiles(relationsRoot, "*.json")
+            .Where(static path => !Path.GetFileName(path).Equals("resolution.json", StringComparison.Ordinal))
             .SelectMany(path =>
             {
                 using var partition = JsonDocument.Parse(File.ReadAllText(path));
@@ -222,7 +223,8 @@ public sealed class RelationCollectorTrustedWiringFixture : IAsyncLifetime
     {
         var relationsRoot = Path.Combine(TopicLayout.RawRoot(Output), "facts", "relations");
         var matches = new List<JsonElement>();
-        foreach (var path in Directory.EnumerateFiles(relationsRoot, "*.json"))
+        foreach (var path in Directory.EnumerateFiles(relationsRoot, "*.json")
+            .Where(static path => !Path.GetFileName(path).Equals("resolution.json", StringComparison.Ordinal)))
         {
             using var partition = JsonDocument.Parse(File.ReadAllText(path));
             foreach (var entry in partition.RootElement.GetProperty("entries").EnumerateArray())

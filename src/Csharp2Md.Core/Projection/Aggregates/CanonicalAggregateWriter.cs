@@ -66,6 +66,13 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
             files.Write($"raw/facts/relations/{wireName}.json", Json(new RelationAggregate(2, wireName, projected?.Relations ?? [])));
         }
 
+        // RELR-35: resolution.json is a new envelope at version 1 - distinct from the partition files'
+        // version 2 - and is written on every run, including one that produced no relations at all.
+        var resolutionMetrics = relationProjection is null
+            ? ResolutionMetricsAggregate.Empty
+            : ResolutionMetricsProjector.Project(relationProjection);
+        files.Write("raw/facts/relations/resolution.json", Json(resolutionMetrics));
+
         var database = snapshot.Database ?? DatabaseProjectionResult.Empty;
         files.Write("raw/facts/database.json", Json(new DatabaseAggregate(2, "database", database.Objects, database.Columns)));
 
@@ -133,6 +140,7 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
     private static byte[] Json(DiagnosticAggregate value) => Serialize(value, AggregateJsonContext.Default.DiagnosticAggregate);
     private static byte[] Json(CoverageAggregate value) => Serialize(value, AggregateJsonContext.Default.CoverageAggregate);
     private static byte[] Json(RelationAggregate value) => Serialize(value, AggregateJsonContext.Default.RelationAggregate);
+    private static byte[] Json(ResolutionMetricsAggregate value) => Serialize(value, AggregateJsonContext.Default.ResolutionMetricsAggregate);
     private static byte[] Json(DatabaseAggregate value) => Serialize(value, AggregateJsonContext.Default.DatabaseAggregate);
     private static byte[] Json(FactualManifest value) => Serialize(value, AggregateJsonContext.Default.FactualManifest);
 

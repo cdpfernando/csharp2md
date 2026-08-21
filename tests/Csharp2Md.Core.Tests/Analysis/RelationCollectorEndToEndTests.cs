@@ -137,7 +137,8 @@ public sealed class RelationCollectorEndToEndFixture : IAsyncLifetime
     {
         var relationsRoot = Path.Combine(TopicLayout.RawRoot(Output), "facts", "relations");
         var matches = new List<JsonElement>();
-        foreach (var path in Directory.EnumerateFiles(relationsRoot, "*.json"))
+        foreach (var path in Directory.EnumerateFiles(relationsRoot, "*.json")
+            .Where(static path => !Path.GetFileName(path).Equals("resolution.json", StringComparison.Ordinal)))
         {
             using var partition = JsonDocument.Parse(File.ReadAllText(path));
             foreach (var entry in partition.RootElement.GetProperty("entries").EnumerateArray())

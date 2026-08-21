@@ -1018,11 +1018,11 @@ produced no relations.
 
 **Done when**:
 
-- [ ] The file exists after a run with relations and after a run with none
-- [ ] The aggregate envelopes for the partition files still name version 2, untouched
-- [ ] The file is listed in the manifest alongside the other aggregates
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] The file exists after a run with relations and after a run with none
+- [x] The aggregate envelopes for the partition files still name version 2, untouched
+- [x] The file is listed in the manifest alongside the other aggregates
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
