@@ -988,12 +988,12 @@ partitions rather than from the resolver's own tally.
 
 **Done when**:
 
-- [ ] All eight method keys always present, at zero when unused
-- [ ] A per-partition breakdown covers every `RelationPartition` member, projected over the enum rather than a hand-kept list
-- [ ] The totals equal the relations in the projected partitions, asserted rather than assumed
-- [ ] A zero-relation projection yields every count at zero, not an empty object
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] All eight method keys always present, at zero when unused
+- [x] A per-partition breakdown covers every `RelationPartition` member, projected over the enum rather than a hand-kept list
+- [x] The totals equal the relations in the projected partitions, asserted rather than assumed
+- [x] A zero-relation projection yields every count at zero, not an empty object
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
