@@ -1047,11 +1047,11 @@ declared set, and never changes the exit code on its own.
 
 **Done when**:
 
-- [ ] Each of `C2M-RELR-001` through `C2M-RELR-007` is provoked by a test and asserted for code, severity and scope
-- [ ] A test asserts no code outside the declared set can be emitted by the resolver
-- [ ] A run producing only `C2M-RELR-*` diagnostics exits 0
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Each of `C2M-RELR-001` through `C2M-RELR-007` is provoked by a test and asserted for code, severity and scope
+- [x] A test asserts no code outside the declared set can be emitted by the resolver
+- [x] A run producing only `C2M-RELR-*` diagnostics exits 0
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
