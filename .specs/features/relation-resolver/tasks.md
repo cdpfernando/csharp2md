@@ -876,11 +876,11 @@ run resolve → build → persist once after the symbol index and the database r
 
 **Done when**:
 
-- [ ] A real `AnalyzeAsync` run produces document fragments containing no relations and one solution-level fragment containing all of them
-- [ ] The resolver is the only call site constructing a `RelationFact`, verified by search and stated in the commit body
-- [ ] A `C2M-RELR-*` diagnostic alone leaves `ExitCode` at 0, asserted at the `AnalyzeAsync` level rather than by inspection
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A real `AnalyzeAsync` run produces document fragments containing no relations and one solution-level fragment containing all of them
+- [x] The resolver is the only call site constructing a `RelationFact`, verified by search and stated in the commit body
+- [x] A `C2M-RELR-*` diagnostic alone leaves `ExitCode` at 0, asserted at the `AnalyzeAsync` level rather than by inspection
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: integration
 **Gate**: full

@@ -2,9 +2,11 @@ using System.Text.Json;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Analysis.Inventory;
+using Csharp2Md.Core.Facts.Serialization;
 using Csharp2Md.Core.Facts.Validation;
 using Csharp2Md.Core.Manifests;
 using Csharp2Md.Core.Tests.Analysis.DataAccess;
+using Csharp2Md.Core.Topic;
 
 namespace Csharp2Md.Core.Tests.Analysis;
 
@@ -96,6 +98,77 @@ public sealed class AnalysisEngineTests : IDisposable
 
         Assert.NotEmpty(Directory.EnumerateFiles(Path.Combine(_output, "raw", "facts"), "*.json", SearchOption.AllDirectories));
         Assert.True(File.Exists(Path.Combine(_output, "raw", "facts", "manifest.json")));
+    }
+
+    [Fact]
+    public async Task AnalyzeAsync_RelationsBetweenTwoTypes_ProducesDocumentFragmentsWithNoRelationsAndOneSolutionLevelRelationFragment()
+    {
+        CreateProject(
+            "App",
+            """
+            class Worker
+            {
+                void Run()
+                {
+                    Helper helper = new Helper();
+                    helper.Do();
+                }
+            }
+
+            class Helper
+            {
+                public void Do() { }
+            }
+            """);
+
+        var result = await new AnalysisEngine().AnalyzeAsync(Request());
+
+        Assert.Equal(0, result.ExitCode);
+        var documentRoot = Path.Combine(TopicLayout.RawRoot(_output), "facts", "document");
+        var documentPaths = Directory.EnumerateFiles(documentRoot, "*.json", SearchOption.AllDirectories).ToArray();
+        Assert.NotEmpty(documentPaths);
+        Assert.All(documentPaths, path =>
+            Assert.Empty(FactualJsonSerializer.Deserialize(File.ReadAllBytes(path)).Relations));
+
+        var structuralPath = Path.Combine(TopicLayout.RawRoot(_output), "facts", "relations", "structural.json");
+        Assert.True(File.Exists(structuralPath));
+        using var structural = JsonDocument.Parse(File.ReadAllText(structuralPath));
+        var entries = structural.RootElement.GetProperty("entries").EnumerateArray().ToArray();
+        Assert.Contains(entries, entry => entry.GetProperty("relation_kind").GetString() == "creates");
+        Assert.Contains(entries, entry => entry.GetProperty("relation_kind").GetString() == "calls");
+    }
+
+    [Fact]
+    public async Task AnalyzeAsync_AnUnresolvableRelation_LeavesExitCodeAtZeroDespiteItsC2MRELRDiagnostic()
+    {
+        CreateProject(
+            "App",
+            """
+            class Worker
+            {
+                void Run()
+                {
+                    Nonexistent target = new Nonexistent();
+                    target.Go();
+                }
+            }
+            """);
+
+        var result = await new AnalysisEngine().AnalyzeAsync(Request());
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("C2M-RELR-", File.ReadAllText(Path.Combine(_output, "raw", "facts", "diagnostics.json")), StringComparison.Ordinal);
+        var relationsRoot = Path.Combine(TopicLayout.RawRoot(_output), "facts", "relations");
+        var unresolvedEntries = Directory.EnumerateFiles(relationsRoot, "*.json")
+            .Where(path => !Path.GetFileName(path).Equals("resolution.json", StringComparison.Ordinal))
+            .SelectMany(path =>
+            {
+                using var partition = JsonDocument.Parse(File.ReadAllText(path));
+                return partition.RootElement.GetProperty("entries").EnumerateArray()
+                    .Select(entry => entry.GetProperty("resolution_method").GetString())
+                    .ToArray();
+            });
+        Assert.Contains("unresolved", unresolvedEntries);
     }
 
     [Fact]

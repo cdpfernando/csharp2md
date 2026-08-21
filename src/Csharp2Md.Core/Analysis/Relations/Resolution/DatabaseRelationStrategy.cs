@@ -20,6 +20,7 @@ internal sealed class DatabaseRelationStrategy : IRelationResolutionStrategy
     private const string ConventionCode = "C2M-RELR-005";
     private const string DynamicCode = "C2M-RELR-004";
     private const string NoCandidateCode = "C2M-RELR-001";
+    private const string AmbiguousCode = "C2M-RELR-002";
 
     public RelationResolutionOutcome TryResolve(RelationResolutionContext context)
     {
@@ -61,19 +62,30 @@ internal sealed class DatabaseRelationStrategy : IRelationResolutionStrategy
         }
 
         // Every other data-partition claim without a proven target: an unreadable SQL target, an
-        // unmapped owning object, or an ambiguous entity attribution. None of these are "configured
-        // vs. convention vs. dynamic" per RELR-27..RELR-30, so they fall to the generic unresolved
-        // outcome, keeping whichever reason DatabaseMappingResolver already recorded.
+        // unmapped owning object, or an ambiguous entity attribution (DAD-12, EmitTrackedWrite). None
+        // of these are "configured vs. convention vs. dynamic" per RELR-27..RELR-30, so the claim's own
+        // ShapeConfidence - already Candidate for an ambiguous attribution, Heuristic for one this
+        // strategy's other branches don't otherwise classify, Unresolved for a genuinely unreadable
+        // target - carries forward as the method, rather than every case collapsing to Unresolved.
+        var method = claim.ShapeConfidence switch
+        {
+            FactResolution.Candidate => ResolutionMethod.Candidate,
+            FactResolution.Heuristic => ResolutionMethod.Heuristic,
+            _ => ResolutionMethod.Unresolved,
+        };
+        var isAmbiguous = method is ResolutionMethod.Candidate;
         return new RelationResolutionOutcome(
             Handled: true,
-            Method: ResolutionMethod.Unresolved,
+            Method: method,
             UnresolvedReason: string.IsNullOrWhiteSpace(claim.UnresolvedReason)
                 ? $"No candidate found for a '{claim.Kind}' relation."
                 : claim.UnresolvedReason,
             Diagnostic: new RelationDiagnostic(
-                NoCandidateCode,
+                isAmbiguous ? AmbiguousCode : NoCandidateCode,
                 DiagnosticSeverity.Information,
-                $"No candidate was found for the observed target text of a '{claim.Kind}' relation.",
+                isAmbiguous
+                    ? $"More than one candidate attribution is possible for a '{claim.Kind}' relation."
+                    : $"No candidate was found for the observed target text of a '{claim.Kind}' relation.",
                 [new DiagnosticData("relation_kind", claim.Kind)]));
     }
 

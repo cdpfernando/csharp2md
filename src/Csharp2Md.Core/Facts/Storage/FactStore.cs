@@ -195,7 +195,11 @@ internal static class FactualJsonMapper
             WireRelationPartition(fact.Partition), fact.RelationKind, fact.UnresolvedReason,
             fact.Details.IsDefaultOrEmpty
                 ? null
-                : fact.Details.Order().Select(static detail => new RelationDetailJson(detail.Key, detail.Value)).ToImmutableArray());
+                : fact.Details.Order().Select(static detail => new RelationDetailJson(detail.Key, detail.Value)).ToImmutableArray(),
+            ResolutionMethodWire.Name(fact.Method),
+            fact.Candidates.IsDefaultOrEmpty
+                ? null
+                : fact.Candidates.Select(static id => id.Value).ToImmutableArray());
 
     internal static DatabaseObjectFactJson MapDatabaseObject(DatabaseObjectFact fact) =>
         new(Map(fact.Header), fact.ObjectId.Value, fact.ConnectionName, DatabaseFactWire.Name(fact.Kind), fact.Name);

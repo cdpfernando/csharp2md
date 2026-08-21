@@ -137,12 +137,13 @@ internal static class DatabaseMappingResolver
     /// <summary>
     /// Builds one <see cref="RawRelation"/> claim in the <c>Data</c> partition, carrying whatever target
     /// this resolver already proved (RELR-32). RELR-02: when <paramref name="targetId"/> is set, the
-    /// claim also reports the method that proved it - every database target this resolver ever sets is
-    /// reached through a source literal (an explicit configuration call, or a SQL statement the reader
-    /// tokenized), which AD-016 treats the same way, so <see cref="ResolutionMethod.Configured"/> is
-    /// correct whenever a target exists. A null target defers the configured/convention/dynamic
-    /// classification to <c>DatabaseRelationStrategy</c> (T20), which reads the <c>mapping</c> detail
-    /// this claim's <paramref name="details"/> already carries.
+    /// claim also reports the method that proved it, derived from <paramref name="resolution"/> - a
+    /// source literal (an explicit configuration call, or a SQL statement the reader tokenized) proves
+    /// <see cref="ResolutionMethod.Configured"/>, while a single-match tracked-write attribution
+    /// (<see cref="EmitTrackedWrite"/>) proves only <see cref="ResolutionMethod.Heuristic"/> - it is
+    /// still a real target, but inferred from a unique name match, not read from source. A null target
+    /// defers the configured/convention/dynamic classification to <c>DatabaseRelationStrategy</c> (T20),
+    /// which reads the <c>mapping</c> detail this claim's <paramref name="details"/> already carries.
     /// </summary>
     private static RawRelation RelationClaim(
         FactId sourceId,
@@ -161,9 +162,18 @@ internal static class DatabaseMappingResolver
             Partition = RelationPartition.Data,
             Details = details,
             TargetId = targetId,
-            ProducerMethod = targetId is not null ? ResolutionMethod.Configured : null,
+            ProducerMethod = targetId is null ? null : ProvenTargetMethod(resolution),
             UnresolvedReason = unresolvedReason,
         };
+
+    /// <summary>
+    /// <see cref="FactResolution.Heuristic"/> is the only shape confidence a proven (non-null) target
+    /// carries that is not a source-literal proof - every other value this resolver assigns to a proven
+    /// target (<see cref="FactResolution.Exact"/> for a configuration call, <see cref="FactResolution.Syntactic"/>
+    /// for a resolved SQL statement's object) is read from source, so <see cref="ResolutionMethod.Configured"/>.
+    /// </summary>
+    private static ResolutionMethod ProvenTargetMethod(FactResolution resolution) =>
+        resolution == FactResolution.Heuristic ? ResolutionMethod.Heuristic : ResolutionMethod.Configured;
 
     /// <summary>
     /// DAD-03: one node per configured table literal, and the entity-to-object map every later stage
