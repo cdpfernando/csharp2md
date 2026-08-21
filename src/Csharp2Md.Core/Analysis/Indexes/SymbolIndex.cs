@@ -147,7 +147,18 @@ internal enum SymbolLookupStatus
 /// The outcome of <see cref="ISymbolIndex.FindCandidates"/>: every candidate found, ordered
 /// best-first, plus whether the best tier held one candidate or several.
 /// </summary>
-internal sealed record SymbolLookupResult(SymbolLookupStatus Status, ImmutableArray<SymbolFact> Candidates);
+/// <param name="TiedCandidateCount">
+/// How many leading entries of <see cref="Candidates"/> share the best priority tier - <c>1</c> when
+/// <see cref="Status"/> is <see cref="SymbolLookupStatus.Unique"/>, <c>0</c> when
+/// <see cref="SymbolLookupStatus.NotFound"/>, and 2 or more when
+/// <see cref="SymbolLookupStatus.Ambiguous"/>. <see cref="Candidates"/> is sorted tier-then-id, so
+/// <c>Candidates[..TiedCandidateCount]</c> is exactly the tied set a consumer like
+/// <c>SymbolIndexStrategy</c> (relation-resolver) needs without re-deriving <see cref="SymbolIndex.PriorityTier"/>
+/// itself - <see cref="Candidates"/> alone cannot answer "which of these actually tied" once a lookup
+/// mixes best-tier and lower-tier results, which every existing caller's `Unique` scenario already does.
+/// </param>
+internal sealed record SymbolLookupResult(
+    SymbolLookupStatus Status, ImmutableArray<SymbolFact> Candidates, int TiedCandidateCount);
 
 /// <summary>
 /// A name-indexed, cross-project view of every symbol a run discovered, regardless of whether that
@@ -321,7 +332,7 @@ internal sealed class SymbolIndex : ISymbolIndex
 
         if (ranked.IsEmpty)
         {
-            return new SymbolLookupResult(SymbolLookupStatus.NotFound, []);
+            return new SymbolLookupResult(SymbolLookupStatus.NotFound, [], 0);
         }
 
         var bestTier = ranked[0].Tier;
@@ -329,7 +340,8 @@ internal sealed class SymbolIndex : ISymbolIndex
 
         return new SymbolLookupResult(
             tied == 1 ? SymbolLookupStatus.Unique : SymbolLookupStatus.Ambiguous,
-            ranked.Select(static entry => entry.Symbol).ToImmutableArray());
+            ranked.Select(static entry => entry.Symbol).ToImmutableArray(),
+            tied);
     }
 
     /// <summary>

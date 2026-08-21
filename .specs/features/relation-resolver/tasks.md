@@ -695,13 +695,13 @@ becomes `candidate` with every id listed, nothing found declines to the terminal
 
 **Done when**:
 
-- [ ] A unique match sets `target_id` and `resolution_method: syntactic`
-- [ ] An ambiguous match leaves `target_id` null, sets `candidate`, lists every tied id ordinal-ordered, and emits `C2M-RELR-002`
-- [ ] No code path selects an element from a multi-entry best tier
-- [ ] An empty or whitespace `target_text` declines without querying the index
-- [ ] Namespace, project and imports are passed as hints, not as filters
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A unique match sets `target_id` and `resolution_method: syntactic`
+- [x] An ambiguous match leaves `target_id` null, sets `candidate`, lists every tied id ordinal-ordered, and emits `C2M-RELR-002`
+- [x] No code path selects an element from a multi-entry best tier
+- [x] An empty or whitespace `target_text` declines without querying the index
+- [x] Namespace, project and imports are passed as hints, not as filters
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

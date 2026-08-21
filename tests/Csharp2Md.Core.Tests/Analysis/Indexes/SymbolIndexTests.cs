@@ -389,6 +389,7 @@ public sealed class SymbolIndexTests
 
         Assert.Equal(SymbolLookupStatus.Unique, result.Status);
         Assert.Equal("OrderService", Assert.Single(result.Candidates).Name);
+        Assert.Equal(1, result.TiedCandidateCount);
     }
 
     [Fact]
@@ -409,6 +410,31 @@ public sealed class SymbolIndexTests
         Assert.Equal(
             new[] { first, second }.Select(static symbol => symbol.SymbolId.Value).Order(StringComparer.Ordinal),
             result.Candidates.Select(static symbol => symbol.SymbolId.Value));
+        Assert.Equal(2, result.TiedCandidateCount);
+    }
+
+    [Fact]
+    public void FindCandidates_TwoTiedAtBestRankPlusALowerTierCandidate_TiedCandidateCountExcludesTheLowerTierOne()
+    {
+        var tiedFirst = Symbol("Handler", "global::Acme.Shared.Handler", projectId: ProjectId, documentPath: "First.cs")
+            with
+        { Namespace = "Acme.Shared" };
+        var tiedSecond = Symbol("Handler", "global::Acme.Shared.Handler", projectId: ProjectId, documentPath: "Second.cs")
+            with
+        { Namespace = "Acme.Shared" };
+        var lowerTier = Symbol("Handler", "global::Other.Far.Handler", projectId: OtherProjectId, documentPath: "Far.cs")
+            with
+        { Namespace = "Other.Far" };
+        var index = Build(tiedFirst, tiedSecond, lowerTier);
+
+        var result = index.FindCandidates(new SymbolLookup { Name = "Handler", Namespace = "Acme.Shared" });
+
+        Assert.Equal(SymbolLookupStatus.Ambiguous, result.Status);
+        Assert.Equal(3, result.Candidates.Length);
+        Assert.Equal(2, result.TiedCandidateCount);
+        Assert.Equal(
+            new[] { tiedFirst, tiedSecond }.Select(static symbol => symbol.SymbolId.Value).Order(StringComparer.Ordinal),
+            result.Candidates.Take(result.TiedCandidateCount).Select(static symbol => symbol.SymbolId.Value));
     }
 
     [Fact]
@@ -420,6 +446,7 @@ public sealed class SymbolIndexTests
 
         Assert.Equal(SymbolLookupStatus.NotFound, result.Status);
         Assert.Empty(result.Candidates);
+        Assert.Equal(0, result.TiedCandidateCount);
     }
 
     [Fact]
@@ -468,6 +495,9 @@ public sealed class SymbolIndexTests
             new[] { inContainingType, inNamespace, inImportedNamespace, inSameProject, elsewhere }
                 .Select(static symbol => symbol.SymbolId.Value),
             result.Candidates.Select(static symbol => symbol.SymbolId.Value));
+        // Five candidates span five different priority tiers here - proves TiedCandidateCount reports
+        // only the winning tier's size, not the full returned pool's length.
+        Assert.Equal(1, result.TiedCandidateCount);
     }
 
     [Fact]
