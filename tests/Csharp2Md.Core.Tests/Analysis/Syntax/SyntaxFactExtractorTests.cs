@@ -463,6 +463,79 @@ public sealed class SyntaxFactExtractorTests
     }
 
     [Fact]
+    public void Extract_CallThroughAConstructorParameterReceiver_ResolvesTheParametersDeclaredType()
+    {
+        // The design's worked example: public OrderService(PaymentClient paymentClient) makes
+        // paymentClient resolve to PaymentClient.
+        const string source = """
+            class OrderService
+            {
+                public OrderService(PaymentClient paymentClient) => paymentClient.Authorize();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal("PaymentClient", candidate.ReceiverTypeText);
+    }
+
+    [Fact]
+    public void Extract_CallThroughAPrimaryConstructorParameterReceiverOnAClass_ResolvesTheParametersDeclaredType()
+    {
+        const string source = """
+            class OrderService(PaymentsClient paymentsClient)
+            {
+                void Run() => paymentsClient.Authorize();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal("PaymentsClient", candidate.ReceiverTypeText);
+    }
+
+    [Fact]
+    public void Extract_CallThroughAPrimaryConstructorParameterReceiverOnARecord_ResolvesTheParametersDeclaredType()
+    {
+        const string source = """
+            record OrderService(PaymentsClient paymentsClient)
+            {
+                void Run() => paymentsClient.Authorize();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal("PaymentsClient", candidate.ReceiverTypeText);
+    }
+
+    [Fact]
+    public void Extract_CallThroughAPrimaryConstructorParameterShadowedByALocal_ResolvesTheLocalsDeclaredType()
+    {
+        // C# scoping: a local variable declared inside a method hides the outer parameter of the
+        // same name, so the local's own (different) declared type is what resolves - not the
+        // primary-constructor parameter's.
+        const string source = """
+            class OrderService(PaymentsClient paymentsClient)
+            {
+                void Run()
+                {
+                    LegacyPaymentsClient paymentsClient = GetLegacyClient();
+                    paymentsClient.Authorize();
+                }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal("LegacyPaymentsClient", candidate.ReceiverTypeText);
+    }
+
+    [Fact]
     public void Extract_NewOfDenylistedFrameworkType_EmitsNoCreates()
     {
         const string source = """

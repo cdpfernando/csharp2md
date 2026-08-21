@@ -377,11 +377,11 @@ primary-constructor parameter of the enclosing type.
 
 **Done when**:
 
-- [ ] The design's worked example resolves: `public OrderService(PaymentClient paymentClient)` makes `paymentClient` resolve to `PaymentClient`
-- [ ] A primary-constructor parameter on a class and on a record both resolve
-- [ ] A parameter shadowed by a local of a different type resolves to the local, matching C# scoping
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] The design's worked example resolves: `public OrderService(PaymentClient paymentClient)` makes `paymentClient` resolve to `PaymentClient`
+- [x] A primary-constructor parameter on a class and on a record both resolve
+- [x] A parameter shadowed by a local of a different type resolves to the local, matching C# scoping
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
