@@ -664,13 +664,13 @@ isolation, plus `UnresolvedStrategy`, which always handles.
 
 **Done when**:
 
-- [ ] The chain stops at the first strategy that handles a claim, proven with a recording double
-- [ ] A throwing strategy contributes `C2M-RELR-006`, has its outcome discarded, and the walk continues
-- [ ] Every claim yields exactly one relation, because the terminal strategy cannot be fallen through
-- [ ] A relation left unresolved carries an `unresolved_reason` naming the observed text, and `C2M-RELR-001`
-- [ ] Cancellation propagates and is never converted into a diagnostic
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] The chain stops at the first strategy that handles a claim, proven with a recording double
+- [x] A throwing strategy contributes `C2M-RELR-006`, has its outcome discarded, and the walk continues
+- [x] Every claim yields exactly one relation, because the terminal strategy cannot be fallen through
+- [x] A relation left unresolved carries an `unresolved_reason` naming the observed text, and `C2M-RELR-001`
+- [x] Cancellation propagates and is never converted into a diagnostic
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
