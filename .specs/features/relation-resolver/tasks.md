@@ -922,21 +922,45 @@ that declaration's span as an additional `Evidence` entry.
 
 **What**: Rewrite every existing assertion that looks for relations in a document fragment to look in the
 resolver's fragment, and re-approve the affected snapshots.
-**Where**: `tests/Csharp2Md.Core.Tests/Analysis/RelationCollectorEndToEndTests.cs`
+**Where**: `tests/Csharp2Md.Core.Tests/Analysis/RelationCollectorEndToEndTests.cs`,
+`tests/Csharp2Md.Core.Tests/Analysis/RelationCollectorWiringTests.cs`,
+`tests/Csharp2Md.Core.Tests/Analysis/RelationCollectorTrustedWiringTests.cs`,
+`tests/Csharp2Md.Core.Tests/Analysis/V3DeterminismTests.cs`,
+`tests/Csharp2Md.Core.Tests/Projection/Aggregates/AggregateRelationPartitionTests.cs`,
+`tests/Csharp2Md.Core.Tests/Cli/EndToEndTests.cs`,
+`tests/Csharp2Md.Core.Tests/Analysis/DataAccessDiscoveryEndToEndTests.cs`,
+`tests/Csharp2Md.Core.Tests/Analysis/AnalysisEngineTests.cs`
 **Depends on**: T24
 **Reuses**: The `data-access-discovery` precedent for re-approving a snapshot line by line
 **Requirement**: RELR-12
 
-**Tools**:
-
-- MCP: NONE
-- Skill: `dotnet-skills:slopwatch`
+**Scope note (added after Phase 3 execution, 2026-08-21):** The T12-T14 batch confirmed by direct
+`dotnet test` run that this breakage is wider than `spec.md`/`design.md` anticipated. Two distinct
+groups of pre-existing tests now fail because nothing between T14 and T23 persists a relation yet
+(T14's own worker report + this run's own tail confirm 46 failures, matching): (1) tests scoped to
+this feature's own `RelationCollector` output — `RelationCollectorWiringTests`,
+`RelationCollectorTrustedWiringTests` (incl. its `+Refinement` fixture),
+`RelationCollectorEndToEndTests`, `AggregateRelationPartitionTests.HttpPartitionFile_*` /
+`StructuralPartitionFile_*`, one `V3DeterminismTests` snapshot, and one
+`Cli/EndToEndTests.Run_AgainstFixture_WritesSyntaxOnlyRelationPartitionsWithoutV2Graph` case; (2) a
+second, previously-undisclosed group belonging to the **already-shipped** `data-access-discovery`
+feature, broken purely because T14 changed `DatabaseMappingResolver`'s output type — all 27 cases in
+`DataAccessDiscoveryEndToEndTests.cs`,
+`AnalysisEngineTests.AnalyzeAsync_EfCoreProject_WritesTheResolvedDataRelationPartition`, and
+`AggregateRelationPartitionTests.DataPartitionFile_CarriesThePersistenceRelationsPassTwoResolved` /
+`DataPartitionFile_RecordsTheFixturesUnconfiguredEntityAsAConventionMapping`. Both groups are
+explicitly this task's scope now — T25 is not done until every one of them passes again, on top of
+the `RelationCollectorEndToEndTests.cs` migration `spec.md` already called for. Two pre-existing,
+unrelated flakes (`DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml`,
+`ProcessTreeProbeTests`) are out of scope — confirmed reproducing before T12 and passing in isolation.
 
 **Done when**:
 
 - [ ] Every migrated assertion is at least as strict as the one it replaces; any that becomes stricter is called out in the commit body
 - [ ] No test is deleted, skipped, or weakened to accommodate the move
 - [ ] `RelationCollectorWiringTests` and `RelationCollectorTrustedWiringTests` assert the claim path and still cover what they covered before
+- [ ] `DataAccessDiscoveryEndToEndTests.cs` (all 27 cases) and `AnalysisEngineTests.AnalyzeAsync_EfCoreProject_WritesTheResolvedDataRelationPartition` pass again against the resolver's fragment, unweakened
+- [ ] Both `AggregateRelationPartitionTests.DataPartitionFile_*` cases pass again
 - [ ] Each re-approved snapshot diff is reviewed line by line
 - [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
 - [ ] Test count recorded (no silent deletions)
