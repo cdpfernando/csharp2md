@@ -817,12 +817,12 @@ occurrence ordinal, and order the output by `RelationFactId`.
 
 **Done when**:
 
-- [ ] A test asserts every id the resolver mints for the fixture equals the id the pre-change collector minted for the same claim — this is the design's named ordinal risk, so it is proven, not argued
-- [ ] No resolution field reaches the fingerprint, proven by resolving one claim two ways and comparing ids
-- [ ] Two claims tying on every ranking signal both appear, ordered ordinally, with no first-seen tiebreak
-- [ ] Output is ordered by `RelationFactId` ordinal comparison
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A test asserts every id the resolver mints for the fixture equals the id the pre-change collector minted for the same claim — this is the design's named ordinal risk, so it is proven, not argued
+- [x] No resolution field reaches the fingerprint, proven by resolving one claim two ways and comparing ids
+- [x] Two claims tying on every ranking signal both appear, ordered ordinally, with no first-seen tiebreak
+- [x] Output is ordered by `RelationFactId` ordinal comparison
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

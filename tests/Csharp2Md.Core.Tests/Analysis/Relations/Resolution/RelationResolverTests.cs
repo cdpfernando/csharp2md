@@ -90,6 +90,147 @@ public sealed class RelationResolverTests
             () => resolver.Resolve(snapshot, EmptyIndex, NoKnownFacts, cts.Token));
     }
 
+    /// <summary>
+    /// T21's named ordinal risk (design.md's Risks table, `RelationCollector.cs:39`): the pre-refactor
+    /// collector minted a fresh <c>kind\0claim</c>-keyed ordinal dictionary once per document, with no
+    /// owner in the key. The resolver mints run-wide, keyed <c>owner\0kind\0claim</c> (design.md line
+    /// 134). This reconstructs the pre-refactor algorithm verbatim (from `RelationCollector.cs` before
+    /// commit `fc96d75`, i.e. before T12) and proves it mints byte-identical ids to today's resolver for
+    /// a representative multi-owner, multi-kind, single-document claim set - proven, not argued.
+    /// </summary>
+    [Fact]
+    public void Resolve_RepresentativeDocumentClaims_MintsTheSameIdsThePreRefactorCollectorWouldHave()
+    {
+        var ownerA = SymbolFactId.CreateSyntactic(ProjectId, "Worker.cs", "method", "class:Worker/Handle/one").ToFactId();
+        var ownerB = SymbolFactId.CreateSyntactic(ProjectId, "Worker.cs", "method", "class:Worker/Handle/two").ToFactId();
+        var claims = new[]
+        {
+            Claim("calls", "PaymentClient.Authorize") with { OwnerId = ownerA },
+            Claim("creates", "OrderFactory") with { OwnerId = ownerA },
+            // Same owner, same kind, same target text as the first: exercises the ordinal counter.
+            Claim("calls", "PaymentClient.Authorize") with
+            {
+                OwnerId = ownerA, Evidence = new Evidence(DocumentId, "Worker.cs", 2, 1, 2, 10),
+            },
+            Claim("references", "IEventBus") with { OwnerId = ownerB },
+        };
+        var resolver = RelationResolver.Default;
+        var snapshot = SnapshotOf(claims);
+        var legacyOrdinals = new Dictionary<string, int>(StringComparer.Ordinal);
+        var expectedIds = snapshot.Claims.Select(claim => LegacyMint(legacyOrdinals, claim)).ToArray();
+
+        var resolution = resolver.Resolve(snapshot, EmptyIndex, NoKnownFacts, CancellationToken.None);
+
+        Assert.Equal(4, resolution.Facts.Length);
+        foreach (var expected in expectedIds)
+        {
+            Assert.Contains(resolution.Facts, fact => fact.RelationId.Value == expected.Value);
+        }
+    }
+
+    [Fact]
+    public void Resolve_TheSameClaimResolvedTwoWaysWithDifferentOutcomes_MintsTheIdenticalId()
+    {
+        var claim = Claim("references", "PaymentClient");
+        var target = new SymbolFact(
+            FactHeader.Create(SymbolFactId.CreateSyntactic(ProjectId, "Client.cs", "class", "class:PaymentClient").ToFactId(), FactKind.Symbol, FactResolution.Syntactic),
+            SymbolFactId.CreateSyntactic(ProjectId, "Client.cs", "class", "class:PaymentClient"),
+            DocumentFactId.Create(ProjectId, "Client.cs"),
+            "class",
+            ContainsErrorSymbol: false,
+            [], [], [],
+            Semantics: null,
+            Name: "PaymentClient",
+            FullyQualifiedName: "global::Acme.PaymentClient",
+            Namespace: null,
+            ContainingType: null,
+            ContainingSymbolId: null,
+            Signature: "class PaymentClient",
+            Arity: 0,
+            ParameterTypes: []);
+        var indexWithTarget = SymbolIndexBuilder.Build([target], [], [], []);
+        var resolver = RelationResolver.Default;
+
+        var resolvedFound = resolver.Resolve(SnapshotOf(claim), indexWithTarget, NoKnownFacts, CancellationToken.None);
+        var resolvedMissing = resolver.Resolve(SnapshotOf(claim), EmptyIndex, NoKnownFacts, CancellationToken.None);
+
+        var foundFact = Assert.Single(resolvedFound.Facts);
+        var missingFact = Assert.Single(resolvedMissing.Facts);
+        Assert.NotEqual(foundFact.Method, missingFact.Method);
+        Assert.Equal(foundFact.RelationId.Value, missingFact.RelationId.Value);
+    }
+
+    [Fact]
+    public void Resolve_TwoClaimsTyingOnEveryRankingSignal_BothAppearOrderedOrdinallyWithNoFirstSeenTiebreak()
+    {
+        var first = Claim("calls", "Foo");
+        var second = Claim("calls", "Foo") with { Evidence = new Evidence(DocumentId, "Worker.cs", 5, 1, 5, 10) };
+        var resolver = RelationResolver.Default;
+        var snapshot = SnapshotOf(first, second);
+
+        var resolution = resolver.Resolve(snapshot, EmptyIndex, NoKnownFacts, CancellationToken.None);
+
+        Assert.Equal(2, resolution.Facts.Length);
+        Assert.DoesNotContain("ordinal=2", resolution.Facts[0].RelationId.Value, StringComparison.Ordinal);
+        Assert.Contains("ordinal=1", resolution.Facts[0].RelationId.Value, StringComparison.Ordinal);
+        Assert.Contains("ordinal=2", resolution.Facts[1].RelationId.Value, StringComparison.Ordinal);
+        Assert.True(string.CompareOrdinal(resolution.Facts[0].RelationId.Value, resolution.Facts[1].RelationId.Value) < 0);
+    }
+
+    [Fact]
+    public void Resolve_Output_IsOrderedByRelationFactIdOrdinalComparisonNotByEvidenceOrInsertionOrder()
+    {
+        // Owner "AAAA" mints an id that sorts before owner "ZZZZ"'s, but is placed *second* in the
+        // document (a later evidence position) - so an evidence- or insertion-preserving sort would
+        // put it after the "ZZZZ" claim, while a genuine RelationFactId sort must put it first.
+        var laterInDocumentButEarlierId =
+            SymbolFactId.CreateSyntactic(ProjectId, "Worker.cs", "method", "class:Worker/Handle/aaaa").ToFactId();
+        var earlierInDocumentButLaterId =
+            SymbolFactId.CreateSyntactic(ProjectId, "Worker.cs", "method", "class:Worker/Handle/zzzz").ToFactId();
+        var firstInDocument = Claim("references", "One") with
+        {
+            OwnerId = earlierInDocumentButLaterId,
+            Evidence = new Evidence(DocumentId, "Worker.cs", 1, 1, 1, 5),
+        };
+        var secondInDocument = Claim("references", "Two") with
+        {
+            OwnerId = laterInDocumentButEarlierId,
+            Evidence = new Evidence(DocumentId, "Worker.cs", 2, 1, 2, 5),
+        };
+        var resolver = RelationResolver.Default;
+        var snapshot = SnapshotOf(firstInDocument, secondInDocument);
+        // Confirms the accumulator's own evidence-first order places the "zzzz"-owned claim first -
+        // the premise this test needs before it can show the resolver re-sorts past that order.
+        Assert.Equal(
+            [earlierInDocumentButLaterId, laterInDocumentButEarlierId],
+            snapshot.Claims.Select(static claim => claim.OwnerId));
+
+        var resolution = resolver.Resolve(snapshot, EmptyIndex, NoKnownFacts, CancellationToken.None);
+
+        Assert.Equal(2, resolution.Facts.Length);
+        Assert.Equal(
+            resolution.Facts.OrderBy(static fact => fact.RelationId.Value, StringComparer.Ordinal).Select(static fact => fact.RelationId.Value),
+            resolution.Facts.Select(static fact => fact.RelationId.Value));
+        Assert.Equal(laterInDocumentButEarlierId, resolution.Facts[0].SourceId);
+    }
+
+    /// <summary>
+    /// The exact pre-refactor algorithm (`RelationCollector.ClaimFor`/`NextOrdinal`, before commit
+    /// `fc96d75`): a fresh per-document ordinal dictionary keyed <c>kind\0claim</c> - no owner in the
+    /// key, unlike the resolver's <c>owner\0kind\0claim</c>.
+    /// </summary>
+    private static RelationFactId LegacyMint(Dictionary<string, int> ordinals, RawRelation claim)
+    {
+        var fingerprint = LegacyFingerprint(claim.Details);
+        var key = $"{claim.Kind}\0{fingerprint}";
+        var ordinal = ordinals.GetValueOrDefault(key) + 1;
+        ordinals[key] = ordinal;
+        return RelationFactId.Create(claim.OwnerId, claim.Kind, fingerprint, ordinal);
+    }
+
+    private static string LegacyFingerprint(ImmutableArray<RelationDetail> details) =>
+        string.Join('|', details.Select(static detail => $"{detail.Key}={detail.Value}")).Trim();
+
     /// <summary>An <c>IRelationResolutionStrategy</c> whose outcome each test supplies, recording how often it ran.</summary>
     private sealed class RecordingStrategy : IRelationResolutionStrategy
     {
