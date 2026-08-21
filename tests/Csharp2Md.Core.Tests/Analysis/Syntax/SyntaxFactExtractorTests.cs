@@ -413,6 +413,56 @@ public sealed class SyntaxFactExtractorTests
     }
 
     [Fact]
+    public void Extract_CallThroughAFieldBackedReceiver_ResolvesTheFieldsDeclaredType()
+    {
+        const string source = """
+            class OrderService
+            {
+                PaymentsClient paymentsClient;
+                void Run() => paymentsClient.Authorize();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal("PaymentsClient", candidate.ReceiverTypeText);
+    }
+
+    [Fact]
+    public void Extract_CallThroughAPropertyBackedReceiver_ResolvesThePropertysDeclaredType()
+    {
+        const string source = """
+            class OrderService
+            {
+                PaymentsClient PaymentsClient { get; }
+                void Run() => PaymentsClient.Authorize();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal("PaymentsClient", candidate.ReceiverTypeText);
+    }
+
+    [Fact]
+    public void Extract_CallThroughAReceiverWithNoMatchingDeclaration_LeavesReceiverTypeTextNull()
+    {
+        const string source = """
+            class OrderService
+            {
+                void Run() => unknownReceiver.Authorize();
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Null(candidate.ReceiverTypeText);
+    }
+
+    [Fact]
     public void Extract_NewOfDenylistedFrameworkType_EmitsNoCreates()
     {
         const string source = """

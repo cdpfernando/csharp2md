@@ -635,9 +635,10 @@ internal static class SyntaxFactExtractor
     }
 
     /// <summary>
-    /// A receiver's syntactic type name when it is a bare identifier bound to a parameter or a
-    /// non-<c>var</c> local variable declared in the same enclosing member. Returns <c>null</c> (not
-    /// determinable) for anything else, including <c>var</c>-declared locals.
+    /// A receiver's syntactic type name when it is a bare identifier bound to a parameter, a
+    /// non-<c>var</c> local variable declared in the same enclosing member, or a field or property
+    /// declared directly on the enclosing type (RELR-07). Returns <c>null</c> (not determinable) for
+    /// anything else, including <c>var</c>-declared locals.
     /// </summary>
     private static string? DeclaredReceiverTypeName(ExpressionSyntax receiver)
     {
@@ -670,6 +671,36 @@ internal static class SyntaxFactExtractor
             && declaredType is not IdentifierNameSyntax { Identifier.ValueText: "var" })
         {
             return SimpleTypeName(declaredType);
+        }
+
+        return DeclaredMemberTypeName(receiver, name);
+    }
+
+    /// <summary>
+    /// A field or property declared directly on the receiver's enclosing type (RELR-07). Only direct
+    /// members are searched - never a nested type's own same-named member, and never an inherited
+    /// member, which syntax alone cannot see. A field's type genuinely cannot be <c>var</c> in valid
+    /// C#, but the check mirrors the local-variable rule anyway rather than assuming well-formed input.
+    /// </summary>
+    private static string? DeclaredMemberTypeName(SyntaxNode receiver, string name)
+    {
+        if (receiver.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault() is not { } enclosingType)
+        {
+            return null;
+        }
+
+        foreach (var member in enclosingType.Members)
+        {
+            switch (member)
+            {
+                case FieldDeclarationSyntax { Declaration.Type: { } fieldType } field
+                    when field.Declaration.Variables.Any(variable => variable.Identifier.ValueText == name):
+                    return fieldType is IdentifierNameSyntax { Identifier.ValueText: "var" } ? null : SimpleTypeName(fieldType);
+
+                case PropertyDeclarationSyntax { Identifier.ValueText: var propertyName, Type: { } propertyType }
+                    when propertyName == name:
+                    return propertyType is IdentifierNameSyntax { Identifier.ValueText: "var" } ? null : SimpleTypeName(propertyType);
+            }
         }
 
         return null;

@@ -348,11 +348,11 @@ on the enclosing type.
 
 **Done when**:
 
-- [ ] A call through a field-backed receiver resolves to the field's declared type
-- [ ] A call through a property-backed receiver resolves to the property's declared type
-- [ ] A field whose type is `var`-like or unreadable still returns `null` rather than guessing
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A call through a field-backed receiver resolves to the field's declared type
+- [x] A call through a property-backed receiver resolves to the property's declared type
+- [x] A field whose type is `var`-like or unreadable still returns `null` rather than guessing
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
