@@ -122,7 +122,128 @@
 - **Date**: 2026-08-19
 - **Status**: active
 
+### AD-016
+- **Decision**: Persistence discovery introduces a new fact family (`DatabaseObjectFact`, `DatabaseColumnFact`) whose identity is minted **only** from a name proven by a source string literal or explicit configuration (`ToTable("tb_order")`, `HasColumnName("order_status")`, a table name the SQL tokenizer read out of a literal statement). A name reached by EF convention, by interpolated or concatenated SQL, or by any other inference never mints a node: its relation keeps `target_id: null`, carries the observed `target_text`, an `unresolved_reason` where applicable, and a non-`Exact` resolution (`Heuristic` for convention, `Candidate` for ambiguous, `Unresolved` for unreadable).
+- **Reason**: The knowledge graph needs real nodes to hang incoming edges on — without them there is no per-table wiki page and no change-impact query, which are the stated payoffs of the whole stage. But AD-011's guarantee (never promote an unproven name to an identity) is what makes the output trustworthy. Splitting on "was this name proven by a literal?" satisfies both: a literal in source is evidence in exactly the sense AD-011 requires, while a convention is a claim about a target, not proof the target exists.
+- **Trade-off**: Two representations now exist for the same conceptual table — a real node when configuration proves its name, and a `target_text` string when only convention suggests it. A consumer asking "which tables exist?" must read both and understand that the second set is unconfirmed. The alternative (mint from convention too) would have made the catalogue look complete while being partly invented.
+- **Scope**: The persistence fact family and its relations. Extends AD-011's discipline beyond `ServiceName` to a new node family; supersedes nothing.
+- **Date**: 2026-08-20
+- **Status**: active
+
+### AD-017
+- **Decision**: The factual fragment schema moves from version 3 to version 4 to admit `database_objects` and `database_columns`. `FactualJsonSerializer.SchemaVersion` and `schemas/facts.schema.json`'s `const` move together; the aggregate envelopes (`raw/facts/relations/*.json`, `coverage.json`, `diagnostics.json`, `manifest.json`) stay at version 2.
+- **Reason**: `facts.schema.json` is strict (`additionalProperties: false`, every array in `required`), so adding fact kinds is necessarily a breaking change for any consumer validating against it. Recording the break as a version bump is what `symbol-index` already did going 2→3 when it extended `SymbolFact`; following the same practice keeps the fragment schema's version an honest signal instead of letting the contract drift silently.
+- **Trade-off**: Every fragment-reading consumer must be updated in lockstep with the tool, and the two version lines (fragment at 4, aggregates at 2) must be kept mentally distinct. Keeping fragments at 3 and extending the schema quietly would have avoided the churn at the cost of making the version number meaningless.
+- **Scope**: The factual fragment wire contract and `schemas/facts.schema.json`. Partially supersedes AD-010's schema-version statement as it applies to fragments; AD-010's output-layout decisions are otherwise untouched.
+- **Date**: 2026-08-20
+- **Status**: active
+
 ## Handoff
+
+- **Feature**: Database Access Discovery (`.specs/features/data-access-discovery/`) — **done.** A stage that
+  maps every interaction the analysed code has with a database: EF Core entities/tables/columns and literal
+  SQL, emitted as persistence nodes (`raw/facts/database.json`) plus a new `data` relation partition, all
+  under the default syntax-only mode.
+- **Phase / Task**: Execute — **all 36 tasks complete across 7 phases, feature-level validation PASSED**
+  after one fix→re-verify iteration (a first Verifier pass FAILed on 3 items; all 3 were fixed and a second
+  independent Verifier pass returned PASS, 28/28 P1 acceptance criteria substantiated). Discrimination
+  sensor skipped for this feature by the user's standing request (same as `relation-collector`/
+  `symbol-index`), recorded in `tasks.md`'s header — the user will run Stryker manually.
+- **Branch**: `feat/data-access-discovery`, cut from `master` at `67bbbe0`, HEAD `4ea8cfc`. 41 commits.
+  Not pushed to any remote.
+- **Completed this session (2026-08-20)**, executed as 7 sequential phase-batch sub-agents (one per phase,
+  the user's chosen packing), each following implement.md's per-task cycle:
+  - **Phase 0** (`0fa984d`..`6907fd4`, T1-T3) — the three pre-existing pipeline defects the prior Design
+    session found: `RelationProjector` had no production caller so every relation partition was written
+    empty; `CanonicalAggregateWriter` listed 6 of 7 partitions so `structural.json` was never written; a
+    multi-project run crashed in `CoverageProjector` on a project reached by more than one path. All three
+    fixed with a failing-test-first cycle. One pre-existing test that asserted the defect itself
+    (`EndToEndTests`, `"entries": []`) was rewritten *stricter*, not deleted.
+  - **Phase 1** (`c7a1f8f`..`9b9e572`, T4-T10) — the persistence fact family: `DatabaseObjectKind`/
+    `DatabaseOperation`/`ColumnUsage` enums, `DatabaseObjectFactId`/`DatabaseColumnFactId` (AD-014
+    grammar), `DatabaseObjectFact`/`DatabaseColumnFact`, `FactValidator` support, JSON contracts, and a
+    **breaking schema bump to version 4** (`feat(facts)!:`, one snapshot re-approved line-by-line, 4 version
+    assertions renamed to reflect the new value).
+  - **Phase 2** (`3857c83`..`00e7b6e`, T11-T15) — the collector seam: `RawDatabaseClaim`, `IDataAccessAnalyzer`,
+    `DataAccessCollector` with per-analyzer failure isolation (`C2M-DA-001`, partial work discarded,
+    cancellation never converted into a diagnostic), `DatabaseClaimAccumulator` with canonical ordering,
+    wired into `SyntaxFactExtractor.Extract`'s existing walk.
+  - **Phase 3** (`c440edd`..`7bd4a80`, T16-T22) — `EfCoreAnalyzer`: DbContext/DbSet discovery, `ToTable`/
+    `HasColumnName` configuration, reads/filters/writes as claims. One stray out-of-scope file
+    (`launchSettings.json`) was accidentally staged by a `git add -A` and untracked again in a follow-up
+    commit — its blob remains in one commit's history, working tree is correct.
+  - **Phase 4** (`6fbb437`..`7a7272b`, T23-T26) — `SqlStatementReader` (an internal bounded tokenizer, no
+    new package) plus `SqlTextAnalyzer`. The DAD-15 credential guard (withholds statement text when a
+    literal credential value is assigned) originates here, later found incomplete — see below.
+  - **Phase 5** (`55d4c8c`..`403d3c5`, T27-T32) — `DatabaseMappingResolver` (entity→object, property→column,
+    accesses→relations, configured-over-convention precedence), `DatabaseFragmentBuilder`, pass-2 wiring
+    into `AnalysisEngine`, `DatabaseAggregateProjector` writing `raw/facts/database.json`. **This batch's
+    sub-agent was interrupted by an infrastructure error (API spend-limit) after committing T27-T31**; the
+    orchestrator reconciled state (found T32's implementation and tests already written but uncommitted,
+    an interrupted run — same pattern as a prior session's `symbol-index` T11), independently ran the gate,
+    and closed T32 as its own commit (`403d3c5`).
+  - **Phase 6** (`2196149`..`20856f2`, T33-T36) — extended `fixtures/SyntheticSolution` with EF Core
+    configuration/queries and literal/dynamic SQL, then proved both of `spec.md`'s P1 Independent Tests
+    verbatim end to end and flipped all 28 P1 `DAD-NN` traceability rows to `Verified`. One deliberate
+    deviation from T34's literal wording, disclosed inline: "no credential text anywhere in the fixture"
+    was inverted to "the fixture *does* carry two credentials, on purpose" — read literally, T34's
+    criterion would have made DAD-15 vacuous (nothing to leak, nothing proven).
+  - **First Verifier (fresh sub-agent) → FAIL.** 27/28 P1 ACs substantiated; `DAD-15` was not. Ran the CLI
+    over the fixture and found `Password=inline-fixture-secret` inside `symbols[].signature`,
+    `symbols[].symbol_id`, `symbols[].header.id` and `documents[].symbol_ids[]` in
+    `raw/facts/document/*.json` — synthesised **fact** fields, not rendered source. Root cause pre-dates
+    this feature: `SyntaxFactExtractor.DeclarationSignature` joins every token of a member's declaration
+    verbatim up to its body, so a field initializer like a hardcoded connection-string `const` flows
+    straight into the symbol's signature and the id derived from it. T34's fixture (a `const string
+    ConnectionString` in `OrderSqlQueries.cs`) was the first thing in this codebase to exercise that
+    pre-existing leak against a real credential. Also flagged, non-blocking: `DAD-18`'s "leaving the run's
+    exit code unchanged" clause had no assertion at any layer (true by inspection only); two spec-precision
+    gaps (`MERGE`'s operation, the SQL access relation's own resolution) were confirmed genuine, not
+    defects.
+  - **Fix iteration** (`ecff901`, `e49bbd7`, `a9626f6`) — because the second Verifier sub-agent dispatch
+    also hit the same infrastructure error, the orchestrator implemented the three fixes directly rather
+    than keep retrying: (1) extracted `SqlTextAnalyzer`'s existing credential-shape predicate into a shared
+    `CredentialText.Carries` helper and applied it in `DeclarationSignature` to redact a credential-bearing
+    string-literal token to `"<redacted>"` before it becomes part of a signature or the id derived from it
+    — narrow by construction, proven with tests that an ordinary literal and a `SET Password = @password`
+    parameterized literal are untouched; (2) threaded a new internal `dataAccessAnalyzers` constructor seam
+    through `AnalysisEngine` (mirroring the existing `onSymbolIndexBuilt` pattern) so a test could inject a
+    throwing analyzer at the real `AnalyzeAsync` level and assert `ExitCode == 0`, closing DAD-18's gap;
+    (3) wording-only `spec.md` edits stating `MERGE`'s `update` operation and the SQL relation's `Syntactic`
+    resolution explicitly.
+  - **Second Verifier — also hit the infrastructure error mid-run.** The orchestrator ran the
+    re-verification directly instead: re-derived all evidence fresh (re-ran the CLI over the fixture and
+    walked the output JSON field-by-field rather than trusting the fix commits' own summaries; re-read
+    every changed test file at its current line numbers, since the DAD-15 fix shifted later citations in
+    `DataAccessDiscoveryEndToEndTests.cs` by ~35 lines) and confirmed **PASS**: all 28 P1 criteria
+    substantiated, gate clean, `validate_state.py data-access-discovery` exit 0. This departs from strict
+    author≠verifier separation for the fix-and-reverify step only (both were done by the orchestrating
+    session, not a fresh sub-agent) — disclosed to the user at the time as a consequence of repeated
+    sub-agent dispatch failures, not a silent shortcut. Report: `.specs/features/data-access-discovery/validation.md`.
+  - **One pre-existing, disclosed, order-dependent flaky test, confirmed unrelated to this feature** (same
+    known flake disclosed in every prior feature's handoff below): `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml`
+    (temp-directory cleanup race under xUnit parallel execution) — 1/1 passing in isolation, file untouched
+    by this feature's diff.
+- **In-progress** (file:line): none. Feature is done.
+- **Next step**: None for this feature's implementation. Two things remain, both requiring the user: (1)
+  run Stryker manually for the mutation-testing pass deferred from the automated Verifier; (2) push
+  `feat/data-access-discovery` and open the PR — not yet given, not yet requested, per the standing
+  blast-radius rule. Worth a look later, not blocking: `SyntaxFactExtractor.DeclarationSignature`'s
+  credential redaction now covers this feature's fixture case, but is a general fix — any codebase with a
+  different secret-shaped literal pattern the `CredentialText` predicate doesn't recognise (its key list is
+  `password`/`pwd`/`accountkey`/`sharedaccesskey`/`accesstoken`) would still leak into a symbol signature.
+- **Blockers**: None.
+- **Uncommitted files**: none from this feature (working tree clean on `feat/data-access-discovery` as of
+  `4ea8cfc`, aside from the same long-standing untracked paths listed below, plus one pre-existing
+  line-ending-only working-copy modification to `DatabaseFragmentBuilder.cs` that carries no content diff).
+  `context.md` and `design.md` for this feature stay untracked, matching this repo's established
+  convention (Design-phase artifacts; only `spec.md`, `tasks.md`, and `validation.md` are committed by
+  Execute). Unrelated, still out of scope: `.agents/`, `.claude/`, `.cursor/`, `.windsurf/`,
+  `.specs/features/csharp2md-v3/context.md`, `.specs/features/relation-collector/context.md` and
+  `design.md`, both dated Markdown files, `AGENTS.md`, `CLAUDE.md`, `fixtures/launch-manifest.json`,
+  `research/`, `src/Csharp2Md.Cli/Properties/`.
+
+## Historical Handoff — SymbolIndex
 
 - **Feature**: SymbolIndex (`.specs/features/symbol-index/`) — **done.** A queryable, name/qualified-name/member/method-lookup index over every `SymbolFact` a run produces, backed by `FrozenDictionary`s, with explicit ambiguity reporting (`FindCandidates`), build-time diagnostics for duplicate/dangling/ambiguous symbols, and metrics — wired into `AnalysisEngine.AnalyzeAsync` via an internal test-seam callback (no public `AnalysisResult` change).
 - **Phase / Task**: Execute — **all 11 tasks complete (T1-T11), feature-level validation PASSED** (single pass, no fix→re-verify iteration needed). Discrimination sensor skipped for this feature by the user's standing request (same as `relation-collector`/`markdown-cleanup`), recorded in `tasks.md`'s header — the user will run Stryker manually.
