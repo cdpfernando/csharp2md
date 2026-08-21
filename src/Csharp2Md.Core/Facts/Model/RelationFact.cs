@@ -73,15 +73,15 @@ public sealed record RelationFact(
     string RelationKind,
     string? UnresolvedReason,
     ImmutableArray<RelationDetail> Details = default,
-    // SPEC_DEVIATION: design.md's target shape (relation-resolver/design.md:197-207) declares Method with
-    // no default, required on every construction, once RelationResolver is the sole writer of RelationFact
-    // (AD-018, Phase 4-5). Phase 1 (T1-T4) only lands the wire contract; the pre-existing producers that
-    // still call this constructor directly - DatabaseFragmentBuilder, CompileTimeReferenceDetector and the
-    // orphaned Detection/* detectors - are out of this feature's task list (grep confirms no task touches
-    // them) and are not migrated until later phases. Exact is a safe transitional default: every relation
-    // those producers construct with a non-null TargetId today is genuinely exact-resolved (a configured
-    // database mapping or a same-solution project reference), so C2M-FV-008 (T3) never rejects their
-    // output. Remove this default once every producer sets Method explicitly.
+    // RELR-01: RelationResolver is the sole reachable writer of RelationFact as of T23's AnalysisEngine
+    // wiring - DatabaseFragmentBuilder no longer constructs one directly (its database relations enter
+    // RelationResolver as already-targeted raw relations instead, per AD-018's "ownership of data
+    // relations" decision). The only other `new RelationFact(` call sites are the four Detection/*
+    // detectors (GrpcRelationDetector, CompileTimeReferenceDetector, DependencyInjectionDetector,
+    // AspNetCoreDetector), which remain orphaned from AnalyzeAsync per AD-015 - unreachable in production,
+    // still compiled only because their own tests call them directly. The default keeps them compiling
+    // without forcing Method on every call site; remove it if and when Detection/*'s fate (AD-015's open
+    // question) is resolved by migrating or retiring them.
     ResolutionMethod Method = ResolutionMethod.Exact,
     ImmutableArray<FactId> Candidates = default) : IFact
 {

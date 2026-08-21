@@ -240,45 +240,45 @@ confidence are refinement, and cross-relation enrichment is a whole additional p
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| RELR-01 | P1: Proven targets | Design | Pending |
-| RELR-02 | P1: Proven targets | Design | Pending |
-| RELR-03 | P1: Proven targets | Design | Pending |
-| RELR-04 | P1: Proven targets | Design | Pending |
-| RELR-05 | P1: Proven targets | Design | Pending |
-| RELR-06 | P1: Proven targets | Design | Pending |
-| RELR-07 | P1: Proven targets | Design | Pending |
-| RELR-08 | P1: Proven targets | Design | Pending |
-| RELR-09 | P1: Proven targets | Design | Pending |
-| RELR-10 | P1: Proven targets | Design | Pending |
-| RELR-11 | P1: Proven targets | Design | Pending |
-| RELR-12 | P1: Nothing is lost | Design | Pending |
-| RELR-13 | P1: Nothing is lost | Design | Pending |
-| RELR-14 | P1: Nothing is lost | Design | Pending |
-| RELR-15 | P1: Nothing is lost | Design | Pending |
-| RELR-16 | P1: Nothing is lost | Design | Pending |
-| RELR-17 | P1: Nothing is lost | Design | Pending |
-| RELR-18 | P1: Nothing is lost | Design | Pending |
-| RELR-19 | P1: Nothing is lost | Design | Pending |
-| RELR-20 | P1: Nothing is lost | Design | Pending |
-| RELR-21 | P1: Deterministic identity | Design | Pending |
-| RELR-22 | P1: Deterministic identity | Design | Pending |
-| RELR-23 | P1: Deterministic identity | Design | Pending |
-| RELR-24 | P1: Deterministic identity | Design | Pending |
-| RELR-25 | P1: Deterministic identity | Design | Pending |
-| RELR-26 | P1: Deterministic identity | Design | Pending |
-| RELR-27 | P1: Database configured vs convention | Design | Pending |
-| RELR-28 | P1: Database configured vs convention | Design | Pending |
-| RELR-29 | P1: Database configured vs convention | Design | Pending |
-| RELR-30 | P1: Database configured vs convention | Design | Pending |
-| RELR-31 | P1: Database configured vs convention | Design | Pending |
-| RELR-32 | P1: Database configured vs convention | Design | Pending |
-| RELR-33 | P1: Measurable outcomes | Design | Pending |
-| RELR-34 | P1: Measurable outcomes | Design | Pending |
-| RELR-35 | P1: Measurable outcomes | Design | Pending |
-| RELR-36 | P1: Measurable outcomes | Design | Pending |
-| RELR-37 | P1: Measurable outcomes | Design | Pending |
-| RELR-38 | P1: Measurable outcomes | Design | Pending |
-| RELR-39 | P1: Measurable outcomes | Design | Pending |
+| RELR-01 | P1: Proven targets | T23 | Verified |
+| RELR-02 | P1: Proven targets | T19 | Verified |
+| RELR-03 | P1: Proven targets | T19 | Verified |
+| RELR-04 | P1: Proven targets | T17 | Verified |
+| RELR-05 | P1: Proven targets | T18 | Verified |
+| RELR-06 | P1: Proven targets | T18 | Verified |
+| RELR-07 | P1: Proven targets | T30 | Verified |
+| RELR-08 | P1: Proven targets | T18 | Verified |
+| RELR-09 | P1: Proven targets | T16 | Verified |
+| RELR-10 | P1: Proven targets | T18 | Verified |
+| RELR-11 | P1: Proven targets | T16 | Verified |
+| RELR-12 | P1: Nothing is lost | T16 | Verified |
+| RELR-13 | P1: Nothing is lost | T17 | Verified |
+| RELR-14 | P1: Nothing is lost | T17 | Verified |
+| RELR-15 | P1: Nothing is lost | T16 | Verified |
+| RELR-16 | P1: Nothing is lost | T16 | Verified |
+| RELR-17 | P1: Nothing is lost | T21 | Verified |
+| RELR-18 | P1: Nothing is lost | T21 | Verified |
+| RELR-19 | P1: Nothing is lost | T22 | Verified |
+| RELR-20 | P1: Nothing is lost | T22 | Verified |
+| RELR-21 | P1: Deterministic identity | T30 | Verified |
+| RELR-22 | P1: Deterministic identity | T21 | Verified |
+| RELR-23 | P1: Deterministic identity | T21 | Verified |
+| RELR-24 | P1: Deterministic identity | T17 | Verified |
+| RELR-25 | P1: Deterministic identity | T21 | Verified |
+| RELR-26 | P1: Deterministic identity | T21 | Verified |
+| RELR-27 | P1: Database configured vs convention | T20 | Verified |
+| RELR-28 | P1: Database configured vs convention | T20 | Verified |
+| RELR-29 | P1: Database configured vs convention | T20 | Verified |
+| RELR-30 | P1: Database configured vs convention | T20 | Verified |
+| RELR-31 | P1: Database configured vs convention | T20 | Verified |
+| RELR-32 | P1: Database configured vs convention | T20 | Verified |
+| RELR-33 | P1: Measurable outcomes | T26 | Verified |
+| RELR-34 | P1: Measurable outcomes | T26 | Verified |
+| RELR-35 | P1: Measurable outcomes | T26 | Verified |
+| RELR-36 | P1: Measurable outcomes | T30 | Verified |
+| RELR-37 | P1: Measurable outcomes | T28 | Verified |
+| RELR-38 | P1: Measurable outcomes | T28 | Verified |
+| RELR-39 | P1: Measurable outcomes | T28 | Verified |
 | RELR-40 | P2: Protocol targets | - | Pending |
 | RELR-41 | P2: Protocol targets | - | Pending |
 | RELR-42 | P2: Protocol targets | - | Pending |
@@ -298,7 +298,11 @@ criteria 1 to 6; RELR-46 to RELR-49 to P3 criteria 1 to 4.
 
 **Status values:** Pending -> In Design -> In Tasks -> Implementing -> Verified
 
-**Coverage:** 49 total, 0 mapped to tasks, 49 unmapped (Tasks phase not run yet)
+**Coverage:** 49 total. All 39 P1 rows (`RELR-01`..`RELR-39`) are mapped to a task and `Verified` with
+located `file:line` evidence (cited in the closing commit body). The remaining 10 are `Pending` by design:
+P2 (`RELR-40`..`RELR-45`) and P3 (`RELR-46`..`RELR-49`) are explicitly out of this task list's scope per
+the Out of Scope table above (no `Detection/`-tree producer exists for the protocol resolvers, and P3's
+per-strategy attempt logging and cross-pass enrichment were never scheduled).
 
 ---
 
@@ -319,10 +323,14 @@ criteria 1 to 6; RELR-46 to RELR-49 to P3 criteria 1 to 4.
 ## Success Criteria
 
 - [ ] A run over `fixtures/SyntheticSolution` in the default syntax-only mode produces a non-empty
-      `raw/dependencies.mmd` with at least one edge outside the `data` partition.
-- [ ] Every relation in every `raw/facts/relations/*.json` partition carries a `resolution_method` from the
+      `raw/dependencies.mmd` with at least one edge outside the `data` partition. Not met: per AD-020, this
+      is unreachable regardless of resolution quality (no production path mints a `ComponentFact`, and
+      `RelationProjector.Mermaid`'s project-keyed lookup would miss a symbol/document-shaped
+      `SourceId`/`TargetId` even if one existed) - both pre-existing gaps outside this feature's scope. The
+      file is confirmed written and non-empty (`RelationResolverEndToEndTests.cs:120`).
+- [x] Every relation in every `raw/facts/relations/*.json` partition carries a `resolution_method` from the
       declared eight-value set.
-- [ ] Two runs over identical inputs produce byte-identical relation partition files.
-- [ ] No relation present before the resolver is absent after it: the raw relation count equals the persisted
+- [x] Two runs over identical inputs produce byte-identical relation partition files.
+- [x] No relation present before the resolver is absent after it: the raw relation count equals the persisted
       relation count for every run.
-- [ ] `raw/facts/relations/resolution.json` counts match the partition files exactly.
+- [x] `raw/facts/relations/resolution.json` counts match the partition files exactly.

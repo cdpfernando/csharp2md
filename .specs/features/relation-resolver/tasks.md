@@ -1173,11 +1173,11 @@ fixture.
 
 **Done when**:
 
-- [ ] All 39 P1 rows read `Verified`; the ten P2/P3 rows are untouched
-- [ ] Every flipped row has a test that asserts its criterion, cited by `file:line` in the commit body
-- [ ] Any criterion that cannot be substantiated is left `Pending` and reported, never flipped optimistically
-- [ ] The Coverage line is updated to the real mapped count
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
+- [x] All 39 P1 rows read `Verified`; the ten P2/P3 rows are untouched
+- [x] Every flipped row has a test that asserts its criterion, cited by `file:line` in the commit body
+- [x] Any criterion that cannot be substantiated is left `Pending` and reported, never flipped optimistically
+- [x] The Coverage line is updated to the real mapped count
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
 
 **Tests**: none
 **Gate**: build
