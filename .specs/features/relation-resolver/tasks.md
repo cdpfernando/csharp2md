@@ -406,10 +406,10 @@ pins a `var`-declared local as deliberately unresolvable by syntax.
 
 **Done when**:
 
-- [ ] A call through `is PaymentClient client` resolves `client` to `PaymentClient`
-- [ ] A `var`-declared local returns `null`, with the limit stated in the method's doc comment rather than left implicit
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A call through `is PaymentClient client` resolves `client` to `PaymentClient`
+- [x] A `var`-declared local returns `null`, with the limit stated in the method's doc comment rather than left implicit
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

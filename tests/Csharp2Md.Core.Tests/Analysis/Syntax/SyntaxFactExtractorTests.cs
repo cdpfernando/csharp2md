@@ -536,6 +536,51 @@ public sealed class SyntaxFactExtractorTests
     }
 
     [Fact]
+    public void Extract_CallThroughADeclarationPatternVariableReceiver_ResolvesThePatternsDeclaredType()
+    {
+        const string source = """
+            class OrderService
+            {
+                void Run(object client)
+                {
+                    if (client is PaymentClient paymentClient)
+                    {
+                        paymentClient.Authorize();
+                    }
+                }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Equal("PaymentClient", candidate.ReceiverTypeText);
+    }
+
+    // A var-declared local's type is written nowhere in the syntax; this is a deliberate, permanent
+    // limit of syntax-only receiver resolution, not a gap - pinned so a future change can't silently
+    // regress it into a guess.
+    [Fact]
+    public void Extract_CallThroughAVarDeclaredLocalReceiver_LeavesReceiverTypeTextNullByDesign()
+    {
+        const string source = """
+            class OrderService
+            {
+                void Run()
+                {
+                    var paymentsClient = CreatePaymentsClient();
+                    paymentsClient.Authorize();
+                }
+            }
+            """;
+
+        var extraction = SyntaxFactExtractor.Extract(ProjectId, "src/App/OrderService.cs", source);
+
+        var candidate = Assert.Single(extraction.RelationCandidates, static candidate => candidate.RelationKind == "calls");
+        Assert.Null(candidate.ReceiverTypeText);
+    }
+
+    [Fact]
     public void Extract_NewOfDenylistedFrameworkType_EmitsNoCreates()
     {
         const string source = """

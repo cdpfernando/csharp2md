@@ -636,10 +636,12 @@ internal static class SyntaxFactExtractor
 
     /// <summary>
     /// A receiver's syntactic type name when it is a bare identifier bound to a method or constructor
-    /// parameter, a non-<c>var</c> local variable declared in the same enclosing member, or a
-    /// primary-constructor parameter, field or property declared directly on the enclosing type
-    /// (RELR-07). Returns <c>null</c> (not determinable) for anything else, including <c>var</c>-declared
-    /// locals.
+    /// parameter, a non-<c>var</c> local variable or declaration-pattern variable (e.g. <c>is PaymentClient
+    /// client</c>) declared in the same enclosing member, or a primary-constructor parameter, field or
+    /// property declared directly on the enclosing type (RELR-07). Returns <c>null</c> (not determinable)
+    /// for anything else. This is a deliberate, permanent limit, not a gap to close later: a
+    /// <c>var</c>-declared local's type is not written anywhere in the syntax, so no amount of syntax-only
+    /// extension can read it - only a <see cref="SemanticModel"/> binding could, which pass two does not have.
     /// </summary>
     private static string? DeclaredReceiverTypeName(ExpressionSyntax receiver)
     {
@@ -672,6 +674,16 @@ internal static class SyntaxFactExtractor
             && declaredType is not IdentifierNameSyntax { Identifier.ValueText: "var" })
         {
             return SimpleTypeName(declaredType);
+        }
+
+        var pattern = enclosingMember.DescendantNodes()
+            .OfType<DeclarationPatternSyntax>()
+            .FirstOrDefault(candidate =>
+                candidate.Designation is SingleVariableDesignationSyntax { Identifier.ValueText: var designationName }
+                && designationName == name);
+        if (pattern is not null)
+        {
+            return SimpleTypeName(pattern.Type);
         }
 
         return DeclaredMemberTypeName(receiver, name);
