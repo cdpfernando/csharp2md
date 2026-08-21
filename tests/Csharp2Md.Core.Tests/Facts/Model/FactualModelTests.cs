@@ -137,6 +137,45 @@ public sealed class FactualModelTests
         Assert.Equal(FactResolution.Unresolved, fact.Header.Resolution);
     }
 
+    [Fact]
+    public void RelationFact_MethodAndCandidates_CanBeConstructedExplicitly()
+    {
+        var relationId = RelationFactId.Create(Document.ToFactId(), "calls", "target=x", 1);
+        var candidateOne = SymbolFactId.CreateSyntactic(Project, "Feature.cs", "method", "A").ToFactId();
+        var candidateTwo = SymbolFactId.CreateSyntactic(Project, "Feature.cs", "method", "B").ToFactId();
+        var fact = new RelationFact(
+            Header(relationId.ToFactId(), FactKind.Relation, FactResolution.Candidate),
+            relationId,
+            Document.ToFactId(),
+            TargetId: null,
+            RelationPartition.Structural,
+            "calls",
+            UnresolvedReason: null,
+            Details: [],
+            Method: ResolutionMethod.Candidate,
+            Candidates: [candidateOne, candidateTwo]);
+
+        Assert.Equal(ResolutionMethod.Candidate, fact.Method);
+        Assert.Equal([candidateOne, candidateTwo], fact.Candidates.ToArray());
+    }
+
+    [Fact]
+    public void RelationFact_MethodAndCandidates_DefaultToExactAndEmpty()
+    {
+        var relationId = RelationFactId.Create(Document.ToFactId(), "calls", "target=x", 1);
+        var fact = new RelationFact(
+            Header(relationId.ToFactId(), FactKind.Relation, FactResolution.Exact),
+            relationId,
+            Document.ToFactId(),
+            Target.ToFactId(),
+            RelationPartition.Structural,
+            "calls",
+            null);
+
+        Assert.Equal(ResolutionMethod.Exact, fact.Method);
+        Assert.True(fact.Candidates.IsDefaultOrEmpty);
+    }
+
     [Theory]
     [InlineData(RelationPartition.CompileTime, false)]
     [InlineData(RelationPartition.Inheritance, false)]

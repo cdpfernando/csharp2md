@@ -172,11 +172,11 @@ order 7.
 
 **Done when**:
 
-- [ ] Existing serialized field order is unchanged for the seven fields that already existed
-- [ ] A round-trip test covers a relation with a target and no candidates, and one with candidates and no target
-- [ ] `candidates` serializes as an ordinal-ordered array of fact id strings
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Existing serialized field order is unchanged for the seven fields that already existed
+- [x] A round-trip test covers a relation with a target and no candidates, and one with candidates and no target
+- [x] `candidates` serializes as an ordinal-ordered array of fact id strings
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

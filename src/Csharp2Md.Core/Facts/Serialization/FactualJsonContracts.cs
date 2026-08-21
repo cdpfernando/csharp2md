@@ -136,7 +136,14 @@ public sealed record RelationFactJson(
     [property: JsonPropertyOrder(4)] string Partition,
     [property: JsonPropertyOrder(5)] string RelationKind,
     [property: JsonPropertyOrder(6)] string? UnresolvedReason,
-    [property: JsonPropertyOrder(7)] ImmutableArray<RelationDetailJson>? Details = null);
+    [property: JsonPropertyOrder(7)] ImmutableArray<RelationDetailJson>? Details = null,
+    // SPEC_DEVIATION: kept nullable (rather than the schema-required plain `string` design.md implies) so
+    // FactualSchemaSyncTests' contract-vs-schema "required" check stays in sync with the still-v4 schema
+    // through T2/T3. T4 flips this to non-nullable in lockstep with the schema bump and the required-list
+    // addition (relation-resolver/tasks.md T4). A null value is omitted from the wire output
+    // (DefaultIgnoreCondition.WhenWritingNull), so this addition is invisible to every existing snapshot.
+    [property: JsonPropertyOrder(8)] string? ResolutionMethod = null,
+    [property: JsonPropertyOrder(9)] ImmutableArray<string>? Candidates = null);
 
 public sealed record RelationDetailJson(
     [property: JsonPropertyOrder(0)] string Key,
