@@ -164,68 +164,88 @@
 
 ## Handoff
 
-- **Feature**: RelationResolver (`.specs/features/relation-resolver/`) — **planned, not started.** The stage
-  that turns the pipeline's relation stubs into proven edges: every relation the pipeline emits today carries
-  `target_id: null`, so `raw/dependencies.mmd` has zero edges outside the `data` partition even though
-  `SymbolIndex` has been sitting there unused since the `symbol-index` feature shipped.
-- **Phase / Task**: Specify, Design and Tasks are **complete and user-approved**. Execute has **not begun** —
-  no code written, nothing committed. The user approved the 32-task breakdown on 2026-08-21 and chose to run
-  Execute in a later session.
-- **Branch**: still `feat/data-access-discovery`, HEAD `024b2fe`. **Open decision for whoever starts Execute:**
-  this feature is breaking (fragment schema 4 -> 5), so AD-007 requires its own feature branch. That branch
-  does not exist yet, and `feat/data-access-discovery` is still unpushed and unmerged — decide whether
-  `feat/relation-resolver` cuts from `master` (and waits on the DAD PR) or from `feat/data-access-discovery`
-  before writing the first task.
-- **Artifacts written this session (2026-08-21), all uncommitted**:
-  - `.specs/features/relation-resolver/spec.md` — 49 requirements. P1 `RELR-01`..`RELR-39` across five
-    stories; P2 `RELR-40`..`RELR-45` (HTTP / events / configuration nodes); P3 `RELR-46`..`RELR-49`
-    (confidence, attempts, cross-relation enrichment). `validate_spec.py` exit 0.
-  - `.specs/features/relation-resolver/design.md` — approved. Five-strategy chain, claim-based seam, risks.
-  - `.specs/features/relation-resolver/tasks.md` — approved. 32 tasks, 6 phases (4/7/3/7/4/7).
-    `validate_tasks.py` exit 0 with 5 justified warnings.
-  - `.specs/STATE.md` — AD-018 and AD-019 appended; AD-015 flipped to partially superseded.
-- **Four decisions the user made during Specify and Design**, all recorded in `spec.md`'s Assumptions table:
-  (1) relations are persisted in a pass-two fragment of their own, not in the document fragment;
-  (2) the eight-state resolution vocabulary is a relation-scoped `ResolutionMethod`, not an extension of
-  `FactResolution`; (3) new target-node families only for names a source string literal proved, and events
-  resolve to the message type's existing `SymbolFactId` rather than a new family; (4) P1 is the core pipeline
-  only — HTTP, events, DI and configuration resolvers are P2. A fifth, asked at Design: the collector-to-resolver
-  seam carries context as buffered `RawRelation` claims (the `RawDatabaseClaim` pattern), not as serialized
-  `RelationDetail` entries.
-- **Three findings from the codebase walk that reshaped the scope**, none of them previously recorded:
-  - `SemanticModel` and `SyntaxNode` are disposed with the compilation at the end of pass one, so the user's
-    original `SemanticResolver` / `CandidateSymbolResolver` strategies cannot exist as pass-two strategies.
-    What the semantic pass knows must be *captured* onto the claim during collection instead.
-  - The entire `Detection/` tree (`GrpcRelationDetector`, `DependencyInjectionDetector`, `AspNetCoreDetector`,
-    `CompileTimeReferenceDetector`, `DetectorHost`) still has no production caller — tests only, exactly as
-    AD-015 recorded. So `grpc-call`, `registers` and `resolves-to` relations never reach a resolver, and the
-    gRPC and DI strategies are out of scope for want of an input.
-  - `DatabaseMappingResolver` already resolves entity-to-table and property-to-column with
-    configured-over-convention precedence, and already writes a `mapping` detail holding `configured` /
-    `convention`. Spec sections 18-21 are therefore already shipped; the remaining work is exposing which of
-    the two produced a target, not resolving it.
-- **Three named risks carried into the tasks**, each with a task that proves rather than argues it:
-  - Relation ordinals are per-document today (`RelationCollector.cs:39`). A run-wide resolver keyed only on
-    `kind + claim` would silently renumber relations. T21's gate is a test comparing every minted id against
-    the pre-change collector's id for the same claim.
-  - `DeclaredReceiverTypeName` (`SyntaxFactExtractor.cs:627`) covers only method parameters and non-`var`
-    locals. T8/T9/T10 extend it to fields, properties, constructor and primary-constructor parameters, and
-    pattern variables; `var` locals stay unresolvable by syntax and are documented as such.
-  - Existing tests and snapshots assert relations inside document fragments. T25 migrates them with an
-    explicit no-deletion, no-weakening criterion.
+- **Feature**: none in progress. `RelationResolver` closed out this session — see
+  "Historical Handoff — RelationResolver" below for the full record.
+- **Branch**: `feat/relation-resolver`, HEAD `dea05f5`, stacked on `feat/data-access-discovery` (which is
+  stacked on `master`). Neither branch is pushed to any remote; no PR opened. Pushing/opening a PR requires
+  explicit user go-ahead per AD-007 — not yet requested or given.
 - **In-progress** (file:line): none.
-- **Next step**: resolve the branch question above, then start Execute at Phase 1 / T1. The user's chosen
-  packing was not settled — they were offered one worker per phase (their `data-access-discovery` choice),
-  ~7-task batches, or inline, and deferred the whole question by choosing to review first and execute later.
-  Ask before dispatching.
+- **Next step**: none decided. Candidates, not yet chosen: (a) push and open a PR for the two stacked
+  branches; (b) start the deferred P2 scope (`RELR-40`..`RELR-45` — HTTP/events/configuration node
+  resolvers) as a new feature; (c) start a separate feature to close AD-020's gap (wire a `ComponentFact`
+  producer and fix `RelationProjector.Mermaid`'s project-vs-symbol/document key mismatch), which is what
+  spec.md's `dependencies.mmd`-edge Success Criterion actually needs. Ask the user before assuming any of
+  these.
 - **Blockers**: None.
-- **Uncommitted files**: everything listed under "Artifacts written this session" above, plus the same
-  long-standing untracked paths carried by every prior handoff: `.agents/`, `.claude/`, `.cursor/`,
-  `.windsurf/`, `.specs/features/csharp2md-v3/context.md`, `.specs/features/data-access-discovery/context.md`
-  and `design.md`, `.specs/features/relation-collector/context.md` and `design.md`, both dated Markdown files,
-  `AGENTS.md`, `CLAUDE.md`, `fixtures/launch-manifest.json`, `research/`, `src/Csharp2Md.Cli/Properties/`, and
-  the pre-existing line-ending-only working-copy modification to `DatabaseFragmentBuilder.cs` that carries no
-  content diff.
+- **Uncommitted files**: the same long-standing untracked paths carried by every prior handoff — `.agents/`,
+  `.claude/`, `.cursor/`, `.windsurf/`, `.specs/features/csharp2md-v3/context.md`,
+  `.specs/features/data-access-discovery/context.md` and `design.md`,
+  `.specs/features/relation-collector/context.md` and `design.md`, two dated Markdown files, `AGENTS.md`,
+  `CLAUDE.md`, `fixtures/launch-manifest.json`, `research/`, `src/Csharp2Md.Cli/Properties/`. No tracked-file
+  modifications outstanding (`git status --porcelain --untracked-files=no` is empty).
+
+## Historical Handoff — RelationResolver
+
+- **Feature**: RelationResolver (`.specs/features/relation-resolver/`) — **done.** Turns the pipeline's
+  relation stubs into proven edges: `RelationResolver` is now the sole reachable writer of `RelationFact`,
+  reading the run's complete `SymbolIndex` against every buffered `RawRelation` claim in a pass-two stage,
+  through a fixed five-strategy chain (`ExistingTarget` → `DatabaseRelation` → `ReceiverType` → `SymbolIndex`
+  → `Unresolved`).
+- **Phase / Task**: Execute — **all 32 tasks complete across 6 phases**; feature-level validation **PASSED**
+  on the first Verifier pass (two Minor spec-precision gaps found and fixed immediately after, before this
+  handoff was written — see below). Discrimination sensor skipped by standing user request (same as
+  `symbol-index`/`relation-collector`/`data-access-discovery`), recorded in `tasks.md`'s header.
+- **Branch**: `feat/relation-resolver`, cut from `feat/data-access-discovery` (the user's explicit choice —
+  `AskUserQuestion`, "stacked, not from master"), HEAD `dea05f5`. 34 commits. Not pushed to any remote.
+- **Specify/Design/Tasks (prior session, 2026-08-21)**: spec.md — 49 requirements, P1 `RELR-01`..`RELR-39`
+  across five stories, P2 `RELR-40`..`RELR-45` and P3 `RELR-46`..`RELR-49` deliberately out of this task
+  list's scope. design.md — five-strategy chain, claim-based collector-to-resolver seam (mirrors
+  `RawDatabaseClaim`, never serialized). tasks.md — 32 tasks, 6 phases. User chose "one sub-agent per phase"
+  for execution.
+- **Execution (this session)**: Phases 1-3 (T1-T14) ran via dispatched sub-agents as planned. **Phase 4's
+  sub-agent hit the account's monthly API spend limit mid-T15 and terminated.** The user's only instruction
+  was "continue" — interpreted (matching this same project's own documented precedent, e.g.
+  data-access-discovery's Phase 5 interruption) as authorization to keep implementing directly in the main
+  session rather than retry sub-agent dispatch. Phases 4, 5 and 6 (T15-T32) were completed this way, each
+  task still following the full implement → gate → atomic-commit cycle.
+- **Eight real production bugs found and fixed during wiring (T23)**, each via direct CLI/`dotnet test`
+  runs rather than assumption: `RelationClaimAccumulator`'s "no claim → no extent" rule dropped
+  cross-referenced documents for pure-SQL claims; `DatabaseMappingResolver`'s `ProducerMethod` was
+  hardcoded to `Configured` regardless of the claim's actual proof strength; `DatabaseRelationStrategy`'s
+  generic fallback hardcoded `Unresolved` instead of deriving from `ShapeConfidence`;
+  `FactStore.MapRelation` never read `RelationFact.Method`/`Candidates` at all, so every persisted relation
+  showed `"exact"` regardless of truth; `RelationFragmentBuilder.Build`'s diagnostics were validator-only,
+  so the resolver's own `C2M-RELR-*` codes never reached `diagnostics.json`. Full detail in the T23 commit
+  body (`dd94e76`).
+- **AD-020 (new decision this session)**: spec.md's Success Criterion "a non-empty `raw/dependencies.mmd`
+  with at least one edge outside the `data` partition" is **not met**, by explicit user decision after being
+  shown the trade-off (`AskUserQuestion`). Two independent, pre-existing gaps make it unreachable regardless
+  of resolution quality: no production path anywhere constructs a `ComponentFact` (the `Detection/` tree
+  that would is still orphaned, per AD-015), and separately `RelationProjector.Mermaid`'s
+  `componentByProject` lookup is keyed by project-shaped `FactId`s while relation `Source`/`TargetId`s are
+  symbol- or document-shaped, so it would still miss even if a `ComponentFact` existed. Confirmed by a real
+  run: `raw/dependencies.mmd` is `"flowchart LR\n"` with zero edges even with real, resolved relation
+  targets in place. `RelationResolverEndToEndTests.cs`'s corresponding test proves only that the file is
+  written and non-empty, not that it has an edge — this is the honest, narrower claim. **Closing this gap
+  for real needs a future feature**: wire some `ComponentFact` producer and fix `Mermaid`'s key mismatch.
+- **Verifier (fresh sub-agent, author != verifier) → PASS.** All 39 P1 acceptance criteria independently
+  re-derived and confirmed against real `file:line` assertions; two T32 commit-body citations were wrong and
+  corrected (RELR-10, RELR-25 — the underlying behaviour was still covered elsewhere, so not gaps). Two
+  Minor spec-precision gaps found: RELR-05 (`ReceiverTypeStrategy` forwards `ArgumentCount`/`ArgumentTypes`
+  into the lookup but no test exercised non-default values) and RELR-20 ("preserve the claim's
+  `FactProvenance`" was asserted with a vacuous `NotEmpty`, since `RawRelation` carries no provenance field
+  by design). Both fixed same-session (`dea05f5`) with a genuine overload-discriminating test and a pinned
+  `DetectorId` assertion, respectively; re-verified green. One cosmetic stale comment
+  (`FactualJsonContracts.cs`, pointed at a `SPEC_DEVIATION` note T32's rewrite had already removed) also
+  fixed. `.specs/features/relation-resolver/validation.md` is the persisted report, updated in place to
+  reflect the post-fix state; `validate_state.py relation-resolver` exits 0. Four lessons distilled to
+  `.specs/lessons.json` (L-007..L-010).
+- **Gate at close**: `dotnet build -c Release` clean, `dotnet format --verify-no-changes` clean,
+  `dotnet test` 1850/1851 passing (the one failure is the pre-existing documented
+  `DotnetMsBuildEvaluatorTests` flake, unrelated to this feature — carried unchanged across every session
+  that has touched this branch). Test count 859 → 968 `[Fact]`/`[Theory]` attributes (+109).
+- **Not decided**: whether to push the two stacked branches and open a PR (needs explicit user go-ahead
+  per AD-007); what to work on next.
 
 ## Historical Handoff — Database Access Discovery
 
