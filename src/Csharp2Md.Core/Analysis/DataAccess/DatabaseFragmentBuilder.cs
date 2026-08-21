@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
@@ -18,11 +17,15 @@ internal sealed record DatabaseFragmentResult(
 }
 
 /// <summary>
-/// Turns pass two's resolution into facts and runs them through the identical validate path every
-/// document fragment takes. A failure here is a structural failure with the same diagnostics and the
-/// same meaning it would have on a document - no new failure semantics are introduced.
+/// Turns pass two's resolved database objects and columns into facts and runs them through the
+/// identical validate path every document fragment takes. A failure here is a structural failure with
+/// the same diagnostics and the same meaning it would have on a document - no new failure semantics are
+/// introduced. Database relations (RELR-32) are no longer this builder's concern - they leave
+/// <c>DatabaseMappingResolver.Resolve</c> as
+/// <see cref="Csharp2Md.Core.Analysis.Relations.RawRelation"/> claims for the
+/// <c>RelationClaimAccumulator</c> instead.
 /// </summary>
-internal static partial class DatabaseFragmentBuilder
+internal static class DatabaseFragmentBuilder
 {
     private const string EngineId = "csharp2md.syntax";
     private const string EngineVersion = "1";
@@ -41,16 +44,14 @@ internal static partial class DatabaseFragmentBuilder
         var facts = ImmutableArray.CreateBuilder<IFact>();
         facts.AddRange(resolution.Objects.Select(Fact));
         facts.AddRange(resolution.Columns.Select(Fact));
-        facts.AddRange(RelationFacts(resolution.Relations));
 
+        // RELR-32: database relations are now RawRelation claims (resolution.Relations) handed to the
+        // RelationClaimAccumulator instead of being minted into facts here - RelationResolver is the
+        // only writer of RelationFact (AD-018). A database object's or column's identity references
+        // nothing outside this fragment, so no knownFactIds are needed once relations leave it.
         var validation = validate(FactValidationInput.Create(
             facts.ToImmutable(),
-            documents: resolution.Documents,
-            // A relation's source is a symbol or document already persisted in its own fragment, so
-            // C2M-FV-002 cannot see it from here - the same reason the engine declares a document
-            // fragment's project id known. The resolver is what keeps a source real: it comes either
-            // from a symbol-index lookup or from the extractor's owner map, never from a name.
-            knownFactIds: resolution.Relations.Select(static relation => relation.SourceId).Distinct()));
+            documents: resolution.Documents));
 
         return new DatabaseFragmentResult(validation.Fragment, validation.ValidationDiagnostics);
     }
@@ -68,34 +69,6 @@ internal static partial class DatabaseFragmentBuilder
             column.ObjectId,
             column.Name);
 
-    /// <summary>
-    /// One relation fact per resolved relation, identified the way every other relation in the pipeline
-    /// is: owner, kind, a fingerprint of the observed details, and a one-based occurrence ordinal that
-    /// separates two otherwise identical observations in the same member.
-    /// </summary>
-    private static IEnumerable<RelationFact> RelationFacts(ImmutableArray<ResolvedDatabaseRelation> relations)
-    {
-        var ordinals = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var relation in relations)
-        {
-            var claim = Fingerprint(relation.Details);
-            var key = $"{relation.RelationKind}\0{relation.SourceId.Value}\0{claim}";
-            var ordinal = ordinals.GetValueOrDefault(key) + 1;
-            ordinals[key] = ordinal;
-
-            var id = RelationFactId.Create(relation.SourceId, relation.RelationKind, claim, ordinal);
-            yield return new RelationFact(
-                Header(id.ToFactId(), FactKind.Relation, relation.Resolution, [relation.AnalyzerId], [relation.Evidence]),
-                id,
-                relation.SourceId,
-                relation.TargetId,
-                RelationPartition.Data,
-                relation.RelationKind,
-                relation.UnresolvedReason,
-                relation.Details.Distinct().Order().ToImmutableArray());
-        }
-    }
-
     private static FactHeader Header(
         FactId id,
         FactKind kind,
@@ -109,17 +82,4 @@ internal static partial class DatabaseFragmentBuilder
             analyzerIds.Select(static analyzerId =>
                 new FactProvenance(EngineId, EngineVersion, analyzerId.ToDetectorId(), AnalyzerVersion)),
             evidence);
-
-    /// <summary>
-    /// The observed details as one canonical single-line value, which is what the identity grammar
-    /// accepts. Preserved SQL text can carry newlines and runs of spaces, so it is collapsed here rather
-    /// than trusted.
-    /// </summary>
-    private static string Fingerprint(ImmutableArray<RelationDetail> details) =>
-        WhitespaceRun().Replace(
-            string.Join('|', details.Order().Select(static detail => $"{detail.Key}={detail.Value}")),
-            " ").Trim();
-
-    [GeneratedRegex(@"\s+")]
-    private static partial Regex WhitespaceRun();
 }

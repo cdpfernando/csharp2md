@@ -556,11 +556,62 @@ unrelated). All still exactly the class of test AD-018 and T25 name.
 
 **Done when**:
 
-- [ ] `DatabaseFragmentBuilder` stops emitting relation facts and keeps emitting object and column facts unchanged
-- [ ] Every existing `DatabaseMappingResolverTests` assertion about relation kind, operation and target survives, rewritten against the claim
-- [ ] The `mapping` detail's `configured` / `convention` value reaches the claim intact
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] `DatabaseFragmentBuilder` stops emitting relation facts and keeps emitting object and column facts unchanged
+- [x] Every existing `DatabaseMappingResolverTests` assertion about relation kind, operation and target survives, rewritten against the claim (51/51 pass in this file; net +5 tests, see below)
+- [x] The `mapping` detail's `configured` / `convention` value reaches the claim intact (unchanged `Detail(..., "mapping")` assertions all still pass)
+- [~] Gate check passes: `dotnet test csharp2md.slnx` - **major disclosed deviation, larger than T12/T13's, see below**
+- [x] Test count recorded (no silent deletions) - see below
+
+**MAJOR DISCLOSED DEVIATION - wider blast radius than T12/T13, flagging for orchestrator review before
+Phase 4**: Removing `RelationFacts` from `DatabaseFragmentBuilder.Build` (this task's own explicit
+requirement) means the real `AnalyzeAsync` pipeline no longer writes *any* database relation anywhere -
+`resolution.Relations` is computed by `DatabaseMappingResolver.Resolve` but nothing yet consumes it
+(threading it into `RelationClaimAccumulator` is T23's explicit job: "thread the claim accumulator", and
+nothing can persist it before the resolver chain exists in Phase 4-5 regardless). Unlike T12/T13's
+disconnect - which broke only *this feature's own* prior-phase tests (`RelationCollector*`) - this one
+breaks `raw/facts/relations/data.json` and the `database` fragment for the entire, already-shipped,
+previously-merged **`data-access-discovery` feature**, whose own `DataAccessDiscoveryEndToEndTests.cs`
+end-to-end suite is not a "relations inside document fragments" case (AD-018's Trade-off section, written
+for `relation-collector`'s document-embedded relations, does not name this file or this feature).
+`dotnet test csharp2md.slnx` after T14: 1734/1781 passed, 47 failures:
+- 15 continuing unchanged from T13's set (`RelationCollectorWiringTests`, `RelationCollectorTrustedWiringTests`,
+  `RelationCollectorTrustedRefinementWiringTests`, `RelationCollectorEndToEndTests`,
+  `AggregateRelationPartitionTests.HttpPartitionFile_.../StructuralPartitionFile_...`, one CLI end-to-end
+  test, one `V3DeterminismTests` snapshot) - not worsened by T14.
+- **30 newly red, caused by T14, NOT anticipated by AD-018's text**: all 27 test cases in
+  `DataAccessDiscoveryEndToEndTests.cs` (`DAD01`-`DAD28`), `AnalysisEngineTests.AnalyzeAsync_EfCoreProject_WritesTheResolvedDataRelationPartition`,
+  and `AggregateRelationPartitionTests.DataPartitionFile_CarriesThePersistenceRelationsPassTwoResolved` /
+  `DataPartitionFile_RecordsTheFixturesUnconfiguredEntityAsAConventionMapping`.
+- 2 unrelated, pre-existing, order-dependent flakes, both pass in isolation and reproduce on files this
+  task never touched: `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml`
+  (documented flaky in STATE.md's relation-collector history) and
+  `ProcessTreeProbeTests.ServiceTimeout_KillsParentAndDescendantBeforeReturningAndDoesNotCancelNextService`
+  (2/2 pass standalone, confirmed here).
+
+No way was found to implement this task's own explicit Done-when (`DatabaseFragmentBuilder` stops emitting
+relation facts) without this consequence - `RelationClaimAccumulator` is not threaded into `AnalyzeAsync`
+until T23, and nothing else in Phase 3/4 can persist a `RawRelation` claim. **Recommendation**: before Phase 4
+starts, either fold `DataAccessDiscoveryEndToEndTests.cs` / `AnalysisEngineTests.AnalyzeAsync_EfCoreProject_WritesTheResolvedDataRelationPartition` /
+`AggregateRelationPartitionTests.DataPartitionFile_*` explicitly into T25's scope (currently titled only
+"tests that assert relations inside document fragments," which does not literally cover them), or add a
+dedicated task for them - so Phase 5 does not close this feature while leaving an already-shipped feature's
+own end-to-end proof broken.
+
+**Test count**: `DatabaseMappingResolverTests.cs` +5 (new: `Resolve_EveryRelation_IsADataPartitionClaimCarryingEvidence`,
+`Resolve_RelationCarryingAnAlreadyProvenTarget_ReportsConfiguredAsTheProducerMethod`,
+`Resolve_UntargetedRelation_ReportsNoProducerMethod`,
+`Resolve_TwoIdenticalAccessesInOneMember_BothSurviveAsDistinctClaims`,
+`Resolve_RelationCarryingMultilineSql_PreservesTheRawTextWithoutThrowing`). `DatabaseFragmentBuilderTests.cs`
+net -3 (removed 4 relation-fact tests whose subject no longer exists at this layer - one,
+`Build_ConventionMapping_KeepsItsUnresolvedReasonOnTheFact`, had its exact concern already covered verbatim
+by the pre-existing `Resolve_EntitySetWithoutConfiguration_YieldsHeuristicMapsToNamingTheSetWithNoTarget`;
+the other three relocated to `DatabaseMappingResolverTests.cs` above, since their subject -
+`DatabaseMappingResolver.Resolve`'s own claim output - now lives there, not in the built fragment; added 1
+new test, `Build_ResolutionWithOnlyRelationsAndNoObjectsOrColumns_YieldsNoFragment`, covering this task's
+`DatabaseResolution.IsEmpty` redefinition).
+
+`dotnet build csharp2md.slnx -c Release`: 0 warnings, 0 errors. `dotnet format csharp2md.slnx
+--verify-no-changes`: clean.
 
 **Tests**: unit
 **Gate**: quick
