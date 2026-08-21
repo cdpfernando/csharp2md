@@ -14,8 +14,12 @@ public sealed class RelationFragmentBuilderTests
     private static readonly FactId OwnerId =
         SymbolFactId.CreateSyntactic(ProjectId, "Worker.cs", "class", "class:Worker").ToFactId();
 
+    // RELR-19/RELR-20: a raw relation carries no FactProvenance of its own (RawRelation has no such
+    // field by design - only the resolver mints one, at fact-minting time), so "preserve what the claim
+    // carried and append the resolver's own" collapses to exactly one entry: the resolver's. Pinned by
+    // DetectorId rather than NotEmpty, so a regression that dropped or renamed it would fail here.
     [Fact]
-    public void Build_EveryEvidenceDetailAndProvenanceTheClaimCarried_IsPresentOnTheFactWithTheResolversOwnProvenanceAppended()
+    public void Build_EveryEvidenceAndDetailTheClaimCarried_IsPresentOnTheFactWithExactlyTheResolversOwnProvenance()
     {
         var resolution = ResolveOneClaim();
 
@@ -25,7 +29,8 @@ public sealed class RelationFragmentBuilderTests
         Assert.Single(fact.Header.Evidence);
         Assert.Equal(1, fact.Header.Evidence[0].StartLine);
         Assert.Contains(fact.Details, detail => detail is { Key: "target_text", Value: "Foo" });
-        Assert.NotEmpty(fact.Header.Provenance);
+        var provenance = Assert.Single(fact.Header.Provenance);
+        Assert.Equal(DetectorId.Create("io.csharp2md.relation-resolver"), provenance.DetectorId);
     }
 
     [Fact]

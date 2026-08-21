@@ -137,11 +137,10 @@ public sealed record RelationFactJson(
     [property: JsonPropertyOrder(5)] string RelationKind,
     [property: JsonPropertyOrder(6)] string? UnresolvedReason,
     [property: JsonPropertyOrder(7)] ImmutableArray<RelationDetailJson>? Details = null,
-    // Non-nullable and required as of schema v5 (T4). Defaults to "exact" rather than "unresolved" so a
-    // relation whose mapper does not yet set this field explicitly (FactStore.MapRelation does not read
-    // RelationFact.Method until a later phase wires the resolver) never contradicts its own target_id: every
-    // relation reaching this mapper today with a non-null target_id is genuinely exact-resolved (see
-    // RelationFact.Method's matching SPEC_DEVIATION note in Facts/Model/RelationFact.cs).
+    // Non-nullable and required as of schema v5 (T4). FactStore.MapRelation has read RelationFact.Method
+    // explicitly since T23; the "exact" default here only still matters for RelationFact.cs's own
+    // transitional constructor default (RELR-01's comment there), for the same orphaned Detection/*
+    // producers that default applies to.
     [property: JsonPropertyOrder(8)] string ResolutionMethod = "exact",
     [property: JsonPropertyOrder(9)] ImmutableArray<string>? Candidates = null);
 

@@ -49,6 +49,27 @@ public sealed class ReceiverTypeStrategyTests
         Assert.Equal("C2M-RELR-002", outcome.Diagnostic!.Code);
     }
 
+    // RELR-05: the lookup is built from receiver type, member name, argument count AND argument types -
+    // not just the name. Two same-named overloads differing only by arity/parameter types prove both
+    // actually discriminate: ArgumentCount filters out the wrong-arity overload, ArgumentTypes then
+    // scores the survivors. Neither field is a decoration passed through and ignored.
+    [Fact]
+    public void TryResolve_TwoOverloadsDifferingByArityAndParameterTypes_ArgumentCountAndTypesPickTheMatchingOne()
+    {
+        var singleParameter = Method("Authorize", "global::Acme.Payments.PaymentClient", ["Guid"], discriminator: "one");
+        var twoParameters = Method("Authorize", "global::Acme.Payments.PaymentClient", ["Guid", "Decimal"], discriminator: "two");
+        var index = Build(singleParameter, twoParameters);
+        var claim = CallsClaim(receiverText: "paymentClient", receiverType: "global::Acme.Payments.PaymentClient", memberName: "Authorize")
+            with
+        { ArgumentCount = 2, ArgumentTypes = ["Guid", "Decimal"] };
+
+        var outcome = Strategy.TryResolve(new RelationResolutionContext(claim, index, NoKnownFacts));
+
+        Assert.True(outcome.Handled);
+        Assert.Equal(twoParameters.SymbolId.ToFactId(), outcome.TargetId);
+        Assert.Equal(ResolutionMethod.Syntactic, outcome.Method);
+    }
+
     [Fact]
     public void TryResolve_UndeterminableReceiverType_YieldsUnresolvedAndDiagnosesC2MRELR003()
     {
