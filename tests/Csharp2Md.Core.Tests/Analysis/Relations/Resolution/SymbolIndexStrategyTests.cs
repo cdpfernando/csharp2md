@@ -141,7 +141,7 @@ public sealed class SymbolIndexStrategyTests
         public ImmutableArray<SymbolFact> FindMembers(string containingType) =>
             throw new InvalidOperationException("Should not be queried.");
 
-        public ImmutableArray<SymbolFact> FindMethods(MethodLookup lookup) =>
+        public MethodLookupResult FindMethods(MethodLookup lookup) =>
             throw new InvalidOperationException("Should not be queried.");
 
         public SymbolLookupResult FindCandidates(SymbolLookup lookup) =>

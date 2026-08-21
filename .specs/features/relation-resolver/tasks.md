@@ -726,12 +726,12 @@ receiver type, member name, argument count and argument types.
 
 **Done when**:
 
-- [ ] Exactly one method at the top rank sets `target_id` and `syntactic`
-- [ ] More than one at the top rank yields `candidate` with every tied id, never a pick
-- [ ] An undeterminable receiver type yields `unresolved` and `C2M-RELR-003`
-- [ ] A relation kind other than `calls` is declined without a lookup
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Exactly one method at the top rank sets `target_id` and `syntactic`
+- [x] More than one at the top rank yields `candidate` with every tied id, never a pick
+- [x] An undeterminable receiver type yields `unresolved` and `C2M-RELR-003`
+- [x] A relation kind other than `calls` is declined without a lookup
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

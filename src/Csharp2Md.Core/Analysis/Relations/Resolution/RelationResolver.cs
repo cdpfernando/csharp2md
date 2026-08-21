@@ -40,7 +40,7 @@ internal sealed class RelationResolver
     /// which must always stay last: it is the terminal strategy that makes RELR-12 structural.
     /// </summary>
     public static ImmutableArray<IRelationResolutionStrategy> RegisteredStrategies { get; } =
-        [new SymbolIndexStrategy(), new UnresolvedStrategy()];
+        [new ReceiverTypeStrategy(), new SymbolIndexStrategy(), new UnresolvedStrategy()];
 
     public static RelationResolver Default { get; } = new(RegisteredStrategies);
 

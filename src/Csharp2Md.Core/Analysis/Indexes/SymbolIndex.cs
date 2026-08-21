@@ -24,7 +24,7 @@ internal interface ISymbolIndex
 
     ImmutableArray<SymbolFact> FindMembers(string containingType);
 
-    ImmutableArray<SymbolFact> FindMethods(MethodLookup lookup);
+    MethodLookupResult FindMethods(MethodLookup lookup);
 
     SymbolLookupResult FindCandidates(SymbolLookup lookup);
 
@@ -161,6 +161,17 @@ internal sealed record SymbolLookupResult(
     SymbolLookupStatus Status, ImmutableArray<SymbolFact> Candidates, int TiedCandidateCount);
 
 /// <summary>
+/// The outcome of <see cref="ISymbolIndex.FindMethods"/>: every matching method, ranked best-first by
+/// <see cref="MethodLookup.ArgumentTypes"/> match score, plus how many leading entries share that best
+/// score - the same "how many actually tied" answer <see cref="SymbolLookupResult.TiedCandidateCount"/>
+/// gives for <see cref="ISymbolIndex.FindCandidates"/>, and for the same reason: the match score is
+/// computed internally and a caller like <c>ReceiverTypeStrategy</c> (relation-resolver) cannot
+/// otherwise tell a genuine tie from an unrelated lower-scored candidate that merely rode along in
+/// <see cref="Methods"/>.
+/// </summary>
+internal sealed record MethodLookupResult(ImmutableArray<SymbolFact> Methods, int TiedCandidateCount);
+
+/// <summary>
 /// A name-indexed, cross-project view of every symbol a run discovered, regardless of whether that
 /// symbol's semantic binding succeeded. Every lookup is a direct key lookup - never a scan of all
 /// symbols - and every list-returning lookup is ordered by <see cref="SymbolFactId"/> ordinal so
@@ -264,7 +275,7 @@ internal sealed class SymbolIndex : ISymbolIndex
     /// declared parameter types match the looked-up argument types outranks a same-count candidate
     /// whose types do not, but neither is dropped: the caller sees both and decides.
     /// </summary>
-    public ImmutableArray<SymbolFact> FindMethods(MethodLookup lookup)
+    public MethodLookupResult FindMethods(MethodLookup lookup)
     {
         ArgumentNullException.ThrowIfNull(lookup);
 
@@ -278,10 +289,21 @@ internal sealed class SymbolIndex : ISymbolIndex
             methods = methods.Where(symbol => symbol.ParameterTypes.Length == argumentCount);
         }
 
-        return methods
-            .OrderByDescending(symbol => ArgumentTypeMatchScore(symbol, lookup.ArgumentTypes))
-            .ThenBy(static symbol => symbol.SymbolId.Value, StringComparer.Ordinal)
+        var ranked = methods
+            .Select(symbol => (Symbol: symbol, Score: ArgumentTypeMatchScore(symbol, lookup.ArgumentTypes)))
+            .OrderByDescending(static entry => entry.Score)
+            .ThenBy(static entry => entry.Symbol.SymbolId.Value, StringComparer.Ordinal)
             .ToImmutableArray();
+
+        if (ranked.IsEmpty)
+        {
+            return new MethodLookupResult([], 0);
+        }
+
+        var bestScore = ranked[0].Score;
+        var tied = ranked.Count(entry => entry.Score == bestScore);
+
+        return new MethodLookupResult(ranked.Select(static entry => entry.Symbol).ToImmutableArray(), tied);
     }
 
     /// <summary>
