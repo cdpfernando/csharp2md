@@ -69,10 +69,18 @@ internal sealed class ReceiverTypeStrategy : IRelationResolutionStrategy
 
         if (result.TiedCandidateCount == 1)
         {
+            // RELR-18: the resolved method's own declaration span, appended when it differs from the
+            // invocation's own span (almost always, since a call site and its target's declaration are
+            // rarely the same location).
+            var target = result.Methods[0];
+            var addedEvidence = target.Header.Evidence
+                .Where(evidence => evidence != claim.Evidence)
+                .ToImmutableArray();
             return new RelationResolutionOutcome(
                 Handled: true,
-                TargetId: result.Methods[0].SymbolId.ToFactId(),
-                Method: ResolutionMethod.Syntactic);
+                TargetId: target.SymbolId.ToFactId(),
+                Method: ResolutionMethod.Syntactic,
+                AddedEvidence: addedEvidence);
         }
 
         var tied = result.Methods.Take(result.TiedCandidateCount)

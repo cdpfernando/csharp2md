@@ -905,11 +905,11 @@ that declaration's span as an additional `Evidence` entry.
 
 **Done when**:
 
-- [ ] A resolved `calls` relation carries both the invocation span and the resolved method's declaration span
-- [ ] The claim's original evidence entry is present and unmodified, proven by comparing the entry, not the count
-- [ ] An unresolved relation gains no evidence
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A resolved `calls` relation carries both the invocation span and the resolved method's declaration span
+- [x] The claim's original evidence entry is present and unmodified, proven by comparing the entry, not the count
+- [x] An unresolved relation gains no evidence
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

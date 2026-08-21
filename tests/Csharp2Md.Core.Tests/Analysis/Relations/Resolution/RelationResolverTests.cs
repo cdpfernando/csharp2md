@@ -231,6 +231,55 @@ public sealed class RelationResolverTests
     private static string LegacyFingerprint(ImmutableArray<RelationDetail> details) =>
         string.Join('|', details.Select(static detail => $"{detail.Key}={detail.Value}")).Trim();
 
+    [Fact]
+    public void Resolve_ACallsRelationResolvedThroughTheSymbolIndex_CarriesBothTheInvocationAndDeclarationSpansUnmodified()
+    {
+        var declarationEvidence = new Evidence(DocumentFactId.Create(ProjectId, "Target.cs"), "Target.cs", 10, 1, 12, 5);
+        var target = new SymbolFact(
+            FactHeader.Create(
+                SymbolFactId.CreateSyntactic(ProjectId, "Target.cs", "class", "class:PaymentClient").ToFactId(),
+                FactKind.Symbol, FactResolution.Syntactic, evidence: [declarationEvidence]),
+            SymbolFactId.CreateSyntactic(ProjectId, "Target.cs", "class", "class:PaymentClient"),
+            DocumentFactId.Create(ProjectId, "Target.cs"),
+            "class",
+            ContainsErrorSymbol: false,
+            [], [], [],
+            Semantics: null,
+            Name: "PaymentClient",
+            FullyQualifiedName: "global::Acme.PaymentClient",
+            Namespace: null,
+            ContainingType: null,
+            ContainingSymbolId: null,
+            Signature: "class PaymentClient",
+            Arity: 0,
+            ParameterTypes: []);
+        var index = SymbolIndexBuilder.Build([target], [], [], []);
+        var claim = Claim("references", "PaymentClient");
+        var resolver = RelationResolver.Default;
+
+        var resolution = resolver.Resolve(SnapshotOf(claim), index, NoKnownFacts, CancellationToken.None);
+
+        var fact = Assert.Single(resolution.Facts);
+        Assert.Equal(target.SymbolId.ToFactId(), fact.TargetId);
+        Assert.Equal(2, fact.Header.Evidence.Length);
+        Assert.Contains(claim.Evidence, fact.Header.Evidence);
+        Assert.Contains(declarationEvidence, fact.Header.Evidence);
+    }
+
+    [Fact]
+    public void Resolve_AnUnresolvedRelation_GainsNoEvidenceBeyondItsOwn()
+    {
+        var resolver = RelationResolver.Default;
+        var claim = Claim("references", "NothingIndexed");
+
+        var resolution = resolver.Resolve(SnapshotOf(claim), EmptyIndex, NoKnownFacts, CancellationToken.None);
+
+        var fact = Assert.Single(resolution.Facts);
+        Assert.Equal(ResolutionMethod.Unresolved, fact.Method);
+        var evidence = Assert.Single(fact.Header.Evidence);
+        Assert.Equal(claim.Evidence, evidence);
+    }
+
     /// <summary>An <c>IRelationResolutionStrategy</c> whose outcome each test supplies, recording how often it ran.</summary>
     private sealed class RecordingStrategy : IRelationResolutionStrategy
     {

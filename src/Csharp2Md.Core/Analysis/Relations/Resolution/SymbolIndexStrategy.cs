@@ -40,12 +40,28 @@ internal sealed class SymbolIndexStrategy : IRelationResolutionStrategy
             // owns "no candidate found" - handling it here too would duplicate that diagnostic.
             SymbolLookupStatus.NotFound => RelationResolutionOutcome.None,
             SymbolLookupStatus.Ambiguous => Ambiguous(claim, result),
-            _ => Unique(result),
+            _ => Unique(claim, result),
         };
     }
 
-    private static RelationResolutionOutcome Unique(SymbolLookupResult result) =>
-        new(Handled: true, TargetId: result.Candidates[0].SymbolId.ToFactId(), Method: ResolutionMethod.Syntactic);
+    /// <summary>
+    /// RELR-18: the resolved symbol's own declaration span is appended as additional evidence when it
+    /// is not already the claim's own span - a call site and its target's declaration are almost always
+    /// different locations, but the filter keeps a coincidental match from duplicating an entry.
+    /// </summary>
+    private static RelationResolutionOutcome Unique(RawRelation claim, SymbolLookupResult result)
+    {
+        var target = result.Candidates[0];
+        var addedEvidence = target.Header.Evidence
+            .Where(evidence => evidence != claim.Evidence)
+            .ToImmutableArray();
+
+        return new RelationResolutionOutcome(
+            Handled: true,
+            TargetId: target.SymbolId.ToFactId(),
+            Method: ResolutionMethod.Syntactic,
+            AddedEvidence: addedEvidence);
+    }
 
     /// <summary>
     /// RELR story-2 AC2/AC3: never pick from a multi-entry best tier. <see cref="SymbolLookupResult.TiedCandidateCount"/>
