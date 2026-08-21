@@ -261,11 +261,11 @@ field pass two needs, with the evidence guard enforced at construction.
 
 **Done when**:
 
-- [ ] Constructing a claim with default `Evidence` throws, proven by a test
-- [ ] `Details` holds exactly what `RelationCollector.DetailsFor` produces today — no resolution field is a detail
-- [ ] The type carries no `SyntaxNode`, no `SemanticModel` and no source text
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Constructing a claim with default `Evidence` throws, proven by a test
+- [x] `Details` holds exactly what `RelationCollector.DetailsFor` produces today — no resolution field is a detail
+- [x] The type carries no `SyntaxNode`, no `SemanticModel` and no source text
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
