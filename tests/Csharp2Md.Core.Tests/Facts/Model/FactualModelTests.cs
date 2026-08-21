@@ -300,6 +300,38 @@ public sealed class FactualModelTests
         Assert.Throws<ArgumentOutOfRangeException>(() => DatabaseFactWire.Name((ColumnUsage)99));
 
     [Fact]
+    public void ResolutionMethod_DeclaresTheFullMethodSet() =>
+        Assert.Equal(
+            ["Exact", "Candidate", "Syntactic", "Configured", "Convention", "Dynamic", "Heuristic", "Unresolved"],
+            Enum.GetNames<ResolutionMethod>());
+
+    [Theory]
+    [InlineData(ResolutionMethod.Exact, "exact")]
+    [InlineData(ResolutionMethod.Candidate, "candidate")]
+    [InlineData(ResolutionMethod.Syntactic, "syntactic")]
+    [InlineData(ResolutionMethod.Configured, "configured")]
+    [InlineData(ResolutionMethod.Convention, "convention")]
+    [InlineData(ResolutionMethod.Dynamic, "dynamic")]
+    [InlineData(ResolutionMethod.Heuristic, "heuristic")]
+    [InlineData(ResolutionMethod.Unresolved, "unresolved")]
+    public void ResolutionMethod_WireName_IsTheSpecifiedLiteral(ResolutionMethod method, string expected) =>
+        Assert.Equal(expected, ResolutionMethodWire.Name(method));
+
+    [Fact]
+    public void ResolutionMethod_EveryMember_RoundTripsThroughItsWireString() =>
+        Assert.All(
+            Enum.GetValues<ResolutionMethod>(),
+            method => Assert.Equal(method, ResolutionMethodWire.Parse(ResolutionMethodWire.Name(method))));
+
+    [Fact]
+    public void ResolutionMethod_UndeclaredMember_IsRejectedRatherThanNamed() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => ResolutionMethodWire.Name((ResolutionMethod)99));
+
+    [Fact]
+    public void ResolutionMethodWire_UndeclaredWireValue_IsRejectedRatherThanParsed() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => ResolutionMethodWire.Parse("bogus"));
+
+    [Fact]
     public void CoverageFact_TracksDiagnosticReferencesForInventoriedScope()
     {
         var diagnostic = DiagnosticId.Create("compilation", Target.ToFactId(), "C2M3001", "unavailable");

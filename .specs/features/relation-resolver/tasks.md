@@ -142,11 +142,11 @@ both directions.
 
 **Done when**:
 
-- [ ] All eight members present: `Exact`, `Candidate`, `Syntactic`, `Configured`, `Convention`, `Dynamic`, `Heuristic`, `Unresolved`
-- [ ] Wire mapping is total: an undefined value throws `ArgumentOutOfRangeException`, never falls through to a default string
-- [ ] A test asserts every member round-trips through its wire string
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] All eight members present: `Exact`, `Candidate`, `Syntactic`, `Configured`, `Convention`, `Dynamic`, `Heuristic`, `Unresolved`
+- [x] Wire mapping is total: an undefined value throws `ArgumentOutOfRangeException`, never falls through to a default string
+- [x] A test asserts every member round-trips through its wire string
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

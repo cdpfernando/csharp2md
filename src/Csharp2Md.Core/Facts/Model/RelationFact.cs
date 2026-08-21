@@ -14,6 +14,56 @@ public enum RelationPartition
     Data,
 }
 
+/// <summary>
+/// The route by which a relation's target was proven. Distinct from <see cref="FactResolution"/>: that
+/// answers "how proven is this fact", aggregated across every fact family; this answers "by what route did
+/// we reach this target", and is meaningful only on a <see cref="RelationFact"/>. See AD-019.
+/// </summary>
+public enum ResolutionMethod
+{
+    Exact,
+    Candidate,
+    Syntactic,
+    Configured,
+    Convention,
+    Dynamic,
+    Heuristic,
+    Unresolved,
+}
+
+/// <summary>
+/// Wire strings for <see cref="ResolutionMethod"/>, written out in both directions rather than derived by
+/// lowercasing, so a member added later cannot acquire (or accept) a wire name by accident.
+/// </summary>
+public static class ResolutionMethodWire
+{
+    public static string Name(ResolutionMethod method) => method switch
+    {
+        ResolutionMethod.Exact => "exact",
+        ResolutionMethod.Candidate => "candidate",
+        ResolutionMethod.Syntactic => "syntactic",
+        ResolutionMethod.Configured => "configured",
+        ResolutionMethod.Convention => "convention",
+        ResolutionMethod.Dynamic => "dynamic",
+        ResolutionMethod.Heuristic => "heuristic",
+        ResolutionMethod.Unresolved => "unresolved",
+        _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unsupported resolution method."),
+    };
+
+    public static ResolutionMethod Parse(string wireValue) => wireValue switch
+    {
+        "exact" => ResolutionMethod.Exact,
+        "candidate" => ResolutionMethod.Candidate,
+        "syntactic" => ResolutionMethod.Syntactic,
+        "configured" => ResolutionMethod.Configured,
+        "convention" => ResolutionMethod.Convention,
+        "dynamic" => ResolutionMethod.Dynamic,
+        "heuristic" => ResolutionMethod.Heuristic,
+        "unresolved" => ResolutionMethod.Unresolved,
+        _ => throw new ArgumentOutOfRangeException(nameof(wireValue), wireValue, "Unsupported resolution method wire value."),
+    };
+}
+
 public sealed record RelationFact(
     FactHeader Header,
     RelationFactId RelationId,
