@@ -756,12 +756,12 @@ and demote it to `unresolved` with `C2M-RELR-007` when it does not.
 
 **Done when**:
 
-- [ ] A present target survives unchanged with the producer's reported method
-- [ ] An absent target is nulled, marked `unresolved` and diagnosed `C2M-RELR-007` at `Warning`
-- [ ] A claim with a missing source fact id is diagnosed and still emitted
-- [ ] A claim with no target at all is declined, not handled
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A present target survives unchanged with the producer's reported method
+- [x] An absent target is nulled, marked `unresolved` and diagnosed `C2M-RELR-007` at `Warning`
+- [x] A claim with a missing source fact id is diagnosed and still emitted
+- [x] A claim with no target at all is declined, not handled
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
