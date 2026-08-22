@@ -2,6 +2,7 @@ using System.Text.Json;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Analysis.Inventory;
+using Csharp2Md.Core.Facts.Model;
 using Csharp2Md.Core.Facts.Serialization;
 using Csharp2Md.Core.Facts.Validation;
 using Csharp2Md.Core.Manifests;
@@ -246,6 +247,67 @@ public sealed class AnalysisEngineTests : IDisposable
         Assert.Contains("Analyzed 5 project(s)", result.Summary, StringComparison.Ordinal);
         Assert.DoesNotContain(result.Diagnostics, diagnostic =>
             diagnostic.Contains("Acme.Shared.Contracts", StringComparison.Ordinal));
+    }
+
+    // COMP-02: the component fragment reaches the manifest exactly like any other pass-two fragment.
+    [Fact]
+    public async Task AnalyzeAsync_TwoProjects_PersistsOneComponentFragmentIntoTheManifest()
+    {
+        CreateProject("One", "class A { }");
+        CreateProject("Two", "class B { }");
+
+        _ = await new AnalysisEngine().AnalyzeAsync(Request());
+
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(_output, "raw", "facts", "manifest.json")));
+        var fragment = Assert.Single(
+            manifest.RootElement.GetProperty("fragments").EnumerateArray(),
+            entry => entry.GetProperty("fact_id").GetString()!.StartsWith("id1:component", StringComparison.Ordinal));
+
+        Assert.Equal(64, fragment.GetProperty("sha256").GetString()!.Length);
+        Assert.True(fragment.GetProperty("byte_length").GetInt32() > 0);
+    }
+
+    // COMP-31: withholding the run's produced project ids from the component fragment's own validation
+    // reproduces "a component references a project id the run never produced" - C2M-FV-002 fires and the
+    // structural failure moves the exit code, exactly like any other fragment's validation failure would.
+    [Fact]
+    public async Task AnalyzeAsync_ComponentReferencingAnUnknownProjectId_FailsWithC2MFV002AndExitCodeOne()
+    {
+        CreateProject("App", "class C { }");
+        FactValidationResult Validate(FactValidationInput input) =>
+            input.Facts.Any(static fact => fact is ComponentFact)
+                ? FactValidator.Validate(input with { KnownFactIds = input.KnownFactIds.Clear() })
+                : FactValidator.Validate(input);
+        var engine = new AnalysisEngine(new InertInventory(), Validate, null);
+
+        var result = await engine.AnalyzeAsync(Request());
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("C2M-FV-002", File.ReadAllText(Path.Combine(_output, "raw", "facts", "diagnostics.json")), StringComparison.Ordinal);
+    }
+
+    // COMP-03: a project reached by three solution paths (fixtures/SyntheticSolution's
+    // Acme.Shared.Contracts) still yields exactly one component, mirroring analysedProjects' own dedupe.
+    [Fact]
+    public async Task AnalyzeAsync_ProjectReachedBySeveralPaths_PersistsExactlyOneComponentPerProject()
+    {
+        var request = Assert.IsType<AnalysisRequest>(
+            AnalysisRequest.Create(TestPaths.SyntheticSolution("."), _output).Request);
+
+        var result = await new AnalysisEngine(new InertInventory(), FactValidator.Validate, null).AnalyzeAsync(request);
+
+        Assert.Equal(0, result.ExitCode);
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(_output, "raw", "facts", "manifest.json")));
+        var fragmentEntry = Assert.Single(
+            manifest.RootElement.GetProperty("fragments").EnumerateArray(),
+            entry => entry.GetProperty("fact_id").GetString()!.StartsWith("id1:component", StringComparison.Ordinal));
+        var relativePath = fragmentEntry.GetProperty("reference").GetString()!;
+        var bytes = File.ReadAllBytes(Path.Combine(_output, "raw", relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        var components = FactualJsonSerializer.Deserialize(bytes).Components;
+
+        // Acme.Broken, Acme.DoesNotExist, Acme.Orders, Acme.Payments, Acme.Shared.Contracts.
+        Assert.Equal(5, components.Length);
+        Assert.Equal(5, components.Select(static component => component.ComponentId).Distinct(StringComparer.Ordinal).Count());
     }
 
     // Pass two runs after the document loop, so a table configured in one document resolves an entity

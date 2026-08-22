@@ -1,4 +1,5 @@
 using System.Text;
+using Csharp2Md.Core.Analysis.Components;
 using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Analysis.DataAccess;
 using Csharp2Md.Core.Analysis.Indexes;
@@ -255,6 +256,25 @@ public sealed class AnalysisEngine
             aggregateFragments.Add(relationFragment);
         }
         else if (!relations.Diagnostics.IsEmpty)
+        {
+            structuralFailure = true;
+        }
+
+        // Pass two of component synthesis (COMP-01/03): one ComponentFact per analysed ProjectFact, using
+        // every project id the run actually produced so C2M-FV-002 accepts a component's own reference to
+        // the project it mirrors - that project fact lives in a fragment this builder never sees.
+        var projects = accumulated.OfType<ProjectFact>().ToImmutableArray();
+        var componentKnownIds = knownFactIds
+            .Concat(projects.Select(static project => project.ProjectId.ToFactId()))
+            .ToHashSet();
+        var componentResult = ComponentFragmentBuilder.Build(projects, componentKnownIds, _validate);
+        analysisDiagnostics.AddRange(componentResult.Diagnostics);
+        if (componentResult.Fragment is { } componentFragment)
+        {
+            storedFragments.Add(store.Persist(componentFragment));
+            aggregateFragments.Add(componentFragment);
+        }
+        else if (!componentResult.Diagnostics.IsEmpty)
         {
             structuralFailure = true;
         }

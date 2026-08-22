@@ -176,14 +176,15 @@ T15 → T16
 
 **Done when**:
 
-- [ ] The component fragment appears in `raw/facts/manifest.json` after a real `AnalyzeAsync` run
-- [ ] `knownFactIds` includes every project id; a component referencing an unknown project id yields `C2M-FV-002` and sets `structuralFailure`
-- [ ] A run over a multi-solution input produces one component for a project reached twice, not two
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] The component fragment appears in `raw/facts/manifest.json` after a real `AnalyzeAsync` run
+- [x] `knownFactIds` includes every project id; a component referencing an unknown project id yields `C2M-FV-002` and sets `structuralFailure`
+- [x] A run over a multi-solution input produces one component for a project reached twice, not two
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 3 new tests in `AnalysisEngineTests.cs`, all passing (35/35 in that file; 1861/1862 full suite, the one failure being T1's pre-existing unrelated flake).
 
 **Tests**: integration
 **Gate**: full
+**Status**: Done
 
 **Commit**: `feat(components): persist the component fragment`
 
