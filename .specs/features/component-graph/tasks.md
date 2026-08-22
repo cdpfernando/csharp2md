@@ -458,14 +458,15 @@ projector's diagnostics to `analysisDiagnostics` **before** `CoverageProjector.P
 
 **Done when**:
 
-- [ ] `ComponentGraphProjector.Project` is called on its own statement, not inline in the `snapshot` constructor
-- [ ] `C2M-CG-001` is present in `raw/facts/diagnostics.json` after a real `AnalyzeAsync` run over a fixture that omits at least one relation — asserted against the written file, not against the projector's return value
-- [ ] A `C2M-CG-001` diagnostic does not change the run's exit code
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] `ComponentGraphProjector.Project` is called on its own statement, not inline in the `snapshot` constructor
+- [x] `C2M-CG-001` is present in `raw/facts/diagnostics.json` after a real `AnalyzeAsync` run over a fixture that omits at least one relation — asserted against the written file, not against the projector's return value. **Note**: the real `fixtures/SyntheticSolution` fixture never produces an unmapped-endpoint relation on its own (every non-null resolved target lands on a project/document/symbol/database node), so the proving test uses the same validate-interception technique `AnalyzeAsync_ComponentReferencingAnUnknownProjectId_FailsWithC2MFV002AndExitCodeOne` already established: it rewrites one real relation's `TargetId` to a well-formed but non-graph-shaped `FactId` before validation.
+- [x] A `C2M-CG-001` diagnostic does not change the run's exit code
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 1 new test in `AnalysisEngineTests.cs`. `V3DeterminismTests.AnalyzeAsync_Output_OmitsV2DependenciesJsonAndWritesRelationDerivedMermaid` is corrected, not added/removed (renamed to `...WritesARealComponentGraphMermaid`) — it was pinning AD-020's exact bug (asserting the diagram stays empty even with real cross-project relations), which is now provably false; see the T11 commit body. Full suite: 1894 passed / 1895 total (the 1 failure is the pre-existing unrelated flake).
 
 **Tests**: integration
 **Gate**: build
+**Status**: Done
 
 **Commit**: `feat(graph): project the component graph before coverage`
 

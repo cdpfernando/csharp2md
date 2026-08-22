@@ -2,6 +2,7 @@ using System.Text.Json;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Analysis.Inventory;
+using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Model;
 using Csharp2Md.Core.Facts.Serialization;
 using Csharp2Md.Core.Facts.Validation;
@@ -308,6 +309,68 @@ public sealed class AnalysisEngineTests : IDisposable
         // Acme.Broken, Acme.DoesNotExist, Acme.Orders, Acme.Payments, Acme.Shared.Contracts.
         Assert.Equal(5, components.Length);
         Assert.Equal(5, components.Select(static component => component.ComponentId).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    // COMP-27: ComponentGraphProjector.Project runs on its own statement before CoverageProjector.Project,
+    // not inline inside the snapshot constructor after coverage is already computed (the diagnostic-
+    // ordering trap design.md documents). Proven end-to-end: a relation whose target is rewritten (via the
+    // same validate-interception technique the C2M-FV-002 test above uses) to a FactId shape GraphNodeIndex
+    // never indexes must still produce a C2M-CG-001 entry in the real written raw/facts/diagnostics.json -
+    // not merely in the projector's in-memory return value - and must not move the exit code.
+    [Fact]
+    public async Task AnalyzeAsync_ARelationWithAnUnmappableTarget_WritesC2MCG001ToDiagnosticsJsonWithoutChangingExitCode()
+    {
+        CreateProject(
+            "App",
+            """
+            class Worker
+            {
+                void Run()
+                {
+                    Helper helper = new Helper();
+                    helper.Do();
+                }
+            }
+
+            class Helper
+            {
+                public void Do() { }
+            }
+            """);
+
+        FactValidationResult Validate(FactValidationInput input)
+        {
+            var relation = input.Facts.OfType<RelationFact>().FirstOrDefault(static candidate => candidate.TargetId is not null);
+            if (relation is null)
+            {
+                return FactValidator.Validate(input);
+            }
+
+            // A RelationFactId is a real, well-formed FactId shape - just not one of the five
+            // (project/document/symbol/database object/database column) GraphNodeIndex resolves, so it
+            // reproduces "an endpoint mapped to no node" without touching production code.
+            var phantomTarget = RelationFactId.Create(relation.SourceId, "phantom", "claim=unmappable-target", 1).ToFactId();
+            var rewritten = input.Facts
+                .Select(fact => ReferenceEquals(fact, relation) ? relation with { TargetId = phantomTarget } : fact)
+                .ToImmutableArray();
+            return FactValidator.Validate(input with
+            {
+                Facts = rewritten,
+                KnownFactIds = input.KnownFactIds.Add(phantomTarget),
+            });
+        }
+
+        var engine = new AnalysisEngine(new InertInventory(), Validate, null);
+        var result = await engine.AnalyzeAsync(Request());
+
+        Assert.Equal(0, result.ExitCode);
+        using var diagnostics = JsonDocument.Parse(File.ReadAllText(Path.Combine(_output, "raw", "facts", "diagnostics.json")));
+        var entry = Assert.Single(
+            diagnostics.RootElement.GetProperty("entries").EnumerateArray(),
+            entry => entry.GetProperty("code").GetString() == "C2M-CG-001");
+        Assert.Equal("information", entry.GetProperty("severity").GetString());
+        Assert.Equal("1", Assert.Single(entry.GetProperty("data").EnumerateArray(), data => data.GetProperty("key").GetString() == "omitted_relation_count")
+            .GetProperty("value").GetString());
     }
 
     // Pass two runs after the document loop, so a table configured in one document resolves an entity

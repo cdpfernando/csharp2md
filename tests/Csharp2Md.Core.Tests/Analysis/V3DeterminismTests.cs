@@ -74,18 +74,24 @@ public sealed class V3DeterminismTests(V3DeterminismFixture fixture) : IClassFix
             manifest.Hashes);
     }
 
+    // T11/AD-021: this test used to assert the diagram stayed the bare "flowchart LR\n" header even for a
+    // fixture with real cross-project structural relations - that was AD-020's bug (ComponentGraphProjector
+    // was never wired into AnalyzeAsync), not a genuine invariant of syntax-only mode. Structural
+    // calls/references between Acme.Orders, Acme.Payments and Acme.Shared.Contracts are syntax-only
+    // detectable, so a real run now produces real node/edge lines; the exact edges are proven by
+    // ComponentGraphEndToEndTests (T12/T13) against the full 5-project fixture, so this test only pins the
+    // structural invariant (well-formed header, genuinely non-empty) rather than duplicating that coverage.
     [Fact]
-    public void AnalyzeAsync_Output_OmitsV2DependenciesJsonAndWritesRelationDerivedMermaid()
+    public void AnalyzeAsync_Output_OmitsV2DependenciesJsonAndWritesARealComponentGraphMermaid()
     {
         foreach (var output in new[] { fixture.OutputA, fixture.OutputB })
         {
             var rawRoot = TopicLayout.RawRoot(output);
             Assert.False(File.Exists(Path.Combine(rawRoot, "dependencies.json")));
 
-            // Syntax-only mode confirms no runtime relation without semantic binding, so the diagram is
-            // built (not merely copied) from an empty validated relation set rather than a static template.
             var mermaid = File.ReadAllText(Path.Combine(rawRoot, "dependencies.mmd"));
-            Assert.Equal("flowchart LR\n", mermaid);
+            Assert.StartsWith("flowchart LR\n", mermaid, StringComparison.Ordinal);
+            Assert.NotEqual("flowchart LR\n", mermaid);
         }
     }
 
