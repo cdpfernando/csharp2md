@@ -183,10 +183,9 @@
 - **In-progress** (file:line): none.
 - **Next step**: None for this feature. Push or PR requires explicit user go-ahead per AD-007.
 - **Blockers**: None.
-- **Uncommitted files**: `validation.md` and this Handoff update pending the closing documentation commit;
-  all remaining untracked paths are long-standing and out of scope.
-- **Branch**: `feat/component-graph`, HEAD `843315d`, stacked on `feat/relation-resolver`; no branch in the
-  stack is pushed and no PR is open.
+- **Uncommitted files**: no tracked feature files; all remaining untracked paths are long-standing and out of scope.
+- **Branch**: `feat/component-graph`, stacked on `feat/relation-resolver`; no branch in the stack is pushed
+  and no PR is open.
 
 ## Historical Handoff - Component Graph Planning (2026-08-22)
 
