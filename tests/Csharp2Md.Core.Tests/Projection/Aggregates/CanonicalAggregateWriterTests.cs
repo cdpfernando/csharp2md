@@ -50,6 +50,42 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
         Assert.Equal("flowchart LR\n", File.ReadAllText(Path.Combine(_root, "raw", "dependencies.mmd")));
     }
 
+    // COMP-06: a snapshot with no Graph still writes both empty-document contents, not an error and not a
+    // stale value carried over from a previous run.
+    [Fact]
+    public void Write_ASnapshotWithNoGraph_StillWritesBothEmptyDocumentContents()
+    {
+        new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot(), TimeProvider.System);
+
+        Assert.Equal("flowchart LR\n", File.ReadAllText(Path.Combine(_root, "raw", "dependencies.mmd")));
+        Assert.Equal("# Components\n", File.ReadAllText(Path.Combine(_root, "raw", "codebase", "components.md")));
+    }
+
+    // COMP-06/COMP-07: a snapshot carrying a real Graph writes exactly that Graph's Mermaid and
+    // ComponentIndex, proving the writer reads AggregateOutputSnapshot.Graph and not a leftover fallback.
+    [Fact]
+    public void Write_ASnapshotWithAGraph_WritesTheGraphsMermaidAndComponentIndex()
+    {
+        var graph = new ComponentGraphProjection(
+            [],
+            "flowchart LR\n    node0[\"Acme.Orders\"]\n",
+            "# Components\n\n## project\n\n- id: `id1:component;kind=project;owners=id1%3Aproject%3Bpath%3DAcme.Orders.csproj`\n",
+            []);
+
+        new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot() with { Graph = graph }, TimeProvider.System);
+
+        Assert.Equal(graph.Mermaid, File.ReadAllText(Path.Combine(_root, "raw", "dependencies.mmd")));
+        Assert.Equal(graph.ComponentIndex, File.ReadAllText(Path.Combine(_root, "raw", "codebase", "components.md")));
+    }
+
+    // COMP-07: this feature is out of scope for a schema version bump - schemas/facts.schema.json already
+    // declares "component" and "components", so FactualJsonSerializer.SchemaVersion must still read 5.
+    [Fact]
+    public void SchemaVersion_IsStillFive()
+    {
+        Assert.Equal(5, FactualJsonSerializer.SchemaVersion);
+    }
+
     [Fact]
     public void Write_MachineFilesAreUtf8LfWithoutTimestamp()
     {

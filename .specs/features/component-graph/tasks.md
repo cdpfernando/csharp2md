@@ -428,14 +428,15 @@ narrow `RelationProjectionResult` to `Partitions` alone.
 
 **Done when**:
 
-- [ ] `Graph` is a trailing optional parameter, mirroring `Relations` and `Database`
-- [ ] A snapshot with no graph still writes both files with their empty-document contents
-- [ ] `FactualJsonSerializer.SchemaVersion` is asserted to still be 5 and `schemas/facts.schema.json` is unmodified
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] `Graph` is a trailing optional parameter, mirroring `Relations` and `Database`
+- [x] A snapshot with no graph still writes both files with their empty-document contents
+- [x] `FactualJsonSerializer.SchemaVersion` is asserted to still be 5 (`SchemaVersion_IsStillFive`) and `schemas/facts.schema.json` is unmodified (confirmed via `git status`/`git diff --stat` - zero delta)
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 3 new tests in `CanonicalAggregateWriterTests.cs` (12 -> 15), all passing. Full suite: 1894 passed / 1894 total (the previously-flaky `DotnetMsBuildEvaluatorTests` test passed this run).
 
 **Tests**: unit
 **Gate**: quick
+**Status**: Done
 
 **Commit**: `feat(projection): write the graph from its own snapshot member`
 

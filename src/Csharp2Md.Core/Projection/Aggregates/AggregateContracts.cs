@@ -74,6 +74,7 @@ internal sealed record AggregateOutputSnapshot(
     ImmutableArray<StoredFactFragment> Fragments,
     CoverageProjectionResult? HonestCoverage = null,
     RelationProjectionResult? Relations = null,
-    DatabaseProjectionResult? Database = null);
+    DatabaseProjectionResult? Database = null,
+    ComponentGraphProjection? Graph = null);
 
 internal sealed record AggregateWriteResult(string RawRoot, string ManifestPath);
