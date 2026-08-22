@@ -206,17 +206,18 @@ built from components, projects, documents, symbols, database objects and databa
 
 **Done when**:
 
-- [ ] One test per row of the design's resolution table: project id, document id, symbol id, database object id, database column id
-- [ ] A column id resolves to its owning object's node, and the column itself is never a node
-- [ ] An unrelated `FactId` returns `false` with a null node
-- [ ] A project id claimed by two components throws `InvalidOperationException`
-- [ ] Node labels come from `ProjectFact.Name` / `DatabaseObjectFact.Name`; `NodeId` is the component or object identity
-- [ ] No test and no production line parses or unquotes a `FactId` string
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] One test per row of the design's resolution table: project id, document id, symbol id, database object id, database column id
+- [x] A column id resolves to its owning object's node, and the column itself is never a node
+- [x] An unrelated `FactId` returns `false` with a null node
+- [x] A project id claimed by two components throws `InvalidOperationException`
+- [x] Node labels come from `ProjectFact.Name` / `DatabaseObjectFact.Name`; `NodeId` is the component or object identity
+- [x] No test and no production line parses or unquotes a `FactId` string
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 7 new tests in `GraphNodeIndexTests.cs`, all passing (1869/1869 full suite).
 
 **Tests**: unit
 **Gate**: quick
+**Status**: Done
 
 **Commit**: `feat(graph): resolve relation endpoints to graph nodes`
 
