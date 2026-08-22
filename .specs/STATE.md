@@ -172,6 +172,24 @@
 
 ## Handoff
 
+- **Feature**: `component-graph` (`.specs/features/component-graph/`) is complete and independently verified.
+- **Phase / Task**: Execute complete. T1-T18 are committed; feature-level validation passed.
+- **Validation**: `.specs/features/component-graph/validation.md` is PASS. All 32 P1 criteria have file:line
+  evidence. The discrimination sensor is skipped by the standing project rule. `validate_state.py component-graph`
+  exits 0.
+- **Gate**: Release build and format verification pass. Tests: 1917 passed / 1918 total; the unchanged,
+  pre-existing `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` failure
+  remains outside this feature's diff.
+- **In-progress** (file:line): none.
+- **Next step**: None for this feature. Push or PR requires explicit user go-ahead per AD-007.
+- **Blockers**: None.
+- **Uncommitted files**: `validation.md` and this Handoff update pending the closing documentation commit;
+  all remaining untracked paths are long-standing and out of scope.
+- **Branch**: `feat/component-graph`, HEAD `843315d`, stacked on `feat/relation-resolver`; no branch in the
+  stack is pushed and no PR is open.
+
+## Historical Handoff - Component Graph Planning (2026-08-22)
+
 - **Feature**: `component-graph` (`.specs/features/component-graph/`) — **planned, not started.** Specify,
   Design and Tasks are all complete and **user-approved** (2026-08-22). Execute has not begun; no production
   code has been written for it and nothing has been committed.
