@@ -164,25 +164,89 @@
 
 ## Handoff
 
-- **Feature**: none in progress. `RelationResolver` closed out this session — see
-  "Historical Handoff — RelationResolver" below for the full record.
-- **Branch**: `feat/relation-resolver`, HEAD `dea05f5`, stacked on `feat/data-access-discovery` (which is
-  stacked on `master`). Neither branch is pushed to any remote; no PR opened. Pushing/opening a PR requires
-  explicit user go-ahead per AD-007 — not yet requested or given.
+- **Feature**: `component-graph` (`.specs/features/component-graph/`) — **planned, not started.** Specify,
+  Design and Tasks are all complete and **user-approved** (2026-08-22). Execute has not begun; no production
+  code has been written for it and nothing has been committed.
+- **Phase / Task**: Execute, about to start at **T1**. 0 of 17 tasks done.
+- **Branch**: still `feat/relation-resolver`, HEAD `69a9006`, stacked on `feat/data-access-discovery` (which
+  is stacked on `master`). Neither branch is pushed to any remote; no PR opened. Pushing/opening a PR
+  requires explicit user go-ahead per AD-007 — not requested or given. **No branch has been cut for
+  `component-graph`** — decide that with the user before T1 (prior features each got their own stacked
+  branch; AD-007 requires a feature branch, and this feature carries a `refactor(projection)!` break at T9).
 - **In-progress** (file:line): none.
-- **Next step**: none decided. Candidates, not yet chosen: (a) push and open a PR for the two stacked
-  branches; (b) start the deferred P2 scope (`RELR-40`..`RELR-45` — HTTP/events/configuration node
-  resolvers) as a new feature; (c) start a separate feature to close AD-020's gap (wire a `ComponentFact`
-  producer and fix `RelationProjector.Mermaid`'s project-vs-symbol/document key mismatch), which is what
-  spec.md's `dependencies.mmd`-edge Success Criterion actually needs. Ask the user before assuming any of
-  these.
+- **Next step**: run Execute from T1. The user chose **"approve, I'll execute later"**, so do not start
+  without them asking. The sub-agent offer was presented and **not yet answered** — 17 tasks pack into 3
+  batches (Phases 1+2 = T1-T8, Phases 3+4 = T9-T15, Phase 5 = T16-T17); one-worker-per-phase (5 workers) and
+  inline execution were both offered as alternatives. Ask which before dispatching anything.
 - **Blockers**: None.
-- **Uncommitted files**: the same long-standing untracked paths carried by every prior handoff — `.agents/`,
-  `.claude/`, `.cursor/`, `.windsurf/`, `.specs/features/csharp2md-v3/context.md`,
+- **Two pipeline fixes committed this session** (2026-08-22), both pre-existing working-tree changes the
+  user asked to land before Execute begins. Neither changes output; both were verified against the full
+  gate before committing:
+  - `fe3448e` `perf(facts): serialize a fragment straight to UTF-8 bytes` — `FactualJsonSerializer` no
+    longer materializes the payload as a UTF-16 string before encoding it. AD-018 puts every relation in
+    one solution-level fragment, which can grow large enough that the intermediate string fails to
+    allocate. CRLF normalization moved to an in-place byte pass.
+  - `69a9006` `perf(analysis): bound aggregate projection to the pass-two fragments` — `AnalysisEngine`'s
+    `validatedFragments` retained one fragment per document and per project for the whole run, so peak
+    memory grew with codebase size. **That directly contradicted AD-008**, whose stated purpose is a
+    pipeline bounded by catalogs and aggregates rather than by how much source it read; the fix restores
+    that guarantee rather than establishing a new one, so no new `AD-NNN` is warranted. The replacement
+    `aggregateFragments` builder is scoped to pass two, and both aggregate projectors now read one
+    explicitly scoped collection instead of the same growing builder at two different points in the run.
+    Per-document and per-project fragments are still persisted and still reach the manifest through
+    `storedFragments`.
+
+  `component-graph`'s design.md quotes `aggregateFragments` in its `AnalysisEngine` wiring snippet; that
+  identifier is now in `HEAD`, so T2 and T11 apply as written.
+- **Gate at close**: `dotnet build -c Release` clean, `dotnet format --verify-no-changes` clean,
+  `dotnet test` 1850/1851 — the single failure is the pre-existing documented
+  `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` flake, unchanged
+  from the previous session's baseline and unrelated to either commit.
+- **Uncommitted files — untracked**: the same long-standing paths carried by every prior handoff —
+  `.agents/`, `.claude/`, `.cursor/`, `.windsurf/`, `.specs/features/csharp2md-v3/context.md`,
   `.specs/features/data-access-discovery/context.md` and `design.md`,
   `.specs/features/relation-collector/context.md` and `design.md`, two dated Markdown files, `AGENTS.md`,
-  `CLAUDE.md`, `fixtures/launch-manifest.json`, `research/`, `src/Csharp2Md.Cli/Properties/`. No tracked-file
-  modifications outstanding (`git status --porcelain --untracked-files=no` is empty).
+  `CLAUDE.md`, `fixtures/launch-manifest.json`, `research/`, `src/Csharp2Md.Cli/Properties/`. Now also
+  `.specs/features/component-graph/` (spec.md, design.md, tasks.md).
+
+## Planning Record — Component Graph (2026-08-22)
+
+- **What it closes**: AD-020. A live CLI run over `fixtures/SyntheticSolution` during Design confirmed
+  `raw/dependencies.mmd` is exactly `"flowchart LR\n"` — zero nodes, zero edges — while the same run resolves
+  **15 cross-project relations** and **11 relations into proven database objects**. Both of AD-020's blockers
+  were re-verified rather than taken on trust: `grep` finds no `new ComponentFact(` outside one test file,
+  and `RelationProjector.Mermaid`'s `componentByProject` is keyed by project-shaped `FactId`s while relation
+  endpoints are symbol-, document- or database-shaped.
+- **Spec**: 35 requirements. P1 `COMP-01`..`COMP-32` across four stories (components exist; deduped edges
+  render; database objects are nodes; omissions are counted). P2 `COMP-40`/`COMP-41` (service-level rollup)
+  and P3 `COMP-50` (placeholder nodes for unresolved endpoints) deliberately out of the task list.
+  `validate_spec.py` exits 0.
+- **User decisions (AskUserQuestion, all three recorded as confirmed assumptions in spec.md)**: one component
+  per **project** (not per service); edges **deduped** by (source, target, partition, kind) with a count;
+  **database objects are nodes** alongside projects. Service granularity was additionally ruled out by
+  evidence — `Acme.Shared.Contracts` belongs to both `.slnx` files, which trips
+  `RelationProjector`'s one-project-one-component invariant on this repo's own fixture.
+- **Design**: `ComponentFragmentBuilder` (mints one `ComponentFact` per `ProjectFact`), a pure
+  `GraphNodeIndex` (endpoint `FactId` → node, resolved by walking facts, never by parsing id text — AD-014),
+  and a new `ComponentGraphProjector` owning `dependencies.mmd` and `components.md`. `RelationProjector`
+  narrows to its partition job. Architecture chosen by the user over two alternatives.
+- **No schema bump**: `schemas/facts.schema.json` already lists `components` in `required` and `"component"`
+  in `fact_kind`. `FactualJsonSerializer.SchemaVersion` stays at **5**. Verified by reading the schema.
+- **Two corrections the live run forced into the spec**: every `ProjectFact` reports `syntactic` in the
+  default syntax-only mode, so a component's resolution **mirrors its project's** rather than being a
+  hardcoded `Exact`; and `Acme.DoesNotExist` gets a `ProjectFact` despite the file being absent, so the run
+  yields **5** components, not 4.
+- **Critical trap recorded in design.md's Risks table**: `RelationProjector.Project` is invoked inline inside
+  the `snapshot` constructor at `AnalysisEngine.cs:269`, *after* `CoverageProjector.Project` at line 263, so
+  any diagnostic a projector emits from there never reaches `diagnostics.json`. This is the same defect the
+  relation-resolver session found in `RelationFragmentBuilder` (T23). T11 therefore requires asserting
+  `C2M-CG-001` against the **written file**, not the projector's return value.
+- **Tasks**: 17 tasks, 5 phases. `validate_tasks.py` exits 0 (2 expected `Tests: none` warnings on the two
+  document-only tasks). One design amendment was made during breakdown and written back into design.md:
+  `ComponentGraphProjection` also carries `ImmutableArray<ComponentGraphEdge> Edges`, so edge selection (T4)
+  is verifiable without the renderer (T5).
+- **Standing skip**: the Verifier's discrimination sensor is skipped for this feature, as for every prior
+  one, recorded in `tasks.md`'s header.
 
 ## Historical Handoff — RelationResolver
 
