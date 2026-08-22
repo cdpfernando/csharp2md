@@ -68,6 +68,73 @@ public sealed class ComponentGraphEndToEndTests(ComponentGraphEndToEndFixture fi
         var idLines = fixture.ComponentIndex.Split('\n').Count(static line => line.TrimStart().StartsWith("- id: `", StringComparison.Ordinal));
         Assert.Equal(5, idLines);
     }
+
+    // COMP-10/COMP-11/COMP-17/COMP-19: the spec's 7 named non-data edges, each asserted by the exact
+    // rendered line (source alias, "-->|<partition>:<kind> ×<count>|", target alias) - not a substring
+    // search - so the label's exact partition prefix, kind and collapsed count are all pinned at once.
+    // This Theory's first case is also the Independent Test's headline assertion
+    // (Acme.Orders -> Acme.Shared.Contracts, structural:calls x5).
+    [Theory]
+    [InlineData("Acme.Orders", "Acme.Shared.Contracts", "structural:calls ×5")]
+    [InlineData("Acme.Orders", "Acme.Shared.Contracts", "structural:references ×4")]
+    [InlineData("Acme.Orders", "Acme.Shared.Contracts", "events:publishes ×1")]
+    [InlineData("Acme.Payments", "Acme.Shared.Contracts", "structural:references ×2")]
+    [InlineData("Acme.Payments", "Acme.Shared.Contracts", "events:publishes ×1")]
+    [InlineData("Acme.Payments", "Acme.Shared.Contracts", "events:handles ×1")]
+    [InlineData("Acme.Payments", "Acme.Shared.Contracts", "events:subscribes ×1")]
+    public void DeduplicatedEdges_AllSevenNonDataEdgesFromTheIndependentTest_AreAssertedByExactLine(
+        string sourceLabel, string targetLabel, string partitionKindAndCount)
+    {
+        var source = NodeAlias(fixture.Mermaid, sourceLabel);
+        var target = NodeAlias(fixture.Mermaid, targetLabel);
+
+        Assert.Contains($"    {source} -->|{partitionKindAndCount}| {target}\n", fixture.Mermaid, StringComparison.Ordinal);
+    }
+
+    // COMP-12: every edge line's source and target alias differ - the projector's self-edge drop rule
+    // proven here against the real fixture's own relations, not fabricated ones.
+    [Fact]
+    public void DeduplicatedEdges_NoEdgeHasTheSameSourceAndTargetNode()
+    {
+        var edgeLines = fixture.Mermaid.Split('\n').Where(static line => line.Contains("-->", StringComparison.Ordinal)).ToArray();
+        Assert.NotEmpty(edgeLines);
+        Assert.All(edgeLines, static line =>
+        {
+            var source = line.TrimStart().Split(' ', 2)[0];
+            var target = line[(line.IndexOf("-->", StringComparison.Ordinal) + 3)..].Split('|').Last().Trim();
+            Assert.NotEqual(source, target);
+        });
+    }
+
+    // COMP-28: Acme.Broken produces a ProjectFact (and therefore a component) but no resolved
+    // cross-component relation, so it must appear in the index yet never touch the diagram.
+    [Fact]
+    public void AcmeBroken_HasAComponentButNoEdgeConfirmingComp28()
+    {
+        Assert.Contains(fixture.Components, component => component.ProjectIds[0].Contains("Acme.Broken", StringComparison.Ordinal));
+        Assert.DoesNotContain("Acme.Broken", fixture.Mermaid, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The positional node alias (<c>nodeN</c>) that renders the given label in
+    /// <see cref="ComponentGraphEndToEndFixture.Mermaid"/>, looked up rather than hardcoded so edge
+    /// assertions stay exact-line without pinning to a specific alias number.
+    /// </summary>
+    private static string NodeAlias(string mermaid, string label)
+    {
+        var rectangleSuffix = $"[\"{label}\"]";
+        var cylinderSuffix = $"[(\"{label}\")]";
+        foreach (var line in mermaid.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.EndsWith(rectangleSuffix, StringComparison.Ordinal) || trimmed.EndsWith(cylinderSuffix, StringComparison.Ordinal))
+            {
+                return trimmed[..trimmed.IndexOf('[')];
+            }
+        }
+
+        throw new InvalidOperationException($"No node line found for label '{label}' in:\n{mermaid}");
+    }
 }
 
 public sealed class ComponentGraphEndToEndFixture : IAsyncLifetime

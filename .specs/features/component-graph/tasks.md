@@ -519,15 +519,16 @@ absence of any self-edge.
 
 **Done when**:
 
-- [ ] `Acme.Orders → Acme.Shared.Contracts` labelled `structural:calls ×5` is asserted by exact line
-- [ ] All 7 non-`data` edges from the spec's Independent Test are asserted, each by source, target and kind
-- [ ] No edge has the same source and target node
-- [ ] `Acme.Broken` has a component but no edge, confirming COMP-28
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] `Acme.Orders → Acme.Shared.Contracts` labelled `structural:calls ×5` is asserted by exact line
+- [x] All 7 non-`data` edges from the spec's Independent Test are asserted, each by source, target and kind
+- [x] No edge has the same source and target node
+- [x] `Acme.Broken` has a component but no edge, confirming COMP-28
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 9 new tests in `ComponentGraphEndToEndTests.cs` (a 7-case `Theory` for the 7 non-`data` edges, plus the self-edge and `Acme.Broken` facts). Full suite: 1908 passed / 1908 total (the previously-flaky `DotnetMsBuildEvaluatorTests` test passed this run).
 
 **Tests**: integration
 **Gate**: full
+**Status**: Done
 
 **Commit**: `test(graph): prove the deduped-edges independent test`
 
