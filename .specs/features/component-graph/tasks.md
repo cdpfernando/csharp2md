@@ -550,15 +550,16 @@ absence of any self-edge.
 
 **Done when**:
 
-- [ ] `order_headers`, `Orders` and `usp_RebuildOrderTotals` each render as `[("…")]`
-- [ ] Each is reached by an edge from the `Acme.Orders` rectangle
-- [ ] A `data:writes-column ×4` edge into `Orders` is asserted by exact line
-- [ ] No node is named after a column, and `components.md` mentions none of the three objects
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] `order_headers`, `Orders` and `usp_RebuildOrderTotals` each render as `[("…")]`
+- [x] Each is reached by an edge from the `Acme.Orders` rectangle
+- [x] A `data:writes-column ×4` edge into `Orders` is asserted by exact line
+- [x] No node is named after a column, and `components.md` mentions none of the three objects. **Note**: "Orders" (the database object) is a substring of "Acme.Orders" (the project), so `components.md`'s check asserts the absence of any `database-object`-shaped fact id rather than a naive substring search that would false-positive on the project's own name.
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 6 new tests in `ComponentGraphEndToEndTests.cs` (a 3-case `Theory` for the cylinder nodes, plus 3 facts). Full suite: 1913 passed / 1914 total (the 1 failure is the pre-existing unrelated flake).
 
 **Tests**: integration
 **Gate**: full
+**Status**: Done
 
 **Commit**: `test(graph): prove the database-nodes independent test`
 

@@ -115,6 +115,55 @@ public sealed class ComponentGraphEndToEndTests(ComponentGraphEndToEndFixture fi
         Assert.DoesNotContain("Acme.Broken", fixture.Mermaid, StringComparison.Ordinal);
     }
 
+    // COMP-20/COMP-21/COMP-23: each of the fixture's 3 proven database objects renders as a cylinder node
+    // and is reached by at least one edge from the Acme.Orders rectangle - proven against the real
+    // fixture rather than a hand-built GraphNodeIndex.
+    [Theory]
+    [InlineData("order_headers")]
+    [InlineData("Orders")]
+    [InlineData("usp_RebuildOrderTotals")]
+    public void DatabaseNodes_EachOfTheThreeObjects_RendersAsACylinderReachedFromAcmeOrders(string objectName)
+    {
+        Assert.Contains($"[(\"{objectName}\")]", fixture.Mermaid, StringComparison.Ordinal);
+
+        var source = NodeAlias(fixture.Mermaid, "Acme.Orders");
+        var target = NodeAlias(fixture.Mermaid, objectName);
+        Assert.Contains(
+            fixture.Mermaid.Split('\n'),
+            line => line.TrimStart().StartsWith($"{source} -->|", StringComparison.Ordinal)
+                && line.TrimEnd().EndsWith($"| {target}", StringComparison.Ordinal));
+    }
+
+    // COMP-11/COMP-21/COMP-22: the column-targeted and object-targeted writes-column relations into the
+    // Orders object fold into one deduped edge, asserted by exact line.
+    [Fact]
+    public void DatabaseNodes_WritesColumnEdgeIntoOrdersDatabaseObject_IsAssertedByExactLine()
+    {
+        var source = NodeAlias(fixture.Mermaid, "Acme.Orders");
+        var target = NodeAlias(fixture.Mermaid, "Orders");
+
+        Assert.Contains($"    {source} -->|data:writes-column ×4| {target}\n", fixture.Mermaid, StringComparison.Ordinal);
+    }
+
+    // COMP-21: exactly 3 cylinder node lines appear - one per database object - proving no column ever
+    // gets rendered as its own node (a 4th cylinder would mean a column leaked through).
+    [Fact]
+    public void DatabaseNodes_ExactlyThreeCylinderNodesAppear_ProvingNoColumnGetsItsOwnNode()
+    {
+        var cylinderNodeLines = fixture.Mermaid.Split('\n')
+            .Count(static line => line.TrimStart().StartsWith("node", StringComparison.Ordinal) && line.Contains("[(\"", StringComparison.Ordinal));
+
+        Assert.Equal(3, cylinderNodeLines);
+    }
+
+    // COMP-24: database objects are never ComponentFacts, so components.md - rendered exclusively from
+    // ComponentFacts - can never contain a database-object-shaped fact id.
+    [Fact]
+    public void ComponentsMd_MentionsNoDatabaseObject()
+    {
+        Assert.DoesNotContain("database-object", fixture.ComponentIndex, StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// The positional node alias (<c>nodeN</c>) that renders the given label in
     /// <see cref="ComponentGraphEndToEndFixture.Mermaid"/>, looked up rather than hardcoded so edge
