@@ -143,17 +143,18 @@ T15 → T16
 
 **Done when**:
 
-- [ ] `ComponentKind` is `"project"` and `ProjectIds` holds exactly the one owning `ProjectFactId`
-- [ ] Header `Resolution` is copied from the source `ProjectFact.Header.Resolution`, never hardcoded — a test with a `Syntactic` project and one with an `Exact` project both assert the mirrored value
-- [ ] Header carries `new FactProvenance("csharp2md.components", "1")` and an empty `Evidence` array
-- [ ] Two projects resolving to the same `ComponentFactId` throw `InvalidOperationException`
-- [ ] Empty project input returns `ComponentFragmentResult.Empty` with no fragment and no diagnostics
-- [ ] `Components` is exposed on the result separately from `Fragment`
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] `ComponentKind` is `"project"` and `ProjectIds` holds exactly the one owning `ProjectFactId`
+- [x] Header `Resolution` is copied from the source `ProjectFact.Header.Resolution`, never hardcoded — a test with a `Syntactic` project and one with an `Exact` project both assert the mirrored value
+- [x] Header carries `new FactProvenance("csharp2md.components", "1")` and an empty `Evidence` array
+- [x] Two projects resolving to the same `ComponentFactId` throw `InvalidOperationException`
+- [x] Empty project input returns `ComponentFragmentResult.Empty` with no fragment and no diagnostics
+- [x] `Components` is exposed on the result separately from `Fragment`
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 8 new tests in `ComponentFragmentBuilderTests.cs`, all passing. One pre-existing, unrelated flaky test (`DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml`) fails identically on a clean checkout without this task's changes — confirmed via `git stash`; not in scope to fix.
 
 **Tests**: unit
 **Gate**: quick
+**Status**: Done
 
 **Commit**: `feat(components): mint a component fact per analysed project`
 
