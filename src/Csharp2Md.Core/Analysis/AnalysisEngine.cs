@@ -114,7 +114,6 @@ public sealed class AnalysisEngine
 
         var store = new FactStore(request.OutputRoot);
         var storedFragments = ImmutableArray.CreateBuilder<StoredFactFragment>();
-        var validatedFragments = ImmutableArray.CreateBuilder<ValidatedFactFragment>();
         var coverageFacts = ImmutableArray.CreateBuilder<IFact>();
         var symbolFacts = ImmutableArray.CreateBuilder<SymbolFact>();
         var coverageOverrides = ImmutableArray.CreateBuilder<ScopeCoverageInput>();
@@ -157,7 +156,7 @@ public sealed class AnalysisEngine
                     try
                     {
                         var projectResult = await AnalyzeProjectAsync(
-                                request, project, store, storedFragments, validatedFragments, coverageFacts,
+                                request, project, store, storedFragments, coverageFacts,
                                 symbolFacts, coverageOverrides, analysisDiagnostics, resultDiagnostics,
                                 loadedExtensions, databaseClaims, relationClaims, cancellationToken)
                             .ConfigureAwait(false);
@@ -194,17 +193,23 @@ public sealed class AnalysisEngine
         var databaseResolution = DatabaseMappingResolver.Resolve(databaseClaims.ToSnapshot(), symbolIndex);
         var database = DatabaseFragmentBuilder.Build(databaseResolution, _validate);
         analysisDiagnostics.AddRange(database.Diagnostics);
+        // RelationProjector/DatabaseAggregateProjector only react to RelationFact/ComponentFact and
+        // DatabaseObjectFact/DatabaseColumnFact, which exist solely inside these two pass-two aggregate
+        // fragments - never inside a per-document or per-project fragment. Projecting from just these two
+        // (instead of every validated fragment the whole run has produced) keeps this bounded by the
+        // aggregate size rather than by total codebase size.
+        var aggregateFragments = ImmutableArray.CreateBuilder<ValidatedFactFragment>();
         if (database.Fragment is { } databaseFragment)
         {
             storedFragments.Add(store.Persist(databaseFragment));
-            validatedFragments.Add(databaseFragment);
+            aggregateFragments.Add(databaseFragment);
         }
         else if (!database.Diagnostics.IsEmpty)
         {
             structuralFailure = true;
         }
 
-        var databaseAggregate = DatabaseAggregateProjector.Project(validatedFragments);
+        var databaseAggregate = DatabaseAggregateProjector.Project(aggregateFragments);
         analysisDiagnostics.AddRange(databaseAggregate.Diagnostics);
 
         // Pass two of relation resolution (AD-018): runs once the run's complete SymbolIndex and the
@@ -247,7 +252,7 @@ public sealed class AnalysisEngine
         if (relations.Fragment is { } relationFragment)
         {
             storedFragments.Add(store.Persist(relationFragment));
-            validatedFragments.Add(relationFragment);
+            aggregateFragments.Add(relationFragment);
         }
         else if (!relations.Diagnostics.IsEmpty)
         {
@@ -261,7 +266,7 @@ public sealed class AnalysisEngine
             request.Topic, request.Domain, "3.0.1", request.Options.Mode, effectiveMode, request.Options.Trust,
             loadedExtensions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray(),
             new ManifestCoverage(inventory.Services.Length, projectCount, documentCount),
-            storedFragments.ToImmutable(), honestCoverage, RelationProjector.Project(validatedFragments),
+            storedFragments.ToImmutable(), honestCoverage, RelationProjector.Project(aggregateFragments),
             databaseAggregate);
         new CanonicalAggregateWriter().WritePrepared(request.OutputRoot, snapshot, TimeProvider.System);
 
@@ -278,7 +283,6 @@ public sealed class AnalysisEngine
         InventoryProject project,
         FactStore store,
         ImmutableArray<StoredFactFragment>.Builder storedFragments,
-        ImmutableArray<ValidatedFactFragment>.Builder validatedFragments,
         ImmutableArray<IFact>.Builder coverageFacts,
         ImmutableArray<SymbolFact>.Builder symbolFacts,
         ImmutableArray<ScopeCoverageInput>.Builder coverageOverrides,
@@ -389,7 +393,6 @@ public sealed class AnalysisEngine
                 var fragment = validation.Fragment!;
                 var stored = store.Persist(fragment);
                 storedFragments.Add(stored);
-                validatedFragments.Add(fragment);
                 persistedDocumentIds.Add(documentFact.DocumentId);
                 coverageFacts.Add(fragment.Facts.OfType<DocumentFact>().Single());
                 databaseClaims.Add(
@@ -443,7 +446,6 @@ public sealed class AnalysisEngine
             {
                 var fragment = validation.Fragment!;
                 storedFragments.Add(store.Persist(fragment));
-                validatedFragments.Add(fragment);
                 coverageFacts.AddRange(fragment.Facts.Where(static fact => fact is ProjectFact or TargetFact));
             }
             else
