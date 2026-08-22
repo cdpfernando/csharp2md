@@ -168,16 +168,24 @@
   Design and Tasks are all complete and **user-approved** (2026-08-22). Execute has not begun; no production
   code has been written for it and nothing has been committed.
 - **Phase / Task**: Execute, about to start at **T1**. 0 of 17 tasks done.
-- **Branch**: still `feat/relation-resolver`, HEAD `69a9006`, stacked on `feat/data-access-discovery` (which
-  is stacked on `master`). Neither branch is pushed to any remote; no PR opened. Pushing/opening a PR
-  requires explicit user go-ahead per AD-007 — not requested or given. **No branch has been cut for
-  `component-graph`** — decide that with the user before T1 (prior features each got their own stacked
-  branch; AD-007 requires a feature branch, and this feature carries a `refactor(projection)!` break at T9).
+- **Branch**: `feat/component-graph`, **already cut and checked out**, HEAD `79c3aa9`, zero commits of its
+  own so far. User's explicit choice (`AskUserQuestion`, 2026-08-22) to stack rather than branch from
+  `master` — cutting from `master` would lose the resolved relations this feature reads, leaving the fixture
+  with zero edges and making T13/T14 unpassable. Full stack: `master` ← `feat/data-access-discovery` ←
+  `feat/relation-resolver` ← `feat/component-graph`. **No branch in the stack is pushed to any remote and no
+  PR is open**; pushing or opening one needs explicit user go-ahead per AD-007 — not requested or given.
 - **In-progress** (file:line): none.
-- **Next step**: run Execute from T1. The user chose **"approve, I'll execute later"**, so do not start
-  without them asking. The sub-agent offer was presented and **not yet answered** — 17 tasks pack into 3
-  batches (Phases 1+2 = T1-T8, Phases 3+4 = T9-T15, Phase 5 = T16-T17); one-worker-per-phase (5 workers) and
-  inline execution were both offered as alternatives. Ask which before dispatching anything.
+- **Next step**: run Execute from **T1**, no further questions needed — both open decisions were settled
+  before this handoff was written. Read `tasks.md` and follow the `tlc-spec-driven` Execute flow.
+- **Execution mode — decided, do not re-ask**: **3 batch sub-agents**, the user's explicit choice
+  (`AskUserQuestion`, 2026-08-22), packed on whole-phase boundaries:
+  - Batch 1 — Phases 1+2, **T1-T8** (8 tasks)
+  - Batch 2 — Phases 3+4, **T9-T15** (7 tasks)
+  - Batch 3 — Phase 5, **T16-T17** (2 tasks)
+
+  Batches run sequentially; each worker reports a compact summary before the next is dispatched. A fresh
+  Verifier then runs automatically (author ≠ verifier), with its discrimination sensor skipped per the
+  standing project-wide request recorded in `tasks.md`'s header.
 - **Blockers**: None.
 - **Two pipeline fixes committed this session** (2026-08-22), both pre-existing working-tree changes the
   user asked to land before Execute begins. Neither changes output; both were verified against the full
