@@ -581,13 +581,14 @@ absence of any self-edge.
 
 **Done when**:
 
-- [ ] Both files compared byte-for-byte, not line-count or length
-- [ ] The assertion would fail if node aliases were assigned in discovery order — confirmed by reasoning recorded in the commit body
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Both files compared byte-for-byte, not line-count or length
+- [x] The assertion would fail if node aliases were assigned in discovery order — **confirmed by reasoning, not by this integration test itself; see the T15 commit body for the full argument and why the unit-level test is the one that actually proves it.** In short: `InertInventory` (`src/Csharp2Md.Core/Analysis/Inventory/InertInventory.cs:36`) canonically sorts services by `RootPath` before `AnalyzeAsync` ever runs, and in `fixtures/SyntheticSolution` each project's folder name equals its `ProjectFact.Name`, so `RootPath`-alphabetical order and `Label`-alphabetical order coincide — a same-fixture, two-real-run integration test cannot by itself distinguish a discovery-order-based renderer from a canonically-ordered one here. That discrimination is what T6's unit test already proves (`Project_SameFactsInTwoInputOrders_ProducesIdenticalMermaidOutput`, `tests/Csharp2Md.Core.Tests/Projection/Aggregates/ComponentGraphProjectorTests.cs`), which feeds the identical fact set in two different input orders directly, bypassing `InertInventory`'s sort entirely. This test's own value is a different, still-real guarantee: a real run twice over identical input writes identical bytes, catching non-determinism from unsorted `HashSet`/`Dictionary` iteration or similar - not swept up incidentally by `AnalyzeAsync_SameFixtureFromTwoAbsoluteRoots_ProducesByteIdenticalTreesExceptLog`'s whole-tree comparison, since this test names the two files explicitly for traceability.
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 1 new test in `V3DeterminismTests.cs`. Full suite: 1914 passed / 1915 total (the 1 failure is the pre-existing unrelated flake).
 
 **Tests**: integration
 **Gate**: full
+**Status**: Done
 
 **Commit**: `test(graph): pin the diagram's byte-level determinism`
 

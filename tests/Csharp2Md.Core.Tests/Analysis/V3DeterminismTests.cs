@@ -95,6 +95,21 @@ public sealed class V3DeterminismTests(V3DeterminismFixture fixture) : IClassFix
         }
     }
 
+    // COMP-16/COMP-32: the graph's two rendered files specifically, byte-for-byte - named explicitly (not
+    // merely swept up by AnalyzeAsync_SameFixtureFromTwoAbsoluteRoots_ProducesByteIdenticalTreesExceptLog
+    // above, which already covers them incidentally as part of the whole raw/ tree) so a break here is
+    // traceable to the graph feature by test name alone.
+    [Fact]
+    public void AnalyzeAsync_Output_WritesByteIdenticalDependenciesMermaidAndComponentsMarkdownAcrossTwoRuns()
+    {
+        foreach (var relative in new[] { "dependencies.mmd", Path.Combine("codebase", "components.md") })
+        {
+            var bytesA = File.ReadAllBytes(Path.Combine(TopicLayout.RawRoot(fixture.OutputA), relative));
+            var bytesB = File.ReadAllBytes(Path.Combine(TopicLayout.RawRoot(fixture.OutputB), relative));
+            Assert.True(bytesA.AsSpan().SequenceEqual(bytesB), $"byte mismatch: {relative}");
+        }
+    }
+
     [Fact]
     public void AnalyzeAsync_RepresentativeDocument_PersistedFragmentReconstructsOriginalSourceBytes()
     {
