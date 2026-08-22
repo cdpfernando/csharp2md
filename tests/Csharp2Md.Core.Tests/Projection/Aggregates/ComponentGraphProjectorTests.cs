@@ -266,6 +266,19 @@ public sealed class ComponentGraphProjectorTests
         Assert.Contains($"[\"{escapedName}\"]", result.Mermaid, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("calls#remote", "calls#35;remote")]
+    [InlineData("calls\"remote", "calls#quot;remote")]
+    [InlineData("calls|remote", "calls#124;remote")]
+    public void Project_EdgeLabelContainingASpecialCharacter_EscapesItForMermaid(string rawKind, string escapedKind)
+    {
+        var relation = Relation(Orders.ToFactId(), Payments.ToFactId(), RelationPartition.Structural, rawKind);
+
+        var result = ComponentGraphProjector.Project([Validated(relation)], Nodes());
+
+        Assert.Contains($"    node0 -->|structural:{escapedKind} ×1| node1\n", result.Mermaid, StringComparison.Ordinal);
+    }
+
     // COMP-05: every component the fragments carry appears, ordered by component id, each with its kind
     // and project ids.
     [Fact]

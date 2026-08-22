@@ -655,6 +655,36 @@ the covering test for each.
 
 ---
 
+### T18: Cover Mermaid edge-label escaping
+
+**What**: Add one three-case theory that sends each factory-valid `COMP-18` special character through a relation kind
+and asserts the exact rendered Mermaid edge line. CR/LF are already covered through node labels because
+`RelationFactId.Create` rejects non-single-line relation kinds before a valid relation can reach this projector.
+**Where**: `tests/Csharp2Md.Core.Tests/Projection/Aggregates/ComponentGraphProjectorTests.cs`
+**Depends on**: T17
+**Reuses**: `Project_NodeLabelContainingASpecialCharacter_EscapesItForMermaid`'s five-case replacement table
+**Requirement**: COMP-18
+
+**Tools**:
+
+- MCP: NONE
+- Skill: `dotnet-test:code-testing-agent`
+
+**Done when**:
+
+- [x] `#`, `"` and `|` in `RelationFact.RelationKind` each produce the specified escaped edge label; CR/LF remain covered by the node-label theory because the relation identity grammar rejects them
+- [x] Each assertion matches the complete Mermaid edge line, including `structural:`, the collapsed count and aliases
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): three new theory cases in `ComponentGraphProjectorTests.cs`. Full suite: 1917 passed / 1918 total; the single failure remains the pre-existing unrelated flake, `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml`.
+
+**Tests**: unit
+**Gate**: quick
+**Status**: Done
+
+**Commit**: `test(graph): cover Mermaid edge-label escaping`
+
+---
+
 ## Phase Execution Map
 
 ```
@@ -664,7 +694,7 @@ Phase 1:  T1, T2, T3
 Phase 2:  T4, T5, T6, T7, T8
 Phase 3:  T9, T10, T11
 Phase 4:  T12, T13, T14, T15
-Phase 5:  T16, T17
+Phase 5:  T16 → T17 → T18
 ```
 
 Arrows live in the per-phase blocks under **Execution Plan** above; this map only shows phase order and
