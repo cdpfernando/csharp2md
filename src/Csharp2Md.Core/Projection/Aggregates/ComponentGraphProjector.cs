@@ -1,6 +1,8 @@
+using System.Text;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
+using Csharp2Md.Core.Facts.Storage;
 using Csharp2Md.Core.Facts.Validation;
 
 namespace Csharp2Md.Core.Projection.Aggregates;
@@ -36,8 +38,47 @@ internal static class ComponentGraphProjector
 
         var edges = SelectEdges(fragments, nodes);
 
-        return new ComponentGraphProjection(edges, "flowchart LR\n", "# Components\n", []);
+        return new ComponentGraphProjection(edges, RenderMermaid(edges), "# Components\n", []);
     }
+
+    /// <summary>
+    /// Renders a node line for every node an edge touches and nothing else (COMP-15), then an edge line
+    /// per deduped edge carrying its collapsed count (COMP-11). A project component renders as a
+    /// rectangle, a database object as Mermaid's cylinder (COMP-20, COMP-23). Node aliases are positional
+    /// (<c>node0</c>, <c>node1</c>, ...), assigned in the order the nodes are encountered here; T6 makes
+    /// that order canonical rather than input-order-dependent.
+    /// </summary>
+    private static string RenderMermaid(ImmutableArray<ComponentGraphEdge> edges)
+    {
+        var touchedNodes = edges
+            .SelectMany(static edge => new[] { edge.Source, edge.Target })
+            .Distinct()
+            .ToImmutableArray();
+        var aliases = touchedNodes
+            .Select(static (node, index) => (node, alias: $"node{index}"))
+            .ToDictionary(static entry => entry.node, static entry => entry.alias);
+
+        var builder = new StringBuilder("flowchart LR\n");
+        foreach (var node in touchedNodes)
+        {
+            builder.Append("    ").Append(aliases[node]).Append('[').Append(Bracket(node)).Append("]\n");
+        }
+
+        foreach (var edge in edges)
+        {
+            builder.Append("    ").Append(aliases[edge.Source])
+                .Append(" -->|").Append(FactualJsonMapper.WireRelationPartition(edge.Partition)).Append(':').Append(edge.RelationKind)
+                .Append(" ×").Append(edge.Count).Append("| ").Append(aliases[edge.Target]).Append('\n');
+        }
+
+        return builder.ToString();
+    }
+
+    private static string Bracket(GraphNode node) => node.Shape switch
+    {
+        GraphNodeShape.DatabaseObject => $"(\"{node.Label}\")",
+        _ => $"\"{node.Label}\"",
+    };
 
     /// <summary>
     /// Applies COMP-12..14's three drop rules to every relation the run resolved - a null target, a

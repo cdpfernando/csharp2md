@@ -274,15 +274,16 @@ versus cylinder shapes, and the `<partition>:<kind> ×<count>` edge label.
 
 **Done when**:
 
-- [ ] A project node renders as `    node0["Acme.Orders"]` and a database node as `    node1[("order_headers")]`
-- [ ] An edge renders as `    node0 -->|structural:calls ×5| node1`
-- [ ] A node touched by no surviving edge produces no node line
-- [ ] Zero surviving edges produces exactly `flowchart LR\n` with no node lines
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A project node renders as `    node0["Acme.Orders"]` and a database node as `    node1[("order_headers")]`
+- [x] An edge renders as `    node0 -->|structural:calls ×5| node1`
+- [x] A node touched by no surviving edge produces no node line
+- [x] Zero surviving edges produces exactly `flowchart LR\n` with no node lines
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 4 new tests in `ComponentGraphProjectorTests.cs`, all passing (1879/1880 full suite; the one failure is T1's pre-existing unrelated flake).
 
 **Tests**: unit
 **Gate**: quick
+**Status**: Done
 
 **Commit**: `feat(graph): render the component flowchart`
 

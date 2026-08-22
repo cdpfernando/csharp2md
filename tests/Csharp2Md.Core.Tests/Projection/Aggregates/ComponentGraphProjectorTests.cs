@@ -113,6 +113,61 @@ public sealed class ComponentGraphProjectorTests
         Assert.Equal(2, edge.Count);
     }
 
+    // COMP-17/COMP-20/COMP-23: a project renders as a positional rectangle node and a database object as
+    // a positional cylinder node, each labelled with its own Name.
+    [Fact]
+    public void Project_OneEdgeToADatabaseObject_RendersTheProjectRectangleAndTheDatabaseCylinderNodeLines()
+    {
+        var relation = Relation(Orders.ToFactId(), OrdersTable.ToFactId(), RelationPartition.Data, "writes-column");
+
+        var result = ComponentGraphProjector.Project([Validated(relation)], Nodes());
+
+        Assert.Contains("[\"Orders\"]", result.Mermaid, StringComparison.Ordinal);
+        Assert.Contains("[(\"orders\")]", result.Mermaid, StringComparison.Ordinal);
+    }
+
+    // COMP-11: an edge line carries the wire partition name, the relation kind and the collapsed count in
+    // the "<partition>:<kind> ×<count>" label.
+    [Fact]
+    public void Project_FiveRelationsSharingSourceTargetPartitionAndKind_RendersOneEdgeLineWithTheCollapsedCount()
+    {
+        var relations = Enumerable.Range(1, 5)
+            .Select(ordinal => Relation(Orders.ToFactId(), Payments.ToFactId(), RelationPartition.Structural, "calls", ordinal))
+            .ToArray();
+
+        var result = ComponentGraphProjector.Project([Validated(relations)], Nodes());
+
+        Assert.Contains("-->|structural:calls ×5|", result.Mermaid, StringComparison.Ordinal);
+    }
+
+    // COMP-15: a component with no surviving edge touching it produces no node line at all.
+    [Fact]
+    public void Project_ANodeTouchedByNoSurvivingEdge_ProducesNoNodeLineForIt()
+    {
+        var unusedId = ProjectFactId.Create("src/Unused/Unused.csproj");
+        var nodes = GraphNodeIndex.Build(
+            [Component("project", Orders), Component("project", Payments), Component("project", unusedId)],
+            [Project(Orders, "Orders"), Project(Payments, "Payments"), Project(unusedId, "Unused")],
+            [],
+            [],
+            [DatabaseObject()],
+            [Column()]);
+        var relation = Relation(Orders.ToFactId(), Payments.ToFactId(), RelationPartition.Structural, "calls");
+
+        var result = ComponentGraphProjector.Project([Validated(relation)], nodes);
+
+        Assert.DoesNotContain("Unused", result.Mermaid, StringComparison.Ordinal);
+    }
+
+    // COMP-32: zero surviving edges writes exactly the empty flowchart header, with no node lines.
+    [Fact]
+    public void Project_NoValidatedRelations_RendersExactlyFlowchartLrWithNoNodeLines()
+    {
+        var result = ComponentGraphProjector.Project([], Nodes());
+
+        Assert.Equal("flowchart LR\n", result.Mermaid);
+    }
+
     private static GraphNodeIndex Nodes() => GraphNodeIndex.Build(
         [Component("project", Orders), Component("project", Payments)],
         [Project(Orders, "Orders"), Project(Payments, "Payments")],
