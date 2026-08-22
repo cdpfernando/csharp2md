@@ -293,6 +293,68 @@ public sealed class ComponentGraphProjectorTests
         Assert.Equal("# Components\n", result.ComponentIndex);
     }
 
+    // COMP-25: five relations dropped for an unmapped endpoint summarise into exactly one diagnostic
+    // carrying the exact collapsed count, not one diagnostic per relation.
+    [Fact]
+    public void Project_FiveRelationsWithUnmappedEndpoints_ProducesExactlyOneDiagnosticCarryingTheCount()
+    {
+        var unknownTarget = ProjectFactId.Create("src/Unknown/Unknown.csproj").ToFactId();
+        var relations = Enumerable.Range(1, 5)
+            .Select(ordinal => Relation(Orders.ToFactId(), unknownTarget, RelationPartition.Structural, "calls", ordinal))
+            .ToArray();
+
+        var result = ComponentGraphProjector.Project([ValidatedWithExtraKnownIds([unknownTarget], relations)], Nodes());
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Contains(diagnostic.Data, data => data.Key == "omitted_relation_count" && data.Value == "5");
+    }
+
+    // COMP-25: the omission diagnostic is Information severity at the Projection stage - a gap that is
+    // reported, not an error that fails the run.
+    [Fact]
+    public void Project_ARelationWithAnUnmappedEndpoint_RecordsAnInformationSeverityProjectionStageDiagnostic()
+    {
+        var unknownTarget = ProjectFactId.Create("src/Unknown/Unknown.csproj").ToFactId();
+        var relation = Relation(Orders.ToFactId(), unknownTarget, RelationPartition.Structural, "calls");
+
+        var result = ComponentGraphProjector.Project([ValidatedWithExtraKnownIds([unknownTarget], relation)], Nodes());
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal(DiagnosticSeverity.Information, diagnostic.Severity);
+        Assert.Equal(DiagnosticStage.Projection, diagnostic.Stage);
+    }
+
+    // COMP-26: relations dropped only as a self-edge or for a null target are specified behaviour, not a
+    // gap, so they never produce a diagnostic.
+    [Fact]
+    public void Project_OnlySelfEdgesAndNullTargets_ProducesNoOmissionDiagnostic()
+    {
+        var selfEdge = Relation(Orders.ToFactId(), Orders.ToFactId(), RelationPartition.Structural, "calls", ordinal: 1);
+        var nullTarget = Relation(Orders.ToFactId(), null, RelationPartition.Http, "http-request", ordinal: 2);
+
+        var result = ComponentGraphProjector.Project([Validated(selfEdge, nullTarget)], Nodes());
+
+        Assert.Empty(result.Diagnostics);
+    }
+
+    // COMP-25: the anchor is the ordinal-first omitted relation's own id, so it is the same fact
+    // regardless of which order the run happened to discover the two omitted relations in.
+    [Fact]
+    public void Project_ShuffledInputOrder_AnchorsTheDiagnosticOnTheSameOrdinalFirstOmittedRelation()
+    {
+        var unknownTarget = ProjectFactId.Create("src/Unknown/Unknown.csproj").ToFactId();
+        var first = Relation(Orders.ToFactId(), unknownTarget, RelationPartition.Structural, "calls", ordinal: 1);
+        var second = Relation(Orders.ToFactId(), unknownTarget, RelationPartition.Structural, "calls", ordinal: 2);
+        var extraKnownIds = new[] { unknownTarget };
+
+        var forward = ComponentGraphProjector.Project([ValidatedWithExtraKnownIds(extraKnownIds, first, second)], Nodes());
+        var reversed = ComponentGraphProjector.Project([ValidatedWithExtraKnownIds(extraKnownIds, second, first)], Nodes());
+
+        Assert.Equal(
+            Assert.Single(forward.Diagnostics).ScopeId,
+            Assert.Single(reversed.Diagnostics).ScopeId);
+    }
+
     private static GraphNodeIndex Nodes() => GraphNodeIndex.Build(
         [Component("project", Orders), Component("project", Payments)],
         [Project(Orders, "Orders"), Project(Payments, "Payments")],

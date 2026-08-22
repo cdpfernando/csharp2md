@@ -366,15 +366,16 @@ carrying the count and anchored on the ordinal-first omitted relation.
 
 **Done when**:
 
-- [ ] Five relations with unmapped endpoints produce exactly one diagnostic carrying `omitted_relation_count` = 5
-- [ ] Severity is `Information` and stage is `Projection`
-- [ ] A run whose only drops are self-edges and null targets produces no diagnostic at all
-- [ ] The anchor fact id is stable across two runs with shuffled input order
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Five relations with unmapped endpoints produce exactly one diagnostic carrying `omitted_relation_count` = 5
+- [x] Severity is `Information` and stage is `Projection`
+- [x] A run whose only drops are self-edges and null targets produces no diagnostic at all
+- [x] The anchor fact id is stable across two runs with shuffled input order
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 4 new tests in `ComponentGraphProjectorTests.cs`, all passing (1894/1895 full suite; the one failure is T1's pre-existing unrelated flake, confirmed via `git stash` earlier in this batch).
 
 **Tests**: unit
 **Gate**: quick
+**Status**: Done
 
 **Commit**: `feat(graph): summarise omitted relations in one diagnostic`
 

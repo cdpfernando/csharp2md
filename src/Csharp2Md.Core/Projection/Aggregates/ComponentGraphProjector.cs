@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
@@ -31,6 +32,9 @@ internal sealed record ComponentGraphProjection(
 /// </summary>
 internal static class ComponentGraphProjector
 {
+    /// <summary>COMP-25: one summary diagnostic per run, never one per omitted relation.</summary>
+    private const string OmittedRelationCode = "C2M-CG-001";
+
     public static ComponentGraphProjection Project(IEnumerable<ValidatedFactFragment> fragments, GraphNodeIndex nodes)
     {
         ArgumentNullException.ThrowIfNull(fragments);
@@ -42,10 +46,41 @@ internal static class ComponentGraphProjector
             return fragment;
         }).ToImmutableArray();
 
-        var edges = SelectEdges(materialized, nodes);
+        var (edges, omittedForUnmappedEndpoint) = SelectEdges(materialized, nodes);
         var components = SelectComponents(materialized);
+        var diagnostics = OmissionDiagnostics(omittedForUnmappedEndpoint);
 
-        return new ComponentGraphProjection(edges, RenderMermaid(edges), RenderComponentIndex(components), []);
+        return new ComponentGraphProjection(edges, RenderMermaid(edges), RenderComponentIndex(components), diagnostics);
+    }
+
+    /// <summary>
+    /// COMP-25/COMP-26: relations dropped only because an endpoint mapped to no node get exactly one
+    /// summary diagnostic, anchored on the ordinal-first such relation's own id so the anchor stays stable
+    /// across two runs whose input arrived in a different order - the same representative-fact anchoring
+    /// pattern <c>DatabaseAggregateProjector.CaseCollisions</c> uses. A self-edge or a null target is
+    /// specified behaviour rather than a gap (COMP-26), so neither ever reaches this list.
+    /// </summary>
+    private static ImmutableArray<AnalysisDiagnostic> OmissionDiagnostics(ImmutableArray<RelationFact> omittedForUnmappedEndpoint)
+    {
+        if (omittedForUnmappedEndpoint.IsEmpty)
+        {
+            return [];
+        }
+
+        var anchor = omittedForUnmappedEndpoint
+            .OrderBy(static relation => relation.Header.Id.Value, StringComparer.Ordinal)
+            .First();
+
+        return
+        [
+            AnalysisDiagnostic.Create(
+                OmittedRelationCode,
+                DiagnosticSeverity.Information,
+                DiagnosticStage.Projection,
+                anchor.Header.Id,
+                "One or more resolved relations were omitted from the component graph because an endpoint mapped to no node.",
+                [new DiagnosticData("omitted_relation_count", omittedForUnmappedEndpoint.Length.ToString(CultureInfo.InvariantCulture))]),
+        ];
     }
 
     /// <summary>
@@ -148,14 +183,18 @@ internal static class ComponentGraphProjector
     /// the survivors by (source node, target node, partition, relation kind) into one deduped edge apiece
     /// (COMP-11, COMP-19). A column-targeted relation folds into the same group as an object-targeted
     /// relation of the same kind for free, because <see cref="GraphNodeIndex"/> already maps both a column
-    /// id and its owning object's id to the identical node (COMP-21, COMP-22).
+    /// id and its owning object's id to the identical node (COMP-21, COMP-22). Relations dropped for an
+    /// unmapped endpoint are returned alongside the edges so <see cref="OmissionDiagnostics"/> can
+    /// summarise them (COMP-25); a self-edge or a null target is specified behaviour and is never
+    /// collected (COMP-26).
     /// </summary>
-    private static ImmutableArray<ComponentGraphEdge> SelectEdges(
+    private static (ImmutableArray<ComponentGraphEdge> Edges, ImmutableArray<RelationFact> OmittedForUnmappedEndpoint) SelectEdges(
         IEnumerable<ValidatedFactFragment> fragments, GraphNodeIndex nodes)
     {
         var groups = new Dictionary<
             (string Source, string Target, RelationPartition Partition, string Kind),
             (GraphNode Source, GraphNode Target, int Count)>();
+        var omittedForUnmappedEndpoint = ImmutableArray.CreateBuilder<RelationFact>();
 
         foreach (var fragment in fragments)
         {
@@ -169,7 +208,8 @@ internal static class ComponentGraphProjector
 
                 if (!nodes.TryResolve(relation.SourceId, out var source) || !nodes.TryResolve(targetId, out var target))
                 {
-                    continue; // COMP-14/COMP-25: unmapped endpoint - summarised in one diagnostic elsewhere.
+                    omittedForUnmappedEndpoint.Add(relation); // COMP-14/COMP-25: unmapped endpoint, counted.
+                    continue;
                 }
 
                 if (string.Equals(source!.NodeId, target!.NodeId, StringComparison.Ordinal))
@@ -184,9 +224,11 @@ internal static class ComponentGraphProjector
             }
         }
 
-        return groups
+        var edges = groups
             .Select(static entry => new ComponentGraphEdge(
                 entry.Value.Source, entry.Value.Target, entry.Key.Partition, entry.Key.Kind, entry.Value.Count))
             .ToImmutableArray();
+
+        return (edges, omittedForUnmappedEndpoint.ToImmutable());
     }
 }
