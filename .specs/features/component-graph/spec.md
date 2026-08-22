@@ -250,38 +250,38 @@ that the diagram distinguishes "no dependency" from "unproven dependency".
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| COMP-01 | P1: Every analysed project is a proven component | Design | Pending |
-| COMP-02 | P1: Every analysed project is a proven component | Design | Pending |
-| COMP-03 | P1: Every analysed project is a proven component | Design | Pending |
-| COMP-04 | P1: Every analysed project is a proven component | Design | Pending |
-| COMP-05 | P1: Every analysed project is a proven component | Design | Pending |
-| COMP-06 | P1: Every analysed project is a proven component | Design | Pending |
-| COMP-07 | P1: Every analysed project is a proven component | Design | Pending |
-| COMP-08 | P1: Every analysed project is a proven component | Design | Pending |
-| COMP-09 | P1: Every analysed project is a proven component | Design | Pending |
-| COMP-10 | P1: The diagram shows real, deduped edges | Design | Pending |
-| COMP-11 | P1: The diagram shows real, deduped edges | Design | Pending |
-| COMP-12 | P1: The diagram shows real, deduped edges | Design | Pending |
-| COMP-13 | P1: The diagram shows real, deduped edges | Design | Pending |
-| COMP-14 | P1: The diagram shows real, deduped edges | Design | Pending |
-| COMP-15 | P1: The diagram shows real, deduped edges | Design | Pending |
-| COMP-16 | P1: The diagram shows real, deduped edges | Design | Pending |
-| COMP-17 | P1: The diagram shows real, deduped edges | Design | Pending |
-| COMP-18 | P1: The diagram shows real, deduped edges | Design | Pending |
-| COMP-19 | P1: The diagram shows real, deduped edges | Design | Pending |
-| COMP-20 | P1: Database objects appear as graph nodes | Design | Pending |
-| COMP-21 | P1: Database objects appear as graph nodes | Design | Pending |
-| COMP-22 | P1: Database objects appear as graph nodes | Design | Pending |
-| COMP-23 | P1: Database objects appear as graph nodes | Design | Pending |
-| COMP-24 | P1: Database objects appear as graph nodes | Design | Pending |
-| COMP-25 | P1: Omission is bounded and observable | Design | Pending |
-| COMP-26 | P1: Omission is bounded and observable | Design | Pending |
-| COMP-27 | P1: Omission is bounded and observable | Design | Pending |
-| COMP-28 | Edge case: project with no cross-component relation | Design | Pending |
-| COMP-29 | Edge case: project fact with no documents | Design | Pending |
-| COMP-30 | Edge case: same-named objects on different connections | Design | Pending |
-| COMP-31 | Edge case: component referencing an unknown project id | Design | Pending |
-| COMP-32 | Edge case: diagram with no edges | Design | Pending |
+| COMP-01 | P1: Every analysed project is a proven component | T1 | Verified |
+| COMP-02 | P1: Every analysed project is a proven component | T2 | Verified |
+| COMP-03 | P1: Every analysed project is a proven component | T2 | Verified |
+| COMP-04 | P1: Every analysed project is a proven component | T1 | Verified |
+| COMP-05 | P1: Every analysed project is a proven component | T7 | Verified |
+| COMP-06 | P1: Every analysed project is a proven component | T10 | Verified |
+| COMP-07 | P1: Every analysed project is a proven component | T10 | Verified |
+| COMP-08 | P1: Every analysed project is a proven component | T1 | Verified |
+| COMP-09 | P1: Every analysed project is a proven component | T3 | Verified |
+| COMP-10 | P1: The diagram shows real, deduped edges | T4 | Verified |
+| COMP-11 | P1: The diagram shows real, deduped edges | T5 | Verified |
+| COMP-12 | P1: The diagram shows real, deduped edges | T4 | Verified |
+| COMP-13 | P1: The diagram shows real, deduped edges | T4 | Verified |
+| COMP-14 | P1: The diagram shows real, deduped edges | T4 | Verified |
+| COMP-15 | P1: The diagram shows real, deduped edges | T5 | Verified |
+| COMP-16 | P1: The diagram shows real, deduped edges | T6 | Verified |
+| COMP-17 | P1: The diagram shows real, deduped edges | T5 | Verified |
+| COMP-18 | P1: The diagram shows real, deduped edges | T6 | Verified |
+| COMP-19 | P1: The diagram shows real, deduped edges | T4 | Verified |
+| COMP-20 | P1: Database objects appear as graph nodes | T5 | Verified |
+| COMP-21 | P1: Database objects appear as graph nodes | T3 | Verified |
+| COMP-22 | P1: Database objects appear as graph nodes | T4 | Verified |
+| COMP-23 | P1: Database objects appear as graph nodes | T5 | Verified |
+| COMP-24 | P1: Database objects appear as graph nodes | T7 | Verified |
+| COMP-25 | P1: Omission is bounded and observable | T8 | Verified |
+| COMP-26 | P1: Omission is bounded and observable | T8 | Verified |
+| COMP-27 | P1: Omission is bounded and observable | T11 | Verified |
+| COMP-28 | Edge case: project with no cross-component relation | T13 | Verified |
+| COMP-29 | Edge case: project fact with no documents | T12 | Verified |
+| COMP-30 | Edge case: same-named objects on different connections | T6 | Verified |
+| COMP-31 | Edge case: component referencing an unknown project id | T2 | Verified |
+| COMP-32 | Edge case: diagram with no edges | T5 | Verified |
 | COMP-40 | P2: Service-level component rollup | - | Pending |
 | COMP-41 | P2: Service-level component rollup | - | Pending |
 | COMP-50 | P3: Placeholder nodes for unresolved endpoints | - | Pending |
@@ -290,7 +290,11 @@ that the diagram distinguishes "no dependency" from "unproven dependency".
 2's ACs 1-10; `COMP-20`..`COMP-24` are P1 story 3's ACs 1-5; `COMP-25`..`COMP-27` are P1 story 4's ACs 1-3;
 `COMP-28`..`COMP-32` are the Edge Cases in order; `COMP-40`/`COMP-41` are P2's ACs; `COMP-50` is P3's AC.
 
-**Coverage:** 35 total, 32 in P1 scope for this task list, 3 (P2/P3) deferred.
+**Coverage:** 35 total. All 32 P1 rows (`COMP-01`..`COMP-32`) are mapped to a task and `Verified` with
+located `file:line` evidence (cited in the closing commit body). The remaining 3 are `Pending` by design:
+P2 (`COMP-40`, `COMP-41`) and P3 (`COMP-50`) are explicitly out of this task list's scope per the Out of
+Scope table above (service-level rollup needs a shared-project ownership rule not designed here, and
+placeholder nodes for unresolved endpoints were never scheduled).
 
 ---
 

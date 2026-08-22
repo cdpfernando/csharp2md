@@ -610,14 +610,16 @@ absence of any self-edge.
 
 **Done when**:
 
-- [ ] `AD-021` states the one-component-per-project rule, the deduped-edge rule, and that database objects are nodes without being `ComponentFact`s
-- [ ] `AD-021` explicitly records that `AD-015`'s orphaned `Detection/` question stays open
-- [ ] `AD-020`'s status reads `superseded by AD-021`
-- [ ] The roadmap §9 `component-graph` row and the §B.5 row both reflect completion
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
+- [x] `AD-021` states the one-component-per-project rule, the deduped-edge rule, and that database objects are nodes without being `ComponentFact`s
+- [x] `AD-021` explicitly records that `AD-015`'s orphaned `Detection/` question stays open
+- [x] `AD-020`'s status reads `superseded by AD-021`
+- [x] The roadmap §9 `component-graph` row and the §B.5 row both reflect completion
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): document-only task, no tests added or changed. Full suite: 1914 passed / 1915 total (the 1 failure is the pre-existing unrelated flake, `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml`).
 
 **Tests**: none
 **Gate**: build
+**Status**: Done
 
 **Commit**: `docs(state): supersede AD-020 with the real component graph`
 
@@ -639,13 +641,15 @@ the covering test for each.
 
 **Done when**:
 
-- [ ] Every `COMP-01`..`COMP-32` row reads Verified
-- [ ] The P2/P3 rows stay Pending and are not silently flipped
-- [ ] The Coverage line reflects the final counts
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
+- [x] Every `COMP-01`..`COMP-32` row reads Verified
+- [x] The P2/P3 rows stay Pending and are not silently flipped
+- [x] The Coverage line reflects the final counts
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`, then `dotnet format csharp2md.slnx --verify-no-changes`, then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): document-only task, no tests added or changed. Full suite: 1914 passed / 1915 total (the 1 failure is the pre-existing unrelated flake, `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml`).
 
 **Tests**: none
 **Gate**: build
+**Status**: Done
 
 **Commit**: `docs(spec): close the component-graph P1 traceability`
 
