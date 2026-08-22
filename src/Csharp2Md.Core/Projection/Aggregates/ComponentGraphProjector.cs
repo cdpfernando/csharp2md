@@ -45,18 +45,33 @@ internal static class ComponentGraphProjector
     /// Renders a node line for every node an edge touches and nothing else (COMP-15), then an edge line
     /// per deduped edge carrying its collapsed count (COMP-11). A project component renders as a
     /// rectangle, a database object as Mermaid's cylinder (COMP-20, COMP-23). Node aliases are positional
-    /// (<c>node0</c>, <c>node1</c>, ...), assigned in the order the nodes are encountered here; T6 makes
-    /// that order canonical rather than input-order-dependent.
+    /// (<c>node0</c>, <c>node1</c>, ...) but assigned after a canonical ordering (COMP-16), so two runs
+    /// over identical input always write byte-identical output regardless of the order relations were
+    /// discovered in.
     /// </summary>
     private static string RenderMermaid(ImmutableArray<ComponentGraphEdge> edges)
     {
         var touchedNodes = edges
             .SelectMany(static edge => new[] { edge.Source, edge.Target })
             .Distinct()
+            // COMP-16/COMP-30: Label alone is not a total order - two database objects on different
+            // connections may share a Name - so NodeId (the object's or component's real identity) breaks
+            // the tie rather than leaving the order input-dependent.
+            .OrderBy(static node => node.Label, StringComparer.Ordinal)
+            .ThenBy(static node => node.NodeId, StringComparer.Ordinal)
             .ToImmutableArray();
         var aliases = touchedNodes
             .Select(static (node, index) => (node, alias: $"node{index}"))
             .ToDictionary(static entry => entry.node, static entry => entry.alias);
+
+        var orderedEdges = edges
+            .OrderBy(static edge => edge.Source.Label, StringComparer.Ordinal)
+            .ThenBy(static edge => edge.Source.NodeId, StringComparer.Ordinal)
+            .ThenBy(static edge => edge.Target.Label, StringComparer.Ordinal)
+            .ThenBy(static edge => edge.Target.NodeId, StringComparer.Ordinal)
+            .ThenBy(static edge => FactualJsonMapper.WireRelationPartition(edge.Partition), StringComparer.Ordinal)
+            .ThenBy(static edge => edge.RelationKind, StringComparer.Ordinal)
+            .ToImmutableArray();
 
         var builder = new StringBuilder("flowchart LR\n");
         foreach (var node in touchedNodes)
@@ -64,10 +79,10 @@ internal static class ComponentGraphProjector
             builder.Append("    ").Append(aliases[node]).Append('[').Append(Bracket(node)).Append("]\n");
         }
 
-        foreach (var edge in edges)
+        foreach (var edge in orderedEdges)
         {
             builder.Append("    ").Append(aliases[edge.Source])
-                .Append(" -->|").Append(FactualJsonMapper.WireRelationPartition(edge.Partition)).Append(':').Append(edge.RelationKind)
+                .Append(" -->|").Append(FactualJsonMapper.WireRelationPartition(edge.Partition)).Append(':').Append(Escape(edge.RelationKind))
                 .Append(" ×").Append(edge.Count).Append("| ").Append(aliases[edge.Target]).Append('\n');
         }
 
@@ -76,9 +91,21 @@ internal static class ComponentGraphProjector
 
     private static string Bracket(GraphNode node) => node.Shape switch
     {
-        GraphNodeShape.DatabaseObject => $"(\"{node.Label}\")",
-        _ => $"\"{node.Label}\"",
+        GraphNodeShape.DatabaseObject => $"(\"{Escape(node.Label)}\")",
+        _ => $"\"{Escape(node.Label)}\"",
     };
+
+    /// <summary>
+    /// Moved from <c>RelationProjector.Escape</c> and extended with the <c>|</c> rule (COMP-18): unlike
+    /// the relation projector's Mermaid, an edge label here always sits between two pipes, so an
+    /// unescaped <c>|</c> in a relation kind would break the Mermaid edge syntax.
+    /// </summary>
+    private static string Escape(string value) => value
+        .Replace("#", "#35;", StringComparison.Ordinal)
+        .Replace("\"", "#quot;", StringComparison.Ordinal)
+        .Replace("|", "#124;", StringComparison.Ordinal)
+        .Replace("\r", string.Empty, StringComparison.Ordinal)
+        .Replace("\n", " ", StringComparison.Ordinal);
 
     /// <summary>
     /// Applies COMP-12..14's three drop rules to every relation the run resolved - a null target, a

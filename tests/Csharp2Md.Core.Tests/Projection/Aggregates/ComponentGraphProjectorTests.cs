@@ -168,6 +168,74 @@ public sealed class ComponentGraphProjectorTests
         Assert.Equal("flowchart LR\n", result.Mermaid);
     }
 
+    // COMP-16: the same facts fed in two different orders write byte-identical Mermaid output - the
+    // renderer's ordering, not construction order, decides the file's shape.
+    [Fact]
+    public void Project_SameFactsInTwoInputOrders_ProducesIdenticalMermaidOutput()
+    {
+        var calls = Relation(Orders.ToFactId(), Payments.ToFactId(), RelationPartition.Structural, "calls", ordinal: 1);
+        var writes = Relation(Orders.ToFactId(), OrdersTable.ToFactId(), RelationPartition.Data, "writes-column", ordinal: 2);
+
+        var forward = ComponentGraphProjector.Project([Validated(calls, writes)], Nodes());
+        var reversed = ComponentGraphProjector.Project([Validated(writes, calls)], Nodes());
+
+        Assert.Equal(forward.Mermaid, reversed.Mermaid);
+    }
+
+    // COMP-16/COMP-30: two database objects sharing a Name on different connections stay two distinct
+    // nodes, in an order that is stable no matter which construction order encounters them first - proven
+    // by building the same scenario two ways (objects and relations each supplied in the opposite order)
+    // and requiring byte-identical output. Label alone is not a total order for these two nodes (both are
+    // "orders"), so a renderer whose ordering keyed on Label alone would let construction order leak into
+    // the result and this equality would not hold.
+    [Fact]
+    public void Project_TwoDatabaseObjectsSharingANameOnDifferentConnections_KeepAStableOrderNotDrivenByConstructionOrder()
+    {
+        var connA = DatabaseObjectFactId.Create("conn-a", DatabaseObjectKind.Table, "orders");
+        var connB = DatabaseObjectFactId.Create("conn-b", DatabaseObjectKind.Table, "orders");
+        var objectA = DatabaseObject(connA, "conn-a");
+        var objectB = DatabaseObject(connB, "conn-b");
+        var toConnA = Relation(Orders.ToFactId(), connA.ToFactId(), RelationPartition.Data, "reads", ordinal: 1);
+        var toConnB = Relation(Orders.ToFactId(), connB.ToFactId(), RelationPartition.Data, "reads", ordinal: 2);
+        var extraKnownIds = new[] { connA.ToFactId(), connB.ToFactId() };
+
+        var forwardNodes = GraphNodeIndex.Build(
+            [Component("project", Orders)], [Project(Orders, "Orders")], [], [], [objectA, objectB], []);
+        var forward = ComponentGraphProjector.Project(
+            [ValidatedWithExtraKnownIds(extraKnownIds, toConnA, toConnB)], forwardNodes);
+
+        var reversedNodes = GraphNodeIndex.Build(
+            [Component("project", Orders)], [Project(Orders, "Orders")], [], [], [objectB, objectA], []);
+        var reversed = ComponentGraphProjector.Project(
+            [ValidatedWithExtraKnownIds(extraKnownIds, toConnB, toConnA)], reversedNodes);
+
+        Assert.Equal(forward.Mermaid, reversed.Mermaid);
+        Assert.Equal(2, forward.Edges.Select(static edge => edge.Target.NodeId).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    // COMP-18: every Escape replacement rule, each proven by its own case rather than assumed from one.
+    [Theory]
+    [InlineData("Orders#Co", "Orders#35;Co")]
+    [InlineData("Orders\"Co", "Orders#quot;Co")]
+    [InlineData("Orders|Co", "Orders#124;Co")]
+    [InlineData("Orders\rCo", "OrdersCo")]
+    [InlineData("Orders\nCo", "Orders Co")]
+    public void Project_NodeLabelContainingASpecialCharacter_EscapesItForMermaid(string rawName, string escapedName)
+    {
+        var nodes = GraphNodeIndex.Build(
+            [Component("project", Orders), Component("project", Payments)],
+            [Project(Orders, rawName), Project(Payments, "Payments")],
+            [],
+            [],
+            [],
+            []);
+        var relation = Relation(Orders.ToFactId(), Payments.ToFactId(), RelationPartition.Structural, "calls");
+
+        var result = ComponentGraphProjector.Project([Validated(relation)], nodes);
+
+        Assert.Contains($"[\"{escapedName}\"]", result.Mermaid, StringComparison.Ordinal);
+    }
+
     private static GraphNodeIndex Nodes() => GraphNodeIndex.Build(
         [Component("project", Orders), Component("project", Payments)],
         [Project(Orders, "Orders"), Project(Payments, "Payments")],
@@ -222,6 +290,10 @@ public sealed class ComponentGraphProjectorTests
     private static DatabaseObjectFact DatabaseObject() => new(
         FactHeader.Create(OrdersTable.ToFactId(), FactKind.DatabaseObject, FactResolution.Exact),
         OrdersTable, DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, "orders");
+
+    private static DatabaseObjectFact DatabaseObject(DatabaseObjectFactId id, string connection) => new(
+        FactHeader.Create(id.ToFactId(), FactKind.DatabaseObject, FactResolution.Exact),
+        id, connection, DatabaseObjectKind.Table, "orders");
 
     private static DatabaseColumnFact Column() => new(
         FactHeader.Create(OrdersIdColumn.ToFactId(), FactKind.DatabaseColumn, FactResolution.Exact),

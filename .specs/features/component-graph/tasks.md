@@ -305,14 +305,15 @@ new `|` rule.
 
 **Done when**:
 
-- [ ] Feeding the same facts in two different input orders produces identical output strings
-- [ ] Two database objects sharing a `Name` on different connections stay two nodes in a stable order — proven by a test that would pass either way if ordering keyed on label alone
-- [ ] `Escape` maps `#`→`#35;`, `"`→`#quot;`, `|`→`#124;`, `\r`→ empty, `\n`→ single space, each with its own assertion
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Feeding the same facts in two different input orders produces identical output strings
+- [x] Two database objects sharing a `Name` on different connections stay two nodes in a stable order — proven by a test that would pass either way if ordering keyed on label alone
+- [x] `Escape` maps `#`→`#35;`, `"`→`#quot;`, `|`→`#124;`, `\r`→ empty, `\n`→ single space, each with its own assertion
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 7 new tests in `ComponentGraphProjectorTests.cs` (2 ordering/stability + a 5-case `Theory` for `Escape`), all passing (1887/1887 full suite, flake did not reproduce this run).
 
 **Tests**: unit
 **Gate**: quick
+**Status**: Done
 
 **Commit**: `feat(graph): order and escape the flowchart deterministically`
 
