@@ -36,9 +36,44 @@ internal static class ComponentGraphProjector
         ArgumentNullException.ThrowIfNull(fragments);
         ArgumentNullException.ThrowIfNull(nodes);
 
-        var edges = SelectEdges(fragments, nodes);
+        var materialized = fragments.Select(static fragment =>
+        {
+            ArgumentNullException.ThrowIfNull(fragment);
+            return fragment;
+        }).ToImmutableArray();
 
-        return new ComponentGraphProjection(edges, RenderMermaid(edges), "# Components\n", []);
+        var edges = SelectEdges(materialized, nodes);
+        var components = SelectComponents(materialized);
+
+        return new ComponentGraphProjection(edges, RenderMermaid(edges), RenderComponentIndex(components), []);
+    }
+
+    /// <summary>
+    /// Every <see cref="ComponentFact"/> the run's fragments carry, ordered by component id (COMP-05).
+    /// Database objects are never <see cref="ComponentFact"/>s, so they are absent from this list by
+    /// construction rather than by an explicit filter (COMP-24).
+    /// </summary>
+    private static ImmutableArray<ComponentFact> SelectComponents(IEnumerable<ValidatedFactFragment> fragments) =>
+        fragments
+            .SelectMany(static fragment => fragment.Facts.OfType<ComponentFact>())
+            .OrderBy(static component => component.ComponentId.Value, StringComparer.Ordinal)
+            .ToImmutableArray();
+
+    /// <summary>Moved from <c>RelationProjector.ComponentIndex</c> - the Markdown shape is unchanged.</summary>
+    private static string RenderComponentIndex(ImmutableArray<ComponentFact> components)
+    {
+        var builder = new StringBuilder("# Components\n");
+        foreach (var component in components)
+        {
+            builder.Append("\n## ").Append(component.ComponentKind).Append("\n\n")
+                .Append("- id: `").Append(component.ComponentId.Value).Append("`\n");
+            foreach (var projectId in component.ProjectIds)
+            {
+                builder.Append("- project: `").Append(projectId.Value).Append("`\n");
+            }
+        }
+
+        return builder.ToString();
     }
 
     /// <summary>

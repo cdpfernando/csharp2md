@@ -236,6 +236,63 @@ public sealed class ComponentGraphProjectorTests
         Assert.Contains($"[\"{escapedName}\"]", result.Mermaid, StringComparison.Ordinal);
     }
 
+    // COMP-05: every component the fragments carry appears, ordered by component id, each with its kind
+    // and project ids.
+    [Fact]
+    public void Project_TwoComponents_ListsBothOrderedByComponentIdWithKindAndProjectIds()
+    {
+        var orders = Component("project", Orders);
+        var payments = Component("project", Payments);
+
+        var result = ComponentGraphProjector.Project([Validated(orders, payments)], Nodes());
+
+        var orderedIds = new[] { orders.ComponentId.Value, payments.ComponentId.Value }.Order(StringComparer.Ordinal).ToArray();
+        Assert.True(
+            result.ComponentIndex.IndexOf(orderedIds[0], StringComparison.Ordinal)
+                < result.ComponentIndex.IndexOf(orderedIds[1], StringComparison.Ordinal),
+            "Expected the ordinal-first component id to appear before the second in the rendered index.");
+        Assert.Contains($"- id: `{orders.ComponentId.Value}`", result.ComponentIndex, StringComparison.Ordinal);
+        Assert.Contains($"- project: `{Orders.Value}`", result.ComponentIndex, StringComparison.Ordinal);
+        Assert.Contains("## project", result.ComponentIndex, StringComparison.Ordinal);
+    }
+
+    // COMP-05: a component touched by no edge in the diagram (Payments here) still appears in the index -
+    // the index is driven by the ComponentFacts the fragments carry, not by which nodes an edge happened
+    // to touch.
+    [Fact]
+    public void Project_AComponentWithNoEdgeInTheDiagram_StillAppearsInTheIndex()
+    {
+        var orders = Component("project", Orders);
+        var payments = Component("project", Payments);
+
+        var result = ComponentGraphProjector.Project([Validated(orders, payments)], Nodes());
+
+        Assert.Empty(result.Edges);
+        Assert.Contains($"- id: `{payments.ComponentId.Value}`", result.ComponentIndex, StringComparison.Ordinal);
+    }
+
+    // COMP-24: a database object is never a ComponentFact, so a fragment that carries one alongside real
+    // components still lists nothing about it in the index.
+    [Fact]
+    public void Project_FragmentsContainingADatabaseObject_NeverListsItInTheComponentIndex()
+    {
+        var orders = Component("project", Orders);
+        var relation = Relation(Orders.ToFactId(), OrdersTable.ToFactId(), RelationPartition.Data, "writes-column");
+
+        var result = ComponentGraphProjector.Project([Validated(orders, DatabaseObject(), relation)], Nodes());
+
+        Assert.DoesNotContain(OrdersTable.Value, result.ComponentIndex, StringComparison.Ordinal);
+    }
+
+    // COMP-06 (via the projector): no ComponentFacts at all renders exactly the empty index header.
+    [Fact]
+    public void Project_NoComponentFacts_RendersExactlyTheComponentsHeaderWithNoEntries()
+    {
+        var result = ComponentGraphProjector.Project([], Nodes());
+
+        Assert.Equal("# Components\n", result.ComponentIndex);
+    }
+
     private static GraphNodeIndex Nodes() => GraphNodeIndex.Build(
         [Component("project", Orders), Component("project", Payments)],
         [Project(Orders, "Orders"), Project(Payments, "Payments")],

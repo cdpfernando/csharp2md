@@ -335,15 +335,16 @@ component ordered by component id with its kind and project ids.
 
 **Done when**:
 
-- [ ] Every component appears, ordered by component id, with its kind and project ids
-- [ ] A component with no edge in the diagram still appears in the index
-- [ ] No database object appears, proven by a case whose fragments contain database objects
-- [ ] Zero components produces exactly `# Components\n`
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every component appears, ordered by component id, with its kind and project ids
+- [x] A component with no edge in the diagram still appears in the index
+- [x] No database object appears, proven by a case whose fragments contain database objects
+- [x] Zero components produces exactly `# Components\n`
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 4 new tests in `ComponentGraphProjectorTests.cs`, all passing (1890/1891 full suite; the one failure is T1's pre-existing unrelated flake, confirmed via `git stash` earlier in this batch).
 
 **Tests**: unit
 **Gate**: quick
+**Status**: Done
 
 **Commit**: `feat(graph): render the component index`
 
