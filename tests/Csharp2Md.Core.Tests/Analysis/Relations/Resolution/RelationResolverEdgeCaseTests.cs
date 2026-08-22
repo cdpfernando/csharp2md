@@ -43,8 +43,7 @@ public sealed class RelationResolverEdgeCaseTests
     {
         var fragment = RelationFragmentBuilder.Build(RelationResolution.Empty, new HashSet<FactId>(), FactValidator.Validate);
         var metrics = ResolutionMetricsProjector.Project(new RelationProjectionResult(
-            [.. Enum.GetValues<RelationPartition>().Select(static partition => new RelationPartitionProjection(partition, []))],
-            [], "flowchart LR\n", "# Components\n"));
+            [.. Enum.GetValues<RelationPartition>().Select(static partition => new RelationPartitionProjection(partition, []))]));
 
         Assert.Null(fragment.Fragment);
         Assert.Empty(fragment.Diagnostics);

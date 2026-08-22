@@ -82,8 +82,11 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
             2,
             "coverage",
             honestCoverage.Coverage.Select(Map).ToImmutableArray())));
-        files.Write("raw/dependencies.mmd", Utf8(relationProjection?.Mermaid ?? "flowchart LR\n"));
-        files.Write("raw/codebase/components.md", Utf8(relationProjection?.ComponentIndex ?? "# Components\n"));
+        // SPEC_DEVIATION: hardcoded pending T10, which adds AggregateOutputSnapshot.Graph and reads these
+        // two files from it. RelationProjectionResult no longer carries Mermaid/ComponentIndex (T9 moved
+        // that responsibility to ComponentGraphProjector) and nothing wires the new projector in yet.
+        files.Write("raw/dependencies.mmd", Utf8("flowchart LR\n"));
+        files.Write("raw/codebase/components.md", Utf8("# Components\n"));
         files.Write("raw/topic.yaml", Utf8(TopicYaml(snapshot)));
         files.Write("raw/CLAUDE.md", Utf8("# Generated codebase topic\n\nStart with `facts/manifest.json`.\n"));
         files.Write("raw/log.md", Utf8(Log(snapshot, timeProvider.GetUtcNow())));

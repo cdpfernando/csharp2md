@@ -171,8 +171,7 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
             "structural", "calls", null, null, "syntactic", null);
         var projection = new RelationProjectionResult(
             [.. Enum.GetValues<RelationPartition>().Select(partition =>
-                new RelationPartitionProjection(partition, partition == RelationPartition.Structural ? [relation] : []))],
-            [], "flowchart LR\n", "# Components\n");
+                new RelationPartitionProjection(partition, partition == RelationPartition.Structural ? [relation] : []))]);
 
         new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot() with { Relations = projection }, TimeProvider.System);
 

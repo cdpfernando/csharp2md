@@ -44,6 +44,36 @@ public sealed class ComponentGraphProjectorTests
         Assert.Empty(result.Edges);
     }
 
+    // Replaces RelationProjectorTests.Project_NeverPromotesLogicalDetailToMermaidIdentity (T9): a relation
+    // detail carrying an unproven logical destination must never leak into the diagram as if it were a
+    // proven node - not into the edge set (stronger than the old test's string-search over rendered
+    // Mermaid) and not into the rendered text either.
+    [Fact]
+    public void Project_ARelationDetailCarryingAnUnprovenLogicalDestination_NeverReachesTheEdgeSetOrTheDiagram()
+    {
+        var relation = Relation(Orders.ToFactId(), null, RelationPartition.Http, "http-request")
+            with
+        { Details = [new RelationDetail("logical_destination", "payments-api")] };
+
+        var result = ComponentGraphProjector.Project([Validated(relation)], Nodes());
+
+        Assert.Empty(result.Edges);
+        Assert.DoesNotContain("payments-api", result.Mermaid, StringComparison.Ordinal);
+    }
+
+    // Replaces RelationProjectorTests.Project_BuildsMermaidOnlyFromComponentMappedFactualProjectRelations
+    // (T9): a compile-time-partitioned relation renders with the "compile-time:" wire prefix, proving the
+    // partition-to-label mapping isn't hardcoded to the structural case the other Mermaid tests exercise.
+    [Fact]
+    public void Project_CompileTimePartitionedRelation_RendersTheCompileTimeWirePrefixedEdgeLine()
+    {
+        var relation = Relation(Orders.ToFactId(), Payments.ToFactId(), RelationPartition.CompileTime, "project-reference");
+
+        var result = ComponentGraphProjector.Project([Validated(relation)], Nodes());
+
+        Assert.Contains("-->|compile-time:project-reference ×1|", result.Mermaid, StringComparison.Ordinal);
+    }
+
     // COMP-14: a target that maps to no node (here, a real project id GraphNodeIndex was never given)
     // drops the relation from the edge set.
     [Fact]
