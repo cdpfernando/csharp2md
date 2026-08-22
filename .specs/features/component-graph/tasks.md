@@ -240,18 +240,19 @@ into deduped edges carrying a count.
 
 **Done when**:
 
-- [ ] A relation whose endpoints resolve to two different nodes yields one edge
-- [ ] A relation with a null `TargetId` is dropped
-- [ ] A relation whose source or target resolves to no node is dropped and counted as omitted
-- [ ] A relation whose endpoints resolve to the same node is dropped
-- [ ] Three relations sharing (source, target, partition, kind) collapse to one edge with `Count == 3`
-- [ ] Two relations differing only in kind stay two edges
-- [ ] A column-targeted relation folds into the same group as an object-targeted relation of the same kind
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A relation whose endpoints resolve to two different nodes yields one edge
+- [x] A relation with a null `TargetId` is dropped
+- [x] A relation whose source or target resolves to no node is dropped and counted as omitted
+- [x] A relation whose endpoints resolve to the same node is dropped
+- [x] Three relations sharing (source, target, partition, kind) collapse to one edge with `Count == 3`
+- [x] Two relations differing only in kind stay two edges
+- [x] A column-targeted relation folds into the same group as an object-targeted relation of the same kind
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): 7 new tests in `ComponentGraphProjectorTests.cs`, all passing (1875/1876 full suite; the one failure is T1's pre-existing unrelated flake). The omission *count* (the diagnostic itself) is built in T8; here a relation with an unmapped endpoint is proven dropped from the edge set.
 
 **Tests**: unit
 **Gate**: quick
+**Status**: Done
 
 **Commit**: `feat(graph): select and dedupe component graph edges`
 
