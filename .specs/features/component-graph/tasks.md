@@ -488,15 +488,16 @@ CLI run over `fixtures/SyntheticSolution`.
 
 **Done when**:
 
-- [ ] The manifest leads to a fragment holding exactly 5 `ComponentFact`s, named individually
-- [ ] Each carries `resolution: "syntactic"` in the default syntax-only mode
-- [ ] `Acme.DoesNotExist` has a component, appears in `components.md`, and appears nowhere in `dependencies.mmd`
-- [ ] `components.md` lists all 5 and nothing else
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] The manifest leads to a fragment holding exactly 5 `ComponentFact`s, named individually
+- [x] Each carries `resolution: "syntactic"` in the default syntax-only mode
+- [x] `Acme.DoesNotExist` has a component, appears in `components.md`, and appears nowhere in `dependencies.mmd`
+- [x] `components.md` lists all 5 and nothing else
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions): new `ComponentGraphEndToEndTests.cs` (+ its `ComponentGraphEndToEndFixture`), 4 new tests. Full suite: 1898 passed / 1899 total (the 1 failure is the pre-existing unrelated flake).
 
 **Tests**: integration
 **Gate**: full
+**Status**: Done
 
 **Commit**: `test(graph): prove the component-facts independent test`
 
