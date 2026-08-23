@@ -253,19 +253,35 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
     }
 
     [Fact]
-    public void MultipleEvidenceDocumentsPreserveOrdinalProvenanceEntries()
+    public void MultipleEvidenceDocuments_ReconstructEveryFieldThroughPostingLookup()
     {
         var fixture = new SyntheticProjectionFixture(
             """
-            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-first","relative_path":"First.cs","start_line":1,"start_column":1,"end_line":1,"end_column":2,"generated_origin":false},{"document_id":"document-second","relative_path":"Second.cs","start_line":2,"start_column":1,"end_line":2,"end_column":2,"generated_origin":false}]},"relation_id":"relation-two-documents","source_id":"source-1","target_id":"target-1","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"}
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-first","project_id":"project-first","relative_path":"First.cs","start_line":1,"start_column":2,"end_line":3,"end_column":4,"generated_origin":false,"future_evidence":"first"},{"document_id":"document-second","project_id":"project-second","relative_path":"Second.cs","start_line":5,"start_column":6,"end_line":7,"end_column":8,"generated_origin":true,"future_evidence":"second"}]},"relation_id":"relation-two-documents","source_id":"source-1","target_id":"target-1","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"}
             """);
 
-        var evidence = Assert.Single(fixture.SourceEntries).GetProperty("evidence").EnumerateArray().ToArray();
+        var relation = Assert.Single(RetrievalIndexReader.Open(fixture.Files)
+            .Query(new RetrievalLookup("source", "source-1")));
+        var evidence = relation.Evidence;
+        var expectedHash = Convert.ToHexStringLower(SHA256.HashData(
+            fixture.Files.Read("raw/facts/relations/synthetic.json")));
 
-        Assert.Equal([0, 1], evidence.Select(static item => item.GetProperty("document_ordinal").GetInt32()));
-        var metadata = fixture.Metadata("documents");
-        Assert.Equal(["document-first", "document-second"], metadata.Select(static item => RequiredString(item, "document_id")));
-        Assert.Equal(["First.cs", "Second.cs"], metadata.Select(static item => RequiredString(item, "relative_path")));
+        Assert.Equal("relation-two-documents", relation.RelationId);
+        Assert.Equal("facts/relations/synthetic.json", relation.FragmentReference);
+        Assert.Equal("project-first", relation.ProjectId);
+        Assert.Equal(2, evidence.Length);
+        Assert.Equal(["document-first", "document-second"], evidence.Select(static item => item.DocumentId));
+        Assert.Equal(["project-first", "project-second"], evidence.Select(static item => item.ProjectId));
+        Assert.Equal(["First.cs", "Second.cs"], evidence.Select(static item => item.RelativePath));
+        Assert.Equal([1, 5], evidence.Select(static item => item.StartLine));
+        Assert.Equal([2, 6], evidence.Select(static item => item.StartColumn));
+        Assert.Equal([3, 7], evidence.Select(static item => item.EndLine));
+        Assert.Equal([4, 8], evidence.Select(static item => item.EndColumn));
+        Assert.Equal([false, true], evidence.Select(static item => item.GeneratedOrigin));
+        Assert.All(evidence, item => Assert.Equal(expectedHash, item.FragmentSha256));
+        Assert.All(evidence, static item => Assert.Equal("3.0.1", item.GeneratorVersion));
+        Assert.Equal(["first", "second"], evidence.Select(static item =>
+            item.Extensions!.Value.GetProperty("future_evidence").GetString()));
     }
 
     [Fact]
