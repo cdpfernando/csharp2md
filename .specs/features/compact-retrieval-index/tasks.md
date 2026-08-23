@@ -480,7 +480,7 @@ by standing project override.
 
 ---
 
-### T13: Record the canonical scale result
+### T13: Record the canonical scale result [x]
 
 **What**: Execute the approved 25000-relation methodology and commit the raw samples, medians, environment and strict comparison verdict.
 **Where**: `.specs/features/compact-retrieval-index/benchmark-report.json`
@@ -495,14 +495,20 @@ by standing project override.
 
 **Done when**:
 
-- [ ] The report records the 25000-relation corpus, runtime, OS, architecture, methodology and every raw sample.
-- [ ] Schema 2 is strictly lower in total bytes, file count, median projection time and median peak working set.
-- [ ] The benchmark command exits zero against the committed report and identifies no absent metric.
-- [ ] Benchmark gate passes.
+- [x] The report records the 25000-relation corpus, runtime, OS, architecture, methodology and every raw sample.
+- [x] Schema 2 is strictly lower in total bytes, file count, median projection time and median peak working set.
+- [x] The benchmark command exits zero against the committed report and identifies no absent metric.
+- [x] Benchmark gate passes.
 
 **Tests**: none
 **Gate**: benchmark
 **Commit**: `perf(index): record compact retrieval benchmark`
+
+**Execution evidence**: The canonical benchmark gate exited zero for exactly 25,000 deterministic relations.
+Schema 2 reduced total bytes from 118,737,712 to 12,376,427, files from 50,192 to 56, median
+projection time from 42,734 ms to 1,427 ms and median peak working set from 309,067,776 to
+150,568,960 bytes. The report preserves all six measured raw time and memory samples, methodology and
+environment metadata. Discrimination sensor skipped by standing project override.
 
 ---
 
