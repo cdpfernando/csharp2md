@@ -52,6 +52,8 @@ public sealed class RetrievalIndexReaderV2Tests
         Assert.Equal("source-1", group.SourceId);
         Assert.Equal("Runtime.Target", group.ObservedTargetText);
         Assert.Equal(1, group.Count);
+        Assert.False(group.HasProvenEntryPoint);
+        Assert.Equal(1, group.Impact);
         Assert.Equal(["relation-1"], group.RelationIds.ToArray());
         Assert.Equal("relation-1", Assert.Single(group.Relations!.Value).RelationId);
     }
@@ -68,6 +70,57 @@ public sealed class RetrievalIndexReaderV2Tests
 
         Assert.Contains("schema_version 1", exception.Message, StringComparison.Ordinal);
         Assert.Contains("expected 2", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("posting")]
+    [InlineData("relation")]
+    [InlineData("metadata")]
+    [InlineData("unknowns")]
+    public void Reader_RejectsUnknownSchemaInEveryResolvedArtifactKind(string artifact)
+    {
+        var files = Project();
+        var manifest = JsonNode.Parse(files.Contents["raw/index/manifest.json"])!.AsObject();
+        var path = artifact switch
+        {
+            "posting" => manifest["posting_shards"]!.AsArray()
+                .Select(static value => value!.AsObject())
+                .Single(static descriptor => descriptor["family"]!.GetValue<string>() == "source")["path"]!
+                .GetValue<string>(),
+            "relation" => manifest["relation_shards"]![0]!["path"]!.GetValue<string>(),
+            "metadata" => manifest["metadata_shards"]![0]!["path"]!.GetValue<string>(),
+            _ => manifest["unknowns_path"]!.GetValue<string>(),
+        };
+        var json = JsonNode.Parse(files.Contents[path])!.AsObject();
+        json["schema_version"] = 7;
+        files.Contents[path] = Encoding.UTF8.GetBytes(json.ToJsonString());
+        var reader = RetrievalIndexReader.Open(files);
+
+        var exception = artifact == "unknowns"
+            ? Assert.Throws<JsonException>(() => reader.ReadUnknownGroups())
+            : Assert.Throws<JsonException>(() => reader.Query(new RetrievalLookup("source", "source-1")));
+
+        Assert.Contains(path, exception.Message, StringComparison.Ordinal);
+        Assert.Contains("schema_version 7", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("expected 2", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Open_UsesAnalysisTrustAndRestoreOnlyFromManifest()
+    {
+        var files = Project();
+        var manifest = JsonNode.Parse(files.Contents["raw/index/manifest.json"])!.AsObject();
+        var summaryPath = manifest["summary_path"]!.GetValue<string>();
+        files.Contents.Remove(summaryPath);
+        files.Opened.Clear();
+
+        var reader = RetrievalIndexReader.Open(files);
+
+        Assert.Equal("full", reader.Manifest.Analysis.Requested);
+        Assert.Equal("full", reader.Manifest.Analysis.Effective);
+        Assert.Equal("trusted", reader.Manifest.Trust);
+        Assert.False(reader.Manifest.RestorePerformed);
+        Assert.DoesNotContain(summaryPath, files.Opened);
     }
 
     [Fact]

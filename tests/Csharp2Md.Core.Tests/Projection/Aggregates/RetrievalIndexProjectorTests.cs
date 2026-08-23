@@ -71,21 +71,56 @@ public sealed class RetrievalIndexProjectorTests
         var files = new RecordingFiles();
         var manifest = Manifest(files,
             ("facts/documents/orders.json", Documents()),
-            ("facts/relations/all.json", Relations(Relation("relation-a", details: true, extension: true))));
+            ("facts/relations/all.json", Relations(
+                Relation("relation-a", details: true, extension: true),
+                Relation("relation-b", target: "target-b"))));
 
         var projection = new RetrievalIndexProjector().Project(manifest, files);
 
-        var relation = Read(files, Assert.Single(projection.Manifest.RelationShards).Path).GetProperty("entries")[0];
+        var relationShard = Read(files, Assert.Single(projection.Manifest.RelationShards).Path);
+        var relation = relationShard.GetProperty("entries")[0];
+        Assert.Equal(2, relationShard.GetProperty("schema_version").GetInt32());
         Assert.Equal("Target.Text", relation.GetProperty("details")[0].GetProperty("value").GetString());
         Assert.False(relation.GetProperty("extensions").TryGetProperty("details", out _));
         Assert.Equal(2, relation.GetProperty("extensions").GetProperty("future_relation").GetInt32());
         Assert.Equal(0, relation.GetProperty("evidence")[0].GetProperty("document_ordinal").GetInt32());
         Assert.Equal("kept", relation.GetProperty("evidence")[0].GetProperty("extensions").GetProperty("future_evidence").GetString());
+        Assert.All(relationShard.GetProperty("entries").EnumerateArray()
+            .SelectMany(static entry => entry.GetProperty("evidence").EnumerateArray()), static evidence =>
+        {
+            Assert.False(evidence.TryGetProperty("fragment_reference", out _));
+            Assert.False(evidence.TryGetProperty("fragment_sha256", out _));
+            Assert.False(evidence.TryGetProperty("generator_version", out _));
+        });
         var summary = Read(files, projection.Manifest.SummaryPath);
+        Assert.Equal(2, summary.GetProperty("schema_version").GetInt32());
         Assert.Equal(1, summary.GetProperty("unknown_group_count").GetInt32());
+        Assert.Equal("raw/index/unknowns.json", summary.GetProperty("unknowns_path").GetString());
         Assert.False(summary.TryGetProperty("entries", out _));
-        Assert.Equal([0], Read(files, projection.Manifest.UnknownsPath).GetProperty("entries")[0]
+        Assert.False(summary.TryGetProperty("relation_id", out _));
+        Assert.False(summary.TryGetProperty("relation_ordinals", out _));
+        Assert.False(summary.TryGetProperty("analysis", out _));
+        Assert.False(summary.TryGetProperty("trust", out _));
+        Assert.False(summary.TryGetProperty("restore_performed", out _));
+        Assert.All(summary.GetProperty("by_partition").EnumerateArray()
+            .Concat(summary.GetProperty("by_relation_kind").EnumerateArray()), static metric =>
+        {
+            Assert.Equal(["key", "total", "resolutions", "resolution_methods"],
+                metric.EnumerateObject().Select(static property => property.Name));
+            Assert.False(metric.TryGetProperty("exact_percent", out _));
+            Assert.False(metric.TryGetProperty("dynamic_percent", out _));
+            Assert.False(metric.TryGetProperty("unresolved_percent", out _));
+        });
+        var unknowns = Read(files, projection.Manifest.UnknownsPath);
+        Assert.Equal(2, unknowns.GetProperty("schema_version").GetInt32());
+        Assert.Equal([0], unknowns.GetProperty("entries")[0]
             .GetProperty("relation_ordinals").EnumerateArray().Select(static value => value.GetInt32()));
+        var origins = projection.Manifest.MetadataShards.Where(static descriptor => descriptor.Kind == "origins")
+            .SelectMany(descriptor => Read(files, descriptor.Path).GetProperty("entries").EnumerateArray())
+            .ToArray();
+        Assert.Single(origins);
+        Assert.All(projection.Manifest.MetadataShards,
+            descriptor => Assert.Equal(2, Read(files, descriptor.Path).GetProperty("schema_version").GetInt32()));
         Assert.Equal(2, projection.Manifest.MetadataShards.Length);
     }
 
