@@ -1,4 +1,7 @@
+using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Csharp2Md.RetrievalIndex.Benchmarks;
 
 namespace Csharp2Md.Core.Tests.Benchmarks;
@@ -61,6 +64,100 @@ public sealed class RetrievalIndexBenchmarkHarnessTests
         Assert.True(passed.FilesReduced);
         Assert.True(passed.TimeReduced);
         Assert.True(passed.MemoryReduced);
+    }
+
+    [Fact]
+    public void SchemaTwo_TenAndTenThousandUniqueKeysCreateTheSameDirectorySet()
+    {
+        var tenRoot = Directory.CreateTempSubdirectory("csharp2md-index-directories-10-").FullName;
+        var tenThousandRoot = Directory.CreateTempSubdirectory("csharp2md-index-directories-10000-").FullName;
+        try
+        {
+            BenchmarkCorpus.Project(2, 10, tenRoot);
+            BenchmarkCorpus.Project(2, 10000, tenThousandRoot);
+
+            var ten = IndexDirectories(tenRoot);
+            var tenThousand = IndexDirectories(tenThousandRoot);
+
+            Assert.Equal(ten, tenThousand);
+            Assert.Equal(
+                ["catalogues", "metadata", "postings", "postings/kind", "postings/resolution", "postings/source", "postings/target", "relations"],
+                ten);
+        }
+        finally
+        {
+            Directory.Delete(tenRoot, recursive: true);
+            Directory.Delete(tenThousandRoot, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("equal")]
+    [InlineData("regressed")]
+    public async Task VerifyCommand_MissingEqualOrRegressedMetricsExitNonZeroAndNameEveryMetric(string scenario)
+    {
+        var root = Directory.CreateTempSubdirectory("csharp2md-index-benchmark-failure-").FullName;
+        try
+        {
+            var reportPath = Path.Combine(root, "report.json");
+            var schema1 = Variant(1, bytes: 100, files: 10, time: 20, memory: 30);
+            var schema2 = scenario == "regressed"
+                ? Variant(2, bytes: 101, files: 11, time: 21, memory: 31)
+                : Variant(2, bytes: 100, files: 10, time: 20, memory: 30);
+            var report = new BenchmarkReport(
+                1,
+                new BenchmarkCorpusDescription(1, 1, 1),
+                new BenchmarkEnvironment("runtime", "os", "architecture"),
+                new BenchmarkMethodology("Release", 0, 3, true),
+                [schema1, schema2],
+                BenchmarkComparison.Evaluate(schema1, schema2));
+            var json = JsonNode.Parse(JsonSerializer.SerializeToUtf8Bytes(
+                report, BenchmarkJsonContext.Default.BenchmarkReport))!.AsObject();
+            if (scenario == "missing")
+            {
+                var compact = json["variants"]![1]!.AsObject();
+                compact.Remove("total_bytes");
+                compact.Remove("file_count");
+                compact.Remove("median_projection_ms");
+                compact.Remove("median_peak_working_set_bytes");
+            }
+
+            File.WriteAllText(reportPath, json.ToJsonString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            var start = new ProcessStartInfo(
+                "dotnet",
+                $"\"{typeof(BenchmarkRunner).Assembly.Location}\" verify --report \"{reportPath}\"")
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            using var process = Process.Start(start) ?? throw new InvalidOperationException("Benchmark verifier did not start.");
+            var stdout = process.StandardOutput.ReadToEndAsync();
+            var stderr = process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            Assert.NotEqual(0, process.ExitCode);
+            Assert.Empty(await stdout);
+            var error = await stderr;
+            Assert.Contains("total_bytes", error, StringComparison.Ordinal);
+            Assert.Contains("file_count", error, StringComparison.Ordinal);
+            Assert.Contains("median_projection_ms", error, StringComparison.Ordinal);
+            Assert.Contains("median_peak_working_set_bytes", error, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static string[] IndexDirectories(string root)
+    {
+        var indexRoot = Path.Combine(root, "raw", "index");
+        return Directory.EnumerateDirectories(indexRoot, "*", SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(indexRoot, path).Replace('\\', '/'))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
     }
 
     private static BenchmarkVariant Variant(

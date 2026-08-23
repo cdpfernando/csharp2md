@@ -18,6 +18,7 @@ internal static class Program
             {
                 "compare" => await CompareAsync(args[1..]).ConfigureAwait(false),
                 "sample" => Sample(args[1..]),
+                "verify" => Verify(args[1..]),
                 _ => Usage(),
             };
         }
@@ -37,12 +38,7 @@ internal static class Program
         if (parent is not null) Directory.CreateDirectory(parent);
         var reportBytes = JsonSerializer.SerializeToUtf8Bytes(report, BenchmarkJsonContext.Default.BenchmarkReport);
         await File.WriteAllBytesAsync(reportPath, [.. reportBytes, (byte)'\n']).ConfigureAwait(false);
-        foreach (var failure in report.Comparison.Failures)
-        {
-            Console.Error.WriteLine($"Schema 2 did not reduce {failure}.");
-        }
-
-        return report.Comparison.Failures.IsEmpty ? 0 : 1;
+        return Report(report.Comparison);
     }
 
     private static int Sample(string[] args)
@@ -56,9 +52,36 @@ internal static class Program
         return 0;
     }
 
+    private static int Verify(string[] args)
+    {
+        var reportPath = RequiredOption(args, "--report");
+        var report = JsonSerializer.Deserialize(
+            File.ReadAllBytes(reportPath),
+            BenchmarkJsonContext.Default.BenchmarkReport)
+            ?? throw new JsonException($"Benchmark report '{reportPath}' was null.");
+        var schema1 = report.Variants.SingleOrDefault(static variant => variant.IndexSchemaVersion == 1)
+            ?? MissingVariant(1);
+        var schema2 = report.Variants.SingleOrDefault(static variant => variant.IndexSchemaVersion == 2)
+            ?? MissingVariant(2);
+        return Report(BenchmarkComparison.Evaluate(schema1, schema2));
+    }
+
+    private static BenchmarkVariant MissingVariant(int schema) => new(schema, 0, 0, [], [], 0, 0, []);
+
+    private static int Report(BenchmarkComparison comparison)
+    {
+        foreach (var failure in comparison.Failures)
+        {
+            Console.Error.WriteLine($"Schema 2 did not reduce {failure}.");
+        }
+
+        return comparison.Failures.IsEmpty ? 0 : 1;
+    }
+
     private static int Usage()
     {
-        Console.Error.WriteLine("Usage: compare --report <path> [--count <n>] | sample --schema <1|2> --count <n> --output <path>");
+        Console.Error.WriteLine(
+            "Usage: compare --report <path> [--count <n>] | sample --schema <1|2> --count <n> --output <path> | verify --report <path>");
         return 1;
     }
 
