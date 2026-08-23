@@ -150,7 +150,7 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 | RRI-18 | P1: Manter a compatibilidade factual | T1 | Complete |
 | RRI-19 | P1: Manter a compatibilidade factual | Design | Pending |
 | RRI-20 | P1: Manter a compatibilidade factual | Design | Pending |
-| RRI-21 | P1: Manter a compatibilidade factual | T1 | Complete |
+| RRI-21 | P1: Manter a compatibilidade factual | T2 | Complete |
 
 **Coverage:** 21 total, 3 mapped to tasks, 18 unmapped.
 

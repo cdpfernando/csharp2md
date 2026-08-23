@@ -31,13 +31,16 @@ public sealed record FactHeader
 
     public ImmutableArray<DiagnosticId> DiagnosticIds { get; }
 
+    public bool GeneratedOrigin { get; }
+
     private FactHeader(
         FactId id,
         FactKind kind,
         FactResolution resolution,
         ImmutableArray<FactProvenance> provenance,
         ImmutableArray<Evidence> evidence,
-        ImmutableArray<DiagnosticId> diagnosticIds)
+        ImmutableArray<DiagnosticId> diagnosticIds,
+        bool generatedOrigin)
     {
         Id = id;
         Kind = kind;
@@ -45,6 +48,7 @@ public sealed record FactHeader
         Provenance = provenance;
         Evidence = evidence;
         DiagnosticIds = diagnosticIds;
+        GeneratedOrigin = generatedOrigin;
     }
 
     public static FactHeader Create(
@@ -53,14 +57,16 @@ public sealed record FactHeader
         FactResolution resolution,
         IEnumerable<FactProvenance>? provenance = null,
         IEnumerable<Evidence>? evidence = null,
-        IEnumerable<DiagnosticId>? diagnosticIds = null) =>
+        IEnumerable<DiagnosticId>? diagnosticIds = null,
+        bool generatedOrigin = false) =>
         new(
             id,
             kind,
             resolution,
             (provenance ?? []).Distinct().Order().ToImmutableArray(),
             (evidence ?? []).Distinct().Order().ToImmutableArray(),
-            (diagnosticIds ?? []).Distinct().OrderBy(static diagnostic => diagnostic.Value, StringComparer.Ordinal).ToImmutableArray());
+            (diagnosticIds ?? []).Distinct().OrderBy(static diagnostic => diagnostic.Value, StringComparer.Ordinal).ToImmutableArray(),
+            generatedOrigin);
 }
 
 public interface IFact

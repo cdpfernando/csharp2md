@@ -103,10 +103,10 @@ T9 → T10
 
 **Done when**:
 
-- [ ] A source beginning with a case-insensitive auto-generated header yields generated origin; ordinary source yields not detected.
-- [ ] Facts and evidence can carry an explicit boolean without changing fact identities.
-- [ ] Unit tests cover generated, ordinary and no-source defaults in tests/Csharp2Md.Core.Tests/Facts/Metadata/GeneratedOriginTests.cs.
-- [ ] Quick gate passes; the test count is recorded before and after the task.
+- [x] A source beginning with a case-insensitive auto-generated header yields generated origin; ordinary source yields not detected.
+- [x] Facts and evidence can carry an explicit boolean without changing fact identities.
+- [x] Unit tests cover generated, ordinary and no-source defaults in tests/Csharp2Md.Core.Tests/Facts/Metadata/GeneratedOriginTests.cs.
+- [x] Quick gate passes with the approved known-flake waiver: the full suite was 1,923/1,924 with only `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` failing, and its isolated retry passed 1/1. Test count: 1,918 -> 1,924 (+6).
 
 **Tests**: unit
 **Gate**: quick

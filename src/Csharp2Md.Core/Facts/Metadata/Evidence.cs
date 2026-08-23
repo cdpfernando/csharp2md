@@ -16,13 +16,16 @@ public readonly record struct Evidence : IComparable<Evidence>
 
     public int EndColumn { get; }
 
+    public bool GeneratedOrigin { get; }
+
     public Evidence(
         DocumentFactId documentId,
         string relativePath,
         int startLine,
         int startColumn,
         int endLine,
-        int endColumn)
+        int endColumn,
+        bool generatedOrigin = false)
     {
         RelativePath = ValidateRelativePath(relativePath);
         ValidatePosition(startLine, startColumn, nameof(startLine));
@@ -37,6 +40,7 @@ public readonly record struct Evidence : IComparable<Evidence>
         StartColumn = startColumn;
         EndLine = endLine;
         EndColumn = endColumn;
+        GeneratedOrigin = generatedOrigin;
     }
 
     public int CompareTo(Evidence other)
