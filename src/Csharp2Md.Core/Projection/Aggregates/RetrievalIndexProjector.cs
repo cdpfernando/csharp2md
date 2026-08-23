@@ -18,13 +18,14 @@ internal sealed class RetrievalIndexProjector(BoundedShardWriter? shardWriter = 
         var documents = LocateDocuments(manifest, files);
         var entries = ReadRelations(manifest, files, documents);
         var shards = WriteShards(entries, runId, files);
-        var summary = CreateSummary(entries, manifest, runId);
+        var provenEntryPoints = ProvenEntryPointIds(entries);
+        var summary = CreateSummary(entries, manifest, runId, provenEntryPoints);
 
         WriteCatalogue("entities", entries.SelectMany(static entry => new[] { entry.SourceId, entry.TargetId })
             .Where(static id => id is not null).Select(static id => id!).Distinct(StringComparer.Ordinal), files);
         WriteCatalogue("events", entries.Where(static entry => entry.Partition == "events").Select(static entry => entry.RelationId), files);
         WriteCatalogue("integrations", entries.Where(static entry => entry.Partition is "http" or "grpc").Select(static entry => entry.RelationId), files);
-        WriteCatalogue("entry-points", [], files);
+        WriteCatalogue("entry-points", provenEntryPoints, files);
         WriteCatalogue("high-centrality", HighCentrality(entries), files);
         Write("raw/index/unknowns.json", new RetrievalUnknownCatalogue(1, "unknowns", summary.UnknownGroups), files);
 
@@ -179,7 +180,16 @@ internal sealed class RetrievalIndexProjector(BoundedShardWriter? shardWriter = 
         }).ToImmutableArray();
     }
 
-    private static RetrievalIndexSummary CreateSummary(ImmutableArray<RetrievalRelationEntry> entries, FactualManifest manifest, string runId)
+    private static ImmutableHashSet<string> ProvenEntryPointIds(ImmutableArray<RetrievalRelationEntry> entries) =>
+        entries.Where(static entry => entry is { RelationKind: "aspnet-entrypoint", Resolution: "exact" })
+            .Select(static entry => entry.SourceId)
+            .ToImmutableHashSet(StringComparer.Ordinal);
+
+    private static RetrievalIndexSummary CreateSummary(
+        ImmutableArray<RetrievalRelationEntry> entries,
+        FactualManifest manifest,
+        string runId,
+        ImmutableHashSet<string> provenEntryPoints)
     {
         var unknown = entries.Where(static entry => entry.Resolution == "unresolved")
             .GroupBy(static entry => (entry.UnresolvedReason ?? "", entry.SourceId, entry.ObservedTargetText ?? ""))
@@ -188,7 +198,7 @@ internal sealed class RetrievalIndexProjector(BoundedShardWriter? shardWriter = 
                 group.Key.SourceId,
                 group.Key.Item3,
                 group.Count(),
-                HasProvenEntryPoint: false,
+                HasProvenEntryPoint: provenEntryPoints.Contains(group.Key.SourceId),
                 Impact: Impact(entries, group.Key.SourceId),
                 group.Select(static entry => entry.RelationId).Order(StringComparer.Ordinal).ToImmutableArray()))
             .OrderByDescending(static group => group.HasProvenEntryPoint)
@@ -207,7 +217,7 @@ internal sealed class RetrievalIndexProjector(BoundedShardWriter? shardWriter = 
             manifest.Trust,
             manifest.RestorePerformed,
             entries.SelectMany(static entry => new[] { entry.SourceId, entry.TargetId }).Where(static id => id is not null).Distinct(StringComparer.Ordinal).Count(),
-            0,
+            provenEntryPoints.Count,
             Metrics(entries, static entry => entry.Partition),
             Metrics(entries, static entry => entry.RelationKind),
             unknown,

@@ -159,6 +159,54 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
     }
 
     [Fact]
+    public void RRI15_ProvenEntryPointUnknownSortsBeforeHigherImpactGroups()
+    {
+        var fixture = new SyntheticProjectionFixture(
+            """
+            {"header":{"resolution":"unresolved","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Entry.cs","start_line":1,"start_column":1,"end_line":1,"end_column":2,"generated_origin":false}]},"relation_id":"relation-entry-unknown","source_id":"source-entry","partition":"structural","relation_kind":"calls","unresolved_reason":"not-proved","resolution_method":"observed","details":[{"key":"target_text","value":"Runtime.Entry"}]},
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Entry.cs","start_line":2,"start_column":1,"end_line":2,"end_column":2,"generated_origin":false}]},"relation_id":"relation-entry-proof","source_id":"source-entry","partition":"http","relation_kind":"aspnet-entrypoint","resolution_method":"symbol-index"},
+            {"header":{"resolution":"unresolved","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"High.cs","start_line":3,"start_column":1,"end_line":3,"end_column":2,"generated_origin":false}]},"relation_id":"relation-high-unknown","source_id":"source-high","partition":"structural","relation_kind":"calls","unresolved_reason":"not-proved","resolution_method":"observed","details":[{"key":"target_text","value":"Runtime.High"}]},
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"High.cs","start_line":4,"start_column":1,"end_line":4,"end_column":2,"generated_origin":false}]},"relation_id":"relation-high-impact","source_id":"source-other","target_id":"source-high","partition":"structural","relation_kind":"calls","resolution_method":"symbol-index"},
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"High.cs","start_line":5,"start_column":1,"end_line":5,"end_column":2,"generated_origin":false}]},"relation_id":"relation-high-impact-second","source_id":"source-other-second","target_id":"source-high","partition":"structural","relation_kind":"calls","resolution_method":"symbol-index"}
+            """);
+
+        Assert.Equal(["source-entry", "source-high"], fixture.UnknownGroups.Select(static group => RequiredString(group, "source_id")));
+        Assert.True(fixture.UnknownGroups[0].GetProperty("has_proven_entry_point").GetBoolean());
+        Assert.True(fixture.UnknownGroups[1].GetProperty("impact").GetInt32() > fixture.UnknownGroups[0].GetProperty("impact").GetInt32());
+    }
+
+    [Fact]
+    public void RRI16_CataloguesContainOnlyPersistedFactEntries()
+    {
+        var fixture = new SyntheticProjectionFixture(
+            """
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Api.cs","start_line":1,"start_column":1,"end_line":1,"end_column":2,"generated_origin":false}]},"relation_id":"relation-entry-proof","source_id":"source-entry","partition":"http","relation_kind":"aspnet-entrypoint","resolution_method":"symbol-index"},
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Events.cs","start_line":2,"start_column":1,"end_line":2,"end_column":2,"generated_origin":false}]},"relation_id":"relation-event","source_id":"source-event","target_id":"target-event","partition":"events","relation_kind":"publishes","resolution_method":"symbol-index"},
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Http.cs","start_line":3,"start_column":1,"end_line":3,"end_column":2,"generated_origin":false}]},"relation_id":"relation-integration","source_id":"source-http","target_id":"target-http","partition":"http","relation_kind":"http-call","resolution_method":"symbol-index"}
+            """);
+
+        Assert.Equal(["source-entry", "source-event", "source-http", "target-event", "target-http"], ReadCatalogue(fixture, "entities"));
+        Assert.Equal(["relation-event"], ReadCatalogue(fixture, "events"));
+        Assert.Equal(["relation-entry-proof", "relation-integration"], ReadCatalogue(fixture, "integrations"));
+        Assert.Equal(["source-entry"], ReadCatalogue(fixture, "entry-points"));
+        Assert.Equal(["source-entry", "source-event", "source-http", "target-event", "target-http"], ReadCatalogue(fixture, "high-centrality"));
+    }
+
+    [Fact]
+    public void MultipleEvidenceDocumentsPreserveOrdinalProvenanceEntries()
+    {
+        var fixture = new SyntheticProjectionFixture(
+            """
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-first","relative_path":"First.cs","start_line":1,"start_column":1,"end_line":1,"end_column":2,"generated_origin":false},{"document_id":"document-second","relative_path":"Second.cs","start_line":2,"start_column":1,"end_line":2,"end_column":2,"generated_origin":false}]},"relation_id":"relation-two-documents","source_id":"source-1","target_id":"target-1","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"}
+            """);
+
+        var evidence = Assert.Single(fixture.SourceEntries).GetProperty("evidence").EnumerateArray().ToArray();
+
+        Assert.Equal(["document-first", "document-second"], evidence.Select(static item => RequiredString(item, "document_id")));
+        Assert.Equal(["First.cs", "Second.cs"], evidence.Select(static item => RequiredString(item, "relative_path")));
+    }
+
+    [Fact]
     public void RRI20_RRI21_GeneratedAndOrdinaryOriginsRemainExplicitInFactsAndIndex()
     {
         var fixture = new SyntheticProjectionFixture(
@@ -177,6 +225,12 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
     private static string[] ReadCatalogue(string rawRoot, string name) =>
         Read(rawRoot, $"raw/index/catalogues/{name}.json").GetProperty("entries").EnumerateArray()
             .Select(static entry => RequiredString(entry)).ToArray();
+
+    private static string[] ReadCatalogue(SyntheticProjectionFixture fixture, string name)
+    {
+        using var document = JsonDocument.Parse(fixture.Files.Read($"raw/index/catalogues/{name}.json"));
+        return document.RootElement.GetProperty("entries").EnumerateArray().Select(static entry => RequiredString(entry)).ToArray();
+    }
 
     private static string[] SourceRelationIds(string rawRoot) => SourceEntries(rawRoot)
         .Select(static entry => RequiredString(entry, "relation_id")).Order(StringComparer.Ordinal).ToArray();

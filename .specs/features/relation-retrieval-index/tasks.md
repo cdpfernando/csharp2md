@@ -6,7 +6,7 @@ Implement these tasks with the tlc-spec-driven skill and follow its Execute flow
 The discrimination sensor is a standing skip for this repository. Record that skip in validation, but run
 every other verifier check.
 
-**Design**: .specs/features/relation-retrieval-index/design.md  
+**Design**: .specs/features/relation-retrieval-index/design.md
 **Status**: Draft
 
 ---
@@ -15,6 +15,8 @@ every other verifier check.
 
 > Generated from AGENTS.md, Directory.Build.props, the existing xUnit/Verify test suite and the feature
 > specification. Tests use xUnit in tests/Csharp2Md.Core.Tests; Nullable and warnings-as-errors are enabled.
+>
+> **Authoritative current test-method count:** 1,522, discovered on 2026-08-22 with `dotnet test csharp2md.slnx --list-tests --no-restore | Select-String '^\s{4}Csharp2Md\.Core\.Tests\.' | Measure-Object`. The full runner separately reports 1,949 expanded test cases because theories generate multiple cases. Earlier T1--T10 before/after count claims are superseded; they are not a trustworthy baseline.
 
 | Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
 | --- | --- | --- | --- | --- |
@@ -80,7 +82,7 @@ T9 → T10
 - [x] AD-022 states that generated-origin metadata is an additive factual field and that the factual schema changes from 5 to 6.
 - [x] AD-017 is marked superseded only for its fragment-version statement; its remaining scope remains active.
 - [x] The documentation names the backward-read default of false.
-- [x] Build and format pass; the test count is 1,918 before and after. The documented order-dependent MSBuild test failed repeatedly in the full suite (1,917/1,918), while its required isolated retry passed (1/1); this narrowly scoped waiver applies only to that known baseline failure.
+- [x] Build and format passed. Historical test-count figures are superseded by T12's authoritative discovery; the narrowly scoped MSBuild-flake waiver remains recorded.
 
 **Tests**: none
 **Gate**: build
@@ -106,7 +108,7 @@ T9 → T10
 - [x] A source beginning with a case-insensitive auto-generated header yields generated origin; ordinary source yields not detected.
 - [x] Facts and evidence can carry an explicit boolean without changing fact identities.
 - [x] Unit tests cover generated, ordinary and no-source defaults in tests/Csharp2Md.Core.Tests/Facts/Metadata/GeneratedOriginTests.cs.
-- [x] Quick gate passes with the approved known-flake waiver: the full suite was 1,923/1,924 with only `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` failing, and its isolated retry passed 1/1. Test count: 1,918 -> 1,924 (+6).
+- [x] Quick gate passed with the approved known-flake waiver. Historical test-count figures are superseded by T12's authoritative discovery.
 
 **Tests**: unit
 **Gate**: quick
@@ -133,7 +135,7 @@ T9 → T10
 - [x] FactualJsonSerializer.SchemaVersion and schemas/facts.schema.json both read 6.
 - [x] The schema explicitly distinguishes proof-quality resolution from relation resolution_method.
 - [x] Schema-sync and JSON snapshot tests cover exact required fields, version and descriptions.
-- [x] Build and format pass; the full suite was 1,926/1,927 with only the approved known flake failing, and its isolated retry passed 1/1. Test count: 1,924 -> 1,927 (+3).
+- [x] Build and format passed with the approved known-flake waiver. Historical test-count figures are superseded by T12's authoritative discovery.
 
 **Tests**: unit
 **Gate**: build
@@ -160,7 +162,7 @@ T9 → T10
 - [x] Entry, provenance and extension fields represent every spec-required lookup, evidence and compatibility value.
 - [x] Summary contracts hold analysis metadata, counts and exact/dynamic/unresolved percentages by kind and partition.
 - [x] Unit tests serialize representative contracts with snake-case fields and no accidental computed members.
-- [x] Quick gate passes with the approved known-flake waiver: the full suite was 1,928/1,929 with only the documented MSBuild test failing, and its isolated retry passed 1/1. Test count: 1,927 -> 1,929 (+2).
+- [x] Quick gate passed with the approved known-flake waiver. Historical test-count figures are superseded by T12's authoritative discovery.
 
 **Tests**: unit
 **Gate**: quick
@@ -187,7 +189,7 @@ T9 → T10
 - [x] A one-entry oversized envelope raises a deterministic exception with family, key and relation id.
 - [x] Path key hashing and descriptor ordering are byte-stable for reordered input.
 - [x] Unit tests cover empty input, exact boundary, overflow, oversized singleton and deterministic ordering.
-- [x] Quick gate passes with the approved known-flake waiver: the full suite was 1,932/1,933 with only `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` failing, and its isolated retry passed 1/1. Test count: 1,929 -> 1,933 (+4).
+- [x] Quick gate passed with the approved known-flake waiver. Historical test-count figures are superseded by T12's authoritative discovery.
 
 **Tests**: unit
 **Gate**: quick
@@ -215,7 +217,7 @@ T9 → T10
 - [x] It preserves relation/evidence unknown JSON properties as opaque extensions and preserves separate same-semantic relations with distinct evidence/context.
 - [x] It groups UNKNOWNs by reason, source and observed target text, then orders by proven entry point, impact and ordinal tie-breaker without inventing targets or entry points.
 - [x] Unit tests cover missing target, missing evidence project, syntax-only limits, extension round-trip, dedup preservation and generated-origin propagation.
-- [x] Quick gate passes with the approved known-flake waiver: the full suite was 1,935/1,936 with only `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` failing, and its isolated retry passed 1/1. Test count: 1,933 -> 1,936 (+3).
+- [x] Quick gate passed with the approved known-flake waiver. Historical test-count figures are superseded by T12's authoritative discovery.
 
 **Tests**: unit
 **Gate**: quick
@@ -242,7 +244,7 @@ T9 → T10
 - [x] A missing or hash-invalid factual fragment prevents both factual and index manifests from being advertised.
 - [x] The writer leaves raw/facts bytes unchanged while producing raw/index bytes from their validated references.
 - [x] Writer tests assert the output paths and the failure ordering against bytes, not only mock calls.
-- [x] Build and format passed; Slopwatch is clean for T7 files (the global scan reports five pre-existing, out-of-scope `Task.Delay` warnings). The full suite was 1,936/1,937 with only the approved `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` flake failing, and its isolated retry passed 1/1. Test count: 1,936 -> 1,937 (+1).
+- [x] Build and format passed; Slopwatch was clean for T7 files, apart from five pre-existing out-of-scope `Task.Delay` warnings. Historical test-count figures are superseded by T12's authoritative discovery.
 
 **Tests**: unit
 **Gate**: build
@@ -269,7 +271,7 @@ T9 → T10
 - [x] Two identical-input runs have identical relation ids and analysis_run_id values.
 - [x] The summary has exact/dynamic/unresolved percentages by kind and partition, indexed-symbol count, zero mapped entry points and explicit syntax-only limits.
 - [x] Every index evidence record identifies generator version, project, document, fragment hash and source coordinates.
-- [x] Full gate passed with the approved known-flake waiver: the full suite was 1,940/1,941 with only `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` failing, and its isolated retry passed 1/1. Test count: 1,937 -> 1,941 (+4).
+- [x] Full gate passed with the approved known-flake waiver. Historical test-count figures are superseded by T12's authoritative discovery.
 
 **Tests**: integration
 **Gate**: full
@@ -296,7 +298,7 @@ T9 → T10
 - [x] Two semantically similar relations at different locations remain two index entries.
 - [x] UNKNOWNs group occurrences by the three required keys and sort by impact with deterministic ties.
 - [x] Generated source emits true and ordinary source emits false in factual and index provenance.
-- [x] Build Release, format and the full suite passed. Test count: 1,941 -> 1,945 (+4).
+- [x] Build Release, format and the full suite passed. Historical test-count figures are superseded by T12's authoritative discovery.
 
 **Tests**: integration
 **Gate**: build
@@ -322,7 +324,7 @@ T9 → T10
 - [x] Every RRI requirement is mapped to an exact covering test assertion or a specified documentation evidence line.
 - [x] The coverage line carries the final test count and no requirement remains silently unmapped.
 - [x] The issue phase is Implemented and both roadmap rows remain Pending until the independent verifier returns PASS.
-- [x] Build Release and format passed; the full suite passed. Test count: 1,945 -> 1,945 (no tests added or removed).
+- [x] Build Release and format passed; the full suite passed. Historical test-count figures are superseded by T12's authoritative discovery.
 
 **Tests**: none
 **Gate**: build
@@ -359,7 +361,7 @@ T9 → T10
 ### T12: Prove UNKNOWN priority and catalogue provenance
 
 **What**: Close independent-validator gaps for entry-point-first UNKNOWN ordering, proven catalogue contents, multi-document evidence ordinal preservation and test-count traceability.
-**Where**: tests/Csharp2Md.Core.Tests/Analysis/RelationRetrievalIndexEndToEndTests.cs and .specs/features/relation-retrieval-index/spec.md
+**Where**: src/Csharp2Md.Core/Projection/Aggregates/RetrievalIndexProjector.cs, tests/Csharp2Md.Core.Tests/Analysis/RelationRetrievalIndexEndToEndTests.cs and .specs/features/relation-retrieval-index/spec.md
 **Depends on**: T11
 **Reuses**: T9 unknown/catalogue fixture patterns and the test runner's authoritative discovered-count output.
 **Requirement**: RRI-15, RRI-16; multi-document-evidence edge case
@@ -371,11 +373,11 @@ T9 → T10
 
 **Done when**:
 
-- [ ] A proven entry point sorts before higher-impact non-entry-point UNKNOWN groups; impact and ordinal ties remain deterministic.
-- [ ] Each populated catalogue entry is asserted to be derived from matching persisted facts, and empty families remain empty without proof.
-- [ ] Two evidence documents for one relation preserve two provenance entries in ordinal order.
-- [ ] `tasks.md` and `spec.md` record the authoritative current test-count method and value without a conflicting before/after claim; no trailing whitespace remains.
-- [ ] Build Release, format and the full suite pass, subject only to the approved known-flake waiver with an isolated passing retry.
+- [x] A proven entry point sorts before higher-impact non-entry-point UNKNOWN groups; impact and ordinal ties remain deterministic.
+- [x] Each populated catalogue entry is asserted to be derived from matching persisted facts, and empty families remain empty without proof.
+- [x] Two evidence documents for one relation preserve two provenance entries in ordinal order.
+- [x] `tasks.md` and `spec.md` record the authoritative current test-count method and value without a conflicting before/after claim; no trailing whitespace remains.
+- [x] Build Release and format passed. The full suite had only the approved MSBuild flake; its isolated retry passed 1/1.
 
 **Tests**: integration
 **Gate**: build
