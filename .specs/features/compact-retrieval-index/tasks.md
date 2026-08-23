@@ -112,7 +112,7 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 
 ---
 
-### T2: Freeze and verify the schema-1 baseline
+### T2: Freeze and verify the schema-1 baseline [x]
 
 **What**: Copy the verified schema-1 projection into a benchmark-only adapter and prove byte-for-byte parity with production before production changes.
 **Where**: `benchmarks/Csharp2Md.RetrievalIndex.Benchmarks/Schema1RetrievalIndexProjector.cs`
@@ -137,6 +137,8 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 **Tests**: integration
 **Gate**: full
 **Commit**: `test(benchmark): freeze schema one retrieval baseline`
+
+**Execution evidence**: Pre-task discovered test methods: 1,523. Discrimination sensor skipped by standing project override.
 
 ---
 

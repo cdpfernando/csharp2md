@@ -11,4 +11,8 @@
     <ProjectReference Include="..\..\src\Csharp2Md.Core\Csharp2Md.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Csharp2Md.Core.Tests" />
+  </ItemGroup>
+
 </Project>
