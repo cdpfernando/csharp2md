@@ -198,7 +198,7 @@ public sealed class SymbolFactEnricherTests
     }
 
     [Fact]
-    public void SemanticRelationships_SerializeThroughSchemaVersionFiveContract()
+    public void SemanticRelationships_SerializeThroughSchemaVersionSixContract()
     {
         var result = Enrich("namespace Acme; public interface IProbe { void Run(); } public sealed class Probe : IProbe { public void Run() { } }");
         var fragment = new ValidatedFactFragment(
@@ -207,7 +207,7 @@ public sealed class SymbolFactEnricherTests
 
         var mapped = FactualJsonMapper.Map(fragment);
 
-        Assert.Equal(5, mapped.SchemaVersion);
+        Assert.Equal(6, mapped.SchemaVersion);
         var implementation = mapped.Symbols.Single(symbol => symbol.SymbolId.Contains("M%3AAcme.Probe.Run", StringComparison.Ordinal));
         Assert.NotNull(implementation.Semantics);
         Assert.Single(implementation.Semantics.ImplementedMemberIds);

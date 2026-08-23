@@ -129,11 +129,11 @@ T9 → T10
 
 **Done when**:
 
-- [ ] Header and evidence JSON emit generated_origin and readers accept its absence as false.
-- [ ] FactualJsonSerializer.SchemaVersion and schemas/facts.schema.json both read 6.
-- [ ] The schema explicitly distinguishes proof-quality resolution from relation resolution_method.
-- [ ] Schema-sync and JSON snapshot tests cover exact required fields, version and descriptions.
-- [ ] Build gate passes; the test count is recorded before and after the task.
+- [x] Header and evidence JSON emit generated_origin and readers accept its absence as false.
+- [x] FactualJsonSerializer.SchemaVersion and schemas/facts.schema.json both read 6.
+- [x] The schema explicitly distinguishes proof-quality resolution from relation resolution_method.
+- [x] Schema-sync and JSON snapshot tests cover exact required fields, version and descriptions.
+- [x] Build and format pass; the full suite was 1,926/1,927 with only the approved known flake failing, and its isolated retry passed 1/1. Test count: 1,924 -> 1,927 (+3).
 
 **Tests**: unit
 **Gate**: build

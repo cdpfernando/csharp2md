@@ -16,7 +16,8 @@
           }
         ],
         "evidence": [],
-        "diagnostic_ids": []
+        "diagnostic_ids": [],
+        "generated_origin": false
       },
       "relation_id": "id1:relation;owner=id1%3Aproject%3Bpath%3Dsrc%252FOrders%252FOrders.csproj;kind=project-reference;claim=target%3Did1%3Aproject%3Bpath%3Dsrc%252FPayments%252FPayments.csproj;ordinal=1",
       "source_id": "id1:project;path=src%2FOrders%2FOrders.csproj",

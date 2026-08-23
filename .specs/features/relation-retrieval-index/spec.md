@@ -138,8 +138,8 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 | RRI-06 | P1: Recuperar relações pontuais | Design | Pending |
 | RRI-07 | P1: Expor limites, qualidade e proveniência | Design | Pending |
 | RRI-08 | P1: Expor limites, qualidade e proveniência | Design | Pending |
-| RRI-09 | P1: Expor limites, qualidade e proveniência | Design | Pending |
-| RRI-10 | P1: Expor limites, qualidade e proveniência | T1 | Complete |
+| RRI-09 | P1: Expor limites, qualidade e proveniência | T3 | Complete |
+| RRI-10 | P1: Expor limites, qualidade e proveniência | T3 | Complete |
 | RRI-11 | P1: Expor limites, qualidade e proveniência | Design | Pending |
 | RRI-12 | P1: Expor limites, qualidade e proveniência | Design | Pending |
 | RRI-13 | P1: Expor limites, qualidade e proveniência | Design | Pending |
@@ -147,12 +147,12 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 | RRI-15 | P1: Priorizar lacunas sem ocultar informação | Design | Pending |
 | RRI-16 | P1: Priorizar lacunas sem ocultar informação | Design | Pending |
 | RRI-17 | P1: Priorizar lacunas sem ocultar informação | Design | Pending |
-| RRI-18 | P1: Manter a compatibilidade factual | T1 | Complete |
-| RRI-19 | P1: Manter a compatibilidade factual | Design | Pending |
+| RRI-18 | P1: Manter a compatibilidade factual | T3 | Complete |
+| RRI-19 | P1: Manter a compatibilidade factual | T3 | Complete |
 | RRI-20 | P1: Manter a compatibilidade factual | Design | Pending |
-| RRI-21 | P1: Manter a compatibilidade factual | T2 | Complete |
+| RRI-21 | P1: Manter a compatibilidade factual | T3 | Complete |
 
-**Coverage:** 21 total, 3 mapped to tasks, 18 unmapped.
+**Coverage:** 21 total, 5 mapped to tasks, 16 unmapped.
 
 ## Success Criteria
 

@@ -78,12 +78,11 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
         Assert.Equal(graph.ComponentIndex, File.ReadAllText(Path.Combine(_root, "raw", "codebase", "components.md")));
     }
 
-    // COMP-07: this feature is out of scope for a schema version bump - schemas/facts.schema.json already
-    // declares "component" and "components", so FactualJsonSerializer.SchemaVersion must still read 5.
+    // RRI-21: generated-origin metadata is an additive factual field, so the schema moves to version 6.
     [Fact]
-    public void SchemaVersion_IsStillFive()
+    public void SchemaVersion_IsSix()
     {
-        Assert.Equal(5, FactualJsonSerializer.SchemaVersion);
+        Assert.Equal(6, FactualJsonSerializer.SchemaVersion);
     }
 
     [Fact]

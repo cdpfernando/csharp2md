@@ -14,7 +14,8 @@ public sealed record EvidenceJson(
     [property: JsonPropertyOrder(2)] int StartLine,
     [property: JsonPropertyOrder(3)] int StartColumn,
     [property: JsonPropertyOrder(4)] int EndLine,
-    [property: JsonPropertyOrder(5)] int EndColumn);
+    [property: JsonPropertyOrder(5)] int EndColumn,
+    [property: JsonPropertyOrder(6)] bool GeneratedOrigin = false);
 
 public sealed record FactHeaderJson(
     [property: JsonPropertyOrder(0)] string Id,
@@ -22,7 +23,8 @@ public sealed record FactHeaderJson(
     [property: JsonPropertyOrder(2)] string Resolution,
     [property: JsonPropertyOrder(3)] ImmutableArray<FactProvenanceJson> Provenance,
     [property: JsonPropertyOrder(4)] ImmutableArray<EvidenceJson> Evidence,
-    [property: JsonPropertyOrder(5)] ImmutableArray<string> DiagnosticIds);
+    [property: JsonPropertyOrder(5)] ImmutableArray<string> DiagnosticIds,
+    [property: JsonPropertyOrder(6)] bool GeneratedOrigin = false);
 
 public sealed record DiagnosticDataJson(
     [property: JsonPropertyOrder(0)] string Key,
