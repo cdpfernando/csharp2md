@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Text;
 
 namespace Csharp2Md.Core.Projection.Aggregates;
 
@@ -16,108 +15,98 @@ internal sealed class BoundedUtf8ShardWriter(int maximumBytes = 262144)
         ArgumentNullException.ThrowIfNull(records);
         if (_maximumBytes <= 0) throw new ArgumentOutOfRangeException(nameof(maximumBytes));
 
-        var result = ImmutableArray.CreateBuilder<BoundedUtf8Shard>();
-        var current = new List<ReadOnlyMemory<byte>>();
-        foreach (var record in records)
-        {
-            SerializedRecordCount++;
-            if (Length(current, record) > _maximumBytes)
-            {
-                if (current.Count == 0)
-                {
-                    throw new InvalidOperationException($"Compact retrieval {kind} record exceeds {_maximumBytes} bytes.");
-                }
+        var materialized = records.ToArray();
+        return PackCore(
+            kind,
+            materialized,
+            static _ => "{\"entries\":["u8.ToArray(),
+            identity: null);
+    }
 
-                result.Add(Create(current));
-                current.Clear();
-                if (Length(current, record) > _maximumBytes)
-                {
-                    throw new InvalidOperationException($"Compact retrieval {kind} record exceeds {_maximumBytes} bytes.");
-                }
+    public ImmutableArray<BoundedUtf8Shard> Pack(
+        string kind,
+        IReadOnlyList<byte[]> records,
+        Func<int, byte[]> prefix,
+        Func<int, string> identity)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(kind);
+        ArgumentNullException.ThrowIfNull(records);
+        ArgumentNullException.ThrowIfNull(prefix);
+        ArgumentNullException.ThrowIfNull(identity);
+        if (_maximumBytes <= 0) throw new ArgumentOutOfRangeException(nameof(maximumBytes));
+
+        return PackCore(
+            kind,
+            records.Select(static record => (ReadOnlyMemory<byte>)record).ToArray(),
+            prefix,
+            identity);
+    }
+
+    private ImmutableArray<BoundedUtf8Shard> PackCore(
+        string kind,
+        IReadOnlyList<ReadOnlyMemory<byte>> records,
+        Func<int, byte[]> prefix,
+        Func<int, string>? identity)
+    {
+        var result = ImmutableArray.CreateBuilder<BoundedUtf8Shard>();
+        SerializedRecordCount += records.Count;
+        var first = 0;
+        while (first < records.Count)
+        {
+            var prefixBytes = prefix(first);
+            var length = prefixBytes.Length + 3;
+            var last = first - 1;
+            while (last + 1 < records.Count)
+            {
+                var candidate = records[last + 1].Length + (last >= first ? 1 : 0);
+                if (length + candidate > _maximumBytes) break;
+                length += candidate;
+                last++;
             }
 
-            current.Add(record);
+            if (last < first)
+            {
+                var recordIdentity = identity is null ? "" : $" '{identity(first)}'";
+                throw new InvalidOperationException(
+                    $"Compact retrieval {kind} record{recordIdentity} exceeds {_maximumBytes} bytes.");
+            }
+
+            result.Add(Create(first, last, prefixBytes, records, length));
+            first = last + 1;
         }
 
-        if (current.Count != 0) result.Add(Create(current));
         CompletedEnvelopeCount += result.Count;
         return result.ToImmutable();
     }
 
-    private static int Length(List<ReadOnlyMemory<byte>> records, ReadOnlyMemory<byte> next) =>
-        12 + records.Sum(static item => item.Length) + next.Length + records.Count + 3;
-
-    private static BoundedUtf8Shard Create(List<ReadOnlyMemory<byte>> records)
+    private static BoundedUtf8Shard Create(
+        int first,
+        int last,
+        byte[] prefix,
+        IReadOnlyList<ReadOnlyMemory<byte>> records,
+        int length)
     {
-        var buffer = new ArrayBufferWriter<byte>();
-        buffer.Write("{\"entries\":["u8);
-        for (var index = 0; index < records.Count; index++)
+        var buffer = new ArrayBufferWriter<byte>(length);
+        buffer.Write(prefix);
+        for (var index = first; index <= last; index++)
         {
-            if (index != 0) buffer.Write(","u8);
+            if (index != first) buffer.Write(","u8);
             buffer.Write(records[index].Span);
         }
+
         buffer.Write("]}\n"u8);
-        return new BoundedUtf8Shard(buffer.WrittenMemory.ToArray());
+        return new BoundedUtf8Shard(first, last, buffer.WrittenMemory.ToArray());
     }
 }
 
-internal sealed record BoundedUtf8Shard(byte[] Bytes);
+internal sealed record BoundedUtf8Shard(int FirstIndex, int LastIndex, byte[] Bytes)
+{
+    public int Count => LastIndex - FirstIndex + 1;
+}
 
-internal sealed record CompactShardDescriptor(string Path, string Kind, string? Key, int EntryCount, int ByteLength);
 internal sealed record CompactSerializationCounters(
     int RelationRecords,
     int MetadataRecords,
     int PostingLists,
     int PostingOrdinals,
     int CompletedEnvelopes);
-
-internal sealed class CompactShardPolicy(string kind, string directory)
-{
-    public string Kind { get; } = kind;
-    public string Directory { get; } = directory;
-
-    public ImmutableArray<CompactShardDescriptor> Write(
-        BoundedUtf8ShardWriter writer,
-        IEnumerable<ReadOnlyMemory<byte>> records,
-        IAggregateFileWriter files)
-    {
-        ArgumentNullException.ThrowIfNull(writer);
-        ArgumentNullException.ThrowIfNull(records);
-        ArgumentNullException.ThrowIfNull(files);
-        var shards = writer.Pack(Kind, records);
-        return shards.Select((shard, ordinal) =>
-        {
-            var path = $"raw/index/{Directory}/{ordinal:D4}.json";
-            files.Write(path, shard.Bytes);
-            return new CompactShardDescriptor(path, Kind, null, 0, shard.Bytes.Length);
-        }).ToImmutableArray();
-    }
-}
-
-internal static class CompactShardPolicies
-{
-    public static CompactShardPolicy Relations { get; } = new("relation", "relations");
-    public static CompactShardPolicy Metadata { get; } = new("metadata", "metadata");
-    public static CompactShardPolicy Postings { get; } = new("posting", "postings");
-}
-
-internal sealed class CompactPostingShardPolicy
-{
-    public ImmutableArray<CompactShardDescriptor> Write(
-        string family,
-        string key,
-        IEnumerable<ReadOnlyMemory<byte>> postingSegments,
-        BoundedUtf8ShardWriter writer,
-        IAggregateFileWriter files)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(family);
-        ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        var shards = writer.Pack("posting", postingSegments);
-        return shards.Select((shard, ordinal) =>
-        {
-            var path = $"raw/index/postings/{ordinal:D4}.json";
-            files.Write(path, shard.Bytes);
-            return new CompactShardDescriptor(path, "posting", key, 0, shard.Bytes.Length);
-        }).ToImmutableArray();
-    }
-}

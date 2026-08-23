@@ -7,13 +7,13 @@ using Csharp2Md.Core.Facts.Serialization;
 
 namespace Csharp2Md.Core.Projection.Aggregates;
 
-internal sealed class RetrievalIndexProjector
+internal sealed class RetrievalIndexProjector(BoundedUtf8ShardWriter? shardWriter = null)
 {
     private const int SchemaVersion = 2;
-    private const int MaximumShardBytes = 262144;
     private const string SummaryPath = "raw/index/summary.json";
     private const string UnknownsPath = "raw/index/unknowns.json";
     private const string EntryPointsPath = "raw/index/catalogues/entry-points.json";
+    private readonly BoundedUtf8ShardWriter _shardWriter = shardWriter ?? new BoundedUtf8ShardWriter();
 
     public CompactRetrievalIndexProjection Project(FactualManifest manifest, IAggregateFileWriter files)
     {
@@ -220,13 +220,13 @@ internal sealed class RetrievalIndexProjector
                 ?? throw new JsonException("Compact retrieval candidate must be a string.")).ToImmutableArray()
             : null;
 
-    private static ImmutableArray<RelationShardDescriptor> WriteRelationShards(
+    private ImmutableArray<RelationShardDescriptor> WriteRelationShards(
         ImmutableArray<byte[]> records,
         ImmutableArray<ParsedRelation> relations,
         string runId,
         IAggregateFileWriter files)
     {
-        var packed = Pack(records, first => Prefix(runId, $"\"first_ordinal\":{first},"), "relation",
+        var packed = _shardWriter.Pack("relation", records, first => Prefix(runId, $"\"first_ordinal\":{first},"),
             first => relations[first].RelationId);
         return packed.Select((shard, index) =>
         {
@@ -236,7 +236,7 @@ internal sealed class RetrievalIndexProjector
         }).ToImmutableArray();
     }
 
-    private static ImmutableArray<MetadataShardDescriptor> WriteMetadataShards(
+    private ImmutableArray<MetadataShardDescriptor> WriteMetadataShards(
         CompactRetrievalIndexBuildResult built,
         string runId,
         IAggregateFileWriter files)
@@ -250,8 +250,9 @@ internal sealed class RetrievalIndexProjector
 
         void WriteKind(string kind, ImmutableArray<byte[]> records)
         {
-            var packed = Pack(records, first => Prefix(runId, $"\"kind\":\"{kind}\",\"first_ordinal\":{first},"),
-                "metadata", first => $"{kind}:{first}");
+            var packed = _shardWriter.Pack("metadata", records,
+                first => Prefix(runId, $"\"kind\":\"{kind}\",\"first_ordinal\":{first},"),
+                first => $"{kind}:{first}");
             foreach (var (shard, index) in packed.Select((value, index) => (value, index)))
             {
                 var path = $"raw/index/metadata/{kind}-{index:D4}.json";
@@ -261,7 +262,7 @@ internal sealed class RetrievalIndexProjector
         }
     }
 
-    private static ImmutableArray<PostingShardDescriptor> WritePostingShards(
+    private ImmutableArray<PostingShardDescriptor> WritePostingShards(
         CompactPostingMaps maps,
         string runId,
         IAggregateFileWriter files)
@@ -282,7 +283,7 @@ internal sealed class RetrievalIndexProjector
                 .ToImmutableArray();
             var records = orderedPostings.Select(value => Serialize(value,
                 CompactRetrievalIndexJsonContext.Default.CompactPostingList)).ToImmutableArray();
-            var packed = Pack(records, _ => Prefix(runId, $"\"family\":\"{family}\","), "posting",
+            var packed = _shardWriter.Pack("posting", records, _ => Prefix(runId, $"\"family\":\"{family}\","),
                 first => orderedPostings[first].Key);
             foreach (var (shard, index) in packed.Select((value, index) => (value, index)))
             {
@@ -297,49 +298,6 @@ internal sealed class RetrievalIndexProjector
                     shard.Bytes.Length));
             }
         }
-    }
-
-    private static ImmutableArray<PackedShard> Pack(
-        ImmutableArray<byte[]> records,
-        Func<int, byte[]> prefix,
-        string kind,
-        Func<int, string> identity)
-    {
-        var result = ImmutableArray.CreateBuilder<PackedShard>();
-        var first = 0;
-        while (first < records.Length)
-        {
-            var prefixBytes = prefix(first);
-            var length = prefixBytes.Length + 3;
-            var last = first - 1;
-            while (last + 1 < records.Length)
-            {
-                var candidate = records[last + 1].Length + (last >= first ? 1 : 0);
-                if (length + candidate > MaximumShardBytes) break;
-                length += candidate;
-                last++;
-            }
-
-            if (last < first)
-            {
-                throw new InvalidOperationException(
-                    $"Compact retrieval {kind} record '{identity(first)}' exceeds {MaximumShardBytes} bytes.");
-            }
-
-            var buffer = new ArrayBufferWriter<byte>(length);
-            buffer.Write(prefixBytes);
-            for (var index = first; index <= last; index++)
-            {
-                if (index != first) buffer.Write(","u8);
-                buffer.Write(records[index]);
-            }
-
-            buffer.Write("]}\n"u8);
-            result.Add(new PackedShard(first, last, buffer.WrittenMemory.ToArray()));
-            first = last + 1;
-        }
-
-        return result.ToImmutable();
     }
 
     private static byte[] Prefix(string runId, string fields) =>
@@ -508,10 +466,6 @@ internal sealed class RetrievalIndexProjector
             documentOrdinals[DocumentId], StartLine, StartColumn, EndLine, EndColumn, Extensions);
     }
 
-    private sealed record PackedShard(int FirstIndex, int LastIndex, byte[] Bytes)
-    {
-        public int Count => LastIndex - FirstIndex + 1;
-    }
 }
 
 internal sealed record CompactRetrievalIndexProjection(

@@ -192,8 +192,90 @@ public sealed class RetrievalIndexProjectorTests
         Assert.Equal(Encoding.UTF8.GetBytes(relations), files.Writes["raw/facts/relations/all.json"]);
     }
 
-    private static string Documents() =>
-        """{"schema_version":6,"documents":[{"header":{},"document_id":"document-a","project_id":"project-a","relative_path":"A.cs","generated_origin":false}],"relations":[]}""";
+    [Fact]
+    public void Project_DefaultWriterAccepts262144AndRejects262145ByteRelationShard()
+    {
+        var baselineFiles = new RecordingFiles();
+        var baseline = new RetrievalIndexProjector().Project(Manifest(baselineFiles,
+            ("facts/relations/all.json", Relations(Relation("relation-boundary", paddingLength: 0)))), baselineFiles);
+        var paddingLength = BoundedUtf8ShardWriter.DefaultMaximumBytes - Assert.Single(baseline.Manifest.RelationShards).ByteLength;
+
+        var exactFiles = new RecordingFiles();
+        var exact = new RetrievalIndexProjector().Project(Manifest(exactFiles,
+            ("facts/relations/all.json", Relations(Relation("relation-boundary", paddingLength: paddingLength)))), exactFiles);
+        var overFiles = new RecordingFiles();
+        var exception = Assert.Throws<InvalidOperationException>(() => new RetrievalIndexProjector().Project(Manifest(overFiles,
+            ("facts/relations/all.json", Relations(Relation("relation-boundary", paddingLength: paddingLength + 1)))), overFiles));
+
+        Assert.Equal(262144, Assert.Single(exact.Manifest.RelationShards).ByteLength);
+        Assert.Equal("Compact retrieval relation record 'relation-boundary' exceeds 262144 bytes.", exception.Message);
+        Assert.False(overFiles.Writes.ContainsKey("raw/index/manifest.json"));
+    }
+
+    [Fact]
+    public void Project_DefaultWriterAccepts262144AndRejects262145ByteMetadataShard()
+    {
+        var baselineFiles = new RecordingFiles();
+        var baseline = new RetrievalIndexProjector().Project(Manifest(baselineFiles,
+            ("facts/documents/orders.json", Documents("A")),
+            ("facts/relations/all.json", Relations(Relation("relation-boundary", evidencePath: "A")))), baselineFiles);
+        var baselineDescriptor = Assert.Single(baseline.Manifest.MetadataShards, static shard => shard.Kind == "documents");
+        var paddingLength = BoundedUtf8ShardWriter.DefaultMaximumBytes - baselineDescriptor.ByteLength;
+        var exactPath = "A" + new string('x', paddingLength);
+
+        var exactFiles = new RecordingFiles();
+        var exact = new RetrievalIndexProjector().Project(Manifest(exactFiles,
+            ("facts/documents/orders.json", Documents(exactPath)),
+            ("facts/relations/all.json", Relations(Relation("relation-boundary", evidencePath: exactPath)))), exactFiles);
+        var overPath = exactPath + "x";
+        var overFiles = new RecordingFiles();
+        var exception = Assert.Throws<InvalidOperationException>(() => new RetrievalIndexProjector().Project(Manifest(overFiles,
+            ("facts/documents/orders.json", Documents(overPath)),
+            ("facts/relations/all.json", Relations(Relation("relation-boundary", evidencePath: overPath)))), overFiles));
+
+        Assert.Equal(262144, Assert.Single(exact.Manifest.MetadataShards, static shard => shard.Kind == "documents").ByteLength);
+        Assert.Equal("Compact retrieval metadata record 'documents:0' exceeds 262144 bytes.", exception.Message);
+        Assert.False(overFiles.Writes.ContainsKey("raw/index/manifest.json"));
+    }
+
+    [Fact]
+    public void Project_DefaultWriterAccepts262144AndRejects262145BytePostingShard()
+    {
+        var (relationCount, keyPadding) = PostingBoundary();
+        var exactKey = "calls" + new string('x', keyPadding);
+        var exactFiles = new RecordingFiles();
+        var exact = new RetrievalIndexProjector().Project(Manifest(exactFiles,
+            ("facts/relations/all.json", ManyRelations(relationCount, exactKey))), exactFiles);
+        var overKey = exactKey + "x";
+        var overFiles = new RecordingFiles();
+        var exception = Assert.Throws<InvalidOperationException>(() => new RetrievalIndexProjector().Project(Manifest(overFiles,
+            ("facts/relations/all.json", ManyRelations(relationCount, overKey))), overFiles));
+
+        Assert.Equal(262144, Assert.Single(exact.Manifest.PostingShards,
+            static shard => shard.Family == "kind").ByteLength);
+        Assert.Equal($"Compact retrieval posting record '{overKey}' exceeds 262144 bytes.", exception.Message);
+        Assert.False(overFiles.Writes.ContainsKey("raw/index/manifest.json"));
+    }
+
+    [Fact]
+    public void Project_DelimiterClosingAndLfOverflowStartsAnotherProductionShard()
+    {
+        var oneFiles = new RecordingFiles();
+        var one = new RetrievalIndexProjector(new BoundedUtf8ShardWriter(int.MaxValue)).Project(Manifest(oneFiles,
+            ("facts/relations/all.json", Relations(Relation("relation-a")))), oneFiles);
+        var exactSingleLength = Assert.Single(one.Manifest.RelationShards).ByteLength;
+        var files = new RecordingFiles();
+
+        var projection = new RetrievalIndexProjector(new BoundedUtf8ShardWriter(exactSingleLength)).Project(Manifest(files,
+            ("facts/relations/all.json", Relations(Relation("relation-a"), Relation("relation-b")))), files);
+
+        Assert.Equal(2, projection.Manifest.RelationShards.Length);
+        Assert.All(projection.Manifest.RelationShards, descriptor => Assert.Equal(exactSingleLength, descriptor.ByteLength));
+        Assert.Equal([0, 1], projection.Manifest.RelationShards.Select(static descriptor => descriptor.FirstOrdinal));
+    }
+
+    private static string Documents(string relativePath = "A.cs") =>
+        $$"""{"schema_version":6,"documents":[{"header":{},"document_id":"document-a","project_id":"project-a","relative_path":"{{relativePath}}","generated_origin":false}],"relations":[]}""";
 
     private static string Relations(params string[] relations) =>
         $$"""{"schema_version":6,"documents":[],"relations":[{{string.Join(',', relations)}}]}""";
@@ -203,12 +285,14 @@ public sealed class RetrievalIndexProjectorTests
         string? target = null,
         string? headerId = null,
         bool details = false,
-        bool extension = false)
+        bool extension = false,
+        int paddingLength = -1,
+        string evidencePath = "A.cs")
     {
         var evidence = new JsonObject
         {
             ["document_id"] = "document-a",
-            ["relative_path"] = "A.cs",
+            ["relative_path"] = evidencePath,
             ["start_line"] = 1,
             ["start_column"] = 1,
             ["end_line"] = 1,
@@ -235,7 +319,36 @@ public sealed class RetrievalIndexProjectorTests
         if (target is null) relation["unresolved_reason"] = "missing";
         if (details) relation["details"] = new JsonArray(new JsonObject { ["key"] = "target_text", ["value"] = "Target.Text" });
         if (extension) relation["future_relation"] = 2;
+        if (paddingLength >= 0) relation["padding"] = new string('x', paddingLength);
         return relation.ToJsonString();
+    }
+
+    private static string ManyRelations(int count, string relationKind) => Relations(Enumerable.Range(0, count)
+        .Select(index => $$"""{"header":{"id":"relation-{{index:D5}}","resolution":"exact","provenance":[],"evidence":[]},"relation_id":"relation-{{index:D5}}","source_id":"source","partition":"structural","relation_kind":"{{relationKind}}","resolution_method":"exact"}""")
+        .ToArray());
+
+    private static (int RelationCount, int KeyPadding) PostingBoundary()
+    {
+        var low = 1;
+        var high = 100000;
+        while (low < high)
+        {
+            var middle = low + ((high - low + 1) / 2);
+            if (PostingEnvelopeLength(middle, "resolution", "exact") <= BoundedUtf8ShardWriter.DefaultMaximumBytes) low = middle;
+            else high = middle - 1;
+        }
+
+        return (low, BoundedUtf8ShardWriter.DefaultMaximumBytes - PostingEnvelopeLength(low, "kind", "calls"));
+    }
+
+    private static int PostingEnvelopeLength(int relationCount, string family, string key)
+    {
+        var record = JsonSerializer.SerializeToUtf8Bytes(
+            new CompactPostingList(key, Enumerable.Range(0, relationCount).ToImmutableArray()),
+            CompactRetrievalIndexJsonContext.Default.CompactPostingList);
+        var prefix = Encoding.UTF8.GetByteCount(
+            $"{{\"schema_version\":2,\"analysis_run_id\":\"{new string('0', 64)}\",\"family\":\"{family}\",\"entries\":[");
+        return prefix + record.Length + 3;
     }
 
     private static FactualManifest Manifest(RecordingFiles files, params (string Reference, string Json)[] fragments)
