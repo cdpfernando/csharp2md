@@ -102,12 +102,10 @@ O gerador já produz objetos e colunas de banco comprovados por literais/configu
 
 ### 2.7 Limite conhecido do grafo de componentes — PENDENTE
 
-O arquivo `raw/dependencies.mmd` é produzido, mas ainda não representa um grafo de componentes utilizável. Há duas causas independentes já registradas na especificação do repositório:
-
-- o pipeline de produção não cria `ComponentFact`; os detectores legados que provavelmente o fariam estão fora do caminho de execução;
-- `RelationProjector.Mermaid` indexa componentes por ids de projeto, mas procura arestas usando ids de símbolo ou documento.
-
-Resolver relações não remove esse bloqueio. A correção exige uma feature própria de componentes e uma correção na projeção Mermaid.
+O `raw/dependencies.mmd` agora representa um grafo de componentes utilizável. A feature `component-graph` cria um
+`ComponentFact` por `ProjectFact`, resolve endpoints de projeto, documento, símbolo e banco via `GraphNodeIndex`,
+deduplica arestas por origem, destino, partição e tipo, e inclui objetos de banco como nós. A validação independente
+comprovou ao menos uma aresta real entre componentes no fixture ponta a ponta; AD-020 foi substituída por AD-021.
 
 ## 3. Contrato de conhecimento
 
@@ -270,9 +268,11 @@ O próximo artefato do gerador não deve duplicar nem reescrever fatos. Deve ser
 
 Esse trabalho deve respeitar o ciclo factual existente: os fragmentos permanecem a autoridade; índices e resumos são apenas meios eficientes de recuperação. Não cria páginas, não interpreta domínio e não é uma implementação de ingestão. Ele substitui a proposta anterior de “serializar relações resolvidas”, pois essa serialização já existe.
 
-### 6.4 Grafo de componentes e Mermaid — PENDENTE
+### 6.4 Grafo de componentes e Mermaid — CONCLUÍDO
 
-Criar uma feature dedicada que: (1) define e produz `ComponentFact` a partir do pipeline ativo, e (2) corrige a correspondência entre componentes e relações no `RelationProjector.Mermaid`. A feature deve provar um edge real em `raw/dependencies.mmd` numa execução ponta a ponta. Esse é o pré-requisito técnico para mapas de módulos/componentes confiáveis.
+`component-graph` produz `ComponentFact` a partir do inventário ativo e substitui a projeção Mermaid baseada em
+chaves incompatíveis por `ComponentGraphProjector`. A execução ponta a ponta prova arestas reais, deduplicadas e
+determinísticas em `raw/dependencies.mmd`, que agora é base confiável para mapas de módulos e componentes.
 
 ### 6.5 Protocolos e destinos runtime — PENDENTE (P2 do RelationResolver)
 
@@ -653,7 +653,7 @@ wiki (ADIADO) dependem de `component-graph`, mas não fazem parte da fila ativa.
 
 | Área | Estado | Feature | Condição para avançar |
 |---|---|---|---|
-| Componentes e arestas Mermaid reais | Concluído | `component-graph` | Novo produtor de `ComponentFact` e correção da chave projeto/símbolo/documento |
+| Componentes e arestas Mermaid reais | Concluído | `component-graph` | Concluído: produtor de `ComponentFact`, resolução de endpoints e projeção Mermaid deduplicada |
 | Índice de recuperação para consumidores | Pendente | `relation-retrieval-index` | Shards/resumos derivados dos fragmentos persistidos, sem duplicar `raw/facts` |
 | Seleção de candidato em `publishes` | Pendente | `relation-resolver-candidate-fix` | Preferir o tipo do evento sobre classe/construtor quando ambos são candidatos |
 | DI, gRPC, ASP.NET Core e referências compile-time no caminho ativo | Pendente | `detection-tree-revival` | Portar, religar ou aposentar conscientemente a árvore `Detection/` atualmente órfã |
