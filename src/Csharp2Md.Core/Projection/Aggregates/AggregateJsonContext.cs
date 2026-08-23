@@ -9,6 +9,9 @@ namespace Csharp2Md.Core.Projection.Aggregates;
 [JsonSerializable(typeof(ResolutionMetricsAggregate))]
 [JsonSerializable(typeof(DatabaseAggregate))]
 [JsonSerializable(typeof(FactualManifest))]
+[JsonSerializable(typeof(RetrievalIndexManifest))]
+[JsonSerializable(typeof(RetrievalShard))]
+[JsonSerializable(typeof(RetrievalIndexSummary))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,

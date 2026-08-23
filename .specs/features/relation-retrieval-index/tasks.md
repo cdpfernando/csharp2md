@@ -156,11 +156,11 @@ T9 → T10
 
 **Done when**:
 
-- [ ] Index schema version 1 and deterministic analysis_run_id occur in manifest and shard contracts.
-- [ ] Entry, provenance and extension fields represent every spec-required lookup, evidence and compatibility value.
-- [ ] Summary contracts hold analysis metadata, counts and exact/dynamic/unresolved percentages by kind and partition.
-- [ ] Unit tests serialize representative contracts with snake-case fields and no accidental computed members.
-- [ ] Quick gate passes; the test count is recorded before and after the task.
+- [x] Index schema version 1 and deterministic analysis_run_id occur in manifest and shard contracts.
+- [x] Entry, provenance and extension fields represent every spec-required lookup, evidence and compatibility value.
+- [x] Summary contracts hold analysis metadata, counts and exact/dynamic/unresolved percentages by kind and partition.
+- [x] Unit tests serialize representative contracts with snake-case fields and no accidental computed members.
+- [x] Quick gate passes with the approved known-flake waiver: the full suite was 1,928/1,929 with only the documented MSBuild test failing, and its isolated retry passed 1/1. Test count: 1,927 -> 1,929 (+2).
 
 **Tests**: unit
 **Gate**: quick

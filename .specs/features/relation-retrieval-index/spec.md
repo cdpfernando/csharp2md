@@ -131,28 +131,28 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | RRI-01 | P1: Recuperar relações pontuais | Design | Pending |
-| RRI-02 | P1: Recuperar relações pontuais | Design | Pending |
+| RRI-02 | P1: Recuperar relações pontuais | T4 | Complete |
 | RRI-03 | P1: Recuperar relações pontuais | Design | Pending |
 | RRI-04 | P1: Recuperar relações pontuais | Design | Pending |
 | RRI-05 | P1: Recuperar relações pontuais | Design | Pending |
 | RRI-06 | P1: Recuperar relações pontuais | Design | Pending |
-| RRI-07 | P1: Expor limites, qualidade e proveniência | Design | Pending |
-| RRI-08 | P1: Expor limites, qualidade e proveniência | Design | Pending |
-| RRI-09 | P1: Expor limites, qualidade e proveniência | T3 | Complete |
-| RRI-10 | P1: Expor limites, qualidade e proveniência | T3 | Complete |
-| RRI-11 | P1: Expor limites, qualidade e proveniência | Design | Pending |
-| RRI-12 | P1: Expor limites, qualidade e proveniência | Design | Pending |
+| RRI-07 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
+| RRI-08 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
+| RRI-09 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
+| RRI-10 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
+| RRI-11 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
+| RRI-12 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
 | RRI-13 | P1: Expor limites, qualidade e proveniência | Design | Pending |
 | RRI-14 | P1: Priorizar lacunas sem ocultar informação | Design | Pending |
-| RRI-15 | P1: Priorizar lacunas sem ocultar informação | Design | Pending |
-| RRI-16 | P1: Priorizar lacunas sem ocultar informação | Design | Pending |
-| RRI-17 | P1: Priorizar lacunas sem ocultar informação | Design | Pending |
+| RRI-15 | P1: Priorizar lacunas sem ocultar informação | T4 | Complete |
+| RRI-16 | P1: Priorizar lacunas sem ocultar informação | T4 | Complete |
+| RRI-17 | P1: Priorizar lacunas sem ocultar informação | T4 | Complete |
 | RRI-18 | P1: Manter a compatibilidade factual | T3 | Complete |
 | RRI-19 | P1: Manter a compatibilidade factual | T3 | Complete |
 | RRI-20 | P1: Manter a compatibilidade factual | Design | Pending |
 | RRI-21 | P1: Manter a compatibilidade factual | T3 | Complete |
 
-**Coverage:** 21 total, 5 mapped to tasks, 16 unmapped.
+**Coverage:** 21 total, 12 mapped to tasks, 9 unmapped.
 
 ## Success Criteria
 
