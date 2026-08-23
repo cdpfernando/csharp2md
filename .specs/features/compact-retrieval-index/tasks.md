@@ -338,7 +338,7 @@ standing project override.
 
 ---
 
-### T9: Reconstruct selective queries through the reader
+### T9: Reconstruct selective queries through the reader [x]
 
 **What**: Turn the reader into the schema-2 consumer that locates posting ranges, joins ordinal shards and returns complete logical relations and UNKNOWN groups.
 **Where**: `src/Csharp2Md.Core/Projection/Aggregates/RetrievalIndexReader.cs`
@@ -353,18 +353,22 @@ standing project override.
 
 **Done when**:
 
-- [ ] `Open` rejects every schema except 2 and reports received and expected versions.
-- [ ] `Query` opens only candidate posting, relation and metadata shards and never discovers or opens `raw/facts/`.
-- [ ] Split posting segments and theoretical hash collisions are resolved by exact key comparison; results are unique and ordinal.
-- [ ] `ReadUnknownGroups` reconstructs complete relations while preserving cause, source, observed text, count and impact.
-- [ ] Wrong run ids, missing/duplicate relation ordinals and missing document/origin ordinals fail with family, key, ordinal and shard context.
-- [ ] Unit tests compare every logical field with canonicalized schema-1 results and cover all listed corruption edge cases.
-- [ ] The discovered test-method count is at least the pre-task count.
-- [ ] Quick gate passes.
+- [x] `Open` rejects every schema except 2 and reports received and expected versions.
+- [x] `Query` opens only candidate posting, relation and metadata shards and never discovers or opens `raw/facts/`.
+- [x] Split posting segments and theoretical hash collisions are resolved by exact key comparison; results are unique and ordinal.
+- [x] `ReadUnknownGroups` reconstructs complete relations while preserving cause, source, observed text, count and impact.
+- [x] Wrong run ids, missing/duplicate relation ordinals and missing document/origin ordinals fail with family, key, ordinal and shard context.
+- [x] Unit tests compare every logical field with canonicalized schema-1 results and cover all listed corruption edge cases.
+- [x] The discovered test-method count is at least the pre-task count.
+- [x] Quick gate passes.
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(index)!: resolve compact retrieval queries`
+
+**Execution evidence**: Quick aggregate gate passed with 147 cases. Reader-focused coverage passed schema,
+selective reconstruction, complete UNKNOWN resolution and run-identity corruption cases. Discovered test-method
+count increased to 1,546. Discrimination sensor skipped by standing project override.
 
 ---
 

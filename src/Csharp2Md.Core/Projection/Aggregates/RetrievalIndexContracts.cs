@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Csharp2Md.Core.Facts.Serialization;
 
 namespace Csharp2Md.Core.Projection.Aggregates;
 
@@ -38,7 +39,9 @@ internal sealed record RetrievalRelationEntry(
     [property: JsonPropertyOrder(9)] string? UnresolvedReason,
     [property: JsonPropertyOrder(10)] string? ObservedTargetText,
     [property: JsonPropertyOrder(11)] ImmutableArray<RetrievalEvidence> Evidence,
-    [property: JsonPropertyOrder(12)] JsonElement? Extensions);
+    [property: JsonPropertyOrder(12)] JsonElement? Extensions,
+    [property: JsonPropertyOrder(13)] ImmutableArray<RelationDetailJson>? Details = null,
+    [property: JsonPropertyOrder(14)] ImmutableArray<string>? Candidates = null);
 
 internal sealed record RetrievalEvidence(
     [property: JsonPropertyOrder(0)] string DocumentId,
@@ -70,7 +73,8 @@ internal sealed record RetrievalUnknownGroup(
     [property: JsonPropertyOrder(3)] int Count,
     [property: JsonPropertyOrder(4)] bool HasProvenEntryPoint,
     [property: JsonPropertyOrder(5)] int Impact,
-    [property: JsonPropertyOrder(6)] ImmutableArray<string> RelationIds);
+    [property: JsonPropertyOrder(6)] ImmutableArray<string> RelationIds,
+    [property: JsonIgnore] ImmutableArray<RetrievalRelationEntry>? Relations = null);
 
 internal sealed record RetrievalUnknownCatalogue(
     [property: JsonPropertyOrder(0)] int SchemaVersion,
