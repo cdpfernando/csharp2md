@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Csharp2Md.Core.Tests" />
+    <InternalsVisibleTo Include="Csharp2Md.RetrievalIndex.Benchmarks" />
   </ItemGroup>
 
 </Project>

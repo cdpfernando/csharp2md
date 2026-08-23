@@ -6,4 +6,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Csharp2Md.Core.Tests/Csharp2Md.Core.Tests.csproj" />
   </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Csharp2Md.RetrievalIndex.Benchmarks/Csharp2Md.RetrievalIndex.Benchmarks.csproj" />
+  </Folder>
 </Solution>
