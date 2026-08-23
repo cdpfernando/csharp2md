@@ -13,8 +13,19 @@ namespace Csharp2Md.Core.Projection.Aggregates;
 [JsonSerializable(typeof(RetrievalShard))]
 [JsonSerializable(typeof(RetrievalIndexSummary))]
 [JsonSerializable(typeof(RetrievalUnknownCatalogue))]
+[JsonSerializable(typeof(CompactRetrievalIndexManifest))]
+[JsonSerializable(typeof(CompactRelationRecord))]
+[JsonSerializable(typeof(CompactPostingList))]
+[JsonSerializable(typeof(CompactDocumentMetadata))]
+[JsonSerializable(typeof(CompactOriginMetadata))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     WriteIndented = true)]
 internal partial class AggregateJsonContext : JsonSerializerContext;
+
+[JsonSerializable(typeof(CompactRetrievalIndexManifest))]
+[JsonSerializable(typeof(CompactRelationRecord))]
+[JsonSerializable(typeof(CompactPostingList))]
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+internal partial class CompactRetrievalIndexJsonContext : JsonSerializerContext;

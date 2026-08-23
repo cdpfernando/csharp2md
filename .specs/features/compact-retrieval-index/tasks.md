@@ -172,7 +172,7 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 
 ---
 
-### T4: Define the compact schema-2 contracts
+### T4: Define the compact schema-2 contracts [x]
 
 **What**: Add normalized schema-2 manifest, shard, metadata, posting, UNKNOWN and logical-reader models plus a dedicated compact JSON context alongside the still-running schema-1 contracts.
 **Where**: `src/Csharp2Md.Core/Projection/Aggregates/RetrievalIndexContracts.cs`
@@ -200,6 +200,8 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(index)!: define compact retrieval schema`
+
+**Execution evidence**: Pre-task discovered test methods: 1,525. Quick aggregate gate passed with 122 tests. Discrimination sensor skipped by standing project override.
 
 ---
 
