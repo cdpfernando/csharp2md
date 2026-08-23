@@ -1,8 +1,11 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Model;
+using Csharp2Md.Core.Projection.Aggregates;
 using Csharp2Md.Core.Tests.Pipeline;
 using Csharp2Md.Core.Topic;
 
@@ -93,6 +96,75 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
         }
     }
 
+    [Fact]
+    public void RRI18_UnknownRelationAndEvidenceFieldsSurviveSyntheticProjection()
+    {
+        var fixture = new SyntheticProjectionFixture(
+            """
+            {"header":{"resolution":"exact","provenance":[{"engine_version":"3.0.1"}],"evidence":[{"document_id":"document-1","relative_path":"Orders.cs","start_line":7,"start_column":3,"end_line":7,"end_column":19,"generated_origin":false,"future_evidence":"kept"}]},"relation_id":"relation-extension","source_id":"source-1","target_id":"target-1","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index","future_relation":{"version":2}}
+            """);
+
+        var entry = Assert.Single(fixture.SourceEntries);
+
+        Assert.Equal(2, entry.GetProperty("extensions").GetProperty("future_relation").GetProperty("version").GetInt32());
+        Assert.Equal("kept", entry.GetProperty("evidence")[0].GetProperty("extensions").GetProperty("future_evidence").GetString());
+    }
+
+    [Fact]
+    public void RRI19_SameSemanticRelationsAtDifferentLocationsRemainSeparateIndexEntries()
+    {
+        var fixture = new SyntheticProjectionFixture(
+            """
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Orders.cs","start_line":7,"start_column":3,"end_line":7,"end_column":19,"generated_origin":false}]},"relation_id":"relation-first","source_id":"source-1","target_id":"target-1","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"},
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Orders.cs","start_line":8,"start_column":3,"end_line":8,"end_column":19,"generated_origin":false}]},"relation_id":"relation-second","source_id":"source-1","target_id":"target-1","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"}
+            """);
+
+        Assert.Equal(["relation-first", "relation-second"], fixture.SourceEntries.Select(static entry => RequiredString(entry, "relation_id")).Order(StringComparer.Ordinal));
+        Assert.Equal([7, 8], fixture.SourceEntries.Select(static entry => entry.GetProperty("evidence")[0].GetProperty("start_line").GetInt32()).Order());
+    }
+
+    [Fact]
+    public void RRI14_RRI15_UnknownGroupsConsolidateRequiredKeysAndOrderByImpactWithStableTies()
+    {
+        var relations = """
+            {"header":{"resolution":"unresolved","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Orders.cs","start_line":1,"start_column":1,"end_line":1,"end_column":2,"generated_origin":false}]},"relation_id":"relation-high-a","source_id":"source-high","partition":"structural","relation_kind":"calls","unresolved_reason":"not-proved","resolution_method":"observed","details":[{"key":"target_text","value":"Runtime.High"}]},
+            {"header":{"resolution":"unresolved","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Orders.cs","start_line":2,"start_column":1,"end_line":2,"end_column":2,"generated_origin":false}]},"relation_id":"relation-high-b","source_id":"source-high","partition":"structural","relation_kind":"calls","unresolved_reason":"not-proved","resolution_method":"observed","details":[{"key":"target_text","value":"Runtime.High"}]},
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Orders.cs","start_line":3,"start_column":1,"end_line":3,"end_column":2,"generated_origin":false}]},"relation_id":"relation-impact","source_id":"source-other","target_id":"source-high","partition":"structural","relation_kind":"calls","resolution_method":"symbol-index"},
+            {"header":{"resolution":"unresolved","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Orders.cs","start_line":4,"start_column":1,"end_line":4,"end_column":2,"generated_origin":false}]},"relation_id":"relation-tie-a","source_id":"source-a","partition":"structural","relation_kind":"calls","unresolved_reason":"not-proved","resolution_method":"observed","details":[{"key":"target_text","value":"Runtime.A"}]},
+            {"header":{"resolution":"unresolved","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Orders.cs","start_line":5,"start_column":1,"end_line":5,"end_column":2,"generated_origin":false}]},"relation_id":"relation-tie-b","source_id":"source-b","partition":"structural","relation_kind":"calls","unresolved_reason":"not-proved","resolution_method":"observed","details":[{"key":"target_text","value":"Runtime.B"}]}
+            """;
+        var first = new SyntheticProjectionFixture(relations);
+        var second = new SyntheticProjectionFixture(relations);
+
+        var unknowns = first.UnknownGroups;
+        var high = Assert.Single(unknowns, group => RequiredString(group, "source_id") == "source-high");
+        Assert.Equal("not-proved", RequiredString(high, "unresolved_reason"));
+        Assert.Equal("Runtime.High", RequiredString(high, "observed_target_text"));
+        Assert.Equal(2, high.GetProperty("count").GetInt32());
+        Assert.Equal(3, high.GetProperty("impact").GetInt32());
+        Assert.Equal(["relation-high-a", "relation-high-b"], high.GetProperty("relation_ids").EnumerateArray().Select(static id => RequiredString(id)));
+        Assert.Equal(["source-high", "source-a", "source-b"], unknowns.Select(static group => RequiredString(group, "source_id")));
+        Assert.Equal(
+            unknowns.Select(static group => RequiredString(group, "source_id")),
+            second.UnknownGroups.Select(static group => RequiredString(group, "source_id")));
+    }
+
+    [Fact]
+    public void RRI20_RRI21_GeneratedAndOrdinaryOriginsRemainExplicitInFactsAndIndex()
+    {
+        var fixture = new SyntheticProjectionFixture(
+            """
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Generated.cs","start_line":1,"start_column":1,"end_line":1,"end_column":2,"generated_origin":true}]},"relation_id":"relation-generated","source_id":"source-generated","target_id":"target-generated","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"},
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Ordinary.cs","start_line":2,"start_column":1,"end_line":2,"end_column":2,"generated_origin":false}]},"relation_id":"relation-ordinary","source_id":"source-ordinary","target_id":"target-ordinary","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"}
+            """);
+        var factual = fixture.Relations;
+
+        Assert.True(factual[0].GetProperty("header").GetProperty("evidence")[0].GetProperty("generated_origin").GetBoolean());
+        Assert.False(factual[1].GetProperty("header").GetProperty("evidence")[0].GetProperty("generated_origin").GetBoolean());
+        Assert.True(Entry(fixture.SourceEntries, "relation-generated").GetProperty("evidence")[0].GetProperty("generated_origin").GetBoolean());
+        Assert.False(Entry(fixture.SourceEntries, "relation-ordinary").GetProperty("evidence")[0].GetProperty("generated_origin").GetBoolean());
+    }
+
     private static string[] ReadCatalogue(string rawRoot, string name) =>
         Read(rawRoot, $"raw/index/catalogues/{name}.json").GetProperty("entries").EnumerateArray()
             .Select(static entry => RequiredString(entry)).ToArray();
@@ -164,6 +236,68 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
 
     private static string RequiredString(JsonElement value) =>
         value.GetString() ?? throw new InvalidOperationException("Expected a JSON string.");
+
+    private static JsonElement Entry(IEnumerable<JsonElement> entries, string relationId) =>
+        Assert.Single(entries, entry => RequiredString(entry, "relation_id") == relationId);
+
+    private sealed class SyntheticProjectionFixture
+    {
+        public SyntheticProjectionFixture(string relations)
+        {
+            var document = """
+                {"schema_version":6,"documents":[{"document_id":"document-1","project_id":"project-1"}],"relations":[
+                """ + relations + "]}";
+            var bytes = Encoding.UTF8.GetBytes(document);
+            Files.Write("raw/facts/relations/synthetic.json", bytes);
+            var fragment = new ManifestFragment(
+                "fact-synthetic",
+                "facts/relations/synthetic.json",
+                Convert.ToHexStringLower(SHA256.HashData(bytes)),
+                bytes.Length);
+            var manifest = new FactualManifest(
+                6,
+                "3.0.1",
+                new ManifestAnalysis("full", "full"),
+                "trusted",
+                false,
+                "none",
+                [],
+                new ManifestCoverage(1, 1, 1),
+                [fragment],
+                [fragment.Sha256]);
+
+            Projection = new RetrievalIndexProjector().Project(manifest, Files);
+            Relations = Read(Files.Read("raw/facts/relations/synthetic.json")).GetProperty("relations").EnumerateArray()
+                .Select(static relation => relation.Clone()).ToArray();
+            SourceEntries = Projection.Manifest.Shards.Where(static shard => shard.Family == "source")
+                .SelectMany(shard => Read(Files.Read(shard.Path)).GetProperty("entries").EnumerateArray())
+                .Select(static entry => entry.Clone()).ToArray();
+            UnknownGroups = Read(Files.Read("raw/index/unknowns.json")).GetProperty("entries").EnumerateArray()
+                .Select(static group => group.Clone()).ToArray();
+        }
+
+        public RecordingFiles Files { get; } = new();
+        public RetrievalIndexProjection Projection { get; }
+        public JsonElement[] Relations { get; }
+        public JsonElement[] SourceEntries { get; }
+        public JsonElement[] UnknownGroups { get; }
+
+        private static JsonElement Read(byte[] bytes)
+        {
+            using var document = JsonDocument.Parse(bytes);
+            return document.RootElement.Clone();
+        }
+    }
+
+    private sealed class RecordingFiles : IAggregateFileWriter
+    {
+        private readonly Dictionary<string, byte[]> _files = new(StringComparer.Ordinal);
+
+        public void CreateDirectory(string relativePath) { }
+        public void Write(string relativePath, byte[] bytes) => _files[relativePath] = bytes;
+        public bool Exists(string relativePath) => _files.ContainsKey(relativePath);
+        public byte[] Read(string relativePath) => _files[relativePath];
+    }
 }
 
 public sealed class RelationRetrievalIndexEndToEndFixture : IAsyncLifetime

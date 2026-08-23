@@ -292,11 +292,11 @@ T9 → T10
 
 **Done when**:
 
-- [ ] An unknown relation/evidence field survives projector ingestion in extensions.
-- [ ] Two semantically similar relations at different locations remain two index entries.
-- [ ] UNKNOWNs group occurrences by the three required keys and sort by impact with deterministic ties.
-- [ ] Generated source emits true and ordinary source emits false in factual and index provenance.
-- [ ] Full build gate passes; the test count is recorded before and after the task.
+- [x] An unknown relation/evidence field survives projector ingestion in extensions.
+- [x] Two semantically similar relations at different locations remain two index entries.
+- [x] UNKNOWNs group occurrences by the three required keys and sort by impact with deterministic ties.
+- [x] Generated source emits true and ordinary source emits false in factual and index provenance.
+- [x] Build Release, format and the full suite passed. Test count: 1,941 -> 1,945 (+4).
 
 **Tests**: integration
 **Gate**: build
