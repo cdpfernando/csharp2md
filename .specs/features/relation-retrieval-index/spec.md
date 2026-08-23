@@ -130,29 +130,29 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| RRI-01 | P1: Recuperar relações pontuais | Design | Pending |
+| RRI-01 | P1: Recuperar relações pontuais | T6 | Complete |
 | RRI-02 | P1: Recuperar relações pontuais | T4 | Complete |
 | RRI-03 | P1: Recuperar relações pontuais | T5 | Complete |
 | RRI-04 | P1: Recuperar relações pontuais | T5 | Complete |
 | RRI-05 | P1: Recuperar relações pontuais | Design | Pending |
-| RRI-06 | P1: Recuperar relações pontuais | Design | Pending |
+| RRI-06 | P1: Recuperar relações pontuais | T6 | Complete |
 | RRI-07 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
 | RRI-08 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
 | RRI-09 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
 | RRI-10 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
 | RRI-11 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
 | RRI-12 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
-| RRI-13 | P1: Expor limites, qualidade e proveniência | Design | Pending |
-| RRI-14 | P1: Priorizar lacunas sem ocultar informação | Design | Pending |
+| RRI-13 | P1: Expor limites, qualidade e proveniência | T6 | Complete |
+| RRI-14 | P1: Priorizar lacunas sem ocultar informação | T6 | Complete |
 | RRI-15 | P1: Priorizar lacunas sem ocultar informação | T4 | Complete |
 | RRI-16 | P1: Priorizar lacunas sem ocultar informação | T4 | Complete |
 | RRI-17 | P1: Priorizar lacunas sem ocultar informação | T4 | Complete |
 | RRI-18 | P1: Manter a compatibilidade factual | T3 | Complete |
 | RRI-19 | P1: Manter a compatibilidade factual | T3 | Complete |
-| RRI-20 | P1: Manter a compatibilidade factual | Design | Pending |
+| RRI-20 | P1: Manter a compatibilidade factual | T6 | Complete |
 | RRI-21 | P1: Manter a compatibilidade factual | T3 | Complete |
 
-**Coverage:** 21 total, 12 mapped to tasks, 9 unmapped.
+**Coverage:** 21 total, 17 mapped to tasks, 4 unmapped.
 
 ## Success Criteria
 

@@ -48,7 +48,7 @@ internal sealed record RetrievalEvidence(
     [property: JsonPropertyOrder(4)] int EndLine,
     [property: JsonPropertyOrder(5)] int EndColumn,
     [property: JsonPropertyOrder(6)] bool GeneratedOrigin,
-    [property: JsonPropertyOrder(7)] string ProjectId,
+    [property: JsonPropertyOrder(7)] string? ProjectId,
     [property: JsonPropertyOrder(8)] string FragmentSha256,
     [property: JsonPropertyOrder(9)] string GeneratorVersion,
     [property: JsonPropertyOrder(10)] JsonElement? Extensions);
@@ -72,6 +72,11 @@ internal sealed record RetrievalUnknownGroup(
     [property: JsonPropertyOrder(5)] int Impact,
     [property: JsonPropertyOrder(6)] ImmutableArray<string> RelationIds);
 
+internal sealed record RetrievalUnknownCatalogue(
+    [property: JsonPropertyOrder(0)] int SchemaVersion,
+    [property: JsonPropertyOrder(1)] string Kind,
+    [property: JsonPropertyOrder(2)] ImmutableArray<RetrievalUnknownGroup> Entries);
+
 internal sealed record RetrievalIndexSummary(
     [property: JsonPropertyOrder(0)] int SchemaVersion,
     [property: JsonPropertyOrder(1)] string AnalysisRunId,
@@ -82,4 +87,5 @@ internal sealed record RetrievalIndexSummary(
     [property: JsonPropertyOrder(6)] int MappedEntryPointCount,
     [property: JsonPropertyOrder(7)] ImmutableArray<RetrievalQualityMetric> ByPartition,
     [property: JsonPropertyOrder(8)] ImmutableArray<RetrievalQualityMetric> ByRelationKind,
-    [property: JsonPropertyOrder(9)] ImmutableArray<RetrievalUnknownGroup> UnknownGroups);
+    [property: JsonPropertyOrder(9)] ImmutableArray<RetrievalUnknownGroup> UnknownGroups,
+    [property: JsonPropertyOrder(10)] ImmutableArray<string>? AnalysisLimitations = null);

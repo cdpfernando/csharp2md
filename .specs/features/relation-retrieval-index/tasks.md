@@ -210,12 +210,12 @@ T9 → T10
 
 **Done when**:
 
-- [ ] The projector reads persisted fragment references and never invokes the typed factual deserializer for relation/evidence compatibility input.
-- [ ] It emits five lookup families, a deterministic analysis_run_id, per-run quality metrics, provenance and zero-valued empty output.
-- [ ] It preserves relation/evidence unknown JSON properties as opaque extensions and preserves separate same-semantic relations with distinct evidence/context.
-- [ ] It groups UNKNOWNs by reason, source and observed target text, then orders by proven entry point, impact and ordinal tie-breaker without inventing targets or entry points.
-- [ ] Unit tests cover missing target, missing evidence project, syntax-only limits, extension round-trip, dedup preservation and generated-origin propagation.
-- [ ] Quick gate passes; the test count is recorded before and after the task.
+- [x] The projector reads persisted fragment references and never invokes the typed factual deserializer for relation/evidence compatibility input.
+- [x] It emits five lookup families, a deterministic analysis_run_id, per-run quality metrics, provenance and zero-valued empty output.
+- [x] It preserves relation/evidence unknown JSON properties as opaque extensions and preserves separate same-semantic relations with distinct evidence/context.
+- [x] It groups UNKNOWNs by reason, source and observed target text, then orders by proven entry point, impact and ordinal tie-breaker without inventing targets or entry points.
+- [x] Unit tests cover missing target, missing evidence project, syntax-only limits, extension round-trip, dedup preservation and generated-origin propagation.
+- [x] Quick gate passes with the approved known-flake waiver: the full suite was 1,935/1,936 with only `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` failing, and its isolated retry passed 1/1. Test count: 1,933 -> 1,936 (+3).
 
 **Tests**: unit
 **Gate**: quick

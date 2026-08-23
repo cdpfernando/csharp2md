@@ -12,6 +12,7 @@ namespace Csharp2Md.Core.Projection.Aggregates;
 [JsonSerializable(typeof(RetrievalIndexManifest))]
 [JsonSerializable(typeof(RetrievalShard))]
 [JsonSerializable(typeof(RetrievalIndexSummary))]
+[JsonSerializable(typeof(RetrievalUnknownCatalogue))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
