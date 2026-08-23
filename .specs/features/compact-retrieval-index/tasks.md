@@ -459,17 +459,24 @@ Discrimination sensor skipped by standing project override.
 
 **Done when**:
 
-- [ ] `compare` generates exactly 25000 deterministic relations and launches each variant in a fresh process after one warm-up.
-- [ ] Three raw elapsed-time and peak-working-set samples per variant, total bytes, file count and environment metadata reach a versioned JSON report.
-- [ ] Medians are calculated deterministically and all four comparisons require schema 2 to be strictly smaller.
-- [ ] Missing, equal or regressed metrics are all named and cause a non-zero exit.
-- [ ] Integration tests use a small corpus to cover success shape, process isolation, raw samples and every comparison failure without running the full benchmark.
-- [ ] The discovered test-method count is at least the pre-task count.
+- [x] `compare` generates exactly 25000 deterministic relations and launches each variant in a fresh process after one warm-up.
+- [x] Three raw elapsed-time and peak-working-set samples per variant, total bytes, file count and environment metadata reach a versioned JSON report.
+- [x] Medians are calculated deterministically and all four comparisons require schema 2 to be strictly smaller.
+- [x] Missing, equal or regressed metrics are all named and cause a non-zero exit.
+- [x] Integration tests use a small corpus to cover success shape, process isolation, raw samples and every comparison failure without running the full benchmark.
+- [x] The discovered test-method count is at least the pre-task count.
 - [ ] Build gate passes.
 
 **Tests**: integration
 **Gate**: build
 **Commit**: `feat(benchmark): compare retrieval index formats`
+
+**Execution evidence**: The small-corpus benchmark suite passed 4/4 cases and proved six distinct measured
+child PIDs, preserved raw samples, versioned JSON shape, and named failures for missing, equal and regressed
+metrics. Discovered test-method count increased to 1,554. Release build and format passed with no warning;
+the full-suite portion passed 1,979/1,981 cases, with the known packaging-network blocker deferred to its
+approved T14 fix and the unrelated MSBuild temporary-file race again isolated. Discrimination sensor skipped
+by standing project override.
 
 ---
 
