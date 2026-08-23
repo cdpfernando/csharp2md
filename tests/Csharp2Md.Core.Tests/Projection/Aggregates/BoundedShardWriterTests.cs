@@ -69,6 +69,24 @@ public sealed class BoundedShardWriterTests
     }
 
     [Fact]
+    public void Write_DefaultLimitAccepts262144BytesAndRejects262145ByteSingleton()
+    {
+        var exact = EntryWithSerializedLength(BoundedShardWriter.DefaultMaximumBytes);
+        var oneByteOver = EntryWithSerializedLength(BoundedShardWriter.DefaultMaximumBytes + 1);
+        var files = new RecordingFiles();
+
+        var descriptor = Assert.Single(new BoundedShardWriter().Write("resolution", "unresolved", "run-1", [exact], files));
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            new BoundedShardWriter().Write("resolution", "unresolved", "run-1", [oneByteOver], new RecordingFiles()));
+
+        Assert.Equal(262144, BoundedShardWriter.DefaultMaximumBytes);
+        Assert.Equal(262144, descriptor.ByteLength);
+        Assert.Equal(
+            "Retrieval index entry exceeds 262144 bytes: family 'resolution', key 'unresolved', relation 'relation-262145'.",
+            exception.Message);
+    }
+
+    [Fact]
     public void Write_ReorderedInputProducesByteStableDescriptorsAndCanonicalEntryOrder()
     {
         var firstFiles = new RecordingFiles();
@@ -104,6 +122,20 @@ public sealed class BoundedShardWriterTests
         null,
         [new RetrievalEvidence("id1:document;name=Orders.cs", "Orders.cs", 1, 1, 1, 10, false, "id1:project;name=Orders", "hash", "3.0.1", null)],
         null);
+
+    private static RetrievalRelationEntry EntryWithSerializedLength(int expectedLength)
+    {
+        var relationId = expectedLength == BoundedShardWriter.DefaultMaximumBytes
+            ? "relation-262144"
+            : "relation-262145";
+        var template = Entry(relationId) with { ObservedTargetText = "" };
+        var templateLength = new BoundedShardWriter(int.MaxValue)
+            .Write("resolution", "unresolved", "run-1", [template], new RecordingFiles())
+            .Single()
+            .ByteLength;
+
+        return template with { ObservedTargetText = new string('x', expectedLength - templateLength) };
+    }
 
     private static ImmutableArray<string> RelationIds(byte[] bytes)
     {

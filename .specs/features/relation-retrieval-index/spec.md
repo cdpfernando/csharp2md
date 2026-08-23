@@ -152,7 +152,9 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 | RRI-20 | P1: Manter a compatibilidade factual | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:162-165` — factual and index generated-origin booleans |
 | RRI-21 | P1: Manter a compatibilidade factual | T2 | Complete | `GeneratedOriginTests.cs:18` — source header detection returns the expected marker |
 
-**Coverage:** 21 total, 21 mapped to exact evidence. Test suite: 1,945 tests after T9 (+8 from the T8 baseline); independent feature verification remains pending.
+**T11 correction:** RRI-03 is covered by `BoundedShardWriterTests.cs:82` - `Assert.Equal(262144, descriptor.ByteLength)`. RRI-04 is covered by `BoundedShardWriterTests.cs:83-86` - the exact 262144-byte family, key and relation diagnostic. RRI-07 is covered by `RelationRetrievalIndexEndToEndTests.cs:69-75` - manifest schema/run id and every shard schema/run id assertions.
+
+**Coverage:** 21 total, 21 mapped to exact evidence. Test suite: count reconciliation is completed in T12; independent feature verification remains pending.
 
 ## Success Criteria
 

@@ -330,6 +330,59 @@ T9 → T10
 
 ---
 
+### T11: Prove exact shard and manifest boundary contracts
+
+**What**: Strengthen existing index tests with the specified 262144/262145-byte outcomes and manifest provenance assertions found missing by independent validation.
+**Where**: tests/Csharp2Md.Core.Tests/Projection/Aggregates/BoundedShardWriterTests.cs and tests/Csharp2Md.Core.Tests/Analysis/RelationRetrievalIndexEndToEndTests.cs
+**Depends on**: T10
+**Reuses**: BoundedShardWriter default-boundary and real-output fixture patterns.
+**Requirement**: RRI-03, RRI-04, RRI-07; exact-boundary edge case
+
+**Tools**:
+
+- MCP: NONE
+- Skill: dotnet-test:code-testing-agent, dotnet-test:assertion-quality
+
+**Done when**:
+
+- [x] Tests assert that shards at the actual 262144-byte default limit are accepted and a 262145-byte entry fails with the deterministic family, key and relation identity.
+- [x] The real index manifest asserts `schema_version: 1` and an `analysis_run_id` matching the relation shards.
+- [x] Tests assert specified values rather than a dynamically selected substitute boundary.
+- [x] Build Release and format passed. The full suite had only the approved MSBuild flake; its isolated retry passed 1/1.
+
+**Tests**: integration
+**Gate**: build
+**Commit**: test(index): prove shard boundary and manifest contract
+
+---
+
+### T12: Prove UNKNOWN priority and catalogue provenance
+
+**What**: Close independent-validator gaps for entry-point-first UNKNOWN ordering, proven catalogue contents, multi-document evidence ordinal preservation and test-count traceability.
+**Where**: tests/Csharp2Md.Core.Tests/Analysis/RelationRetrievalIndexEndToEndTests.cs and .specs/features/relation-retrieval-index/spec.md
+**Depends on**: T11
+**Reuses**: T9 unknown/catalogue fixture patterns and the test runner's authoritative discovered-count output.
+**Requirement**: RRI-15, RRI-16; multi-document-evidence edge case
+
+**Tools**:
+
+- MCP: NONE
+- Skill: dotnet-test:code-testing-agent, dotnet-test:assertion-quality, dotnet-test:test-anti-patterns
+
+**Done when**:
+
+- [ ] A proven entry point sorts before higher-impact non-entry-point UNKNOWN groups; impact and ordinal ties remain deterministic.
+- [ ] Each populated catalogue entry is asserted to be derived from matching persisted facts, and empty families remain empty without proof.
+- [ ] Two evidence documents for one relation preserve two provenance entries in ordinal order.
+- [ ] `tasks.md` and `spec.md` record the authoritative current test-count method and value without a conflicting before/after claim; no trailing whitespace remains.
+- [ ] Build Release, format and the full suite pass, subject only to the approved known-flake waiver with an isolated passing retry.
+
+**Tests**: integration
+**Gate**: build
+**Commit**: test(index): prove unknown priority and catalogue provenance
+
+---
+
 ## Phase Execution Map
 
 ```text
@@ -337,6 +390,7 @@ Phase 1: T1 → T2 → T3
 Phase 2: T3 → T4 → T5 → T6 → T7
 Phase 3: T7 → T8 → T9
 Phase 4: T9 → T10
+Phase 5: T10 → T11 → T12
 ```
 
 ## Task Granularity Check
@@ -353,6 +407,8 @@ Phase 4: T9 → T10
 | T8 | One independent retrieval test suite | OK |
 | T9 | One independent compatibility test suite | OK |
 | T10 | One traceability closure | OK |
+| T11 | One boundary and manifest proof suite | OK |
+| T12 | One UNKNOWN and catalogue proof suite | OK |
 
 ## Diagram-Definition Cross-Check
 
@@ -368,6 +424,8 @@ Phase 4: T9 → T10
 | T8 | T7 | T7 -> T8 | Match |
 | T9 | T8 | T8 -> T9 | Match |
 | T10 | T9 | T9 -> T10 | Match |
+| T11 | T10 | T10 -> T11 | Match |
+| T12 | T11 | T11 -> T12 | Match |
 
 No task depends on a later phase.
 
@@ -385,6 +443,8 @@ No task depends on a later phase.
 | T8 | Pipeline retrieval behaviour | integration | integration | OK |
 | T9 | Pipeline compatibility behaviour | integration | integration | OK |
 | T10 | Traceability documents | none | none | OK |
+| T11 | Shard and manifest contract proof | integration | integration | OK |
+| T12 | UNKNOWN and catalogue behaviour proof | integration | integration | OK |
 
 The planned execution needs two task-budgeted batches (3 + 4 tasks, then 2 + 1 tasks). Before Execute,
 the tlc-spec-driven process requires an explicit user choice about sequential batch workers. No external

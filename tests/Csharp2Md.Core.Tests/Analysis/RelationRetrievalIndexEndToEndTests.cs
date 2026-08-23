@@ -62,9 +62,18 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
     public void RRI07_RRI08_RRI10_RRI11_RRI12_SyntaxOnlySummaryReportsQualityAndLimits()
     {
         var rawRoot = TopicLayout.RawRoot(fixture.OutputA);
+        var manifest = Read(rawRoot, "raw/index/manifest.json");
         var summary = Read(rawRoot, "raw/index/summary.json");
         var entries = SourceEntries(rawRoot);
 
+        Assert.Equal(1, manifest.GetProperty("schema_version").GetInt32());
+        Assert.NotEmpty(RequiredString(manifest, "analysis_run_id"));
+        foreach (var shardDescriptor in manifest.GetProperty("shards").EnumerateArray())
+        {
+            var shard = Read(rawRoot, RequiredString(shardDescriptor, "path"));
+            Assert.Equal(1, shard.GetProperty("schema_version").GetInt32());
+            Assert.Equal(RequiredString(manifest, "analysis_run_id"), RequiredString(shard, "analysis_run_id"));
+        }
         Assert.Equal("syntax-only", summary.GetProperty("analysis").GetProperty("effective").GetString());
         Assert.Equal("untrusted", summary.GetProperty("trust").GetString());
         Assert.False(summary.GetProperty("restore_performed").GetBoolean());
