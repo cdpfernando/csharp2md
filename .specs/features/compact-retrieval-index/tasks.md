@@ -527,15 +527,23 @@ environment metadata. Discrimination sensor skipped by standing project override
 
 **Done when**:
 
-- [ ] `<Version>` is 4.0.0 and the AD-007 comment names the schema-2 derived-output break.
-- [ ] Packaging smoke assertions select `csharp2md.4.0.0.nupkg` and inspect an emitted schema-2 retrieval manifest.
-- [ ] No tag, push, PR or publication occurs.
-- [ ] The discovered test-method count is at least the pre-task count.
+- [x] `<Version>` is 4.0.0 and the AD-007 comment names the schema-2 derived-output break.
+- [x] Packaging smoke assertions select `csharp2md.4.0.0.nupkg` and inspect an emitted schema-2 retrieval manifest.
+- [x] No tag, push, PR or publication occurs.
+- [x] The discovered test-method count is at least the pre-task count.
 - [ ] Build gate passes.
 
 **Tests**: integration
 **Gate**: build
 **Commit**: `chore(release)!: version compact retrieval schema`
+
+**Execution evidence**: The focused packaging smoke passed 1/1 completely offline: it packed version 4.0.0,
+installed from an isolated local-only NuGet source into a temporary tool path, executed outside the repository,
+and asserted factual tool version 4.0.0 plus compact retrieval schema 2. The changed-test assertion review found
+no Critical or High issue and discovered test-method count remained 1,554. Release build and format passed;
+the full suite passed 1,980/1,981 cases, leaving only the unrelated MSBuild global-temporary-file race, which
+passed 1/1 immediately in isolation. No tag, push, PR or publication occurred. Discrimination sensor skipped
+by standing project override.
 
 ---
 

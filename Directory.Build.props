@@ -6,8 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NetLibVersion>net10.0</NetLibVersion>
-    <!-- AD-007: signals the incompatible v3 factual output contract by semver. -->
-    <Version>3.0.1</Version>
+    <!-- AD-007: signals the incompatible schema-2 derived-output contract by semver. -->
+    <Version>4.0.0</Version>
   </PropertyGroup>
 
   <PropertyGroup>

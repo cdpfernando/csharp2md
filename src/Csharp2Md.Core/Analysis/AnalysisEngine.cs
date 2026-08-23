@@ -301,7 +301,7 @@ public sealed class AnalysisEngine
         var honestCoverage = CoverageProjector.Project(new CoverageProjectionRequest(
             request.Options.Mode, accumulated, analysisDiagnostics.ToImmutable(), [], coverageOverrides.ToImmutable()));
         var snapshot = new AggregateOutputSnapshot(
-            request.Topic, request.Domain, "3.0.1", request.Options.Mode, effectiveMode, request.Options.Trust,
+            request.Topic, request.Domain, "4.0.0", request.Options.Mode, effectiveMode, request.Options.Trust,
             loadedExtensions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray(),
             new ManifestCoverage(inventory.Services.Length, projectCount, documentCount),
             storedFragments.ToImmutable(), honestCoverage, RelationProjector.Project(aggregateFragments),
