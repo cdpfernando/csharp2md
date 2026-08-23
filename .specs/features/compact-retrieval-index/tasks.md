@@ -98,17 +98,19 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 
 **Done when**:
 
-- [ ] The benchmark is an executable `net10.0` project under `benchmarks/`, references `Csharp2Md.Core` and uses no external benchmark package.
-- [ ] `csharp2md.slnx` builds the benchmark without creating another production project under `src/`.
-- [ ] The benchmark assembly can call only the internal projection surface required by the approved design.
-- [ ] The discovered test-method count is recorded before the task and does not decrease.
-- [ ] Build gate passes.
+- [x] The benchmark is an executable `net10.0` project under `benchmarks/`, references `Csharp2Md.Core` and uses no external benchmark package.
+- [x] `csharp2md.slnx` builds the benchmark without creating another production project under `src/`.
+- [x] The benchmark assembly can call only the internal projection surface required by the approved design.
+- [x] The discovered test-method count is recorded before the task and does not decrease.
+- [x] Build gate passes.
 
 **Tests**: none
 **Gate**: build
 **Commit**: `build(benchmark): scaffold retrieval index harness`
 
-**Execution evidence**: Pre-task discovered test methods: 1,523. Discrimination sensor skipped by standing project override.
+**Execution evidence**: Pre-task discovered test methods: 1,523. Final follow-up gate built the benchmark in
+Release with 0 warnings/errors, formatting was clean and the full suite passed 2,006/2,006. Discrimination
+sensor skipped by standing project override.
 
 ---
 
@@ -127,18 +129,21 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 
 **Done when**:
 
-- [ ] The adapter contains the current schema-1 behavior and remains isolated from production code.
-- [ ] A deterministic reference corpus produces the same relative paths and exact bytes through the adapter and the current production projector.
-- [ ] The parity fixture pins hashes or bytes so later schema-1 baseline drift fails visibly.
-- [ ] Integration tests live under `tests/Csharp2Md.Core.Tests/Benchmarks/` and cover populated and empty runs.
-- [ ] The discovered test-method count is at least the pre-task count.
-- [ ] Full gate passes.
+- [x] The adapter contains the current schema-1 behavior and remains isolated from production code.
+- [x] A deterministic reference corpus produces the same relative paths and exact bytes through the adapter and the current production projector.
+- [x] The parity fixture pins hashes or bytes so later schema-1 baseline drift fails visibly.
+- [x] Integration tests live under `tests/Csharp2Md.Core.Tests/Benchmarks/` and cover populated and empty runs.
+- [x] The discovered test-method count is at least the pre-task count.
+- [x] Full gate passes.
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `test(benchmark): freeze schema one retrieval baseline`
 
-**Execution evidence**: Pre-task discovered test methods: 1,523. Discrimination sensor skipped by standing project override.
+**Execution evidence**: Pre-task discovered test methods: 1,523. Follow-up commit `53f18a2` pins the exact
+schema-1 path/SHA-256 sets for populated and empty corpora and deep-compares all five schema-2 lookups against
+canonicalized schema-1 relation/evidence payloads. The focused oracle passed 3/3 and the full suite passed
+2,006/2,006. Discrimination sensor skipped by standing project override.
 
 ---
 
@@ -157,18 +162,20 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 
 **Done when**:
 
-- [ ] `IAggregateFileReader` exposes `Exists` and `OpenRead`; `IAggregateFileWriter` inherits it and no longer exposes `Read(): byte[]`.
-- [ ] Local reads return a read-only sequential `FileStream`; every test adapter returns an independent readable stream.
-- [ ] Fragment SHA-256 validation consumes the stream and still rejects missing or mismatched fragments before a manifest is published.
-- [ ] Unit tests prove progressive reads and disposal without relying on `File.ReadAllBytes`.
-- [ ] The discovered test-method count is at least the pre-task count.
-- [ ] Quick gate passes.
+- [x] `IAggregateFileReader` exposes `Exists` and `OpenRead`; `IAggregateFileWriter` inherits it and no longer exposes `Read(): byte[]`.
+- [x] Local reads return a read-only sequential `FileStream`; every test adapter returns an independent readable stream.
+- [x] Fragment SHA-256 validation consumes the stream and still rejects missing or mismatched fragments before a manifest is published.
+- [x] Unit tests prove progressive reads and disposal without relying on `File.ReadAllBytes`.
+- [x] The discovered test-method count is at least the pre-task count.
+- [x] Quick gate passes.
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `refactor(index): stream aggregate file reads`
 
-**Execution evidence**: Pre-task discovered test methods: 1,525. Quick aggregate gate passed with 122 tests. Discrimination sensor skipped by standing project override.
+**Execution evidence**: Pre-task discovered test methods: 1,525. The original quick aggregate gate passed with
+122 tests; the final follow-up quick gate passed 168/168 and the full suite passed 2,006/2,006. Discrimination
+sensor skipped by standing project override.
 
 ---
 
@@ -187,21 +194,24 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 
 **Done when**:
 
-- [ ] Manifest descriptors represent relation ordinal ranges, metadata ordinal ranges and posting SHA-256 ranges without raw keys in the manifest.
-- [ ] Relation records store known details/candidates once, evidence stores document ordinals and origin metadata is normalized.
-- [ ] Manifest owns analysis/trust/restore fields; summary omits them and uses `indexed_endpoint_count`, complete resolution axes and no percentages.
-- [ ] Every required physical artifact has `schema_version: 2` and `analysis_run_id` where the approved design requires it.
-- [ ] Source-generated compact serialization writes snake_case UTF-8 without indentation; existing aggregate formatting remains unchanged.
-- [ ] Schema-1 contracts remain available until T8 replaces the production projector, so the T4 gate is green in isolation.
-- [ ] Unit tests assert exact fields, defaults, omissions and logical promotion of schema-1 details/candidates.
-- [ ] The discovered test-method count is at least the pre-task count.
-- [ ] Quick gate passes.
+- [x] Manifest descriptors represent relation ordinal ranges, metadata ordinal ranges and posting SHA-256 ranges without raw keys in the manifest.
+- [x] Relation records store known details/candidates once, evidence stores document ordinals and origin metadata is normalized.
+- [x] Manifest owns analysis/trust/restore fields; summary omits them and uses `indexed_endpoint_count`, complete resolution axes and no percentages.
+- [x] Every required physical artifact has `schema_version: 2` and `analysis_run_id` where the approved design requires it.
+- [x] Source-generated compact serialization writes snake_case UTF-8 without indentation; existing aggregate formatting remains unchanged.
+- [x] Schema-1 contracts remain available until T8 replaces the production projector, so the T4 gate is green in isolation.
+- [x] Unit tests assert exact fields, defaults, omissions and logical promotion of schema-1 details/candidates.
+- [x] The discovered test-method count is at least the pre-task count.
+- [x] Quick gate passes.
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(index)!: define compact retrieval schema`
 
-**Execution evidence**: Pre-task discovered test methods: 1,525. Quick aggregate gate passed with 122 tests. Discrimination sensor skipped by standing project override.
+**Execution evidence**: Pre-task discovered test methods: 1,525. Follow-up commit `0c9c4d0` asserts exact schema
+markers, summary/UNKNOWN omissions, normalized provenance, manifest-only run metadata and shard-level unknown
+schema rejection. The final quick aggregate gate passed 168/168. Discrimination sensor skipped by standing
+project override.
 
 ---
 
@@ -220,20 +230,24 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 
 **Done when**:
 
-- [ ] Exact accounting includes envelope, commas, closing bytes and one LF; totals of 262144 pass and 262145 fail.
-- [ ] Oversized singleton errors name record kind, identity/key and the 262144 ceiling.
-- [ ] Accepted records are serialized once; instrumentation has no prefix-reserialization path.
-- [ ] Oversized posting lists split into consecutive segments without first serializing a rejected complete list.
-- [ ] Paths use flat sequential shard names and no lookup key becomes a directory.
-- [ ] Unit tests cover empty, exact-boundary, delimiter overflow, oversized singleton, split postings, N/N+1 counters and hash-range ordering.
-- [ ] The discovered test-method count is at least the pre-task count.
-- [ ] Quick gate passes.
+- [x] Exact accounting includes envelope, commas, closing bytes and one LF; totals of 262144 pass and 262145 fail.
+- [x] Oversized singleton errors name record kind, identity/key and the 262144 ceiling.
+- [x] Accepted records are serialized once; instrumentation has no prefix-reserialization path.
+- [x] Oversized posting lists split into consecutive segments without first serializing a rejected complete list.
+- [x] Paths use flat sequential shard names and no lookup key becomes a directory.
+- [x] Unit tests cover empty, exact-boundary, delimiter overflow, oversized singleton, split postings, N/N+1 counters and hash-range ordering.
+- [x] The discovered test-method count is at least the pre-task count.
+- [x] Quick gate passes.
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(index): write exact bounded utf8 shards`
 
-**Execution evidence**: Focused bounded UTF-8 writer tests passed: 3 tests. Discrimination sensor skipped by standing project override.
+**Execution evidence**: Focused bounded UTF-8 writer tests passed: 3 tests. Follow-up commit `6cec37e` removes
+the orphan policies, wires the exact writer into production and proves relation, metadata and posting artifacts
+at 262144/262145 bytes plus delimiter/closing/LF rollover. Commit `d1263e4` proves the flat directory set at
+10/10,000 unique keys. The final quick aggregate gate passed 168/168. Discrimination sensor skipped by standing
+project override.
 
 ---
 
