@@ -131,11 +131,19 @@
 - **Status**: active
 
 ### AD-017
-- **Decision**: The factual fragment schema moves from version 3 to version 4 to admit `database_objects` and `database_columns`. `FactualJsonSerializer.SchemaVersion` and `schemas/facts.schema.json`'s `const` move together; the aggregate envelopes (`raw/facts/relations/*.json`, `coverage.json`, `diagnostics.json`, `manifest.json`) stay at version 2.
+- **Decision**: The factual fragment schema moved from version 3 to version 4 to admit `database_objects` and `database_columns`. Its fragment-version statement is superseded by AD-022. `FactualJsonSerializer.SchemaVersion` and `schemas/facts.schema.json`'s `const` move together; the aggregate envelopes (`raw/facts/relations/*.json`, `coverage.json`, `diagnostics.json`, `manifest.json`) stay at version 2.
 - **Reason**: `facts.schema.json` is strict (`additionalProperties: false`, every array in `required`), so adding fact kinds is necessarily a breaking change for any consumer validating against it. Recording the break as a version bump is what `symbol-index` already did going 2→3 when it extended `SymbolFact`; following the same practice keeps the fragment schema's version an honest signal instead of letting the contract drift silently.
 - **Trade-off**: Every fragment-reading consumer must be updated in lockstep with the tool, and the two version lines (fragment at 4, aggregates at 2) must be kept mentally distinct. Keeping fragments at 3 and extending the schema quietly would have avoided the churn at the cost of making the version number meaningless.
 - **Scope**: The factual fragment wire contract and `schemas/facts.schema.json`. Partially supersedes AD-010's schema-version statement as it applies to fragments; AD-010's output-layout decisions are otherwise untouched.
 - **Date**: 2026-08-20
+- **Status**: active
+
+### AD-022
+- **Decision**: Generated-origin metadata is an additive factual field on fact headers and evidence. The factual fragment schema moves from version 5 to version 6. Readers of earlier factual fragments treat a missing `generated_origin` value as `false`.
+- **Reason**: Generated-origin detection is available only while source text is still present. Persisting the explicit boolean retains that evidence for downstream projections without changing fact identities. The strict factual schema must version the added field rather than silently accepting a contract change.
+- **Trade-off**: Fragment consumers must accept schema 6 and new producers emit the field even when it is false. Backward readers remain compatible with schema 5 fragments by applying the explicit false default.
+- **Scope**: The factual fragment wire contract, `FactualJsonSerializer.SchemaVersion`, and `schemas/facts.schema.json`. Supersedes only AD-017's fragment-version statement; AD-017's database-fact and aggregate-envelope decisions remain active.
+- **Date**: 2026-08-22
 - **Status**: active
 
 ### AD-018
