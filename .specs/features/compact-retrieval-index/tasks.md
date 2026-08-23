@@ -268,7 +268,7 @@ Discovered test-method count: 1,535. Discrimination sensor skipped by standing p
 
 ---
 
-### T7: Normalize metadata and build ordinal postings
+### T7: Normalize metadata and build ordinal postings [x]
 
 **What**: Build dense document/origin tables, five compact posting maps, UNKNOWN groups and corrected summary metrics from streamed relation observations.
 **Where**: `src/Csharp2Md.Core/Projection/Aggregates/CompactRetrievalIndexBuilder.cs`
@@ -283,17 +283,21 @@ Discovered test-method count: 1,535. Discrimination sensor skipped by standing p
 
 **Done when**:
 
-- [ ] Five families retain only lookup keys and relation ordinals; a missing target omits only the target posting.
-- [ ] Known documents and factual origins receive deterministic dense ordinals and conflicting document metadata fails.
-- [ ] UNKNOWN groups contain ordinals once and sort by proven entry point, descending impact and ordinal identity.
-- [ ] Metrics contain every resolution and resolution-method bucket separately and count distinct endpoints under the corrected name.
-- [ ] Unit tests cover repeated metadata, evidence-only documents, absent targets, all enum buckets, UNKNOWN ties and 10 versus 10000 unique keys.
-- [ ] The discovered test-method count is at least the pre-task count.
-- [ ] Build gate passes.
+- [x] Five families retain only lookup keys and relation ordinals; a missing target omits only the target posting.
+- [x] Known documents and factual origins receive deterministic dense ordinals and conflicting document metadata fails.
+- [x] UNKNOWN groups contain ordinals once and sort by proven entry point, descending impact and ordinal identity.
+- [x] Metrics contain every resolution and resolution-method bucket separately and count distinct endpoints under the corrected name.
+- [x] Unit tests cover repeated metadata, evidence-only documents, absent targets, all enum buckets, UNKNOWN ties and 10 versus 10000 unique keys.
+- [x] The discovered test-method count is at least the pre-task count.
+- [x] Build gate passes.
 
 **Tests**: unit
 **Gate**: build
 **Commit**: `feat(index): build compact ordinal postings`
+
+**Execution evidence**: Focused builder tests passed: 7 cases. Release build and format passed; full suite passed
+with 1,969 cases under isolated serial execution. Discovered test-method count: 1,542. Discrimination sensor
+skipped by standing project override.
 
 ---
 
