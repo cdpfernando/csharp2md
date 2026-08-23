@@ -128,31 +128,31 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 
 ## Requirement Traceability
 
-| Requirement ID | Story | Phase | Status |
-| --- | --- | --- | --- |
-| RRI-01 | P1: Recuperar relações pontuais | T6 | Complete |
-| RRI-02 | P1: Recuperar relações pontuais | T4 | Complete |
-| RRI-03 | P1: Recuperar relações pontuais | T5 | Complete |
-| RRI-04 | P1: Recuperar relações pontuais | T5 | Complete |
-| RRI-05 | P1: Recuperar relações pontuais | T8 | Complete |
-| RRI-06 | P1: Recuperar relações pontuais | T6 | Complete |
-| RRI-07 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
-| RRI-08 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
-| RRI-09 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
-| RRI-10 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
-| RRI-11 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
-| RRI-12 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
-| RRI-13 | P1: Expor limites, qualidade e proveniência | T6 | Complete |
-| RRI-14 | P1: Priorizar lacunas sem ocultar informação | T6 | Complete |
-| RRI-15 | P1: Priorizar lacunas sem ocultar informação | T4 | Complete |
-| RRI-16 | P1: Priorizar lacunas sem ocultar informação | T4 | Complete |
-| RRI-17 | P1: Priorizar lacunas sem ocultar informação | T4 | Complete |
-| RRI-18 | P1: Manter a compatibilidade factual | T3 | Complete |
-| RRI-19 | P1: Manter a compatibilidade factual | T3 | Complete |
-| RRI-20 | P1: Manter a compatibilidade factual | T6 | Complete |
-| RRI-21 | P1: Manter a compatibilidade factual | T3 | Complete |
+| Requirement ID | Story | Phase | Status | Covering evidence |
+| --- | --- | --- | --- | --- |
+| RRI-01 | P1: Recuperar relações pontuais | T6 | Complete | `CanonicalAggregateWriterTests.cs:188` — `Assert.Equal(bytes, files.Contents[$"raw/{reference.Value}"])` |
+| RRI-02 | P1: Recuperar relações pontuais | T6 | Complete | `RetrievalIndexProjectorTests.cs:30` — `Assert.Equal(5, ...Distinct(...).Count())` |
+| RRI-03 | P1: Recuperar relações pontuais | T5 | Complete | `BoundedShardWriterTests.cs:44` — `Assert.Equal(exactBoundary, exactDescriptor.ByteLength)` |
+| RRI-04 | P1: Recuperar relações pontuais | T5 | Complete | `BoundedShardWriterTests.cs:63` — `Assert.Throws<InvalidOperationException>(...)` |
+| RRI-05 | P1: Recuperar relações pontuais | T8 | Complete | `RelationRetrievalIndexEndToEndTests.cs:32` — `Assert.Single(... family == "target" && ... key == statusId)` |
+| RRI-06 | P1: Recuperar relações pontuais | T8 | Complete | `RelationRetrievalIndexEndToEndTests.cs:58` — `Assert.Equal(SourceRelationIds(rawA), SourceRelationIds(rawB))` |
+| RRI-07 | P1: Expor limites, qualidade e proveniência | T4 | Complete | `RetrievalIndexContractsTests.cs:25-26` — shard `schema_version` and `analysis_run_id` assertions |
+| RRI-08 | P1: Expor limites, qualidade e proveniência | T8 | Complete | `RelationRetrievalIndexEndToEndTests.cs:68-70` — effective analysis, trust and restore assertions |
+| RRI-09 | P1: Expor limites, qualidade e proveniência | T8 | Complete | `RelationRetrievalIndexEndToEndTests.cs:88-95` — version, project, document, hash and coordinates assertions |
+| RRI-10 | P1: Expor limites, qualidade e proveniência | T3 | Complete | `FactualSchemaSyncTests.cs:69-70` — distinct descriptions for `resolution` and `resolution_method` |
+| RRI-11 | P1: Expor limites, qualidade e proveniência | T8 | Complete | `RelationRetrievalIndexEndToEndTests.cs:215-221` — exact, dynamic and unresolved counts and percentages |
+| RRI-12 | P1: Expor limites, qualidade e proveniência | T8 | Complete | `RelationRetrievalIndexEndToEndTests.cs:71-74` — indexed symbols, zero entry points and syntax-only limits |
+| RRI-13 | P1: Expor limites, qualidade e proveniência | T8 | Complete | `RelationRetrievalIndexEndToEndTests.cs:73-74` — explicit `compile-time`, `dependency-injection` and `grpc` limits |
+| RRI-14 | P1: Priorizar lacunas sem ocultar informação | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:140-145` — required group keys, count and relation ids |
+| RRI-15 | P1: Priorizar lacunas sem ocultar informação | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:144-149` — impact-first order and stable tie ordering |
+| RRI-16 | P1: Priorizar lacunas sem ocultar informação | T6 | Complete | `RetrievalIndexProjectorTests.cs:74-75` — each proven catalogue family is written from projected entries |
+| RRI-17 | P1: Priorizar lacunas sem ocultar informação | T6 | Complete | `RetrievalIndexProjectorTests.cs:42-45` — missing target has no target shard and preserves UNKNOWN ids |
+| RRI-18 | P1: Manter a compatibilidade factual | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:109-110` — opaque relation and evidence extensions survive |
+| RRI-19 | P1: Manter a compatibilidade factual | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:122-123` — two ids and two source locations remain |
+| RRI-20 | P1: Manter a compatibilidade factual | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:162-165` — factual and index generated-origin booleans |
+| RRI-21 | P1: Manter a compatibilidade factual | T2 | Complete | `GeneratedOriginTests.cs:18` — source header detection returns the expected marker |
 
-**Coverage:** 21 total, 17 mapped to tasks, 4 unmapped.
+**Coverage:** 21 total, 21 mapped to exact evidence. Test suite: 1,945 tests after T9 (+8 from the T8 baseline); independent feature verification remains pending.
 
 ## Success Criteria
 

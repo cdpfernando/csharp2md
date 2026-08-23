@@ -319,10 +319,10 @@ T9 → T10
 
 **Done when**:
 
-- [ ] Every RRI requirement is mapped to an exact covering test assertion or a specified documentation evidence line.
-- [ ] The coverage line carries the final test count and no requirement remains silently unmapped.
-- [ ] The issue phase is Implemented and both roadmap rows remain Pending until the independent verifier returns PASS.
-- [ ] Build gate and test-quality reviews pass; the test count is recorded before and after the task.
+- [x] Every RRI requirement is mapped to an exact covering test assertion or a specified documentation evidence line.
+- [x] The coverage line carries the final test count and no requirement remains silently unmapped.
+- [x] The issue phase is Implemented and both roadmap rows remain Pending until the independent verifier returns PASS.
+- [x] Build Release and format passed; the full suite passed. Test count: 1,945 -> 1,945 (no tests added or removed).
 
 **Tests**: none
 **Gate**: build
