@@ -59,6 +59,59 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
     }
 
     [Fact]
+    public void AllFiveLookups_ReconstructExactRealRelationSetsWithoutFactualReads()
+    {
+        var rawRoot = TopicLayout.RawRoot(fixture.OutputA);
+        var manifest = Read(rawRoot, "raw/index/manifest.json");
+        var physical = SourceEntries(rawRoot);
+        var documents = MetadataEntries(rawRoot, manifest, "documents");
+        var files = new TrackingRootReader(fixture.OutputA);
+        var reader = RetrievalIndexReader.Open(files);
+        var seed = reader.Query(new RetrievalLookup("resolution", "exact"))
+            .First(static relation => relation.TargetId is not null && relation.ProjectId is not null);
+        var lookups = new[]
+        {
+            new RetrievalLookup("project", seed.ProjectId!),
+            new RetrievalLookup("source", seed.SourceId),
+            new RetrievalLookup("target", seed.TargetId!),
+            new RetrievalLookup("kind", seed.RelationKind),
+            new RetrievalLookup("resolution", seed.Resolution),
+        };
+
+        foreach (var lookup in lookups)
+        {
+            var expected = physical.Where(entry => Matches(entry, documents, lookup))
+                .Select(static entry => RequiredString(entry, "relation_id"))
+                .Order(StringComparer.Ordinal)
+                .ToArray();
+            var actual = reader.Query(lookup);
+
+            Assert.Equal(expected, actual.Select(static relation => relation.RelationId));
+            Assert.All(actual, relation =>
+            {
+                Assert.NotEmpty(relation.FragmentReference);
+                Assert.NotEmpty(relation.Evidence);
+                Assert.Equal(relation.ObservedTargetText,
+                    relation.Details?.FirstOrDefault(static detail => detail.Key == "target_text")?.Value);
+            });
+        }
+
+        var unknownRelations = reader.ReadUnknownGroups()
+            .SelectMany(static group => group.Relations!.Value)
+            .Select(static relation => relation.RelationId)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        var expectedUnknowns = Read(rawRoot, "raw/index/unknowns.json").GetProperty("entries").EnumerateArray()
+            .SelectMany(group => group.GetProperty("relation_ordinals").EnumerateArray())
+            .Select(ordinal => RequiredString(physical[ordinal.GetInt32()], "relation_id"))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        Assert.Equal(expectedUnknowns, unknownRelations);
+
+        Assert.DoesNotContain(files.Opened, static path => path.StartsWith("raw/facts/", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void RRI07_RRI08_RRI10_RRI11_RRI12_SyntaxOnlySummaryReportsQualityAndLimits()
     {
         var rawRoot = TopicLayout.RawRoot(fixture.OutputA);
@@ -273,6 +326,18 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
         .Distinct(StringComparer.Ordinal)
         .Count();
 
+    private static bool Matches(JsonElement entry, JsonElement[] documents, RetrievalLookup lookup) => lookup.Family switch
+    {
+        "project" => entry.GetProperty("evidence").EnumerateArray().Any(evidence =>
+            documents[evidence.GetProperty("document_ordinal").GetInt32()].TryGetProperty("project_id", out var project) &&
+            project.GetString() == lookup.Key),
+        "source" => RequiredString(entry, "source_id") == lookup.Key,
+        "target" => entry.TryGetProperty("target_id", out var target) && target.GetString() == lookup.Key,
+        "kind" => RequiredString(entry, "relation_kind") == lookup.Key,
+        "resolution" => RequiredString(entry, "resolution") == lookup.Key,
+        _ => false,
+    };
+
     private static void AssertMetrics(JsonElement[] entries, JsonElement actualMetrics, string entryKey)
     {
         var expected = entries.GroupBy(entry => entry.GetProperty(entryKey).GetString()!, StringComparer.Ordinal)
@@ -428,6 +493,20 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
         public bool Exists(string relativePath) => _files.ContainsKey(relativePath);
         public Stream OpenRead(string relativePath) => new MemoryStream(_files[relativePath], writable: false);
         public byte[] Read(string relativePath) => _files[relativePath];
+    }
+
+    private sealed class TrackingRootReader(string root) : IAggregateFileReader
+    {
+        public List<string> Opened { get; } = [];
+        public bool Exists(string relativePath) => File.Exists(Resolve(relativePath));
+        public Stream OpenRead(string relativePath)
+        {
+            Opened.Add(relativePath);
+            return File.OpenRead(Resolve(relativePath));
+        }
+
+        private string Resolve(string relativePath) =>
+            Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar));
     }
 }
 

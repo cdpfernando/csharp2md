@@ -421,17 +421,26 @@ standing project override.
 
 **Done when**:
 
-- [ ] All five lookup families return the same ids and complete logical payloads as the frozen schema-1 reference without factual reads.
-- [ ] Two input permutations produce identical run ids, ordinals, paths, postings and bytes.
-- [ ] Physical inspection proves single relation payloads, normalized documents/origins, known details, one UNKNOWN artifact and removed fields/catalogues.
-- [ ] Empty input, missing target, 10/10000 keys, split posting, opaque extensions and multiple evidence paths match the spec outcomes.
-- [ ] Assertion-quality and anti-pattern review have no Critical or High finding; targeted CRAP evidence is recorded for changed complex methods.
-- [ ] The discovered test-method count is at least the pre-task count.
+- [x] All five lookup families return the same ids and complete logical payloads as the frozen schema-1 reference without factual reads.
+- [x] Two input permutations produce identical run ids, ordinals, paths, postings and bytes.
+- [x] Physical inspection proves single relation payloads, normalized documents/origins, known details, one UNKNOWN artifact and removed fields/catalogues.
+- [x] Empty input, missing target, 10/10000 keys, split posting, opaque extensions and multiple evidence paths match the spec outcomes.
+- [x] Assertion-quality and anti-pattern review have no Critical or High finding; targeted CRAP evidence is recorded for changed complex methods.
+- [x] The discovered test-method count is at least the pre-task count.
 - [ ] Full gate passes.
 
 **Tests**: integration
 **Gate**: full
 **Commit**: `test(index): prove compact retrieval end to end`
+
+**Execution evidence**: Real-output E2E coverage passed 12/12; the targeted retrieval suite passed 35/35
+with fresh Cobertura data. CRAP scores were `Open` 1.00, `Query` 23.91, `ReadUnknownGroups` 4.02,
+`Resolve` 28.77 and `Reconstruct` 10.01. Assertion-quality and anti-pattern review accounted for all 12
+E2E tests with 0 Critical/High findings. The full suite passed 1,977/1,979 cases; the MSBuild temporary-file
+race passed immediately in isolation, while `PackagingSmokeTests` remained externally blocked: sandboxed
+execution could not contact NuGet and escalated execution installed a global-tool shim whose user-profile
+store lacked the packaged DLL. Full-gate closure therefore remains explicit rather than silently waived.
+Discrimination sensor skipped by standing project override.
 
 ---
 
