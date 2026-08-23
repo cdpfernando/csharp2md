@@ -41,6 +41,7 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
 
         new CanonicalAggregateWriter(recording).Write(_root, _input, false, Snapshot(), TimeProvider.System);
 
+        Assert.Equal("raw/index/manifest.json", recording.Writes[^2]);
         Assert.Equal("raw/facts/manifest.json", recording.Writes[^1]);
     }
 
@@ -221,6 +222,24 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
 
         Assert.False(File.Exists(Path.Combine(_root, "stale.txt")));
         Assert.True(File.Exists(Path.Combine(_root, ".csharp2md-output")));
+    }
+
+    [Fact]
+    public void Write_ReplacementRemovesSchema1CataloguesAndPerKeyShards()
+    {
+        new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot(), TimeProvider.System);
+        var legacyCatalogue = Path.Combine(_root, "raw", "index", "catalogues", "entities.json");
+        var legacyShard = Path.Combine(_root, "raw", "index", "shards", "target", "raw-key", "0000.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(legacyCatalogue)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(legacyShard)!);
+        File.WriteAllText(legacyCatalogue, "legacy");
+        File.WriteAllText(legacyShard, "legacy");
+
+        new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot(), TimeProvider.System);
+
+        Assert.False(File.Exists(legacyCatalogue));
+        Assert.False(Directory.Exists(Path.Combine(_root, "raw", "index", "shards")));
+        Assert.True(File.Exists(Path.Combine(_root, "raw", "index", "manifest.json")));
     }
 
     [Fact]

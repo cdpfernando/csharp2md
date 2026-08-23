@@ -372,7 +372,7 @@ count increased to 1,546. Discrimination sensor skipped by standing project over
 
 ---
 
-### T10: Integrate compact publication with aggregate output
+### T10: Integrate compact publication with aggregate output [x]
 
 **What**: Wire the schema-2 projector through the canonical aggregate writer while preserving factual validation and commit-marker ordering.
 **Where**: `src/Csharp2Md.Core/Projection/Aggregates/CanonicalAggregateWriter.cs`
@@ -387,17 +387,22 @@ count increased to 1,546. Discrimination sensor skipped by standing project over
 
 **Done when**:
 
-- [ ] A successful aggregate run publishes a reachable schema-2 index and writes the factual manifest after index projection returns.
-- [ ] Missing or hash-invalid factual fragments advertise neither index nor factual manifests.
-- [ ] A replacement run leaves none of the four removed catalogues or schema-1 per-key directories.
-- [ ] Writer tests assert exact call/write order and unchanged factual bytes through the streaming file seam.
-- [ ] Slopwatch reports no new finding in the feature diff.
-- [ ] The discovered test-method count is at least the pre-task count.
-- [ ] Build gate passes.
+- [x] A successful aggregate run publishes a reachable schema-2 index and writes the factual manifest after index projection returns.
+- [x] Missing or hash-invalid factual fragments advertise neither index nor factual manifests.
+- [x] A replacement run leaves none of the four removed catalogues or schema-1 per-key directories.
+- [x] Writer tests assert exact call/write order and unchanged factual bytes through the streaming file seam.
+- [x] Slopwatch reports no new finding in the feature diff.
+- [x] The discovered test-method count is at least the pre-task count.
+- [x] Build gate passes.
 
 **Tests**: unit
 **Gate**: build
 **Commit**: `feat(index): publish compact index with aggregates`
+
+**Execution evidence**: Aggregate-writer coverage verifies index-then-factual commit markers, unchanged factual
+bytes, failure omission and replacement cleanup of schema-1 paths. Release build and format passed; Slopwatch
+reported no new finding. Discovered test-method count increased to 1,547. Discrimination sensor skipped by
+standing project override.
 
 ---
 
