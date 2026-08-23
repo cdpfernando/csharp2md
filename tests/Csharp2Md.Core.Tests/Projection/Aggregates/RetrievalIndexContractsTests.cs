@@ -43,8 +43,8 @@ public sealed class RetrievalIndexContractsTests
             1, "run-1", new ManifestAnalysis("syntax-only", "syntax-only"), "untrusted", false,
             [new ShardDescriptor("target", "target-1", "shards/target/key/0000.json", 1, 128)]);
 
-        using var shardJson = JsonDocument.Parse(JsonSerializer.SerializeToUtf8Bytes(shard, AggregateJsonContext.Default.RetrievalShard));
-        using var manifestJson = JsonDocument.Parse(JsonSerializer.SerializeToUtf8Bytes(manifest, AggregateJsonContext.Default.RetrievalIndexManifest));
+        using var shardJson = JsonDocument.Parse(JsonSerializer.SerializeToUtf8Bytes(shard, Schema1JsonContext.Default.RetrievalShard));
+        using var manifestJson = JsonDocument.Parse(JsonSerializer.SerializeToUtf8Bytes(manifest, Schema1JsonContext.Default.RetrievalIndexManifest));
         var entryJson = shardJson.RootElement.GetProperty("entries")[0];
 
         Assert.Equal(1, shardJson.RootElement.GetProperty("schema_version").GetInt32());
@@ -64,7 +64,7 @@ public sealed class RetrievalIndexContractsTests
             [new RetrievalQualityMetric("calls", 2, 1, 0, 1, 50, 0, 50)],
             [new RetrievalUnknownGroup("unresolved", "source-1", "Target", 2, false, 2, ["relation-1", "relation-2"])]);
 
-        using var json = JsonDocument.Parse(JsonSerializer.SerializeToUtf8Bytes(summary, AggregateJsonContext.Default.RetrievalIndexSummary));
+        using var json = JsonDocument.Parse(JsonSerializer.SerializeToUtf8Bytes(summary, Schema1JsonContext.Default.RetrievalIndexSummary));
 
         Assert.Equal("syntax-only", json.RootElement.GetProperty("analysis").GetProperty("effective").GetString());
         Assert.Equal(50, json.RootElement.GetProperty("by_partition")[0].GetProperty("exact_percent").GetInt32());

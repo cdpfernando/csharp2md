@@ -301,7 +301,7 @@ skipped by standing project override.
 
 ---
 
-### T8: Project schema 2 and publish its manifest last
+### T8: Project schema 2 and publish its manifest last [x]
 
 **What**: Replace the materializing schema-1 projector with the streaming schema-2 coordinator and remove the obsolete shard implementation.
 **Where**: `src/Csharp2Md.Core/Projection/Aggregates/RetrievalIndexProjector.cs`
@@ -316,20 +316,25 @@ skipped by standing project override.
 
 **Done when**:
 
-- [ ] Each relation payload is serialized once in ordinal relation shards and all postings contain ordinals only.
-- [ ] Relation ids must be strictly increasing, unique and equal to `header.id` before an ordinal is assigned.
-- [ ] `analysis_run_id` includes the schema-2 marker and is invariant to manifest collection order.
-- [ ] Empty input publishes valid manifest, summary, UNKNOWNs and entry points with no relation/posting shards.
-- [ ] All artifacts are complete before `raw/index/manifest.json` is written; projection failure publishes no index manifest and never writes facts.
-- [ ] The schema-1 `BoundedShardWriter` and obsolete aggregate-context registrations are removed after the frozen adapter protects the baseline.
-- [ ] Unit and existing integration tests cover populated, empty, reordered, duplicate, decreasing, header-mismatched, opaque-extension and multi-evidence inputs.
-- [ ] Existing schema-1 integration expectations are migrated or frozen in the benchmark during this task; no known test is left broken for T11 to repair.
-- [ ] The discovered test-method count is at least the pre-task count.
-- [ ] Build gate passes.
+- [x] Each relation payload is serialized once in ordinal relation shards and all postings contain ordinals only.
+- [x] Relation ids must be strictly increasing, unique and equal to `header.id` before an ordinal is assigned.
+- [x] `analysis_run_id` includes the schema-2 marker and is invariant to manifest collection order.
+- [x] Empty input publishes valid manifest, summary, UNKNOWNs and entry points with no relation/posting shards.
+- [x] All artifacts are complete before `raw/index/manifest.json` is written; projection failure publishes no index manifest and never writes facts.
+- [x] The schema-1 `BoundedShardWriter` and obsolete aggregate-context registrations are removed after the frozen adapter protects the baseline.
+- [x] Unit and existing integration tests cover populated, empty, reordered, duplicate, decreasing, header-mismatched, opaque-extension and multi-evidence inputs.
+- [x] Existing schema-1 integration expectations are migrated or frozen in the benchmark during this task; no known test is left broken for T11 to repair.
+- [x] The discovered test-method count is at least the pre-task count.
+- [x] Build gate passes.
 
 **Tests**: integration
 **Gate**: build
 **Commit**: `feat(index)!: project compact retrieval artifacts`
+
+**Execution evidence**: Release build passed with 0 warnings/errors. Focused projector, aggregate-writer,
+scanner, frozen schema-1 and real-output integration coverage passed with 36 cases (35 before the final
+aggregate migration check). Discovered test-method count remained 1,542. Discrimination sensor skipped by
+standing project override.
 
 ---
 

@@ -62,6 +62,8 @@ internal static class FactualFragmentScanner
                         var bytesBeforeRead = reader.BytesConsumed;
                         if (!reader.Read())
                         {
+                            committedBytes = reader.BytesConsumed;
+                            committedState = reader.CurrentState;
                             break;
                         }
 

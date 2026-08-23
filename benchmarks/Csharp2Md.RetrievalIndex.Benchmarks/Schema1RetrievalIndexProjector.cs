@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Csharp2Md.Core.Projection.Aggregates;
 
@@ -307,13 +308,13 @@ internal sealed class Schema1RetrievalIndexProjector(BoundedShardWriter? shardWr
         files.Write(path, Serialize(value, AggregateJsonContext.Default.AggregateEnvelope));
 
     private static void Write(string path, RetrievalIndexSummary value, IAggregateFileWriter files) =>
-        files.Write(path, Serialize(value, AggregateJsonContext.Default.RetrievalIndexSummary));
+        files.Write(path, Serialize(value, Schema1JsonContext.Default.RetrievalIndexSummary));
 
     private static void Write(string path, RetrievalIndexManifest value, IAggregateFileWriter files) =>
-        files.Write(path, Serialize(value, AggregateJsonContext.Default.RetrievalIndexManifest));
+        files.Write(path, Serialize(value, Schema1JsonContext.Default.RetrievalIndexManifest));
 
     private static void Write(string path, RetrievalUnknownCatalogue value, IAggregateFileWriter files) =>
-        files.Write(path, Serialize(value, AggregateJsonContext.Default.RetrievalUnknownCatalogue));
+        files.Write(path, Serialize(value, Schema1JsonContext.Default.RetrievalUnknownCatalogue));
 
     private static void WriteCatalogue(string name, IEnumerable<string> entries, IAggregateFileWriter files) =>
         Write($"raw/index/catalogues/{name}.json", new AggregateEnvelope(1, name, entries.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray()), files);
@@ -328,3 +329,85 @@ internal sealed class Schema1RetrievalIndexProjector(BoundedShardWriter? shardWr
     private static int Percentage(int value, int total) => total == 0 ? 0 : value * 100 / total;
 }
 
+internal sealed record RetrievalIndexProjection(RetrievalIndexManifest Manifest, RetrievalIndexSummary Summary);
+
+[JsonSerializable(typeof(RetrievalIndexManifest))]
+[JsonSerializable(typeof(RetrievalShard))]
+[JsonSerializable(typeof(RetrievalIndexSummary))]
+[JsonSerializable(typeof(RetrievalUnknownCatalogue))]
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    WriteIndented = true)]
+internal partial class Schema1JsonContext : JsonSerializerContext;
+
+internal sealed class BoundedShardWriter(int maximumBytes = 262144)
+{
+    public const int DefaultMaximumBytes = 262144;
+
+    private readonly int _maximumBytes = maximumBytes;
+
+    public ImmutableArray<ShardDescriptor> Write(
+        string family,
+        string key,
+        string analysisRunId,
+        IEnumerable<RetrievalRelationEntry> entries,
+        IAggregateFileWriter files)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(family);
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentException.ThrowIfNullOrWhiteSpace(analysisRunId);
+        ArgumentNullException.ThrowIfNull(entries);
+        ArgumentNullException.ThrowIfNull(files);
+        if (_maximumBytes <= 0) throw new ArgumentOutOfRangeException(nameof(maximumBytes));
+
+        var descriptors = ImmutableArray.CreateBuilder<ShardDescriptor>();
+        var current = new List<RetrievalRelationEntry>();
+        foreach (var entry in entries.OrderBy(static entry => entry.RelationId, StringComparer.Ordinal))
+        {
+            var candidate = current.Append(entry).ToImmutableArray();
+            if (Serialize(analysisRunId, family, key, candidate).Length <= _maximumBytes)
+            {
+                current.Add(entry);
+                continue;
+            }
+
+            if (current.Count == 0)
+            {
+                throw Oversized(entry);
+            }
+
+            WriteCurrent();
+            current.Add(entry);
+            if (Serialize(analysisRunId, family, key, current.ToImmutableArray()).Length > _maximumBytes)
+            {
+                throw Oversized(entry);
+            }
+        }
+
+        if (current.Count > 0) WriteCurrent();
+        return descriptors.ToImmutable();
+
+        InvalidOperationException Oversized(RetrievalRelationEntry entry) => new(
+            $"Retrieval index entry exceeds {_maximumBytes} bytes: family '{family}', key '{key}', relation '{entry.RelationId}'.");
+
+        void WriteCurrent()
+        {
+            var entriesToWrite = current.ToImmutableArray();
+            var bytes = Serialize(analysisRunId, family, key, entriesToWrite);
+            var path = $"raw/index/shards/{family}/{Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(key)))}/{descriptors.Count:D4}.json";
+            files.Write(path, bytes);
+            descriptors.Add(new ShardDescriptor(family, key, path, entriesToWrite.Length, bytes.Length));
+            current.Clear();
+        }
+    }
+
+    private static byte[] Serialize(
+        string analysisRunId,
+        string family,
+        string key,
+        ImmutableArray<RetrievalRelationEntry> entries) =>
+        Encoding.UTF8.GetBytes(JsonSerializer.Serialize(
+            new RetrievalShard(1, analysisRunId, family, key, entries),
+            Schema1JsonContext.Default.RetrievalShard).Replace("\r\n", "\n", StringComparison.Ordinal) + "\n");
+}

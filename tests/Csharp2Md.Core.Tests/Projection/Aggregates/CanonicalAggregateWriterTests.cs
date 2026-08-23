@@ -172,27 +172,42 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
     public void Write_ValidatedFragmentsProduceIndexWithoutRewritingCanonicalBytes()
     {
         var files = new RecordingFiles();
-        var fragmentJson = """
-            {"schema_version":6,"documents":[{"document_id":"document-orders","project_id":"project-orders"}],"relations":[{"header":{"resolution":"exact","provenance":[{"engine_version":"3.0.0"}],"evidence":[{"document_id":"document-orders","relative_path":"Orders.cs","start_line":1,"start_column":1,"end_line":1,"end_column":2,"generated_origin":false}]},"relation_id":"relation-orders-status","source_id":"writer","target_id":"Orders.Status","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"}]}
+        var documentJson = """
+            {"schema_version":6,"documents":[{"header":{"generated_origin":false},"document_id":"document-orders","project_id":"project-orders","relative_path":"Orders.cs"}],"relations":[]}
             """;
-        var bytes = Encoding.UTF8.GetBytes(fragmentJson);
-        var reference = ArtifactReference.Parse("facts/document/00/" + new string('0', 64) + ".json");
-        files.Seed($"raw/{reference.Value}", bytes);
+        var relationJson = """
+            {"schema_version":6,"documents":[],"relations":[{"header":{"id":"relation-orders-status","resolution":"exact","provenance":[{"engine_version":"3.0.0"}],"evidence":[{"document_id":"document-orders","relative_path":"Orders.cs","start_line":1,"start_column":1,"end_line":1,"end_column":2,"generated_origin":false}]},"relation_id":"relation-orders-status","source_id":"writer","target_id":"Orders.Status","partition":"structural","relation_kind":"writes","resolution_method":"exact"}]}
+            """;
+        var documentBytes = Encoding.UTF8.GetBytes(documentJson);
+        var relationBytes = Encoding.UTF8.GetBytes(relationJson);
+        var documentReference = ArtifactReference.Parse("facts/document/00/" + new string('0', 64) + ".json");
+        var relationReference = ArtifactReference.Parse("facts/relation/11/" + new string('1', 64) + ".json");
+        files.Seed($"raw/{documentReference.Value}", documentBytes);
+        files.Seed($"raw/{relationReference.Value}", relationBytes);
         var snapshot = Snapshot() with
         {
-            Fragments = [new(FactIdGrammar.Create("document", [("name", "orders")]), reference, Convert.ToHexStringLower(SHA256.HashData(bytes)), bytes.Length)],
+            Fragments =
+            [
+                new(FactIdGrammar.Create("document", [("name", "orders")]), documentReference,
+                    Convert.ToHexStringLower(SHA256.HashData(documentBytes)), documentBytes.Length),
+                new(FactIdGrammar.Create("relation", [("name", "orders-status")]), relationReference,
+                    Convert.ToHexStringLower(SHA256.HashData(relationBytes)), relationBytes.Length),
+            ],
         };
 
         new CanonicalAggregateWriter(files).Write(_root, _input, false, snapshot, TimeProvider.System);
 
-        Assert.Equal(bytes, files.Contents[$"raw/{reference.Value}"]);
+        Assert.Equal(documentBytes, files.Contents[$"raw/{documentReference.Value}"]);
+        Assert.Equal(relationBytes, files.Contents[$"raw/{relationReference.Value}"]);
         Assert.Contains("raw/index/manifest.json", files.Writes);
         Assert.Contains("raw/index/summary.json", files.Writes);
-        Assert.All(new[] { "entities", "events", "integrations", "entry-points", "high-centrality" },
-            name => Assert.Contains($"raw/index/catalogues/{name}.json", files.Writes));
+        Assert.Contains("raw/index/catalogues/entry-points.json", files.Writes);
+        Assert.All(new[] { "entities", "events", "integrations", "high-centrality" },
+            name => Assert.DoesNotContain($"raw/index/catalogues/{name}.json", files.Writes));
         using var indexManifest = JsonDocument.Parse(files.Contents["raw/index/manifest.json"]);
-        Assert.Contains(indexManifest.RootElement.GetProperty("shards").EnumerateArray(),
-            shard => shard.GetProperty("family").GetString() == "target" && shard.GetProperty("key").GetString() == "Orders.Status");
+        Assert.Single(indexManifest.RootElement.GetProperty("relation_shards").EnumerateArray());
+        Assert.Contains(indexManifest.RootElement.GetProperty("posting_shards").EnumerateArray(),
+            shard => shard.GetProperty("family").GetString() == "target");
         Assert.Equal("raw/facts/manifest.json", files.Writes[^1]);
     }
 
@@ -266,9 +281,8 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
         "raw/facts/relations/data.json", "raw/facts/relations/dependency-injection.json", "raw/facts/relations/events.json",
         "raw/facts/relations/grpc.json", "raw/facts/relations/http.json", "raw/facts/relations/inheritance.json",
         "raw/facts/relations/resolution.json",
-        "raw/facts/relations/structural.json", "raw/facts/solutions.json", "raw/index/catalogues/entities.json",
-        "raw/index/catalogues/entry-points.json", "raw/index/catalogues/events.json", "raw/index/catalogues/high-centrality.json",
-        "raw/index/catalogues/integrations.json", "raw/index/manifest.json", "raw/index/summary.json", "raw/index/unknowns.json",
+        "raw/facts/relations/structural.json", "raw/facts/solutions.json", "raw/index/catalogues/entry-points.json",
+        "raw/index/manifest.json", "raw/index/summary.json", "raw/index/unknowns.json",
         "raw/log.md", "raw/topic.yaml",
     ];
 

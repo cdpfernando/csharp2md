@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Facts.Identity;
@@ -27,14 +28,12 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
         var statusId = DatabaseColumnFactId.Create(
             DatabaseObjectFactId.Create(DatabaseObjectFactId.UnknownConnection, DatabaseObjectKind.Table, "order_headers"),
             "order_status").Value;
-        Assert.Contains(statusId, ReadCatalogue(rawRoot, "entities"));
         var manifest = Read(rawRoot, "raw/index/manifest.json");
-        var target = Assert.Single(manifest.GetProperty("shards").EnumerateArray(), shard =>
-            shard.GetProperty("family").GetString() == "target" && shard.GetProperty("key").GetString() == statusId);
-
-        var shard = Read(rawRoot, target.GetProperty("path").GetString()!);
-        var writers = shard.GetProperty("entries").EnumerateArray()
-            .Where(entry => entry.GetProperty("relation_kind").GetString() == "writes-column")
+        var writers = manifest.GetProperty("relation_shards").EnumerateArray()
+            .SelectMany(shard => Read(rawRoot, RequiredString(shard, "path")).GetProperty("entries").EnumerateArray())
+            .Where(entry => entry.GetProperty("relation_kind").GetString() == "writes-column" &&
+                            entry.TryGetProperty("target_id", out var target) &&
+                            target.GetString() == statusId)
             .ToArray();
 
         Assert.NotEmpty(writers);
@@ -42,8 +41,9 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
         {
             Assert.Equal(statusId, writer.GetProperty("target_id").GetString());
             Assert.NotEmpty(RequiredString(writer, "relation_id"));
-            Assert.NotEmpty(RequiredString(writer, "fragment_reference"));
+            Assert.True(writer.GetProperty("origin_ordinal").GetInt32() >= 0);
         });
+        Assert.False(File.Exists(Path.Combine(rawRoot, "index", "catalogues", "entities.json")));
     }
 
     [Fact]
@@ -66,18 +66,20 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
         var summary = Read(rawRoot, "raw/index/summary.json");
         var entries = SourceEntries(rawRoot);
 
-        Assert.Equal(1, manifest.GetProperty("schema_version").GetInt32());
+        Assert.Equal(2, manifest.GetProperty("schema_version").GetInt32());
         Assert.NotEmpty(RequiredString(manifest, "analysis_run_id"));
-        foreach (var shardDescriptor in manifest.GetProperty("shards").EnumerateArray())
+        foreach (var shardDescriptor in manifest.GetProperty("relation_shards").EnumerateArray()
+                     .Concat(manifest.GetProperty("posting_shards").EnumerateArray()))
         {
             var shard = Read(rawRoot, RequiredString(shardDescriptor, "path"));
-            Assert.Equal(1, shard.GetProperty("schema_version").GetInt32());
+            Assert.Equal(2, shard.GetProperty("schema_version").GetInt32());
             Assert.Equal(RequiredString(manifest, "analysis_run_id"), RequiredString(shard, "analysis_run_id"));
         }
-        Assert.Equal("syntax-only", summary.GetProperty("analysis").GetProperty("effective").GetString());
-        Assert.Equal("untrusted", summary.GetProperty("trust").GetString());
-        Assert.False(summary.GetProperty("restore_performed").GetBoolean());
-        Assert.Equal(DistinctSymbolCount(entries), summary.GetProperty("indexed_symbol_count").GetInt32());
+        Assert.Equal("syntax-only", manifest.GetProperty("analysis").GetProperty("effective").GetString());
+        Assert.Equal("untrusted", manifest.GetProperty("trust").GetString());
+        Assert.False(manifest.GetProperty("restore_performed").GetBoolean());
+        Assert.Equal(DistinctSymbolCount(entries), summary.GetProperty("indexed_endpoint_count").GetInt32());
+        Assert.False(summary.TryGetProperty("indexed_symbol_count", out _));
         Assert.Equal(0, summary.GetProperty("mapped_entry_point_count").GetInt32());
         Assert.Equal(new[] { "compile-time", "dependency-injection", "grpc" },
             summary.GetProperty("analysis_limitations").EnumerateArray().Select(static value => RequiredString(value)).ToArray());
@@ -89,20 +91,27 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
     [Fact]
     public void RRI09_EveryIndexedEvidenceCarriesVersionProjectFragmentAndCoordinates()
     {
-        var entries = SourceEntries(TopicLayout.RawRoot(fixture.OutputA));
+        var rawRoot = TopicLayout.RawRoot(fixture.OutputA);
+        var manifest = Read(rawRoot, "raw/index/manifest.json");
+        var entries = SourceEntries(rawRoot);
+        var documents = MetadataEntries(rawRoot, manifest, "documents");
+        var origins = MetadataEntries(rawRoot, manifest, "origins");
 
         Assert.NotEmpty(entries);
         foreach (var evidence in entries.SelectMany(static entry => entry.GetProperty("evidence").EnumerateArray()))
         {
-            Assert.NotEmpty(RequiredString(evidence, "generator_version"));
-            Assert.NotEmpty(RequiredString(evidence, "project_id"));
-            Assert.NotEmpty(RequiredString(evidence, "document_id"));
-            Assert.NotEmpty(RequiredString(evidence, "fragment_sha256"));
+            Assert.InRange(evidence.GetProperty("document_ordinal").GetInt32(), 0, documents.Length - 1);
             Assert.True(evidence.GetProperty("start_line").GetInt32() > 0);
             Assert.True(evidence.GetProperty("start_column").GetInt32() > 0);
             Assert.True(evidence.GetProperty("end_line").GetInt32() > 0);
             Assert.True(evidence.GetProperty("end_column").GetInt32() > 0);
         }
+        Assert.All(documents, static document => Assert.NotEmpty(RequiredString(document, "document_id")));
+        Assert.All(origins, static origin =>
+        {
+            Assert.NotEmpty(RequiredString(origin, "generator_version"));
+            Assert.NotEmpty(RequiredString(origin, "fragment_sha256"));
+        });
     }
 
     [Fact]
@@ -151,7 +160,7 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
         Assert.Equal("Runtime.High", RequiredString(high, "observed_target_text"));
         Assert.Equal(2, high.GetProperty("count").GetInt32());
         Assert.Equal(3, high.GetProperty("impact").GetInt32());
-        Assert.Equal(["relation-high-a", "relation-high-b"], high.GetProperty("relation_ids").EnumerateArray().Select(static id => RequiredString(id)));
+        Assert.Equal([0, 1], high.GetProperty("relation_ordinals").EnumerateArray().Select(static id => id.GetInt32()));
         Assert.Equal(["source-high", "source-a", "source-b"], unknowns.Select(static group => RequiredString(group, "source_id")));
         Assert.Equal(
             unknowns.Select(static group => RequiredString(group, "source_id")),
@@ -185,11 +194,9 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
             {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Http.cs","start_line":3,"start_column":1,"end_line":3,"end_column":2,"generated_origin":false}]},"relation_id":"relation-integration","source_id":"source-http","target_id":"target-http","partition":"http","relation_kind":"http-call","resolution_method":"symbol-index"}
             """);
 
-        Assert.Equal(["source-entry", "source-event", "source-http", "target-event", "target-http"], ReadCatalogue(fixture, "entities"));
-        Assert.Equal(["relation-event"], ReadCatalogue(fixture, "events"));
-        Assert.Equal(["relation-entry-proof", "relation-integration"], ReadCatalogue(fixture, "integrations"));
         Assert.Equal(["source-entry"], ReadCatalogue(fixture, "entry-points"));
-        Assert.Equal(["source-entry", "source-event", "source-http", "target-event", "target-http"], ReadCatalogue(fixture, "high-centrality"));
+        Assert.All(new[] { "entities", "events", "integrations", "high-centrality" },
+            name => Assert.False(fixture.Files.Exists($"raw/index/catalogues/{name}.json")));
     }
 
     [Fact]
@@ -202,8 +209,10 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
 
         var evidence = Assert.Single(fixture.SourceEntries).GetProperty("evidence").EnumerateArray().ToArray();
 
-        Assert.Equal(["document-first", "document-second"], evidence.Select(static item => RequiredString(item, "document_id")));
-        Assert.Equal(["First.cs", "Second.cs"], evidence.Select(static item => RequiredString(item, "relative_path")));
+        Assert.Equal([0, 1], evidence.Select(static item => item.GetProperty("document_ordinal").GetInt32()));
+        var metadata = fixture.Metadata("documents");
+        Assert.Equal(["document-first", "document-second"], metadata.Select(static item => RequiredString(item, "document_id")));
+        Assert.Equal(["First.cs", "Second.cs"], metadata.Select(static item => RequiredString(item, "relative_path")));
     }
 
     [Fact]
@@ -212,14 +221,17 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
         var fixture = new SyntheticProjectionFixture(
             """
             {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Generated.cs","start_line":1,"start_column":1,"end_line":1,"end_column":2,"generated_origin":true}]},"relation_id":"relation-generated","source_id":"source-generated","target_id":"target-generated","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"},
-            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-1","relative_path":"Ordinary.cs","start_line":2,"start_column":1,"end_line":2,"end_column":2,"generated_origin":false}]},"relation_id":"relation-ordinary","source_id":"source-ordinary","target_id":"target-ordinary","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"}
+            {"header":{"resolution":"exact","provenance":[],"evidence":[{"document_id":"document-2","relative_path":"Ordinary.cs","start_line":2,"start_column":1,"end_line":2,"end_column":2,"generated_origin":false}]},"relation_id":"relation-ordinary","source_id":"source-ordinary","target_id":"target-ordinary","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"}
             """);
         var factual = fixture.Relations;
 
         Assert.True(factual[0].GetProperty("header").GetProperty("evidence")[0].GetProperty("generated_origin").GetBoolean());
         Assert.False(factual[1].GetProperty("header").GetProperty("evidence")[0].GetProperty("generated_origin").GetBoolean());
-        Assert.True(Entry(fixture.SourceEntries, "relation-generated").GetProperty("evidence")[0].GetProperty("generated_origin").GetBoolean());
-        Assert.False(Entry(fixture.SourceEntries, "relation-ordinary").GetProperty("evidence")[0].GetProperty("generated_origin").GetBoolean());
+        var metadata = fixture.Metadata("documents");
+        Assert.True(metadata[Entry(fixture.SourceEntries, "relation-generated").GetProperty("evidence")[0].GetProperty("document_ordinal").GetInt32()]
+            .GetProperty("generated_origin").GetBoolean());
+        Assert.False(metadata[Entry(fixture.SourceEntries, "relation-ordinary").GetProperty("evidence")[0].GetProperty("document_ordinal").GetInt32()]
+            .GetProperty("generated_origin").GetBoolean());
     }
 
     private static string[] ReadCatalogue(string rawRoot, string name) =>
@@ -238,13 +250,18 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
     private static JsonElement[] SourceEntries(string rawRoot)
     {
         var manifest = Read(rawRoot, "raw/index/manifest.json");
-        return manifest.GetProperty("shards").EnumerateArray()
-            .Where(static shard => shard.GetProperty("family").GetString() == "source")
+        return manifest.GetProperty("relation_shards").EnumerateArray()
             .SelectMany(shard => Read(rawRoot, shard.GetProperty("path").GetString()!).GetProperty("entries").EnumerateArray())
             .Select(static entry => entry.Clone())
             .OrderBy(static entry => RequiredString(entry, "relation_id"), StringComparer.Ordinal)
             .ToArray();
     }
+
+    private static JsonElement[] MetadataEntries(string rawRoot, JsonElement manifest, string kind) =>
+        manifest.GetProperty("metadata_shards").EnumerateArray()
+            .Where(shard => RequiredString(shard, "kind") == kind)
+            .SelectMany(shard => Read(rawRoot, RequiredString(shard, "path")).GetProperty("entries").EnumerateArray())
+            .Select(static value => value.Clone()).ToArray();
 
     private static int DistinctSymbolCount(IEnumerable<JsonElement> entries) => entries
         .SelectMany(static entry => new[]
@@ -260,14 +277,7 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
     {
         var expected = entries.GroupBy(entry => entry.GetProperty(entryKey).GetString()!, StringComparer.Ordinal)
             .OrderBy(static group => group.Key, StringComparer.Ordinal)
-            .Select(group => new
-            {
-                Key = group.Key,
-                Total = group.Count(),
-                Exact = group.Count(entry => entry.GetProperty("resolution").GetString() == "exact"),
-                Dynamic = group.Count(entry => entry.GetProperty("resolution").GetString() == "dynamic"),
-                Unresolved = group.Count(entry => entry.GetProperty("resolution").GetString() == "unresolved"),
-            })
+            .Select(group => (group.Key, Entries: group.ToArray()))
             .ToArray();
         var actual = actualMetrics.EnumerateArray().ToArray();
 
@@ -275,14 +285,21 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
         foreach (var metric in expected)
         {
             var result = Assert.Single(actual, value => RequiredString(value, "key") == metric.Key);
-            Assert.Equal(metric.Total, result.GetProperty("total").GetInt32());
-            Assert.Equal(metric.Exact, result.GetProperty("exact").GetInt32());
-            Assert.Equal(metric.Dynamic, result.GetProperty("dynamic").GetInt32());
-            Assert.Equal(metric.Unresolved, result.GetProperty("unresolved").GetInt32());
-            Assert.Equal(metric.Exact * 100 / metric.Total, result.GetProperty("exact_percent").GetInt32());
-            Assert.Equal(metric.Dynamic * 100 / metric.Total, result.GetProperty("dynamic_percent").GetInt32());
-            Assert.Equal(metric.Unresolved * 100 / metric.Total, result.GetProperty("unresolved_percent").GetInt32());
+            Assert.Equal(metric.Entries.Length, result.GetProperty("total").GetInt32());
+            AssertCounts(metric.Entries, result.GetProperty("resolutions"), "resolution");
+            AssertCounts(metric.Entries, result.GetProperty("resolution_methods"), "resolution_method");
         }
+    }
+
+    private static void AssertCounts(JsonElement[] entries, JsonElement actualCounts, string entryKey)
+    {
+        var expected = entries.GroupBy(entry => RequiredString(entry, entryKey), StringComparer.Ordinal)
+            .ToDictionary(static group => group.Key, static group => group.Count(), StringComparer.Ordinal);
+        var actual = actualCounts.EnumerateArray().ToArray();
+
+        Assert.Equal(entries.Length, actual.Sum(static count => count.GetProperty("count").GetInt32()));
+        Assert.All(actual, count =>
+            Assert.Equal(expected.GetValueOrDefault(RequiredString(count, "name")), count.GetProperty("count").GetInt32()));
     }
 
     private static JsonElement Read(string rawRoot, string relativePath)
@@ -307,9 +324,53 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
     {
         public SyntheticProjectionFixture(string relations)
         {
-            var document = """
-                {"schema_version":6,"documents":[{"document_id":"document-1","project_id":"project-1"}],"relations":[
-                """ + relations + "]}";
+            var relationArray = JsonNode.Parse("[" + relations + "]")!.AsArray();
+            foreach (var relation in relationArray.Select(static value => value!.AsObject()))
+            {
+                relation["header"]!.AsObject()["id"] = relation["relation_id"]!.GetValue<string>();
+                var method = relation["resolution_method"]!.GetValue<string>();
+                relation["resolution_method"] = method switch
+                {
+                    "symbol-index" => "exact",
+                    "observed" => "unresolved",
+                    _ => method,
+                };
+            }
+
+            var conflictingDocumentIds = relationArray
+                .SelectMany(static relation => relation!["header"]!["evidence"]!.AsArray())
+                .Select(static evidence => evidence!.AsObject())
+                .GroupBy(static evidence => evidence["document_id"]!.GetValue<string>(), StringComparer.Ordinal)
+                .Where(static group => group
+                    .Select(evidence => (evidence["relative_path"]!.GetValue<string>(), evidence["generated_origin"]!.GetValue<bool>()))
+                    .Distinct().Count() > 1)
+                .Select(static group => group.Key)
+                .ToHashSet(StringComparer.Ordinal);
+            foreach (var evidence in relationArray
+                         .SelectMany(static relation => relation!["header"]!["evidence"]!.AsArray())
+                         .Select(static value => value!.AsObject()))
+            {
+                var documentId = evidence["document_id"]!.GetValue<string>();
+                if (conflictingDocumentIds.Contains(documentId))
+                {
+                    evidence["document_id"] = $"{documentId}:{evidence["relative_path"]!.GetValue<string>()}";
+                }
+            }
+
+            var orderedRelations = new JsonArray(relationArray
+                .Select(static value => value!.DeepClone())
+                .OrderBy(static value => value!["relation_id"]!.GetValue<string>(), StringComparer.Ordinal)
+                .ToArray());
+            var document = new JsonObject
+            {
+                ["schema_version"] = 6,
+                ["documents"] = new JsonArray(new JsonObject
+                {
+                    ["document_id"] = "document-1",
+                    ["project_id"] = "project-1",
+                }),
+                ["relations"] = orderedRelations,
+            }.ToJsonString();
             var bytes = Encoding.UTF8.GetBytes(document);
             Files.Write("raw/facts/relations/synthetic.json", bytes);
             var fragment = new ManifestFragment(
@@ -332,7 +393,7 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
             Projection = new RetrievalIndexProjector().Project(manifest, Files);
             Relations = Read(Files.Read("raw/facts/relations/synthetic.json")).GetProperty("relations").EnumerateArray()
                 .Select(static relation => relation.Clone()).ToArray();
-            SourceEntries = Projection.Manifest.Shards.Where(static shard => shard.Family == "source")
+            SourceEntries = Projection.Manifest.RelationShards
                 .SelectMany(shard => Read(Files.Read(shard.Path)).GetProperty("entries").EnumerateArray())
                 .Select(static entry => entry.Clone()).ToArray();
             UnknownGroups = Read(Files.Read("raw/index/unknowns.json")).GetProperty("entries").EnumerateArray()
@@ -340,10 +401,16 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
         }
 
         public RecordingFiles Files { get; } = new();
-        public RetrievalIndexProjection Projection { get; }
+        public CompactRetrievalIndexProjection Projection { get; }
         public JsonElement[] Relations { get; }
         public JsonElement[] SourceEntries { get; }
         public JsonElement[] UnknownGroups { get; }
+
+        public JsonElement[] Metadata(string kind) => Projection.Manifest.MetadataShards
+            .Where(shard => shard.Kind == kind)
+            .SelectMany(shard => Read(Files.Read(shard.Path)).GetProperty("entries").EnumerateArray())
+            .Select(static entry => entry.Clone())
+            .ToArray();
 
         private static JsonElement Read(byte[] bytes)
         {
