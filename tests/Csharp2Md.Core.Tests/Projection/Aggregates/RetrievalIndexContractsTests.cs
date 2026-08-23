@@ -6,6 +6,31 @@ namespace Csharp2Md.Core.Tests.Projection.Aggregates;
 public sealed class RetrievalIndexContractsTests
 {
     [Fact]
+    public void Reader_ReadsPriorShardAndSummaryWithoutAdditiveFields()
+    {
+        var manifest = RetrievalIndexReader.ReadManifest(
+            """
+            {"schema_version":1,"analysis_run_id":"run-prior","analysis":{"requested":"full","effective":"full"},"trust":"trusted","restore_performed":true,"shards":[{"family":"target","key":"target-1","path":"shards/target/key/0000.json","entry_count":1,"byte_length":512}]}
+            """u8);
+        var shard = RetrievalIndexReader.ReadShard(
+            """
+            {"schema_version":1,"analysis_run_id":"run-prior","family":"target","key":"target-1","entries":[{"relation_id":"relation-prior","fragment_reference":"facts/relations/prior.json","source_id":"source-1","target_id":"target-1","project_id":"project-1","partition":"structural","relation_kind":"calls","resolution":"exact","resolution_method":"symbol-index","evidence":[{"document_id":"document-1","relative_path":"Prior.cs","start_line":1,"start_column":1,"end_line":1,"end_column":5,"project_id":"project-1","fragment_sha256":"hash-1","generator_version":"3.0.0"}]}]}
+            """u8);
+        var summary = RetrievalIndexReader.ReadSummary(
+            """
+            {"schema_version":1,"analysis_run_id":"run-prior","analysis":{"requested":"full","effective":"full"},"trust":"trusted","restore_performed":true,"indexed_symbol_count":1,"mapped_entry_point_count":0,"by_partition":[],"by_relation_kind":[],"unknown_groups":[]}
+            """u8);
+
+        Assert.Equal("shards/target/key/0000.json", Assert.Single(manifest.Shards).Path);
+        Assert.Equal("run-prior", shard.AnalysisRunId);
+        Assert.Equal("relation-prior", Assert.Single(shard.Entries).RelationId);
+        Assert.False(shard.Entries[0].Evidence[0].GeneratedOrigin);
+        Assert.Equal(1, summary.IndexedSymbolCount);
+        Assert.True(summary.RestorePerformed);
+        Assert.Null(summary.AnalysisLimitations);
+    }
+
+    [Fact]
     public void Contracts_SerializeSnakeCaseFieldsWithoutComputedMembers()
     {
         var entry = new RetrievalRelationEntry(

@@ -151,6 +151,7 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 | RRI-19 | P1: Manter a compatibilidade factual | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:122-123` — two ids and two source locations remain |
 | RRI-20 | P1: Manter a compatibilidade factual | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:162-165` — factual and index generated-origin booleans |
 | RRI-21 | P1: Manter a compatibilidade factual | T2 | Complete | `GeneratedOriginTests.cs:18` — source header detection returns the expected marker |
+| P4 additive/missing-field compatibility | P1: Manter a compatibilidade factual | T14 | Complete | `RetrievalIndexContractsTests.cs:11-30` — `RetrievalIndexReader.ReadShard(...)`, `Assert.False(...GeneratedOrigin)` and `Assert.Null(summary.AnalysisLimitations)` prove a prior index remains readable |
 
 **T11 correction:** RRI-03 is covered by `BoundedShardWriterTests.cs:82` - `Assert.Equal(262144, descriptor.ByteLength)`. RRI-04 is covered by `BoundedShardWriterTests.cs:83-86` - the exact 262144-byte family, key and relation diagnostic. RRI-07 is covered by `RelationRetrievalIndexEndToEndTests.cs:69-75` - manifest schema/run id and every shard schema/run id assertions.
 
@@ -158,7 +159,9 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 
 **T13 correction:** RRI-02 is covered by `RetrievalIndexProjectorTests.cs:30-32` - the manifest has the exact `project`, `source`, `target`, `kind` and `resolution` shard-family names. RRI-16 is additionally covered by `RetrievalIndexProjectorTests.cs:81, :99-100` - no-proof and empty-run catalogue envelopes hold empty `entries` arrays. RRI-17 is covered by `RetrievalIndexProjectorTests.cs:44-47` - the missing-target relation entry omits `target_id` and no target shard/key is fabricated.
 
-**Coverage:** 21 total, 21 mapped to exact evidence. Authoritative current test-method count: 1,522, discovered on 2026-08-22 with `dotnet test csharp2md.slnx --list-tests --no-restore | Select-String '^\s{4}Csharp2Md\.Core\.Tests\.' | Measure-Object`. The full runner separately reports 1,949 expanded test cases because theories generate multiple cases. Earlier before/after count claims are superseded because they used incompatible runner output. Independent feature verification remains pending.
+**T14 correction:** P4 additive/missing-field compatibility is covered by `RetrievalIndexContractsTests.cs:11-30` - `RetrievalIndexReader` reads a prior shard and summary without `generated_origin` or `analysis_limitations`, preserving required content while defaulting generated origin to `false` and the optional limitations field to `null`.
+
+**Coverage:** All 21 RRI requirements and the P4 additive/missing-field acceptance criterion are mapped to exact evidence. Authoritative current test-method count: 1,523, discovered on 2026-08-22 with `dotnet test csharp2md.slnx --list-tests --no-restore | Select-String '^\s{4}Csharp2Md\.Core\.Tests\.' | Measure-Object`. The full runner separately reports 1,950 expanded test cases because theories generate multiple cases. Earlier before/after count claims are superseded because they used incompatible runner output. Independent feature verification remains pending.
 
 ## Success Criteria
 

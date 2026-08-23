@@ -16,7 +16,7 @@ every other verifier check.
 > Generated from AGENTS.md, Directory.Build.props, the existing xUnit/Verify test suite and the feature
 > specification. Tests use xUnit in tests/Csharp2Md.Core.Tests; Nullable and warnings-as-errors are enabled.
 >
-> **Authoritative current test-method count:** 1,522, discovered on 2026-08-22 with `dotnet test csharp2md.slnx --list-tests --no-restore | Select-String '^\s{4}Csharp2Md\.Core\.Tests\.' | Measure-Object`. The full runner separately reports 1,949 expanded test cases because theories generate multiple cases. Earlier T1--T10 before/after count claims are superseded; they are not a trustworthy baseline.
+> **Authoritative current test-method count:** 1,523, discovered on 2026-08-22 with `dotnet test csharp2md.slnx --list-tests --no-restore | Select-String '^\s{4}Csharp2Md\.Core\.Tests\.' | Measure-Object`. The full runner separately reports 1,950 expanded test cases because theories generate multiple cases. Earlier T1--T10 before/after count claims are superseded; they are not a trustworthy baseline.
 
 | Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
 | --- | --- | --- | --- | --- |
@@ -416,10 +416,10 @@ T9 → T10
 
 **Done when**:
 
-- [ ] A consumer reader deserializes a prior shard and summary that omit the additive generated-origin and analysis-limitations fields.
-- [ ] The read values prove the documented false/default and optional-field behavior while retaining required index content.
-- [ ] The unnumbered P4 additive/missing-field criterion is mapped to the exact reader assertions in spec traceability.
-- [ ] Build Release, format and the full suite pass, subject only to the approved MSBuild-flake waiver with an isolated passing retry.
+- [x] A consumer reader deserializes a prior shard and summary that omit the additive generated-origin and analysis-limitations fields.
+- [x] The read values prove the documented false/default and optional-field behavior while retaining required index content.
+- [x] The unnumbered P4 additive/missing-field criterion is mapped to the exact reader assertions in spec traceability.
+- [x] Build Release, format and the full suite passed, subject only to the approved MSBuild-flake waiver with an isolated passing retry.
 
 **Tests**: unit
 **Gate**: build
