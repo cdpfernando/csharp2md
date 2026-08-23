@@ -205,7 +205,7 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 
 ---
 
-### T5: Write exact bounded UTF-8 shards
+### T5: Write exact bounded UTF-8 shards [x]
 
 **What**: Implement byte-counted relation, metadata and posting shard packing over once-serialized UTF-8 records.
 **Where**: `src/Csharp2Md.Core/Projection/Aggregates/BoundedUtf8ShardWriter.cs`
@@ -232,6 +232,8 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(index): write exact bounded utf8 shards`
+
+**Execution evidence**: Focused bounded UTF-8 writer tests passed: 3 tests. Discrimination sensor skipped by standing project override.
 
 ---
 
