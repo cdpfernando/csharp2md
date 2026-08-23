@@ -237,7 +237,7 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 
 ---
 
-### T6: Scan factual fragments progressively
+### T6: Scan factual fragments progressively [x]
 
 **What**: Add an incremental UTF-8 scanner that extracts document metadata and one canonical relation value at a time from manifest-referenced streams.
 **Where**: `src/Csharp2Md.Core/Projection/Aggregates/FactualFragmentScanner.cs`
@@ -252,16 +252,19 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 
 **Done when**:
 
-- [ ] Document fragments stop after the documents array and do not read or retain source-section text.
-- [ ] Relation fragments yield one disposable relation value at a time while preserving unconsumed UTF-8 bytes across buffers.
-- [ ] The scanner rejects malformed JSON, missing required fields and a second non-empty relation array with fragment context.
-- [ ] Large source text and buffer-boundary tests prove progressive consumption without whole-document DOM or `ReadAllBytes`.
-- [ ] The discovered test-method count is at least the pre-task count.
-- [ ] Quick gate passes.
+- [x] Document fragments stop after the documents array and do not read or retain source-section text.
+- [x] Relation fragments yield one disposable relation value at a time while preserving unconsumed UTF-8 bytes across buffers.
+- [x] The scanner rejects malformed JSON, missing required fields and a second non-empty relation array with fragment context.
+- [x] Large source text and buffer-boundary tests prove progressive consumption without whole-document DOM or `ReadAllBytes`.
+- [x] The discovered test-method count is at least the pre-task count.
+- [x] Quick gate passes.
 
 **Tests**: unit
 **Gate**: quick
 **Commit**: `feat(index): stream factual relation fragments`
+
+**Execution evidence**: Focused scanner tests passed: 7 cases. Quick aggregate gate passed with 132 tests.
+Discovered test-method count: 1,535. Discrimination sensor skipped by standing project override.
 
 ---
 
