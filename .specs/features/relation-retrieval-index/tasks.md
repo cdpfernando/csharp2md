@@ -183,11 +183,11 @@ T9 → T10
 
 **Done when**:
 
-- [ ] Entries exactly at the size boundary are accepted and entries one byte over begin a new numbered shard.
-- [ ] A one-entry oversized envelope raises a deterministic exception with family, key and relation id.
-- [ ] Path key hashing and descriptor ordering are byte-stable for reordered input.
-- [ ] Unit tests cover empty input, exact boundary, overflow, oversized singleton and deterministic ordering.
-- [ ] Quick gate passes; the test count is recorded before and after the task.
+- [x] Entries exactly at the size boundary are accepted and entries one byte over begin a new numbered shard.
+- [x] A one-entry oversized envelope raises a deterministic exception with family, key and relation id.
+- [x] Path key hashing and descriptor ordering are byte-stable for reordered input.
+- [x] Unit tests cover empty input, exact boundary, overflow, oversized singleton and deterministic ordering.
+- [x] Quick gate passes with the approved known-flake waiver: the full suite was 1,932/1,933 with only `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` failing, and its isolated retry passed 1/1. Test count: 1,929 -> 1,933 (+4).
 
 **Tests**: unit
 **Gate**: quick
