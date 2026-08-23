@@ -178,22 +178,33 @@
 - **Date**: 2026-08-22
 - **Status**: active
 
+### AD-023
+- **Decision**: `raw/index/` uses derived schema 2: each relation payload is stored once in flat relation shards; the five lookup families store only relation ordinals; document and factual-origin metadata are normalized into ordinal shards; the reader rejects every schema other than 2; factual input is streamed and `raw/index/manifest.json` is published last. This replaces the schema-1 physical format documented by `relation-retrieval-index` without changing `raw/facts/`.
+- **Reason**: Schema 1 repeats each full relation in up to five families, creates a directory per key, materializes the large factual relation document, and reserializes every accepted shard prefix. The normalized layout preserves the same queries while reducing bytes, files, projection work and peak memory.
+- **Trade-off**: Consumers must join postings, relation records and metadata through the reader, and schema-1 indexes are not readable by the schema-2 reader. Posting memory still grows with unique keys and ordinal memberships; external sorting remains deferred until measurement justifies its additional I/O and temporary-file lifecycle.
+- **Scope**: Retrieval-index projection and reading, every artifact under `raw/index/`, and future consumers of the derived index. Factual schemas, ids and resolution remain governed by AD-008, AD-010, AD-014, AD-018, AD-019 and AD-022.
+- **Date**: 2026-08-23
+- **Status**: active
+
 ## Handoff
 
-- **Feature**: `component-graph` (`.specs/features/component-graph/`) is complete and independently verified.
-- **Phase / Task**: Execute complete. T1-T18 are committed; feature-level validation passed.
-- **Validation**: `.specs/features/component-graph/validation.md` is PASS. All 32 P1 criteria have file:line
-  evidence. The discrimination sensor is skipped by the standing project rule. `validate_state.py component-graph`
-  exits 0.
-- **Gate**: Release build and format verification pass. Tests: 1917 passed / 1918 total; the unchanged,
-  pre-existing `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` failure
-  remains outside this feature's diff.
+- **Feature**: `compact-retrieval-index` (`.specs/features/compact-retrieval-index/`).
+- **Phase / Task**: Execute complete. T1-T16 are locally committed; independent verification is pending.
+- **Completed**: Schema-2 projection/reader, canonical 25,000-relation benchmark, package version 4.0.0,
+  35/35 verified traceability rows and all five success criteria.
+- **Validation**: pending at `.specs/features/compact-retrieval-index/validation.md`; discrimination sensor
+  remains skipped by the standing project override.
+- **Gate**: Release build and format verification pass; full suite 1,992/1,992. Canonical schema 1 → 2
+  benchmark: 118,737,712 → 12,376,427 bytes, 50,192 → 56 files, 42,734 → 1,427 ms median,
+  309,067,776 → 150,568,960 bytes median peak working set.
 - **In-progress** (file:line): none.
-- **Next step**: None for this feature. Push or PR requires explicit user go-ahead per AD-007.
-- **Blockers**: None.
-- **Uncommitted files**: no tracked feature files; all remaining untracked paths are long-standing and out of scope.
-- **Branch**: `feat/component-graph`, stacked on `feat/relation-resolver`; no branch in the stack is pushed
-  and no PR is open.
+- **Next step**: Run a fresh independent Verifier. On PASS, commit `validation.md`, mark the local issue
+  `Verified`, and change the compact-index roadmap row from `IMPLEMENTADO — AGUARDANDO VERIFIER` to
+  `CONCLUÍDO`.
+- **Blockers**: none.
+- **Uncommitted files**: pre-existing roadmap edits and unrelated untracked paths remain present and preserved.
+- **Branch**: `feat/component-graph`, stacked on `feat/relation-resolver`; no push, PR, tag or package
+  publication is authorized or performed.
 
 ## Historical Handoff - Component Graph Planning (2026-08-22)
 

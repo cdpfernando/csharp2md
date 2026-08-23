@@ -589,7 +589,7 @@ Discrimination sensor skipped by standing project override.
 
 ---
 
-### T16: Update the local roadmap state
+### T16: Update the local roadmap state [x]
 
 **What**: Mark the local feature issue implemented, preserve the roadmap's verifier gate and record the execution handoff without changing remote state.
 **Where**: `llmwiki-reverse-engineering-roadmap.md`
@@ -604,15 +604,21 @@ Discrimination sensor skipped by standing project override.
 
 **Done when**:
 
-- [ ] The local issue mirror records all implementation tasks complete and points to the pending independent validation report.
-- [ ] The roadmap row remains gated on Verifier PASS instead of claiming completion early.
-- [ ] `.specs/STATE.md` names the exact next step and contains no stale task or benchmark status.
-- [ ] No push, PR, tag or publication occurs.
-- [ ] Build gate passes.
+- [x] The local issue mirror records all implementation tasks complete and points to the pending independent validation report.
+- [x] The roadmap row remains gated on Verifier PASS instead of claiming completion early.
+- [x] `.specs/STATE.md` names the exact next step and contains no stale task or benchmark status.
+- [x] No push, PR, tag or publication occurs.
+- [x] Build gate passes.
 
 **Tests**: none
 **Gate**: build
 **Commit**: `docs(roadmap): stage compact retrieval verification`
+
+**Execution evidence**: The local issue is `implemented-awaiting-verifier` with all ten implementation
+checks complete and an explicit pending `validation.md` path. The roadmap is deliberately
+`IMPLEMENTADO — AGUARDANDO VERIFIER`, not `CONCLUÍDO`. The STATE handoff records T1-T16, the canonical
+four-metric benchmark, package 4.0.0, the 1,992/1,992 full gate and the exact independent-Verifier next step.
+No push, PR, tag or package publication occurred. Discrimination sensor skipped by standing project override.
 
 ---
 
