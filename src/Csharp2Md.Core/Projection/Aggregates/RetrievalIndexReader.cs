@@ -107,9 +107,11 @@ internal sealed class RetrievalIndexReader
         }
 
         var records = new SortedDictionary<int, CompactRelationRecord>();
+        var relationShardPaths = new List<string>();
         foreach (var descriptor in Manifest.RelationShards.Where(descriptor =>
                      ordinals.Any(ordinal => ordinal >= descriptor.FirstOrdinal && ordinal <= descriptor.LastOrdinal)))
         {
+            relationShardPaths.Add(descriptor.Path);
             var shard = Read(_files, descriptor.Path, CompactRetrievalIndexJsonContext.Default.CompactRelationShard);
             ValidateArtifact(shard.SchemaVersion, shard.AnalysisRunId, descriptor.Path);
             if (shard.FirstOrdinal != descriptor.FirstOrdinal ||
@@ -140,8 +142,9 @@ internal sealed class RetrievalIndexReader
         var documentOrdinals = records.Values.SelectMany(static record => record.Evidence)
             .Select(static evidence => evidence.DocumentOrdinal).Distinct().Order().ToImmutableArray();
         var originOrdinals = records.Values.Select(static record => record.OriginOrdinal).Distinct().Order().ToImmutableArray();
-        var documents = ReadDocuments(documentOrdinals, context);
-        var origins = ReadOrigins(originOrdinals, context);
+        var reconstructionContext = $"{context}, relation shard(s) '{string.Join("', '", relationShardPaths)}'";
+        var documents = ReadDocuments(documentOrdinals, reconstructionContext);
+        var origins = ReadOrigins(originOrdinals, reconstructionContext);
         return records.Select(pair => Reconstruct(pair.Key, pair.Value, documents, origins, context)).ToImmutableArray();
     }
 

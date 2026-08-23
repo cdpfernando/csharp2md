@@ -406,7 +406,7 @@ standing project override.
 
 ---
 
-### T11: Prove compact retrieval against real output
+### T11: Prove compact retrieval against real output [x]
 
 **What**: Replace schema-1 end-to-end expectations with independent schema-2 query, normalization, determinism and absence proofs over real generated output.
 **Where**: `tests/Csharp2Md.Core.Tests/Analysis/RelationRetrievalIndexEndToEndTests.cs`
@@ -427,7 +427,7 @@ standing project override.
 - [x] Empty input, missing target, 10/10000 keys, split posting, opaque extensions and multiple evidence paths match the spec outcomes.
 - [x] Assertion-quality and anti-pattern review have no Critical or High finding; targeted CRAP evidence is recorded for changed complex methods.
 - [x] The discovered test-method count is at least the pre-task count.
-- [ ] Full gate passes.
+- [x] Full gate passes.
 
 **Tests**: integration
 **Gate**: full
@@ -441,10 +441,12 @@ race passed immediately in isolation, while `PackagingSmokeTests` remained exter
 execution could not contact NuGet and escalated execution installed a global-tool shim whose user-profile
 store lacked the packaged DLL. Full-gate closure therefore remains explicit rather than silently waived.
 Discrimination sensor skipped by standing project override.
+The T14 packaging fix and T15 process-specific MSBuild cleanup assertion closed both blockers; the final
+full suite passed 1,992/1,992.
 
 ---
 
-### T12: Measure both formats in isolated processes
+### T12: Measure both formats in isolated processes [x]
 
 **What**: Implement deterministic corpus generation, child-process samples, metric collection, median comparison and versioned JSON reporting for schema 1 and schema 2.
 **Where**: `benchmarks/Csharp2Md.RetrievalIndex.Benchmarks/Program.cs`
@@ -465,7 +467,7 @@ Discrimination sensor skipped by standing project override.
 - [x] Missing, equal or regressed metrics are all named and cause a non-zero exit.
 - [x] Integration tests use a small corpus to cover success shape, process isolation, raw samples and every comparison failure without running the full benchmark.
 - [x] The discovered test-method count is at least the pre-task count.
-- [ ] Build gate passes.
+- [x] Build gate passes.
 
 **Tests**: integration
 **Gate**: build
@@ -477,6 +479,7 @@ metrics. Discovered test-method count increased to 1,554. Release build and form
 the full-suite portion passed 1,979/1,981 cases, with the known packaging-network blocker deferred to its
 approved T14 fix and the unrelated MSBuild temporary-file race again isolated. Discrimination sensor skipped
 by standing project override.
+Final closure after T14/T15: release build, format and all 1,992 runner cases passed.
 
 ---
 
@@ -512,7 +515,7 @@ environment metadata. Discrimination sensor skipped by standing project override
 
 ---
 
-### T14: Publish the local version-4 package contract
+### T14: Publish the local version-4 package contract [x]
 
 **What**: Bump the breaking package version to 4.0.0 and prove the packed tool emits schema 2 from outside the repository.
 **Where**: `Directory.Build.props`
@@ -531,7 +534,7 @@ environment metadata. Discrimination sensor skipped by standing project override
 - [x] Packaging smoke assertions select `csharp2md.4.0.0.nupkg` and inspect an emitted schema-2 retrieval manifest.
 - [x] No tag, push, PR or publication occurs.
 - [x] The discovered test-method count is at least the pre-task count.
-- [ ] Build gate passes.
+- [x] Build gate passes.
 
 **Tests**: integration
 **Gate**: build
@@ -544,10 +547,12 @@ no Critical or High issue and discovered test-method count remained 1,554. Relea
 the full suite passed 1,980/1,981 cases, leaving only the unrelated MSBuild global-temporary-file race, which
 passed 1/1 immediately in isolation. No tag, push, PR or publication occurred. Discrimination sensor skipped
 by standing project override.
+Final closure after the process-specific MSBuild cleanup assertion: release build, format and all 1,992
+runner cases passed.
 
 ---
 
-### T15: Close requirement traceability
+### T15: Close requirement traceability [x]
 
 **What**: Map every CRI requirement to exact test/report evidence and record final coverage and quality-gate results for the Verifier.
 **Where**: `.specs/features/compact-retrieval-index/spec.md`
@@ -562,15 +567,25 @@ by standing project override.
 
 **Done when**:
 
-- [ ] Every CRI row cites an exact covering test assertion or benchmark-report field; no requirement remains only design-mapped.
-- [ ] Test-gap analysis finds no uncovered acceptance criterion or listed edge case.
-- [ ] Assertion-quality and anti-pattern reviews find no Critical or High issue in changed tests.
-- [ ] Final discovered test-method count and runner case result are recorded without hiding pre-existing failures.
-- [ ] Build gate passes.
+- [x] Every CRI row cites an exact covering test assertion or benchmark-report field; no requirement remains only design-mapped.
+- [x] Test-gap analysis finds no uncovered acceptance criterion or listed edge case.
+- [x] Assertion-quality and anti-pattern reviews find no Critical or High issue in changed tests.
+- [x] Final discovered test-method count and runner case result are recorded without hiding pre-existing failures.
+- [x] Build gate passes.
 
 **Tests**: none
 **Gate**: build
 **Commit**: `docs(index): close compact retrieval traceability`
+
+**Execution evidence**: All 35 CRI rows now cite exact test methods or canonical report fields and all five
+success criteria are closed. Spec-anchored gap analysis added direct corruption proofs for invalid, duplicate
+and missing relation ordinals, missing document/origin metadata with the relation-shard path, wrong run ids in
+relation/metadata/UNKNOWN artifacts, split posting shards, exact linear counters, UTF-8/LF encoding and
+byte-identical input permutations; the aggregate suite passed 159/159. Assertion-quality and anti-pattern
+reviews found 0 Critical/High issues. The recurring unrelated MSBuild gate race was traced to a global temp
+directory snapshot and replaced by an exact tracked preprocess-path cleanup assertion. Final discovery was
+1,565 test methods; release build and format passed, and the full runner passed 1,992/1,992 cases.
+Discrimination sensor skipped by standing project override.
 
 ---
 

@@ -20,6 +20,10 @@ public sealed class RetrievalIndexProjectorTests
 
         Assert.Equal(2, projection.Manifest.SchemaVersion);
         Assert.Equal(2, projection.Counters.RelationRecords);
+        Assert.Equal(2, projection.Counters.MetadataRecords);
+        Assert.Equal(6, projection.Counters.PostingLists);
+        Assert.Equal(9, projection.Counters.PostingOrdinals);
+        Assert.Equal(8, projection.Counters.CompletedEnvelopes);
         Assert.Equal(5, projection.Manifest.PostingShards.Select(static value => value.Family).Distinct().Count());
         var relationEntries = projection.Manifest.RelationShards.SelectMany(descriptor =>
             Read(files, descriptor.Path).GetProperty("entries").EnumerateArray().Select(static value => value.Clone())).ToArray();
@@ -31,7 +35,34 @@ public sealed class RetrievalIndexProjectorTests
             Assert.All(posting.GetProperty("entries").EnumerateArray(), static entry =>
                 Assert.Equal(["key", "relation_ordinals"], entry.EnumerateObject().Select(static property => property.Name)));
         });
+        Assert.All(files.Writes.Where(static pair => pair.Key.StartsWith("raw/index/", StringComparison.Ordinal)),
+            static pair =>
+            {
+                Assert.Equal((byte)'\n', pair.Value[^1]);
+                Assert.Equal(1, pair.Value.Count(static value => value == (byte)'\n'));
+                _ = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true)
+                    .GetString(pair.Value);
+            });
         Assert.Equal("raw/index/manifest.json", files.WriteOrder[^1]);
+    }
+
+    [Fact]
+    public void Project_AddingOneRelationIncrementsOnlyItsLinearSerializationWork()
+    {
+        var firstFiles = new RecordingFiles();
+        var first = new RetrievalIndexProjector().Project(Manifest(firstFiles,
+            ("facts/documents/orders.json", Documents()),
+            ("facts/relations/all.json", Relations(Relation("relation-a", target: "target-a")))), firstFiles);
+        var secondFiles = new RecordingFiles();
+        var second = new RetrievalIndexProjector().Project(Manifest(secondFiles,
+            ("facts/documents/orders.json", Documents()),
+            ("facts/relations/all.json", Relations(Relation("relation-a", target: "target-a"), Relation("relation-b")))),
+            secondFiles);
+
+        Assert.Equal(1, second.Counters.RelationRecords - first.Counters.RelationRecords);
+        Assert.Equal(0, second.Counters.MetadataRecords - first.Counters.MetadataRecords);
+        Assert.Equal(1, second.Counters.PostingLists - first.Counters.PostingLists);
+        Assert.Equal(4, second.Counters.PostingOrdinals - first.Counters.PostingOrdinals);
     }
 
     [Fact]
@@ -103,6 +134,40 @@ public sealed class RetrievalIndexProjectorTests
         }.Concat(manifest.Hashes.Order(StringComparer.Ordinal)));
         var schemaOneRunId = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(schemaOneIdentity)));
         Assert.NotEqual(schemaOneRunId, RetrievalIndexProjector.ComputeAnalysisRunId(manifest));
+    }
+
+    [Fact]
+    public void Project_FragmentPermutationsProduceIdenticalPathsAndBytes()
+    {
+        (string Reference, string Json)[] fragments =
+        [
+            ("facts/documents/orders.json", Documents()),
+            ("facts/relations/all.json", Relations(Relation("relation-a", target: "target-a"), Relation("relation-b"))),
+        ];
+        var firstFiles = new RecordingFiles();
+        var firstManifest = Manifest(firstFiles, fragments);
+        var secondFiles = new RecordingFiles();
+        foreach (var fragment in firstManifest.Fragments)
+        {
+            secondFiles.Write($"raw/{fragment.Reference}", firstFiles.Writes[$"raw/{fragment.Reference}"]);
+        }
+
+        var secondManifest = firstManifest with
+        {
+            Fragments = firstManifest.Fragments.Reverse().ToImmutableArray(),
+            Hashes = firstManifest.Hashes.Reverse().ToImmutableArray(),
+        };
+
+        var first = new RetrievalIndexProjector().Project(firstManifest, firstFiles);
+        var second = new RetrievalIndexProjector().Project(secondManifest, secondFiles);
+
+        Assert.Equal(first.Manifest.AnalysisRunId, second.Manifest.AnalysisRunId);
+        var firstIndex = firstFiles.Writes.Where(static pair => pair.Key.StartsWith("raw/index/", StringComparison.Ordinal))
+            .OrderBy(static pair => pair.Key, StringComparer.Ordinal).ToArray();
+        var secondIndex = secondFiles.Writes.Where(static pair => pair.Key.StartsWith("raw/index/", StringComparison.Ordinal))
+            .OrderBy(static pair => pair.Key, StringComparer.Ordinal).ToArray();
+        Assert.Equal(firstIndex.Select(static pair => pair.Key), secondIndex.Select(static pair => pair.Key));
+        Assert.All(firstIndex.Zip(secondIndex), static pair => Assert.Equal(pair.First.Value, pair.Second.Value));
     }
 
     [Theory]

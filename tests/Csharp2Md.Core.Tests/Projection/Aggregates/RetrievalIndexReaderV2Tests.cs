@@ -91,11 +91,126 @@ public sealed class RetrievalIndexReaderV2Tests
         Assert.Contains(reader.Manifest.AnalysisRunId, exception.Message, StringComparison.Ordinal);
     }
 
-    private static RecordingFiles Project()
+    [Theory]
+    [InlineData(-1, "invalid relation ordinal -1")]
+    [InlineData(0, "duplicate or invalid relation ordinal 0")]
+    [InlineData(99, "missing relation ordinal 99")]
+    public void Query_RejectsInvalidDuplicateOrMissingPostingOrdinals(int ordinal, string expected)
     {
-        const string json = """
+        var files = Project();
+        var postingPath = SourcePostingPath(files);
+        var posting = JsonNode.Parse(files.Contents[postingPath])!.AsObject();
+        posting["entries"]![0]!["relation_ordinals"] = ordinal == 0
+            ? new JsonArray(0, 0)
+            : new JsonArray(ordinal);
+        files.Contents[postingPath] = Encoding.UTF8.GetBytes(posting.ToJsonString());
+        var reader = RetrievalIndexReader.Open(files);
+
+        var exception = Assert.Throws<JsonException>(() => reader.Query(new RetrievalLookup("source", "source-1")));
+
+        Assert.Contains("family 'source', key 'source-1'", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(expected, exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("document_ordinal", "document ordinal 99")]
+    [InlineData("origin_ordinal", "origin ordinal 99")]
+    public void Query_RejectsMissingDocumentOrOriginOrdinal(string field, string expected)
+    {
+        var files = Project();
+        var manifest = JsonNode.Parse(files.Contents["raw/index/manifest.json"])!.AsObject();
+        var relationPath = manifest["relation_shards"]![0]!["path"]!.GetValue<string>();
+        var relationShard = JsonNode.Parse(files.Contents[relationPath])!.AsObject();
+        if (field == "origin_ordinal")
+        {
+            relationShard["entries"]![0]![field] = 99;
+        }
+        else
+        {
+            relationShard["entries"]![0]!["evidence"]![0]![field] = 99;
+        }
+
+        files.Contents[relationPath] = Encoding.UTF8.GetBytes(relationShard.ToJsonString());
+        var reader = RetrievalIndexReader.Open(files);
+
+        var exception = Assert.Throws<JsonException>(() => reader.Query(new RetrievalLookup("source", "source-1")));
+
+        Assert.Contains(expected, exception.Message, StringComparison.Ordinal);
+        Assert.Contains(relationPath, exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("relation")]
+    [InlineData("metadata")]
+    [InlineData("unknowns")]
+    public void Reader_RejectsWrongRunIdInEveryResolvedArtifactKind(string artifact)
+    {
+        var files = Project();
+        var manifest = JsonNode.Parse(files.Contents["raw/index/manifest.json"])!.AsObject();
+        var path = artifact switch
+        {
+            "relation" => manifest["relation_shards"]![0]!["path"]!.GetValue<string>(),
+            "metadata" => manifest["metadata_shards"]![0]!["path"]!.GetValue<string>(),
+            _ => manifest["unknowns_path"]!.GetValue<string>(),
+        };
+        var json = JsonNode.Parse(files.Contents[path])!.AsObject();
+        json["analysis_run_id"] = "other-run";
+        files.Contents[path] = Encoding.UTF8.GetBytes(json.ToJsonString());
+        var reader = RetrievalIndexReader.Open(files);
+
+        var exception = artifact == "unknowns"
+            ? Assert.Throws<JsonException>(() => reader.ReadUnknownGroups())
+            : Assert.Throws<JsonException>(() => reader.Query(new RetrievalLookup("source", "source-1")));
+
+        Assert.Contains(path, exception.Message, StringComparison.Ordinal);
+        Assert.Contains("other-run", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(reader.Manifest.AnalysisRunId, exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Query_CombinesSplitPostingShardsAndReturnsEachRelationOnceInOrdinalOrder()
+    {
+        var files = Project(twoRelations: true);
+        var manifest = JsonNode.Parse(files.Contents["raw/index/manifest.json"])!.AsObject();
+        var descriptors = manifest["posting_shards"]!.AsArray();
+        var sourceDescriptor = descriptors.Select(static node => node!.AsObject())
+            .Single(static descriptor => descriptor["family"]!.GetValue<string>() == "source");
+        var originalPath = sourceDescriptor["path"]!.GetValue<string>();
+        var secondPath = "raw/index/postings/source/split.json";
+        var firstPosting = JsonNode.Parse(files.Contents[originalPath])!.AsObject();
+        var secondPosting = firstPosting.DeepClone().AsObject();
+        firstPosting["entries"]![0]!["relation_ordinals"] = new JsonArray(0);
+        secondPosting["entries"]![0]!["relation_ordinals"] = new JsonArray(1);
+        files.Contents[originalPath] = Encoding.UTF8.GetBytes(firstPosting.ToJsonString());
+        files.Contents[secondPath] = Encoding.UTF8.GetBytes(secondPosting.ToJsonString());
+        var secondDescriptor = sourceDescriptor.DeepClone().AsObject();
+        secondDescriptor["path"] = secondPath;
+        descriptors.Add(secondDescriptor);
+        files.Contents["raw/index/manifest.json"] = Encoding.UTF8.GetBytes(manifest.ToJsonString());
+
+        var relations = RetrievalIndexReader.Open(files).Query(new RetrievalLookup("source", "source-1"));
+
+        Assert.Equal(["relation-1", "relation-2"], relations.Select(static relation => relation.RelationId));
+    }
+
+    private static string SourcePostingPath(RecordingFiles files)
+    {
+        var manifest = JsonNode.Parse(files.Contents["raw/index/manifest.json"])!.AsObject();
+        return manifest["posting_shards"]!.AsArray()
+            .Select(static value => value!.AsObject())
+            .Single(static descriptor => descriptor["family"]!.GetValue<string>() == "source")["path"]!
+            .GetValue<string>();
+    }
+
+    private static RecordingFiles Project(bool twoRelations = false)
+    {
+        const string oneRelation = """
             {"schema_version":6,"documents":[],"relations":[{"header":{"id":"relation-1","resolution":"unresolved","provenance":[{"engine_version":"3.0.1"}],"evidence":[{"document_id":"document-1","relative_path":"Feature.cs","start_line":3,"start_column":2,"end_line":3,"end_column":8,"generated_origin":false,"future_evidence":"hash-1"}]},"relation_id":"relation-1","source_id":"source-1","partition":"structural","relation_kind":"calls","resolution_method":"unresolved","unresolved_reason":"missing","details":[{"key":"target_text","value":"Runtime.Target"}],"candidates":["candidate-1"],"future":7}]}
             """;
+        const string twoRelation = """
+            {"schema_version":6,"documents":[],"relations":[{"header":{"id":"relation-1","resolution":"unresolved","provenance":[{"engine_version":"3.0.1"}],"evidence":[{"document_id":"document-1","relative_path":"Feature.cs","start_line":3,"start_column":2,"end_line":3,"end_column":8,"generated_origin":false}]},"relation_id":"relation-1","source_id":"source-1","partition":"structural","relation_kind":"calls","resolution_method":"unresolved","unresolved_reason":"missing"},{"header":{"id":"relation-2","resolution":"exact","provenance":[{"engine_version":"3.0.1"}],"evidence":[{"document_id":"document-1","relative_path":"Feature.cs","start_line":4,"start_column":2,"end_line":4,"end_column":8,"generated_origin":false}]},"relation_id":"relation-2","source_id":"source-1","target_id":"target-2","partition":"structural","relation_kind":"calls","resolution_method":"exact"}]}
+            """;
+        var json = twoRelations ? twoRelation : oneRelation;
         var files = new RecordingFiles();
         var bytes = Encoding.UTF8.GetBytes(json);
         files.Write("raw/facts/relation/test.json", bytes);
