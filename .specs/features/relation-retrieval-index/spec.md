@@ -134,7 +134,7 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 | RRI-02 | P1: Recuperar relações pontuais | T4 | Complete |
 | RRI-03 | P1: Recuperar relações pontuais | T5 | Complete |
 | RRI-04 | P1: Recuperar relações pontuais | T5 | Complete |
-| RRI-05 | P1: Recuperar relações pontuais | Design | Pending |
+| RRI-05 | P1: Recuperar relações pontuais | T8 | Complete |
 | RRI-06 | P1: Recuperar relações pontuais | T6 | Complete |
 | RRI-07 | P1: Expor limites, qualidade e proveniência | T4 | Complete |
 | RRI-08 | P1: Expor limites, qualidade e proveniência | T4 | Complete |

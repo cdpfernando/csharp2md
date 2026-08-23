@@ -265,11 +265,11 @@ T9 → T10
 
 **Done when**:
 
-- [ ] The test resolves Orders.Status through entities and one target shard without opening the relation aggregate.
-- [ ] Two identical-input runs have identical relation ids and analysis_run_id values.
-- [ ] The summary has exact/dynamic/unresolved percentages by kind and partition, indexed-symbol count, zero mapped entry points and explicit syntax-only limits.
-- [ ] Every index evidence record identifies generator version, project, document, fragment hash and source coordinates.
-- [ ] Full gate passes; the test count is recorded before and after the task.
+- [x] The test resolves Orders.Status through entities and one target shard without opening the relation aggregate.
+- [x] Two identical-input runs have identical relation ids and analysis_run_id values.
+- [x] The summary has exact/dynamic/unresolved percentages by kind and partition, indexed-symbol count, zero mapped entry points and explicit syntax-only limits.
+- [x] Every index evidence record identifies generator version, project, document, fragment hash and source coordinates.
+- [x] Full gate passed with the approved known-flake waiver: the full suite was 1,940/1,941 with only `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` failing, and its isolated retry passed 1/1. Test count: 1,937 -> 1,941 (+4).
 
 **Tests**: integration
 **Gate**: full
