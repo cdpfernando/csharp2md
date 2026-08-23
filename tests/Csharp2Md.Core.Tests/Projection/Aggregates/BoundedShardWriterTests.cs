@@ -152,6 +152,6 @@ public sealed class BoundedShardWriterTests
         public void CreateDirectory(string relativePath) { }
         public void Write(string relativePath, byte[] bytes) => Writes.Add(relativePath, bytes);
         public bool Exists(string relativePath) => Writes.ContainsKey(relativePath);
-        public byte[] Read(string relativePath) => Writes[relativePath];
+        public Stream OpenRead(string relativePath) => new MemoryStream(Writes[relativePath], writable: false);
     }
 }

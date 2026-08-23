@@ -142,7 +142,7 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 
 ---
 
-### T3: Replace whole-file reads with a streaming file seam
+### T3: Replace whole-file reads with a streaming file seam [x]
 
 **What**: Split aggregate file reading from writing and expose read-only streams throughout factual validation and index projection.
 **Where**: `src/Csharp2Md.Core/Projection/Aggregates/CanonicalAggregateWriter.cs`
@@ -167,6 +167,8 @@ T11 -> T12 -> T13 -> T14 -> T15 -> T16
 **Tests**: unit
 **Gate**: quick
 **Commit**: `refactor(index): stream aggregate file reads`
+
+**Execution evidence**: Pre-task discovered test methods: 1,525. Quick aggregate gate passed with 122 tests. Discrimination sensor skipped by standing project override.
 
 ---
 

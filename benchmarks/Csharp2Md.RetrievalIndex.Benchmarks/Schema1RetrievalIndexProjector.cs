@@ -297,7 +297,10 @@ internal sealed class Schema1RetrievalIndexProjector(BoundedShardWriter? shardWr
             throw new InvalidOperationException($"Persisted fragment is missing: {fragment.Reference}");
         }
 
-        return files.Read(path);
+        using var stream = files.OpenRead(path);
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        return buffer.ToArray();
     }
 
     private static void Write(string path, AggregateEnvelope value, IAggregateFileWriter files) =>
@@ -324,5 +327,4 @@ internal sealed class Schema1RetrievalIndexProjector(BoundedShardWriter? shardWr
     private static bool Bool(JsonElement value, string name) => value.TryGetProperty(name, out var property) && property.ValueKind is JsonValueKind.True;
     private static int Percentage(int value, int total) => total == 0 ? 0 : value * 100 / total;
 }
-
 

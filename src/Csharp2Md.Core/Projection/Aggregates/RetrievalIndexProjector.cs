@@ -297,7 +297,10 @@ internal sealed class RetrievalIndexProjector(BoundedShardWriter? shardWriter = 
             throw new InvalidOperationException($"Persisted fragment is missing: {fragment.Reference}");
         }
 
-        return files.Read(path);
+        using var stream = files.OpenRead(path);
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        return buffer.ToArray();
     }
 
     private static void Write(string path, AggregateEnvelope value, IAggregateFileWriter files) =>

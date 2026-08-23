@@ -292,7 +292,7 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
         }
 
         public bool Exists(string relativePath) => Contents.ContainsKey(relativePath);
-        public byte[] Read(string relativePath) => Contents[relativePath];
+        public Stream OpenRead(string relativePath) => new MemoryStream(Contents[relativePath], writable: false);
         public void Seed(string relativePath, byte[] bytes) => Contents.Add(relativePath, bytes);
     }
 }

@@ -359,6 +359,7 @@ public sealed class RelationRetrievalIndexEndToEndTests(RelationRetrievalIndexEn
         public void CreateDirectory(string relativePath) { }
         public void Write(string relativePath, byte[] bytes) => _files[relativePath] = bytes;
         public bool Exists(string relativePath) => _files.ContainsKey(relativePath);
+        public Stream OpenRead(string relativePath) => new MemoryStream(_files[relativePath], writable: false);
         public byte[] Read(string relativePath) => _files[relativePath];
     }
 }
