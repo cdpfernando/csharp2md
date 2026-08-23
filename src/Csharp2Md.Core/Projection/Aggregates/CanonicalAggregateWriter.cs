@@ -101,6 +101,8 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
             fragments,
             fragments.Select(static fragment => fragment.Sha256).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray());
 
+        new RetrievalIndexProjector().Project(manifest, files);
+
         // The manifest is the commit marker for the factual tree and is deliberately last.
         files.Write("raw/facts/manifest.json", Json(manifest));
         return new AggregateWriteResult(Path.Combine(outputRoot, "raw"), Path.Combine(outputRoot, "raw", "facts", "manifest.json"));

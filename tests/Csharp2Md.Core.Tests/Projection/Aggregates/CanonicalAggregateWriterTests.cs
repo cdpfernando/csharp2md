@@ -1,8 +1,11 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Csharp2Md.Core.Analysis.Contracts;
+using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Model;
 using Csharp2Md.Core.Facts.Serialization;
+using Csharp2Md.Core.Facts.Storage;
 using Csharp2Md.Core.Projection.Aggregates;
 using VerifyXunit;
 
@@ -162,6 +165,35 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
         Assert.Throws<InvalidOperationException>(() =>
             new CanonicalAggregateWriter().Write(_root, _input, false, invalid, TimeProvider.System));
         Assert.False(File.Exists(Path.Combine(_root, "raw", "facts", "manifest.json")));
+        Assert.False(File.Exists(Path.Combine(_root, "raw", "index", "manifest.json")));
+    }
+
+    [Fact]
+    public void Write_ValidatedFragmentsProduceIndexWithoutRewritingCanonicalBytes()
+    {
+        var files = new RecordingFiles();
+        var fragmentJson = """
+            {"schema_version":6,"documents":[{"document_id":"document-orders","project_id":"project-orders"}],"relations":[{"header":{"resolution":"exact","provenance":[{"engine_version":"3.0.0"}],"evidence":[{"document_id":"document-orders","relative_path":"Orders.cs","start_line":1,"start_column":1,"end_line":1,"end_column":2,"generated_origin":false}]},"relation_id":"relation-orders-status","source_id":"writer","target_id":"Orders.Status","partition":"structural","relation_kind":"writes","resolution_method":"symbol-index"}]}
+            """;
+        var bytes = Encoding.UTF8.GetBytes(fragmentJson);
+        var reference = ArtifactReference.Parse("facts/document/00/" + new string('0', 64) + ".json");
+        files.Seed($"raw/{reference.Value}", bytes);
+        var snapshot = Snapshot() with
+        {
+            Fragments = [new(FactIdGrammar.Create("document", [("name", "orders")]), reference, Convert.ToHexStringLower(SHA256.HashData(bytes)), bytes.Length)],
+        };
+
+        new CanonicalAggregateWriter(files).Write(_root, _input, false, snapshot, TimeProvider.System);
+
+        Assert.Equal(bytes, files.Contents[$"raw/{reference.Value}"]);
+        Assert.Contains("raw/index/manifest.json", files.Writes);
+        Assert.Contains("raw/index/summary.json", files.Writes);
+        Assert.All(new[] { "entities", "events", "integrations", "entry-points", "high-centrality" },
+            name => Assert.Contains($"raw/index/catalogues/{name}.json", files.Writes));
+        using var indexManifest = JsonDocument.Parse(files.Contents["raw/index/manifest.json"]);
+        Assert.Contains(indexManifest.RootElement.GetProperty("shards").EnumerateArray(),
+            shard => shard.GetProperty("family").GetString() == "target" && shard.GetProperty("key").GetString() == "Orders.Status");
+        Assert.Equal("raw/facts/manifest.json", files.Writes[^1]);
     }
 
     [Fact]
@@ -234,11 +266,14 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
         "raw/facts/relations/data.json", "raw/facts/relations/dependency-injection.json", "raw/facts/relations/events.json",
         "raw/facts/relations/grpc.json", "raw/facts/relations/http.json", "raw/facts/relations/inheritance.json",
         "raw/facts/relations/resolution.json",
-        "raw/facts/relations/structural.json", "raw/facts/solutions.json", "raw/log.md", "raw/topic.yaml",
+        "raw/facts/relations/structural.json", "raw/facts/solutions.json", "raw/index/catalogues/entities.json",
+        "raw/index/catalogues/entry-points.json", "raw/index/catalogues/events.json", "raw/index/catalogues/high-centrality.json",
+        "raw/index/catalogues/integrations.json", "raw/index/manifest.json", "raw/index/summary.json", "raw/index/unknowns.json",
+        "raw/log.md", "raw/topic.yaml",
     ];
 
     private static readonly string[] ExpectedDirectories =
-        ["raw/facts/projects", "raw/facts/documents", "raw/facts/symbols", "raw/codebase"];
+        ["raw/facts/projects", "raw/facts/documents", "raw/facts/symbols", "raw/codebase", "raw/index", "raw/index/catalogues"];
 
     private sealed class FixedTimeProvider(DateTimeOffset value) : TimeProvider
     {
@@ -248,9 +283,16 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
     private sealed class RecordingFiles : IAggregateFileWriter
     {
         public List<string> Writes { get; } = [];
+        public Dictionary<string, byte[]> Contents { get; } = new(StringComparer.Ordinal);
         public void CreateDirectory(string relativePath) { }
-        public void Write(string relativePath, byte[] bytes) => Writes.Add(relativePath);
-        public bool Exists(string relativePath) => false;
-        public byte[] Read(string relativePath) => throw new NotSupportedException();
+        public void Write(string relativePath, byte[] bytes)
+        {
+            Writes.Add(relativePath);
+            Contents[relativePath] = bytes;
+        }
+
+        public bool Exists(string relativePath) => Contents.ContainsKey(relativePath);
+        public byte[] Read(string relativePath) => Contents[relativePath];
+        public void Seed(string relativePath, byte[] bytes) => Contents.Add(relativePath, bytes);
     }
 }

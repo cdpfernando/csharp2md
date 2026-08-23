@@ -238,11 +238,11 @@ T9 → T10
 
 **Done when**:
 
-- [ ] A successful writer run creates raw/index/manifest.json, summary.json and all required zero or populated catalogues.
-- [ ] A missing or hash-invalid factual fragment prevents both factual and index manifests from being advertised.
-- [ ] The writer leaves raw/facts bytes unchanged while producing raw/index bytes from their validated references.
-- [ ] Writer tests assert the output paths and the failure ordering against bytes, not only mock calls.
-- [ ] Build gate and Slopwatch pass; the test count is recorded before and after the task.
+- [x] A successful writer run creates raw/index/manifest.json, summary.json and all required zero or populated catalogues.
+- [x] A missing or hash-invalid factual fragment prevents both factual and index manifests from being advertised.
+- [x] The writer leaves raw/facts bytes unchanged while producing raw/index bytes from their validated references.
+- [x] Writer tests assert the output paths and the failure ordering against bytes, not only mock calls.
+- [x] Build and format passed; Slopwatch is clean for T7 files (the global scan reports five pre-existing, out-of-scope `Task.Delay` warnings). The full suite was 1,936/1,937 with only the approved `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` flake failing, and its isolated retry passed 1/1. Test count: 1,936 -> 1,937 (+1).
 
 **Tests**: unit
 **Gate**: build
