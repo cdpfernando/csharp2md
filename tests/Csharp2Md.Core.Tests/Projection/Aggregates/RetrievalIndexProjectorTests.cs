@@ -27,7 +27,9 @@ public sealed class RetrievalIndexProjectorTests
 
         Assert.Equal(projection.Manifest.AnalysisRunId, Read(files, "raw/index/manifest.json").GetProperty("analysis_run_id").GetString());
         Assert.Equal(projection.Manifest.AnalysisRunId, RetrievalIndexProjector.ComputeAnalysisRunId(manifest));
-        Assert.Equal(5, projection.Manifest.Shards.Select(static shard => shard.Family).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(
+            ["project", "source", "target", "kind", "resolution"],
+            projection.Manifest.Shards.Select(static shard => shard.Family).Distinct(StringComparer.Ordinal));
         var target = projection.Manifest.Shards.Single(static shard => shard.Family == "target" && shard.Key == "Orders.Status");
         var entry = Read(files, target.Path).GetProperty("entries")[0];
         Assert.Equal("relation-a", entry.GetProperty("relation_id").GetString());
@@ -39,6 +41,9 @@ public sealed class RetrievalIndexProjectorTests
         Assert.Equal("kept", entry.GetProperty("evidence")[0].GetProperty("extensions").GetProperty("future_evidence").GetString());
         Assert.Equal(new[] { "relation-a", "relation-b", "relation-c" }, Read(files, projection.Manifest.Shards.Single(static shard => shard.Family == "source").Path)
             .GetProperty("entries").EnumerateArray().Select(static item => item.GetProperty("relation_id").GetString()).ToArray());
+        var missingTargetEntry = Read(files, projection.Manifest.Shards.Single(static shard => shard.Family == "source").Path)
+            .GetProperty("entries").EnumerateArray().Single(static item => item.GetProperty("relation_id").GetString() == "relation-b");
+        Assert.False(missingTargetEntry.TryGetProperty("target_id", out _));
         Assert.False(projection.Manifest.Shards.Any(static shard => shard.Family == "target" && shard.Key == ""));
         var unknown = Read(files, "raw/index/unknowns.json").GetProperty("entries")[0];
         Assert.Equal(2, unknown.GetProperty("count").GetInt32());
@@ -73,6 +78,7 @@ public sealed class RetrievalIndexProjectorTests
         Assert.Equal("3.0.0", missingProjectEvidence.GetProperty("generator_version").GetString());
         Assert.All(new[] { "entities", "events", "integrations", "entry-points", "high-centrality" },
             name => Assert.True(files.Writes.ContainsKey($"raw/index/catalogues/{name}.json")));
+        Assert.Empty(Read(files, "raw/index/catalogues/entry-points.json").GetProperty("entries").EnumerateArray());
     }
 
     [Fact]
@@ -90,6 +96,8 @@ public sealed class RetrievalIndexProjectorTests
         Assert.Empty(summary.GetProperty("by_partition").EnumerateArray());
         Assert.Empty(Read(files, "raw/index/unknowns.json").GetProperty("entries").EnumerateArray());
         Assert.Equal(projection.Manifest.AnalysisRunId, Read(files, "raw/index/manifest.json").GetProperty("analysis_run_id").GetString());
+        Assert.All(new[] { "entities", "events", "integrations", "entry-points", "high-centrality" },
+            name => Assert.Empty(Read(files, $"raw/index/catalogues/{name}.json").GetProperty("entries").EnumerateArray()));
     }
 
     private static FactualManifest Manifest(RecordingFiles files, params (string Reference, string Json)[] fragments)

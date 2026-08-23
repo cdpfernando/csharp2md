@@ -385,6 +385,48 @@ T9 → T10
 
 ---
 
+### T13: Prove named shards and absence contracts
+
+**What**: Strengthen projection tests to assert every specified lookup-family name, explicit missing target identity and empty catalogue contents.
+**Where**: tests/Csharp2Md.Core.Tests/Projection/Aggregates/RetrievalIndexProjectorTests.cs
+**Depends on**: T12
+**Reuses**: Existing empty-run and missing-target projection fixtures.
+**Requirement**: RRI-02, RRI-16, RRI-17; empty-run and no-entry-point edge cases
+
+**Done when**:
+
+- [x] The five exact shard-family names are asserted from the projected manifest.
+- [x] A missing runtime target produces an entry without `target_id`, without a target shard or fabricated key.
+- [x] Empty input and runs without a proven entry point both serialize catalogue entries as empty arrays.
+- [x] Build Release, format and the full suite passed, subject only to the approved MSBuild-flake waiver with an isolated passing retry.
+
+**Tests**: unit
+**Gate**: build
+**Commit**: test(index): prove named shards and empty catalogues
+
+---
+
+### T14: Prove additive index-read compatibility
+
+**What**: Add the minimum consumer-contract reader coverage proving an index missing newly additive fields remains readable, then map the currently unnumbered P4 acceptance criterion to that evidence.
+**Where**: src/Csharp2Md.Core/Projection/Aggregates/RetrievalIndexReader.cs and tests/Csharp2Md.Core.Tests/Projection/Aggregates/RetrievalIndexContractsTests.cs
+**Depends on**: T13
+**Reuses**: Existing JSON contract serialization tests and System.Text.Json options.
+**Requirement**: P4 additive/missing-field compatibility acceptance criterion
+
+**Done when**:
+
+- [ ] A consumer reader deserializes a prior shard and summary that omit the additive generated-origin and analysis-limitations fields.
+- [ ] The read values prove the documented false/default and optional-field behavior while retaining required index content.
+- [ ] The unnumbered P4 additive/missing-field criterion is mapped to the exact reader assertions in spec traceability.
+- [ ] Build Release, format and the full suite pass, subject only to the approved MSBuild-flake waiver with an isolated passing retry.
+
+**Tests**: unit
+**Gate**: build
+**Commit**: test(index): prove additive index compatibility
+
+---
+
 ## Phase Execution Map
 
 ```text
@@ -393,6 +435,7 @@ Phase 2: T3 → T4 → T5 → T6 → T7
 Phase 3: T7 → T8 → T9
 Phase 4: T9 → T10
 Phase 5: T10 → T11 → T12
+Phase 6: T12 → T13 → T14
 ```
 
 ## Task Granularity Check
@@ -411,6 +454,8 @@ Phase 5: T10 → T11 → T12
 | T10 | One traceability closure | OK |
 | T11 | One boundary and manifest proof suite | OK |
 | T12 | One UNKNOWN and catalogue proof suite | OK |
+| T13 | One named-shard and absence proof suite | OK |
+| T14 | One additive reader compatibility proof | OK |
 
 ## Diagram-Definition Cross-Check
 
@@ -428,6 +473,8 @@ Phase 5: T10 → T11 → T12
 | T10 | T9 | T9 -> T10 | Match |
 | T11 | T10 | T10 -> T11 | Match |
 | T12 | T11 | T11 -> T12 | Match |
+| T13 | T12 | T12 -> T13 | Match |
+| T14 | T13 | T13 -> T14 | Match |
 
 No task depends on a later phase.
 
@@ -447,6 +494,8 @@ No task depends on a later phase.
 | T10 | Traceability documents | none | none | OK |
 | T11 | Shard and manifest contract proof | integration | integration | OK |
 | T12 | UNKNOWN and catalogue behaviour proof | integration | integration | OK |
+| T13 | Projection behaviour proof | unit | unit | OK |
+| T14 | Index consumer contract proof | unit | unit | OK |
 
 The planned execution needs two task-budgeted batches (3 + 4 tasks, then 2 + 1 tasks). Before Execute,
 the tlc-spec-driven process requires an explicit user choice about sequential batch workers. No external

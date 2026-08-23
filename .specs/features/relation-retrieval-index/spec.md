@@ -131,7 +131,7 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 | Requirement ID | Story | Phase | Status | Covering evidence |
 | --- | --- | --- | --- | --- |
 | RRI-01 | P1: Recuperar relações pontuais | T6 | Complete | `CanonicalAggregateWriterTests.cs:188` — `Assert.Equal(bytes, files.Contents[$"raw/{reference.Value}"])` |
-| RRI-02 | P1: Recuperar relações pontuais | T6 | Complete | `RetrievalIndexProjectorTests.cs:30` — `Assert.Equal(5, ...Distinct(...).Count())` |
+| RRI-02 | P1: Recuperar relações pontuais | T13 | Complete | `RetrievalIndexProjectorTests.cs:30-32` — `Assert.Equal(["project", "source", "target", "kind", "resolution"], ...Family...)` |
 | RRI-03 | P1: Recuperar relações pontuais | T11 | Complete | `BoundedShardWriterTests.cs:82` — `Assert.Equal(262144, descriptor.ByteLength)` |
 | RRI-04 | P1: Recuperar relações pontuais | T11 | Complete | `BoundedShardWriterTests.cs:83-86` — exact 262144-byte family, key and relation diagnostic |
 | RRI-05 | P1: Recuperar relações pontuais | T8 | Complete | `RelationRetrievalIndexEndToEndTests.cs:32` — `Assert.Single(... family == "target" && ... key == statusId)` |
@@ -145,8 +145,8 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 | RRI-13 | P1: Expor limites, qualidade e proveniência | T8 | Complete | `RelationRetrievalIndexEndToEndTests.cs:73-74` — explicit `compile-time`, `dependency-injection` and `grpc` limits |
 | RRI-14 | P1: Priorizar lacunas sem ocultar informação | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:140-145` — required group keys, count and relation ids |
 | RRI-15 | P1: Priorizar lacunas sem ocultar informação | T12 | Complete | `RelationRetrievalIndexEndToEndTests.cs:172-174` — proven entry point precedes a higher-impact UNKNOWN group |
-| RRI-16 | P1: Priorizar lacunas sem ocultar informação | T12 | Complete | `RelationRetrievalIndexEndToEndTests.cs:187-192` — exact catalogue entries are derived from persisted relation facts |
-| RRI-17 | P1: Priorizar lacunas sem ocultar informação | T6 | Complete | `RetrievalIndexProjectorTests.cs:42-45` — missing target has no target shard and preserves UNKNOWN ids |
+| RRI-16 | P1: Priorizar lacunas sem ocultar informação | T12, T13 | Complete | `RelationRetrievalIndexEndToEndTests.cs:187-192` — catalogues contain only persisted facts; `RetrievalIndexProjectorTests.cs:81, :99-100` — no-proof and empty-run catalogues serialize exact empty `entries` arrays |
+| RRI-17 | P1: Priorizar lacunas sem ocultar informação | T13 | Complete | `RetrievalIndexProjectorTests.cs:44-47` — missing target entry has no `target_id` and no target shard/key |
 | RRI-18 | P1: Manter a compatibilidade factual | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:109-110` — opaque relation and evidence extensions survive |
 | RRI-19 | P1: Manter a compatibilidade factual | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:122-123` — two ids and two source locations remain |
 | RRI-20 | P1: Manter a compatibilidade factual | T9 | Complete | `RelationRetrievalIndexEndToEndTests.cs:162-165` — factual and index generated-origin booleans |
@@ -155,6 +155,8 @@ recuperar relações e limites da análise sem transformar o índice em uma segu
 **T11 correction:** RRI-03 is covered by `BoundedShardWriterTests.cs:82` - `Assert.Equal(262144, descriptor.ByteLength)`. RRI-04 is covered by `BoundedShardWriterTests.cs:83-86` - the exact 262144-byte family, key and relation diagnostic. RRI-07 is covered by `RelationRetrievalIndexEndToEndTests.cs:69-75` - manifest schema/run id and every shard schema/run id assertions.
 
 **T12 correction:** RRI-15 is covered by `RelationRetrievalIndexEndToEndTests.cs:172-174` - a proven entry point precedes a higher-impact UNKNOWN group. RRI-16 is covered by `RelationRetrievalIndexEndToEndTests.cs:187-192` - exact catalogue entries are derived from persisted relation facts. The multi-document-evidence edge case is covered by `RelationRetrievalIndexEndToEndTests.cs:205-206` - document and path provenance remain ordinal.
+
+**T13 correction:** RRI-02 is covered by `RetrievalIndexProjectorTests.cs:30-32` - the manifest has the exact `project`, `source`, `target`, `kind` and `resolution` shard-family names. RRI-16 is additionally covered by `RetrievalIndexProjectorTests.cs:81, :99-100` - no-proof and empty-run catalogue envelopes hold empty `entries` arrays. RRI-17 is covered by `RetrievalIndexProjectorTests.cs:44-47` - the missing-target relation entry omits `target_id` and no target shard/key is fabricated.
 
 **Coverage:** 21 total, 21 mapped to exact evidence. Authoritative current test-method count: 1,522, discovered on 2026-08-22 with `dotnet test csharp2md.slnx --list-tests --no-restore | Select-String '^\s{4}Csharp2Md\.Core\.Tests\.' | Measure-Object`. The full runner separately reports 1,949 expanded test cases because theories generate multiple cases. Earlier before/after count claims are superseded because they used incompatible runner output. Independent feature verification remains pending.
 
