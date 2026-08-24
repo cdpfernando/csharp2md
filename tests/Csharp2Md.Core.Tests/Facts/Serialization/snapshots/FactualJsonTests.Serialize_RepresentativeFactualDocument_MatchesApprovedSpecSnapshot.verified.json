@@ -1,5 +1,5 @@
 {
-  "schema_version": 5,
+  "schema_version": 6,
   "solutions": [],
   "projects": [
     {
@@ -14,7 +14,8 @@
           }
         ],
         "evidence": [],
-        "diagnostic_ids": []
+        "diagnostic_ids": [],
+        "generated_origin": false
       },
       "project_id": "id1:project;path=src%2FApp.csproj",
       "name": "App",

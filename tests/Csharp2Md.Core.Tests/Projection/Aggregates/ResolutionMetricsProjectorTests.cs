@@ -11,8 +11,7 @@ public sealed class ResolutionMetricsProjectorTests
     public void Project_ZeroRelationProjection_YieldsEveryCountAtZeroNotAnEmptyObject()
     {
         var result = new RelationProjectionResult(
-            [.. Enum.GetValues<RelationPartition>().Select(static partition => new RelationPartitionProjection(partition, []))],
-            [], "flowchart LR\n", "# Components\n");
+            [.. Enum.GetValues<RelationPartition>().Select(static partition => new RelationPartitionProjection(partition, []))]);
 
         var aggregate = ResolutionMetricsProjector.Project(result);
 
@@ -47,8 +46,7 @@ public sealed class ResolutionMetricsProjectorTests
     public void Project_PerPartitionBreakdown_CoversEveryRelationPartitionMemberProjectedOverTheEnum()
     {
         var result = new RelationProjectionResult(
-            [.. Enum.GetValues<RelationPartition>().Select(static partition => new RelationPartitionProjection(partition, []))],
-            [], "flowchart LR\n", "# Components\n");
+            [.. Enum.GetValues<RelationPartition>().Select(static partition => new RelationPartitionProjection(partition, []))]);
 
         var aggregate = ResolutionMetricsProjector.Project(result);
 
@@ -69,7 +67,7 @@ public sealed class ResolutionMetricsProjectorTests
             .Where(static partition => partition is not (RelationPartition.Structural or RelationPartition.Data))
             .Select(static partition => new RelationPartitionProjection(partition, [])))
             .ToImmutableArray();
-        var result = new RelationProjectionResult(partitions, [], "flowchart LR\n", "# Components\n");
+        var result = new RelationProjectionResult(partitions);
 
         var aggregate = ResolutionMetricsProjector.Project(result);
 
@@ -102,8 +100,7 @@ public sealed class ResolutionMetricsProjectorTests
     private static RelationProjectionResult SingleRelationProjection(RelationPartition partition, string method) =>
         new(
             [.. Enum.GetValues<RelationPartition>().Select(candidate =>
-                new RelationPartitionProjection(candidate, candidate == partition ? [Relation(method)] : []))],
-            [], "flowchart LR\n", "# Components\n");
+                new RelationPartitionProjection(candidate, candidate == partition ? [Relation(method)] : []))]);
 
     private static RelationFactJson Relation(string resolutionMethod) => new(
         new FactHeaderJson("id1:relation;owner=x;kind=calls;claim=y;ordinal=1", "relation", "syntactic", [], [], []),

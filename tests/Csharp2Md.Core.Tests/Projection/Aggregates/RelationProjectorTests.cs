@@ -57,8 +57,14 @@ public sealed class RelationProjectorTests : IDisposable
             result.Partition(RelationPartition.Http).Relations.Select(static relation => relation.RelationId));
     }
 
+    // NOTE: this test used to also assert `result.Mermaid == "flowchart LR\n"` for a null-target relation.
+    // RelationProjectionResult no longer carries Mermaid (moved to ComponentGraphProjector); that half of
+    // the scenario has a strictly stronger existing replacement -
+    // ComponentGraphProjectorTests.Project_RelationWithNullTargetId_IsDropped, which asserts the edge set
+    // directly instead of a rendered string. The partition-level assertions below (TargetId/UnresolvedReason
+    // survive projection) are still RelationProjector's own job and are unchanged.
     [Fact]
-    public void Project_PreservesUnresolvedTargetAndReasonWithoutCreatingMermaidNode()
+    public void Project_PreservesUnresolvedTargetAndReason()
     {
         var relation = Relation(RelationPartition.Http, "http-request", null, "Remote endpoint was not proved.");
         var result = RelationProjector.Project([Validated(relation)]);
@@ -66,66 +72,6 @@ public sealed class RelationProjectorTests : IDisposable
         var projected = Assert.Single(result.Partition(RelationPartition.Http).Relations);
         Assert.Null(projected.TargetId);
         Assert.Equal("Remote endpoint was not proved.", projected.UnresolvedReason);
-        Assert.Equal("flowchart LR\n", result.Mermaid);
-    }
-
-    [Fact]
-    public void Project_NeverPromotesLogicalDetailToMermaidIdentity()
-    {
-        var relation = Relation(
-            RelationPartition.Http,
-            "http-request",
-            null,
-            "Remote endpoint was not proved.",
-            [new RelationDetail("logical_destination", "payments-api")]);
-
-        var result = RelationProjector.Project([Validated(relation), Validated(Component("service/web-api", Orders))]);
-
-        Assert.DoesNotContain("payments-api", result.Mermaid, StringComparison.Ordinal);
-        Assert.Equal("flowchart LR\n", result.Mermaid);
-    }
-
-    [Fact]
-    public void Project_IndexesComponentsAndProjectsInCanonicalOrder()
-    {
-        var payments = Component("library", Payments);
-        var orders = Component("service/web-api", Orders);
-
-        var result = RelationProjector.Project([Validated(payments), Validated(orders)]);
-
-        Assert.Equal(
-            new[] { orders.ComponentId.Value, payments.ComponentId.Value }.Order(StringComparer.Ordinal),
-            result.Components.Select(static component => component.ComponentId));
-        Assert.Contains($"- project: `{Orders.Value}`", result.ComponentIndex, StringComparison.Ordinal);
-        Assert.Contains($"- project: `{Payments.Value}`", result.ComponentIndex, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Project_BuildsMermaidOnlyFromComponentMappedFactualProjectRelations()
-    {
-        var relation = Relation(RelationPartition.CompileTime, "project-reference", Payments.ToFactId());
-        var orders = Component("service/web-api", Orders);
-        var payments = Component("library", Payments);
-
-        var result = RelationProjector.Project([Validated(relation, orders, payments)]);
-
-        Assert.Contains(orders.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
-        Assert.Contains(payments.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
-        Assert.Contains("compile-time:project-reference", result.Mermaid, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Project_BuildsMermaidWithStructuralPrefixedEdgeLabelForResolvedStructuralRelation()
-    {
-        var relation = Relation(RelationPartition.Structural, "calls", Payments.ToFactId());
-        var orders = Component("service/web-api", Orders);
-        var payments = Component("library", Payments);
-
-        var result = RelationProjector.Project([Validated(relation, orders, payments)]);
-
-        Assert.Contains(orders.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
-        Assert.Contains(payments.ComponentId.Value, result.Mermaid, StringComparison.Ordinal);
-        Assert.Contains("structural:calls", result.Mermaid, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -140,31 +86,6 @@ public sealed class RelationProjectorTests : IDisposable
     }
 
     [Fact]
-    public void Project_RejectsDuplicateComponentIdentityAcrossValidatedFragments()
-    {
-        var component = Component("library", Orders);
-
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-            RelationProjector.Project([Validated(component), Validated(component)]));
-
-        Assert.Contains("Duplicate component identity", exception.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Project_RejectsAProjectClaimedBySeveralComponents()
-    {
-        var relation = Relation(RelationPartition.CompileTime, "project-reference", Payments.ToFactId());
-        var root = Component("service/web-api", Orders);
-        var duplicateOwner = Component("library", Orders, Payments);
-        var target = Component("library", Payments);
-
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-            RelationProjector.Project([Validated(relation, root, duplicateOwner, target)]));
-
-        Assert.Contains("belongs to more than one component", exception.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void Project_RejectsUnsupportedRelationPartition()
     {
         var relation = Relation((RelationPartition)99, "unknown", Payments.ToFactId());
@@ -174,33 +95,34 @@ public sealed class RelationProjectorTests : IDisposable
         Assert.Contains("Unsupported relation partition", exception.Message, StringComparison.Ordinal);
     }
 
+    // NOTE: this test used to also assert the written dependencies.mmd/components.md equalled
+    // result.Mermaid/result.ComponentIndex. RelationProjectionResult no longer carries either (moved to
+    // ComponentGraphProjector via AggregateOutputSnapshot.Graph, wired in T10/T11), so only the partition
+    // JSON assertion - still entirely RelationProjector's own job - survives here.
     [Fact]
-    public void Writer_EmitsProjectedPartitionComponentIndexAndMermaid()
+    public void Writer_EmitsProjectedPartitionJson()
     {
         var relation = Relation(RelationPartition.CompileTime, "project-reference", Payments.ToFactId());
-        var result = RelationProjector.Project(
-            [Validated(relation, Component("service/web-api", Orders), Component("library", Payments))]);
+        var result = RelationProjector.Project([Validated(relation)]);
 
         new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot(result), TimeProvider.System);
 
         using var partition = JsonDocument.Parse(File.ReadAllText(Path.Combine(_root, "raw", "facts", "relations", "compile-time.json")));
         Assert.Equal(relation.RelationId.Value, Assert.Single(partition.RootElement.GetProperty("entries").EnumerateArray()).GetProperty("relation_id").GetString());
-        Assert.Equal(result.Mermaid, File.ReadAllText(Path.Combine(_root, "raw", "dependencies.mmd")));
-        Assert.Equal(result.ComponentIndex, File.ReadAllText(Path.Combine(_root, "raw", "codebase", "components.md")));
     }
 
+    // NOTE: this snapshot used to also capture Mermaid and Components, both hardcoded literals now that
+    // RelationProjector no longer produces them (see Writer_EmitsProjectedPartitionJson's note). Only the
+    // partition JSON - still RelationProjector's own output - remains worth pinning here.
     [Fact]
     public Task Writer_ProjectedOutputsMatchApprovedSnapshot()
     {
         var relation = Relation(RelationPartition.CompileTime, "project-reference", Payments.ToFactId());
-        var result = RelationProjector.Project(
-            [Validated(relation, Component("service/web-api", Orders), Component("library", Payments))]);
+        var result = RelationProjector.Project([Validated(relation)]);
         new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot(result), TimeProvider.System);
 
         return Verifier.Verify(new
         {
-            Mermaid = File.ReadAllText(Path.Combine(_root, "raw", "dependencies.mmd")),
-            Components = File.ReadAllText(Path.Combine(_root, "raw", "codebase", "components.md")),
             CompileTime = File.ReadAllText(Path.Combine(_root, "raw", "facts", "relations", "compile-time.json")),
         }).UseDirectory("snapshots");
     }
@@ -218,22 +140,11 @@ public sealed class RelationProjectorTests : IDisposable
         return Assert.IsType<ValidatedFactFragment>(result.Fragment);
     }
 
-    private static ComponentFact Component(string kind, params ProjectFactId[] projects)
-    {
-        var id = ComponentFactId.Create(kind, projects.Select(static project => project.ToFactId()));
-        return new ComponentFact(
-            FactHeader.Create(id.ToFactId(), FactKind.Component, FactResolution.Exact, [new FactProvenance("test", "1")]),
-            id,
-            kind,
-            projects.ToImmutableArray());
-    }
-
     private static RelationFact Relation(
         RelationPartition partition,
         string kind,
         FactId? target,
-        string? unresolvedReason = null,
-        ImmutableArray<RelationDetail> details = default)
+        string? unresolvedReason = null)
     {
         var id = RelationFactId.Create(Orders.ToFactId(), kind, $"target={target?.Value ?? "none"}", 1);
         var requiresEvidence = kind is not ("project-reference" or "package-reference");
@@ -250,6 +161,6 @@ public sealed class RelationProjectorTests : IDisposable
             partition,
             kind,
             unresolvedReason,
-            details);
+            default);
     }
 }

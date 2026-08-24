@@ -218,11 +218,12 @@ internal static class FactualJsonMapper
             header.Provenance.Select(static provenance => new FactProvenanceJson(
                 provenance.EngineId, provenance.EngineVersion, provenance.DetectorId?.Value, provenance.DetectorVersion)).ToImmutableArray(),
             header.Evidence.Select(Map).ToImmutableArray(),
-            header.DiagnosticIds.Select(static id => id.Value).ToImmutableArray());
+            header.DiagnosticIds.Select(static id => id.Value).ToImmutableArray(),
+            header.GeneratedOrigin);
 
     private static EvidenceJson Map(Evidence evidence) =>
         new(evidence.DocumentId.Value, evidence.RelativePath, evidence.StartLine, evidence.StartColumn,
-            evidence.EndLine, evidence.EndColumn);
+            evidence.EndLine, evidence.EndColumn, evidence.GeneratedOrigin);
 
     private static string Wire<T>(T value) where T : struct, Enum =>
         value.ToString()

@@ -102,12 +102,12 @@ public sealed class DotnetMsBuildEvaluatorTests
             "Imported.csproj",
             fixture.SdkProject("<Import Project=\"Imported.props\" />"));
 
-        var before = Directory.GetFiles(Path.GetTempPath(), "csharp2md-*.preprocessed.xml").ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var result = await EvaluateAsync(project);
-        var after = Directory.GetFiles(Path.GetTempPath(), "csharp2md-*.preprocessed.xml").ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var runner = new PreprocessTrackingRunner();
+        var result = await new DotnetMsBuildEvaluator(runner).EvaluateAsync(Request(project), CancellationToken.None);
 
         Assert.Contains(Path.GetFullPath(imported), result.EvaluatedImports, StringComparer.OrdinalIgnoreCase);
-        Assert.True(before.SetEquals(after));
+        Assert.NotNull(runner.PreprocessedPath);
+        Assert.False(File.Exists(runner.PreprocessedPath));
     }
 
     [Fact]
@@ -320,6 +320,24 @@ public sealed class DotnetMsBuildEvaluatorTests
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             throw new UnreachableException();
+        }
+    }
+
+    private sealed class PreprocessTrackingRunner : IEvaluationProcessRunner
+    {
+        private readonly EvaluationProcessRunner _inner = new();
+
+        public string? PreprocessedPath { get; private set; }
+
+        public Task<EvaluationProcessResult> RunAsync(
+            ProcessStartInfo startInfo,
+            CancellationToken cancellationToken)
+        {
+            const string prefix = "-preprocess:";
+            PreprocessedPath = startInfo.ArgumentList
+                .FirstOrDefault(argument => argument.StartsWith(prefix, StringComparison.Ordinal))?[prefix.Length..]
+                ?? PreprocessedPath;
+            return _inner.RunAsync(startInfo, cancellationToken);
         }
     }
 

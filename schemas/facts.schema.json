@@ -20,7 +20,7 @@
     "coverage"
   ],
   "properties": {
-    "schema_version": { "const": 5 },
+    "schema_version": { "const": 6 },
     "solutions": { "type": "array", "items": { "$ref": "#/$defs/solution_fact" } },
     "projects": { "type": "array", "items": { "$ref": "#/$defs/project_fact" } },
     "targets": { "type": "array", "items": { "$ref": "#/$defs/target_fact" } },
@@ -47,7 +47,29 @@
     "diagnostic_severity": { "enum": ["information", "warning", "error"] },
     "header": {
       "type": "object",
-      "required": ["id", "kind", "resolution", "provenance", "evidence", "diagnostic_ids"]
+      "required": ["id", "kind", "resolution", "provenance", "evidence", "diagnostic_ids", "generated_origin"],
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "$ref": "#/$defs/fact_kind" },
+        "resolution": { "$ref": "#/$defs/fact_resolution", "description": "Proof quality of this fact." },
+        "provenance": { "type": "array" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "diagnostic_ids": { "type": "array", "items": { "type": "string" } },
+        "generated_origin": { "type": "boolean" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["document_id", "relative_path", "start_line", "start_column", "end_line", "end_column", "generated_origin"],
+      "properties": {
+        "document_id": { "type": "string" },
+        "relative_path": { "type": "string" },
+        "start_line": { "type": "integer" },
+        "start_column": { "type": "integer" },
+        "end_line": { "type": "integer" },
+        "end_column": { "type": "integer" },
+        "generated_origin": { "type": "boolean" }
+      }
     },
     "solution_fact": { "type": "object", "required": ["header", "name", "project_ids"] },
     "project_fact": { "type": "object", "required": ["header", "project_id", "name", "relative_path", "target_ids", "document_ids"], "properties": { "evaluation": { "$ref": "#/$defs/project_evaluation" } } },
@@ -59,7 +81,7 @@
     "symbol_fact": { "type": "object", "required": ["header", "symbol_id", "document_id", "symbol_kind", "contains_error_symbol", "base_and_interface_ids", "attributes", "relevant_type_references", "name", "fully_qualified_name", "signature", "arity", "parameter_types"], "properties": { "semantics": { "$ref": "#/$defs/symbol_semantics" }, "namespace": { "type": "string" }, "containing_type": { "type": "string" }, "containing_symbol_id": { "type": "string" } } },
     "symbol_semantics": { "type": "object", "required": ["implemented_member_ids"] },
     "component_fact": { "type": "object", "required": ["header", "component_id", "component_kind", "project_ids"] },
-    "relation_fact": { "type": "object", "required": ["header", "relation_id", "source_id", "partition", "relation_kind", "resolution_method"], "properties": { "details": { "type": "array", "items": { "$ref": "#/$defs/relation_detail" } }, "resolution_method": { "$ref": "#/$defs/resolution_method" }, "candidates": { "type": "array", "items": { "type": "string" } } } },
+    "relation_fact": { "type": "object", "required": ["header", "relation_id", "source_id", "partition", "relation_kind", "resolution_method"], "properties": { "details": { "type": "array", "items": { "$ref": "#/$defs/relation_detail" } }, "resolution_method": { "$ref": "#/$defs/resolution_method", "description": "Method used to resolve this relation target." }, "candidates": { "type": "array", "items": { "type": "string" } } } },
     "relation_detail": { "type": "object", "required": ["key", "value"] },
     "database_object_fact": { "type": "object", "required": ["header", "object_id", "connection_name", "kind", "name"], "properties": { "kind": { "$ref": "#/$defs/database_object_kind" } } },
     "database_column_fact": { "type": "object", "required": ["header", "column_id", "object_id", "name"] },

@@ -8,12 +8,16 @@ using Csharp2Md.Core.Output;
 
 namespace Csharp2Md.Core.Projection.Aggregates;
 
-internal interface IAggregateFileWriter
+internal interface IAggregateFileReader
+{
+    bool Exists(string relativePath);
+    Stream OpenRead(string relativePath);
+}
+
+internal interface IAggregateFileWriter : IAggregateFileReader
 {
     void CreateDirectory(string relativePath);
     void Write(string relativePath, byte[] bytes);
-    bool Exists(string relativePath);
-    byte[] Read(string relativePath);
 }
 
 internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = null)
@@ -82,8 +86,8 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
             2,
             "coverage",
             honestCoverage.Coverage.Select(Map).ToImmutableArray())));
-        files.Write("raw/dependencies.mmd", Utf8(relationProjection?.Mermaid ?? "flowchart LR\n"));
-        files.Write("raw/codebase/components.md", Utf8(relationProjection?.ComponentIndex ?? "# Components\n"));
+        files.Write("raw/dependencies.mmd", Utf8(snapshot.Graph?.Mermaid ?? "flowchart LR\n"));
+        files.Write("raw/codebase/components.md", Utf8(snapshot.Graph?.ComponentIndex ?? "# Components\n"));
         files.Write("raw/topic.yaml", Utf8(TopicYaml(snapshot)));
         files.Write("raw/CLAUDE.md", Utf8("# Generated codebase topic\n\nStart with `facts/manifest.json`.\n"));
         files.Write("raw/log.md", Utf8(Log(snapshot, timeProvider.GetUtcNow())));
@@ -100,6 +104,8 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
             snapshot.Coverage,
             fragments,
             fragments.Select(static fragment => fragment.Sha256).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray());
+
+        new RetrievalIndexProjector().Project(manifest, files);
 
         // The manifest is the commit marker for the factual tree and is deliberately last.
         files.Write("raw/facts/manifest.json", Json(manifest));
@@ -119,9 +125,9 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
                 throw new InvalidOperationException($"Persisted fragment is missing: {fragment.Reference.Value}");
             }
 
-            var bytes = files.Read(relativePath);
-            var hash = Convert.ToHexStringLower(SHA256.HashData(bytes));
-            if (!string.Equals(hash, fragment.Sha256, StringComparison.Ordinal) || bytes.Length != fragment.ByteLength)
+            using var stream = files.OpenRead(relativePath);
+            var hash = Convert.ToHexStringLower(SHA256.HashData(stream));
+            if (!string.Equals(hash, fragment.Sha256, StringComparison.Ordinal) || stream.Length != fragment.ByteLength)
             {
                 throw new InvalidOperationException($"Persisted fragment hash or length is invalid: {fragment.Reference.Value}");
             }
@@ -191,7 +197,8 @@ internal sealed class CanonicalAggregateWriter(IAggregateFileWriter? files = nul
         }
 
         public bool Exists(string relativePath) => File.Exists(Resolve(relativePath));
-        public byte[] Read(string relativePath) => File.ReadAllBytes(Resolve(relativePath));
+        public Stream OpenRead(string relativePath) => new FileStream(
+            Resolve(relativePath), FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan);
 
         private string Resolve(string relativePath)
         {

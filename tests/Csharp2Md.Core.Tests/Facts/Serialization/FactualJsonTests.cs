@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
@@ -102,7 +103,7 @@ public sealed class FactualJsonTests
         Assert.Equal(
             ["global::System.String"],
             symbol.GetProperty("parameter_types").EnumerateArray().Select(static item => item.GetString()!).ToArray());
-        Assert.Equal(5, json.RootElement.GetProperty("schema_version").GetInt32());
+        Assert.Equal(6, json.RootElement.GetProperty("schema_version").GetInt32());
     }
 
     [Fact]
@@ -360,7 +361,8 @@ public sealed class FactualJsonTests
     [InlineData(2)]
     [InlineData(3)]
     [InlineData(4)]
-    public void Serialize_SchemaVersionOtherThanFive_IsRejected(int schemaVersion) =>
+    [InlineData(5)]
+    public void Serialize_SchemaVersionOtherThanSix_IsRejected(int schemaVersion) =>
         Assert.Throws<ArgumentException>(() =>
             FactualJsonSerializer.Serialize(EmptyDocument() with { SchemaVersion = schemaVersion }));
 
@@ -394,6 +396,38 @@ public sealed class FactualJsonTests
         }));
 
         return Verifier.Verify(json, "json").UseDirectory("snapshots");
+    }
+
+    [Fact]
+    public void SerializeAndDeserialize_GeneratedOrigin_EmitsFieldsAndDefaultsMissingFieldsToFalse()
+    {
+        var document = EveryFamilyDocument() with
+        {
+            Documents = [EveryFamilyDocument().Documents[0] with { Header = EveryFamilyDocument().Documents[0].Header with { GeneratedOrigin = true } }],
+            SourceSections = [EveryFamilyDocument().SourceSections[0] with
+            {
+                Header = EveryFamilyDocument().SourceSections[0].Header with
+                {
+                    GeneratedOrigin = true,
+                    Evidence = [EveryFamilyDocument().SourceSections[0].Header.Evidence[0] with { GeneratedOrigin = true }],
+                },
+            }],
+        };
+
+        var emitted = FactualJsonSerializer.Serialize(document);
+        using var emittedJson = JsonDocument.Parse(emitted);
+        var header = emittedJson.RootElement.GetProperty("documents")[0].GetProperty("header");
+        var evidence = emittedJson.RootElement.GetProperty("source_sections")[0].GetProperty("header").GetProperty("evidence")[0];
+
+        Assert.True(header.GetProperty("generated_origin").GetBoolean());
+        Assert.True(evidence.GetProperty("generated_origin").GetBoolean());
+
+        var legacy = JsonNode.Parse(emitted)!.AsObject();
+        RemoveGeneratedOrigin(legacy);
+        var restored = FactualJsonSerializer.Deserialize(Encoding.UTF8.GetBytes(legacy.ToJsonString()));
+
+        Assert.False(restored.Documents[0].Header.GeneratedOrigin);
+        Assert.False(restored.SourceSections[0].Header.Evidence[0].GeneratedOrigin);
     }
 
     private static FactualJsonDocument EveryFamilyDocument()
@@ -448,4 +482,32 @@ public sealed class FactualJsonTests
         [new("csharp2md", "3.0.0", null, null)],
         [],
         []);
+
+    private static void RemoveGeneratedOrigin(JsonNode node)
+    {
+        if (node is JsonObject objectNode)
+        {
+            objectNode.Remove("generated_origin");
+            foreach (var property in objectNode.ToList())
+            {
+                if (property.Value is not null)
+                {
+                    RemoveGeneratedOrigin(property.Value);
+                }
+            }
+
+            return;
+        }
+
+        if (node is JsonArray array)
+        {
+            foreach (var item in array)
+            {
+                if (item is not null)
+                {
+                    RemoveGeneratedOrigin(item);
+                }
+            }
+        }
+    }
 }

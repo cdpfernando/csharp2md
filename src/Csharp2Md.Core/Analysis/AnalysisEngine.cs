@@ -1,4 +1,5 @@
 using System.Text;
+using Csharp2Md.Core.Analysis.Components;
 using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Analysis.DataAccess;
 using Csharp2Md.Core.Analysis.Indexes;
@@ -259,15 +260,52 @@ public sealed class AnalysisEngine
             structuralFailure = true;
         }
 
+        // Pass two of component synthesis (COMP-01/03): one ComponentFact per analysed ProjectFact, using
+        // every project id the run actually produced so C2M-FV-002 accepts a component's own reference to
+        // the project it mirrors - that project fact lives in a fragment this builder never sees.
+        var projects = accumulated.OfType<ProjectFact>().ToImmutableArray();
+        var componentKnownIds = knownFactIds
+            .Concat(projects.Select(static project => project.ProjectId.ToFactId()))
+            .ToHashSet();
+        var componentResult = ComponentFragmentBuilder.Build(projects, componentKnownIds, _validate);
+        analysisDiagnostics.AddRange(componentResult.Diagnostics);
+        if (componentResult.Fragment is { } componentFragment)
+        {
+            storedFragments.Add(store.Persist(componentFragment));
+            aggregateFragments.Add(componentFragment);
+        }
+        else if (!componentResult.Diagnostics.IsEmpty)
+        {
+            structuralFailure = true;
+        }
+
+        // Pass two of component graph projection (COMP-10..COMP-27): must run - and its diagnostics must be
+        // added to analysisDiagnostics - on its own statement here, strictly before CoverageProjector.Project
+        // below. RelationProjector.Project used to run inline inside the snapshot constructor *after*
+        // coverage was already computed, which is exactly why a projector-produced diagnostic (C2M-CG-001)
+        // would otherwise never reach diagnostics.json (design.md's diagnostic-ordering trap; mirrors the
+        // databaseAggregate precedent above).
+        // databaseResolution.Objects/.Columns are pre-fact ResolvedDatabaseObject/ResolvedDatabaseColumn
+        // records; the actual DatabaseObjectFact/DatabaseColumnFact instances GraphNodeIndex needs live in
+        // the database fragment DatabaseFragmentBuilder already validated into aggregateFragments above -
+        // the same source ComponentGraphProjector itself reads ComponentFact/RelationFact from.
+        var nodeIndex = GraphNodeIndex.Build(
+            componentResult.Components, projects, accumulated.OfType<DocumentFact>(),
+            symbolFacts,
+            aggregateFragments.SelectMany(static fragment => fragment.Facts.OfType<DatabaseObjectFact>()),
+            aggregateFragments.SelectMany(static fragment => fragment.Facts.OfType<DatabaseColumnFact>()));
+        var graph = ComponentGraphProjector.Project(aggregateFragments, nodeIndex);
+        analysisDiagnostics.AddRange(graph.Diagnostics);
+
         resultDiagnostics.AddRange(analysisDiagnostics.Select(static diagnostic => diagnostic.Message));
         var honestCoverage = CoverageProjector.Project(new CoverageProjectionRequest(
             request.Options.Mode, accumulated, analysisDiagnostics.ToImmutable(), [], coverageOverrides.ToImmutable()));
         var snapshot = new AggregateOutputSnapshot(
-            request.Topic, request.Domain, "3.0.1", request.Options.Mode, effectiveMode, request.Options.Trust,
+            request.Topic, request.Domain, "4.0.0", request.Options.Mode, effectiveMode, request.Options.Trust,
             loadedExtensions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray(),
             new ManifestCoverage(inventory.Services.Length, projectCount, documentCount),
             storedFragments.ToImmutable(), honestCoverage, RelationProjector.Project(aggregateFragments),
-            databaseAggregate);
+            databaseAggregate, graph);
         new CanonicalAggregateWriter().WritePrepared(request.OutputRoot, snapshot, TimeProvider.System);
 
         return Result(

@@ -2,6 +2,8 @@ using System.Text.Json;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.Analysis.Contracts;
 using Csharp2Md.Core.Analysis.Inventory;
+using Csharp2Md.Core.Facts.Identity;
+using Csharp2Md.Core.Facts.Model;
 using Csharp2Md.Core.Facts.Serialization;
 using Csharp2Md.Core.Facts.Validation;
 using Csharp2Md.Core.Manifests;
@@ -246,6 +248,129 @@ public sealed class AnalysisEngineTests : IDisposable
         Assert.Contains("Analyzed 5 project(s)", result.Summary, StringComparison.Ordinal);
         Assert.DoesNotContain(result.Diagnostics, diagnostic =>
             diagnostic.Contains("Acme.Shared.Contracts", StringComparison.Ordinal));
+    }
+
+    // COMP-02: the component fragment reaches the manifest exactly like any other pass-two fragment.
+    [Fact]
+    public async Task AnalyzeAsync_TwoProjects_PersistsOneComponentFragmentIntoTheManifest()
+    {
+        CreateProject("One", "class A { }");
+        CreateProject("Two", "class B { }");
+
+        _ = await new AnalysisEngine().AnalyzeAsync(Request());
+
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(_output, "raw", "facts", "manifest.json")));
+        var fragment = Assert.Single(
+            manifest.RootElement.GetProperty("fragments").EnumerateArray(),
+            entry => entry.GetProperty("fact_id").GetString()!.StartsWith("id1:component", StringComparison.Ordinal));
+
+        Assert.Equal(64, fragment.GetProperty("sha256").GetString()!.Length);
+        Assert.True(fragment.GetProperty("byte_length").GetInt32() > 0);
+    }
+
+    // COMP-31: withholding the run's produced project ids from the component fragment's own validation
+    // reproduces "a component references a project id the run never produced" - C2M-FV-002 fires and the
+    // structural failure moves the exit code, exactly like any other fragment's validation failure would.
+    [Fact]
+    public async Task AnalyzeAsync_ComponentReferencingAnUnknownProjectId_FailsWithC2MFV002AndExitCodeOne()
+    {
+        CreateProject("App", "class C { }");
+        FactValidationResult Validate(FactValidationInput input) =>
+            input.Facts.Any(static fact => fact is ComponentFact)
+                ? FactValidator.Validate(input with { KnownFactIds = input.KnownFactIds.Clear() })
+                : FactValidator.Validate(input);
+        var engine = new AnalysisEngine(new InertInventory(), Validate, null);
+
+        var result = await engine.AnalyzeAsync(Request());
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("C2M-FV-002", File.ReadAllText(Path.Combine(_output, "raw", "facts", "diagnostics.json")), StringComparison.Ordinal);
+    }
+
+    // COMP-03: a project reached by three solution paths (fixtures/SyntheticSolution's
+    // Acme.Shared.Contracts) still yields exactly one component, mirroring analysedProjects' own dedupe.
+    [Fact]
+    public async Task AnalyzeAsync_ProjectReachedBySeveralPaths_PersistsExactlyOneComponentPerProject()
+    {
+        var request = Assert.IsType<AnalysisRequest>(
+            AnalysisRequest.Create(TestPaths.SyntheticSolution("."), _output).Request);
+
+        var result = await new AnalysisEngine(new InertInventory(), FactValidator.Validate, null).AnalyzeAsync(request);
+
+        Assert.Equal(0, result.ExitCode);
+        using var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(_output, "raw", "facts", "manifest.json")));
+        var fragmentEntry = Assert.Single(
+            manifest.RootElement.GetProperty("fragments").EnumerateArray(),
+            entry => entry.GetProperty("fact_id").GetString()!.StartsWith("id1:component", StringComparison.Ordinal));
+        var relativePath = fragmentEntry.GetProperty("reference").GetString()!;
+        var bytes = File.ReadAllBytes(Path.Combine(_output, "raw", relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        var components = FactualJsonSerializer.Deserialize(bytes).Components;
+
+        // Acme.Broken, Acme.DoesNotExist, Acme.Orders, Acme.Payments, Acme.Shared.Contracts.
+        Assert.Equal(5, components.Length);
+        Assert.Equal(5, components.Select(static component => component.ComponentId).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    // COMP-27: ComponentGraphProjector.Project runs on its own statement before CoverageProjector.Project,
+    // not inline inside the snapshot constructor after coverage is already computed (the diagnostic-
+    // ordering trap design.md documents). Proven end-to-end: a relation whose target is rewritten (via the
+    // same validate-interception technique the C2M-FV-002 test above uses) to a FactId shape GraphNodeIndex
+    // never indexes must still produce a C2M-CG-001 entry in the real written raw/facts/diagnostics.json -
+    // not merely in the projector's in-memory return value - and must not move the exit code.
+    [Fact]
+    public async Task AnalyzeAsync_ARelationWithAnUnmappableTarget_WritesC2MCG001ToDiagnosticsJsonWithoutChangingExitCode()
+    {
+        CreateProject(
+            "App",
+            """
+            class Worker
+            {
+                void Run()
+                {
+                    Helper helper = new Helper();
+                    helper.Do();
+                }
+            }
+
+            class Helper
+            {
+                public void Do() { }
+            }
+            """);
+
+        FactValidationResult Validate(FactValidationInput input)
+        {
+            var relation = input.Facts.OfType<RelationFact>().FirstOrDefault(static candidate => candidate.TargetId is not null);
+            if (relation is null)
+            {
+                return FactValidator.Validate(input);
+            }
+
+            // A RelationFactId is a real, well-formed FactId shape - just not one of the five
+            // (project/document/symbol/database object/database column) GraphNodeIndex resolves, so it
+            // reproduces "an endpoint mapped to no node" without touching production code.
+            var phantomTarget = RelationFactId.Create(relation.SourceId, "phantom", "claim=unmappable-target", 1).ToFactId();
+            var rewritten = input.Facts
+                .Select(fact => ReferenceEquals(fact, relation) ? relation with { TargetId = phantomTarget } : fact)
+                .ToImmutableArray();
+            return FactValidator.Validate(input with
+            {
+                Facts = rewritten,
+                KnownFactIds = input.KnownFactIds.Add(phantomTarget),
+            });
+        }
+
+        var engine = new AnalysisEngine(new InertInventory(), Validate, null);
+        var result = await engine.AnalyzeAsync(Request());
+
+        Assert.Equal(0, result.ExitCode);
+        using var diagnostics = JsonDocument.Parse(File.ReadAllText(Path.Combine(_output, "raw", "facts", "diagnostics.json")));
+        var entry = Assert.Single(
+            diagnostics.RootElement.GetProperty("entries").EnumerateArray(),
+            entry => entry.GetProperty("code").GetString() == "C2M-CG-001");
+        Assert.Equal("information", entry.GetProperty("severity").GetString());
+        Assert.Equal("1", Assert.Single(entry.GetProperty("data").EnumerateArray(), data => data.GetProperty("key").GetString() == "omitted_relation_count")
+            .GetProperty("value").GetString());
     }
 
     // Pass two runs after the document loop, so a table configured in one document resolves an entity

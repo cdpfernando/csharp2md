@@ -1,8 +1,11 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Csharp2Md.Core.Analysis.Contracts;
+using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Model;
 using Csharp2Md.Core.Facts.Serialization;
+using Csharp2Md.Core.Facts.Storage;
 using Csharp2Md.Core.Projection.Aggregates;
 using VerifyXunit;
 
@@ -38,6 +41,7 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
 
         new CanonicalAggregateWriter(recording).Write(_root, _input, false, Snapshot(), TimeProvider.System);
 
+        Assert.Equal("raw/index/manifest.json", recording.Writes[^2]);
         Assert.Equal("raw/facts/manifest.json", recording.Writes[^1]);
     }
 
@@ -48,6 +52,41 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
 
         Assert.False(File.Exists(Path.Combine(_root, "raw", "dependencies.json")));
         Assert.Equal("flowchart LR\n", File.ReadAllText(Path.Combine(_root, "raw", "dependencies.mmd")));
+    }
+
+    // COMP-06: a snapshot with no Graph still writes both empty-document contents, not an error and not a
+    // stale value carried over from a previous run.
+    [Fact]
+    public void Write_ASnapshotWithNoGraph_StillWritesBothEmptyDocumentContents()
+    {
+        new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot(), TimeProvider.System);
+
+        Assert.Equal("flowchart LR\n", File.ReadAllText(Path.Combine(_root, "raw", "dependencies.mmd")));
+        Assert.Equal("# Components\n", File.ReadAllText(Path.Combine(_root, "raw", "codebase", "components.md")));
+    }
+
+    // COMP-06/COMP-07: a snapshot carrying a real Graph writes exactly that Graph's Mermaid and
+    // ComponentIndex, proving the writer reads AggregateOutputSnapshot.Graph and not a leftover fallback.
+    [Fact]
+    public void Write_ASnapshotWithAGraph_WritesTheGraphsMermaidAndComponentIndex()
+    {
+        var graph = new ComponentGraphProjection(
+            [],
+            "flowchart LR\n    node0[\"Acme.Orders\"]\n",
+            "# Components\n\n## project\n\n- id: `id1:component;kind=project;owners=id1%3Aproject%3Bpath%3DAcme.Orders.csproj`\n",
+            []);
+
+        new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot() with { Graph = graph }, TimeProvider.System);
+
+        Assert.Equal(graph.Mermaid, File.ReadAllText(Path.Combine(_root, "raw", "dependencies.mmd")));
+        Assert.Equal(graph.ComponentIndex, File.ReadAllText(Path.Combine(_root, "raw", "codebase", "components.md")));
+    }
+
+    // RRI-21: generated-origin metadata is an additive factual field, so the schema moves to version 6.
+    [Fact]
+    public void SchemaVersion_IsSix()
+    {
+        Assert.Equal(6, FactualJsonSerializer.SchemaVersion);
     }
 
     [Fact]
@@ -127,6 +166,50 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
         Assert.Throws<InvalidOperationException>(() =>
             new CanonicalAggregateWriter().Write(_root, _input, false, invalid, TimeProvider.System));
         Assert.False(File.Exists(Path.Combine(_root, "raw", "facts", "manifest.json")));
+        Assert.False(File.Exists(Path.Combine(_root, "raw", "index", "manifest.json")));
+    }
+
+    [Fact]
+    public void Write_ValidatedFragmentsProduceIndexWithoutRewritingCanonicalBytes()
+    {
+        var files = new RecordingFiles();
+        var documentJson = """
+            {"schema_version":6,"documents":[{"header":{"generated_origin":false},"document_id":"document-orders","project_id":"project-orders","relative_path":"Orders.cs"}],"relations":[]}
+            """;
+        var relationJson = """
+            {"schema_version":6,"documents":[],"relations":[{"header":{"id":"relation-orders-status","resolution":"exact","provenance":[{"engine_version":"3.0.0"}],"evidence":[{"document_id":"document-orders","relative_path":"Orders.cs","start_line":1,"start_column":1,"end_line":1,"end_column":2,"generated_origin":false}]},"relation_id":"relation-orders-status","source_id":"writer","target_id":"Orders.Status","partition":"structural","relation_kind":"writes","resolution_method":"exact"}]}
+            """;
+        var documentBytes = Encoding.UTF8.GetBytes(documentJson);
+        var relationBytes = Encoding.UTF8.GetBytes(relationJson);
+        var documentReference = ArtifactReference.Parse("facts/document/00/" + new string('0', 64) + ".json");
+        var relationReference = ArtifactReference.Parse("facts/relation/11/" + new string('1', 64) + ".json");
+        files.Seed($"raw/{documentReference.Value}", documentBytes);
+        files.Seed($"raw/{relationReference.Value}", relationBytes);
+        var snapshot = Snapshot() with
+        {
+            Fragments =
+            [
+                new(FactIdGrammar.Create("document", [("name", "orders")]), documentReference,
+                    Convert.ToHexStringLower(SHA256.HashData(documentBytes)), documentBytes.Length),
+                new(FactIdGrammar.Create("relation", [("name", "orders-status")]), relationReference,
+                    Convert.ToHexStringLower(SHA256.HashData(relationBytes)), relationBytes.Length),
+            ],
+        };
+
+        new CanonicalAggregateWriter(files).Write(_root, _input, false, snapshot, TimeProvider.System);
+
+        Assert.Equal(documentBytes, files.Contents[$"raw/{documentReference.Value}"]);
+        Assert.Equal(relationBytes, files.Contents[$"raw/{relationReference.Value}"]);
+        Assert.Contains("raw/index/manifest.json", files.Writes);
+        Assert.Contains("raw/index/summary.json", files.Writes);
+        Assert.Contains("raw/index/catalogues/entry-points.json", files.Writes);
+        Assert.All(new[] { "entities", "events", "integrations", "high-centrality" },
+            name => Assert.DoesNotContain($"raw/index/catalogues/{name}.json", files.Writes));
+        using var indexManifest = JsonDocument.Parse(files.Contents["raw/index/manifest.json"]);
+        Assert.Single(indexManifest.RootElement.GetProperty("relation_shards").EnumerateArray());
+        Assert.Contains(indexManifest.RootElement.GetProperty("posting_shards").EnumerateArray(),
+            shard => shard.GetProperty("family").GetString() == "target");
+        Assert.Equal("raw/facts/manifest.json", files.Writes[^1]);
     }
 
     [Fact]
@@ -139,6 +222,24 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
 
         Assert.False(File.Exists(Path.Combine(_root, "stale.txt")));
         Assert.True(File.Exists(Path.Combine(_root, ".csharp2md-output")));
+    }
+
+    [Fact]
+    public void Write_ReplacementRemovesSchema1CataloguesAndPerKeyShards()
+    {
+        new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot(), TimeProvider.System);
+        var legacyCatalogue = Path.Combine(_root, "raw", "index", "catalogues", "entities.json");
+        var legacyShard = Path.Combine(_root, "raw", "index", "shards", "target", "raw-key", "0000.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(legacyCatalogue)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(legacyShard)!);
+        File.WriteAllText(legacyCatalogue, "legacy");
+        File.WriteAllText(legacyShard, "legacy");
+
+        new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot(), TimeProvider.System);
+
+        Assert.False(File.Exists(legacyCatalogue));
+        Assert.False(Directory.Exists(Path.Combine(_root, "raw", "index", "shards")));
+        Assert.True(File.Exists(Path.Combine(_root, "raw", "index", "manifest.json")));
     }
 
     [Fact]
@@ -171,8 +272,7 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
             "structural", "calls", null, null, "syntactic", null);
         var projection = new RelationProjectionResult(
             [.. Enum.GetValues<RelationPartition>().Select(partition =>
-                new RelationPartitionProjection(partition, partition == RelationPartition.Structural ? [relation] : []))],
-            [], "flowchart LR\n", "# Components\n");
+                new RelationPartitionProjection(partition, partition == RelationPartition.Structural ? [relation] : []))]);
 
         new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot() with { Relations = projection }, TimeProvider.System);
 
@@ -200,11 +300,13 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
         "raw/facts/relations/data.json", "raw/facts/relations/dependency-injection.json", "raw/facts/relations/events.json",
         "raw/facts/relations/grpc.json", "raw/facts/relations/http.json", "raw/facts/relations/inheritance.json",
         "raw/facts/relations/resolution.json",
-        "raw/facts/relations/structural.json", "raw/facts/solutions.json", "raw/log.md", "raw/topic.yaml",
+        "raw/facts/relations/structural.json", "raw/facts/solutions.json", "raw/index/catalogues/entry-points.json",
+        "raw/index/manifest.json", "raw/index/summary.json", "raw/index/unknowns.json",
+        "raw/log.md", "raw/topic.yaml",
     ];
 
     private static readonly string[] ExpectedDirectories =
-        ["raw/facts/projects", "raw/facts/documents", "raw/facts/symbols", "raw/codebase"];
+        ["raw/facts/projects", "raw/facts/documents", "raw/facts/symbols", "raw/codebase", "raw/index", "raw/index/catalogues"];
 
     private sealed class FixedTimeProvider(DateTimeOffset value) : TimeProvider
     {
@@ -214,9 +316,16 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
     private sealed class RecordingFiles : IAggregateFileWriter
     {
         public List<string> Writes { get; } = [];
+        public Dictionary<string, byte[]> Contents { get; } = new(StringComparer.Ordinal);
         public void CreateDirectory(string relativePath) { }
-        public void Write(string relativePath, byte[] bytes) => Writes.Add(relativePath);
-        public bool Exists(string relativePath) => false;
-        public byte[] Read(string relativePath) => throw new NotSupportedException();
+        public void Write(string relativePath, byte[] bytes)
+        {
+            Writes.Add(relativePath);
+            Contents[relativePath] = bytes;
+        }
+
+        public bool Exists(string relativePath) => Contents.ContainsKey(relativePath);
+        public Stream OpenRead(string relativePath) => new MemoryStream(Contents[relativePath], writable: false);
+        public void Seed(string relativePath, byte[] bytes) => Contents.Add(relativePath, bytes);
     }
 }

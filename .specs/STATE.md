@@ -131,11 +131,19 @@
 - **Status**: active
 
 ### AD-017
-- **Decision**: The factual fragment schema moves from version 3 to version 4 to admit `database_objects` and `database_columns`. `FactualJsonSerializer.SchemaVersion` and `schemas/facts.schema.json`'s `const` move together; the aggregate envelopes (`raw/facts/relations/*.json`, `coverage.json`, `diagnostics.json`, `manifest.json`) stay at version 2.
+- **Decision**: The factual fragment schema moved from version 3 to version 4 to admit `database_objects` and `database_columns`. Its fragment-version statement is superseded by AD-022. `FactualJsonSerializer.SchemaVersion` and `schemas/facts.schema.json`'s `const` move together; the aggregate envelopes (`raw/facts/relations/*.json`, `coverage.json`, `diagnostics.json`, `manifest.json`) stay at version 2.
 - **Reason**: `facts.schema.json` is strict (`additionalProperties: false`, every array in `required`), so adding fact kinds is necessarily a breaking change for any consumer validating against it. Recording the break as a version bump is what `symbol-index` already did going 2→3 when it extended `SymbolFact`; following the same practice keeps the fragment schema's version an honest signal instead of letting the contract drift silently.
 - **Trade-off**: Every fragment-reading consumer must be updated in lockstep with the tool, and the two version lines (fragment at 4, aggregates at 2) must be kept mentally distinct. Keeping fragments at 3 and extending the schema quietly would have avoided the churn at the cost of making the version number meaningless.
 - **Scope**: The factual fragment wire contract and `schemas/facts.schema.json`. Partially supersedes AD-010's schema-version statement as it applies to fragments; AD-010's output-layout decisions are otherwise untouched.
 - **Date**: 2026-08-20
+- **Status**: active
+
+### AD-022
+- **Decision**: Generated-origin metadata is an additive factual field on fact headers and evidence. The factual fragment schema moves from version 5 to version 6. Readers of earlier factual fragments treat a missing `generated_origin` value as `false`.
+- **Reason**: Generated-origin detection is available only while source text is still present. Persisting the explicit boolean retains that evidence for downstream projections without changing fact identities. The strict factual schema must version the added field rather than silently accepting a contract change.
+- **Trade-off**: Fragment consumers must accept schema 6 and new producers emit the field even when it is false. Backward readers remain compatible with schema 5 fragments by applying the explicit false default.
+- **Scope**: The factual fragment wire contract, `FactualJsonSerializer.SchemaVersion`, and `schemas/facts.schema.json`. Supersedes only AD-017's fragment-version statement; AD-017's database-fact and aggregate-envelope decisions remain active.
+- **Date**: 2026-08-22
 - **Status**: active
 
 ### AD-018
@@ -160,24 +168,68 @@
 - **Trade-off**: spec.md's P1 Success Criteria line ("a non-empty `raw/dependencies.mmd` with at least one edge outside the `data` partition") stays unmet by this feature. A future feature must both wire some producer of `ComponentFact` (finishing or replacing the orphaned `Detection/` tree per AD-015) and fix `RelationProjector.Mermaid`'s project-vs-symbol/document key mismatch before that criterion is achievable.
 - **Scope**: `RelationResolverEndToEndTests`'s coverage of spec.md's dependencies.mmd Success Criterion only. Does not touch `RelationProjector`, `Detection/`, or component detection. Extends AD-015's open question about the orphaned `Detection/` tree with a second, independent blocker in `RelationProjector.Mermaid` itself.
 - **Date**: 2026-08-21
+- **Status**: superseded by AD-021
+
+### AD-021
+- **Decision**: `component-graph` closes both of AD-020's blockers. `ComponentFragmentBuilder` mints exactly one `ComponentFact` (`ComponentKind` `"project"`) per `ProjectFact` a run produces, persisted in one solution-level fragment. `ComponentGraphProjector` renders `raw/dependencies.mmd` from a `GraphNodeIndex` that resolves every relation endpoint — project, document, symbol, database object, database column — to a graph node, groups relations sharing one (source node, target node, partition, relation kind) into a single deduped edge labelled with the collapsed count, and drops a relation whose endpoint maps to no node, whose target is null, or whose source and target are the same node. `DatabaseObjectFact`s render as graph nodes (Mermaid's cylinder shape) straight from the fact the projector already receives; they never mint a `ComponentFact`, because `ComponentFactId.Create` requires at least one `ProjectFactId` owner and no other fact family can supply one.
+- **Reason**: AD-020 recorded two independent gaps blocking the roadmap's stated success criterion: no production path constructed a `ComponentFact`, and `RelationProjector.Mermaid`'s `componentByProject` lookup was keyed by project-shaped `FactId`s while every relation endpoint is symbol-, document- or database-shaped. One component per project makes the identity unambiguous — service-level grouping was ruled out both by the user's explicit choice and by evidence, since `Acme.Shared.Contracts` belongs to two `.slnx` files and trips the one-project-one-component invariant on this repo's own fixture. A flat `GraphNodeIndex` replaces the project-only lookup with one that resolves every shape a relation endpoint can actually take, closing the second gap.
+- **Trade-off**: Edge deduplication means the diagram's edge count no longer equals relation count — a reader must open `raw/facts/relations/*.json` for per-relation detail. Each collapsed drop group emits one summary diagnostic (`C2M-CG-001`) rather than one per omitted relation, so an individual omission is not separately traceable from `diagnostics.json` alone. Database objects being nodes without being components is a deliberate asymmetry: `raw/codebase/components.md` lists projects only, so a reader must already know database objects live in the diagram but not the component index.
+- **Scope**: `ComponentFragmentBuilder`, `GraphNodeIndex`, `ComponentGraphProjector`, `raw/dependencies.mmd`, `raw/codebase/components.md`. AD-015's open question about the orphaned `Detection/` tree — whether to finish wiring it, port it to the newer claim-based pattern, or retire it — is untouched. `component-graph` produces components from project inventory, not from any detector, and does not resolve that question.
+- **Date**: 2026-08-22
+- **Status**: active
+
+### AD-023
+- **Decision**: `raw/index/` uses derived schema 2: each relation payload is stored once in flat relation shards; the five lookup families store only relation ordinals; document and factual-origin metadata are normalized into ordinal shards; the reader rejects every schema other than 2; factual input is streamed and `raw/index/manifest.json` is published last. This replaces the schema-1 physical format documented by `relation-retrieval-index` without changing `raw/facts/`.
+- **Reason**: Schema 1 repeats each full relation in up to five families, creates a directory per key, materializes the large factual relation document, and reserializes every accepted shard prefix. The normalized layout preserves the same queries while reducing bytes, files, projection work and peak memory.
+- **Trade-off**: Consumers must join postings, relation records and metadata through the reader, and schema-1 indexes are not readable by the schema-2 reader. Posting memory still grows with unique keys and ordinal memberships; external sorting remains deferred until measurement justifies its additional I/O and temporary-file lifecycle.
+- **Scope**: Retrieval-index projection and reading, every artifact under `raw/index/`, and future consumers of the derived index. Factual schemas, ids and resolution remain governed by AD-008, AD-010, AD-014, AD-018, AD-019 and AD-022.
+- **Date**: 2026-08-23
 - **Status**: active
 
 ## Handoff
+
+- **Feature**: `compact-retrieval-index` (`.specs/features/compact-retrieval-index/`).
+- **Phase / Task**: Execute complete. T1-T16 are locally committed; independent verification is pending.
+- **Completed**: Schema-2 projection/reader, canonical 25,000-relation benchmark, package version 4.0.0,
+  35/35 verified traceability rows and all five success criteria.
+- **Validation**: pending at `.specs/features/compact-retrieval-index/validation.md`; discrimination sensor
+  remains skipped by the standing project override.
+- **Gate**: Release build and format verification pass; full suite 1,992/1,992. Canonical schema 1 → 2
+  benchmark: 118,737,712 → 12,376,427 bytes, 50,192 → 56 files, 42,734 → 1,427 ms median,
+  309,067,776 → 150,568,960 bytes median peak working set.
+- **In-progress** (file:line): none.
+- **Next step**: Run a fresh independent Verifier. On PASS, commit `validation.md`, mark the local issue
+  `Verified`, and change the compact-index roadmap row from `IMPLEMENTADO — AGUARDANDO VERIFIER` to
+  `CONCLUÍDO`.
+- **Blockers**: none.
+- **Uncommitted files**: pre-existing roadmap edits and unrelated untracked paths remain present and preserved.
+- **Branch**: `feat/component-graph`, stacked on `feat/relation-resolver`; no push, PR, tag or package
+  publication is authorized or performed.
+
+## Historical Handoff - Component Graph Planning (2026-08-22)
 
 - **Feature**: `component-graph` (`.specs/features/component-graph/`) — **planned, not started.** Specify,
   Design and Tasks are all complete and **user-approved** (2026-08-22). Execute has not begun; no production
   code has been written for it and nothing has been committed.
 - **Phase / Task**: Execute, about to start at **T1**. 0 of 17 tasks done.
-- **Branch**: still `feat/relation-resolver`, HEAD `69a9006`, stacked on `feat/data-access-discovery` (which
-  is stacked on `master`). Neither branch is pushed to any remote; no PR opened. Pushing/opening a PR
-  requires explicit user go-ahead per AD-007 — not requested or given. **No branch has been cut for
-  `component-graph`** — decide that with the user before T1 (prior features each got their own stacked
-  branch; AD-007 requires a feature branch, and this feature carries a `refactor(projection)!` break at T9).
+- **Branch**: `feat/component-graph`, **already cut and checked out**, HEAD `79c3aa9`, zero commits of its
+  own so far. User's explicit choice (`AskUserQuestion`, 2026-08-22) to stack rather than branch from
+  `master` — cutting from `master` would lose the resolved relations this feature reads, leaving the fixture
+  with zero edges and making T13/T14 unpassable. Full stack: `master` ← `feat/data-access-discovery` ←
+  `feat/relation-resolver` ← `feat/component-graph`. **No branch in the stack is pushed to any remote and no
+  PR is open**; pushing or opening one needs explicit user go-ahead per AD-007 — not requested or given.
 - **In-progress** (file:line): none.
-- **Next step**: run Execute from T1. The user chose **"approve, I'll execute later"**, so do not start
-  without them asking. The sub-agent offer was presented and **not yet answered** — 17 tasks pack into 3
-  batches (Phases 1+2 = T1-T8, Phases 3+4 = T9-T15, Phase 5 = T16-T17); one-worker-per-phase (5 workers) and
-  inline execution were both offered as alternatives. Ask which before dispatching anything.
+- **Next step**: run Execute from **T1**, no further questions needed — both open decisions were settled
+  before this handoff was written. Read `tasks.md` and follow the `tlc-spec-driven` Execute flow.
+- **Execution mode — decided, do not re-ask**: **3 batch sub-agents**, the user's explicit choice
+  (`AskUserQuestion`, 2026-08-22), packed on whole-phase boundaries:
+  - Batch 1 — Phases 1+2, **T1-T8** (8 tasks)
+  - Batch 2 — Phases 3+4, **T9-T15** (7 tasks)
+  - Batch 3 — Phase 5, **T16-T17** (2 tasks)
+
+  Batches run sequentially; each worker reports a compact summary before the next is dispatched. A fresh
+  Verifier then runs automatically (author ≠ verifier), with its discrimination sensor skipped per the
+  standing project-wide request recorded in `tasks.md`'s header.
 - **Blockers**: None.
 - **Two pipeline fixes committed this session** (2026-08-22), both pre-existing working-tree changes the
   user asked to land before Execute begins. Neither changes output; both were verified against the full

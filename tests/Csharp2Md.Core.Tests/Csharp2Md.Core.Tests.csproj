@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Csharp2Md.Core\Csharp2Md.Core.csproj" />
+    <ProjectReference Include="..\..\benchmarks\Csharp2Md.RetrievalIndex.Benchmarks\Csharp2Md.RetrievalIndex.Benchmarks.csproj" />
   </ItemGroup>
 
 </Project>
