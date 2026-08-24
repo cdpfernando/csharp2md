@@ -19,7 +19,28 @@ internal sealed record SyntacticRelationCandidate(
     int StartLine,
     int StartColumn,
     int EndLine,
-    int EndColumn);
+    int EndColumn)
+{
+    /// <summary>The receiver expression's own source text, populated only for a <c>calls</c> candidate.</summary>
+    public string? ReceiverText { get; init; }
+
+    /// <summary>The receiver's declared type name, when <see cref="DeclaredReceiverTypeName"/> could read one.</summary>
+    public string? ReceiverTypeText { get; init; }
+
+    /// <summary>The invoked member's name, populated only for a <c>calls</c> candidate.</summary>
+    public string? MemberName { get; init; }
+
+    public int? ArgumentCount { get; init; }
+
+    /// <summary>Simple type names, one per argument; an entry is <c>null</c> when its type syntax cannot be read.</summary>
+    public ImmutableArray<string?> ArgumentTypes { get; init; } = [];
+
+    /// <summary>The enclosing document's namespace, captured once per document and shared by every candidate.</summary>
+    public string? Namespace { get; init; }
+
+    /// <summary>The enclosing document's using directives, captured once per document and shared by every candidate.</summary>
+    public ImmutableArray<string> Imports { get; init; } = [];
+}
 
 internal sealed record SyntaxFactExtraction(
     DocumentFact Document,
@@ -217,8 +238,13 @@ internal static class SyntaxFactExtractor
         var canonicalSymbols = symbols
             .OrderBy(static symbol => symbol.SymbolId.Value, StringComparer.Ordinal)
             .ToImmutableArray();
+        // RELR-04: captured once here, not once per candidate, then shared by every candidate below -
+        // SymbolIndexStrategy/ReceiverTypeStrategy use them as contextual hints, never as a filter.
+        var documentNamespace = DocumentNamespace(root);
+        var documentImports = DocumentImports(root);
         var canonicalCandidates = candidates
             .Distinct()
+            .Select(candidate => candidate with { Namespace = documentNamespace, Imports = documentImports })
             .OrderBy(static candidate => candidate.OwnerId.Value, StringComparer.Ordinal)
             .ThenBy(static candidate => candidate.RelationKind, StringComparer.Ordinal)
             .ThenBy(static candidate => candidate.ObservedTarget, StringComparer.Ordinal)
@@ -377,6 +403,31 @@ internal static class SyntaxFactExtractor
         var joined = string.Join('.', names);
         return joined.Length == 0 ? null : joined;
     }
+
+    /// <summary>
+    /// The document's own namespace (RELR-04), from its first namespace declaration - file-scoped
+    /// (<c>namespace A;</c>) and block-scoped (<c>namespace A { }</c>) both derive from the same
+    /// <see cref="BaseNamespaceDeclarationSyntax"/> base - or <c>null</c> for a document with none.
+    /// </summary>
+    private static string? DocumentNamespace(SyntaxNode root) =>
+        root.DescendantNodes().OfType<BaseNamespaceDeclarationSyntax>().FirstOrDefault() is { } declaration
+            ? declaration.Name.ToString()
+            : null;
+
+    /// <summary>
+    /// Every plain namespace import in the document (RELR-04) - <c>using static</c> directives and
+    /// aliases are excluded, since neither names an importable namespace a symbol lookup can use as a
+    /// hint. A document with none yields an empty array, never <c>null</c>.
+    /// </summary>
+    private static ImmutableArray<string> DocumentImports(SyntaxNode root) =>
+        root.DescendantNodes()
+            .OfType<UsingDirectiveSyntax>()
+            .Where(static directive => directive.Alias is null && !directive.StaticKeyword.IsKind(SyntaxKind.StaticKeyword))
+            .Select(static directive => directive.Name?.ToString())
+            .OfType<string>()
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToImmutableArray();
 
     /// <summary>
     /// The names of the type declarations a declaration is nested inside, outer-first - the chain a
@@ -620,9 +671,13 @@ internal static class SyntaxFactExtractor
     }
 
     /// <summary>
-    /// A receiver's syntactic type name when it is a bare identifier bound to a parameter or a
-    /// non-<c>var</c> local variable declared in the same enclosing member. Returns <c>null</c> (not
-    /// determinable) for anything else, including <c>var</c>-declared locals.
+    /// A receiver's syntactic type name when it is a bare identifier bound to a method or constructor
+    /// parameter, a non-<c>var</c> local variable or declaration-pattern variable (e.g. <c>is PaymentClient
+    /// client</c>) declared in the same enclosing member, or a primary-constructor parameter, field or
+    /// property declared directly on the enclosing type (RELR-07). Returns <c>null</c> (not determinable)
+    /// for anything else. This is a deliberate, permanent limit, not a gap to close later: a
+    /// <c>var</c>-declared local's type is not written anywhere in the syntax, so no amount of syntax-only
+    /// extension can read it - only a <see cref="SemanticModel"/> binding could, which pass two does not have.
     /// </summary>
     private static string? DeclaredReceiverTypeName(ExpressionSyntax receiver)
     {
@@ -655,6 +710,54 @@ internal static class SyntaxFactExtractor
             && declaredType is not IdentifierNameSyntax { Identifier.ValueText: "var" })
         {
             return SimpleTypeName(declaredType);
+        }
+
+        var pattern = enclosingMember.DescendantNodes()
+            .OfType<DeclarationPatternSyntax>()
+            .FirstOrDefault(candidate =>
+                candidate.Designation is SingleVariableDesignationSyntax { Identifier.ValueText: var designationName }
+                && designationName == name);
+        if (pattern is not null)
+        {
+            return SimpleTypeName(pattern.Type);
+        }
+
+        return DeclaredMemberTypeName(receiver, name);
+    }
+
+    /// <summary>
+    /// A primary-constructor parameter, field, or property declared directly on the receiver's
+    /// enclosing type (RELR-07). Only direct members are searched - never a nested type's own
+    /// same-named member, and never an inherited member, which syntax alone cannot see. A field's type
+    /// genuinely cannot be <c>var</c> in valid C#, but the check mirrors the local-variable rule anyway
+    /// rather than assuming well-formed input.
+    /// </summary>
+    private static string? DeclaredMemberTypeName(SyntaxNode receiver, string name)
+    {
+        if (receiver.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault() is not { } enclosingType)
+        {
+            return null;
+        }
+
+        var primaryParameter = enclosingType.ParameterList?.Parameters
+            .FirstOrDefault(parameter => parameter.Identifier.ValueText == name);
+        if (primaryParameter?.Type is { } primaryParameterType)
+        {
+            return SimpleTypeName(primaryParameterType);
+        }
+
+        foreach (var member in enclosingType.Members)
+        {
+            switch (member)
+            {
+                case FieldDeclarationSyntax { Declaration.Type: { } fieldType } field
+                    when field.Declaration.Variables.Any(variable => variable.Identifier.ValueText == name):
+                    return fieldType is IdentifierNameSyntax { Identifier.ValueText: "var" } ? null : SimpleTypeName(fieldType);
+
+                case PropertyDeclarationSyntax { Identifier.ValueText: var propertyName, Type: { } propertyType }
+                    when propertyName == name:
+                    return propertyType is IdentifierNameSyntax { Identifier.ValueText: "var" } ? null : SimpleTypeName(propertyType);
+            }
         }
 
         return null;
@@ -690,15 +793,97 @@ internal static class SyntaxFactExtractor
             return null;
         }
 
-        var receiverTypeName = DeclaredReceiverTypeName(memberAccess.Expression)
+        var declaredReceiverType = DeclaredReceiverTypeName(memberAccess.Expression);
+        var receiverTypeName = declaredReceiverType
             ?? (memberAccess.Expression is IdentifierNameSyntax identifier ? identifier.Identifier.ValueText : null);
         if (receiverTypeName is not null && RelationNoiseFilter.IsLikelyFrameworkType(receiverTypeName))
         {
             return null;
         }
 
-        var targetText = $"{NormalizeNode(memberAccess.Expression)}.{memberAccess.Name.Identifier.ValueText}";
-        return MakeCandidate(ownerId, "calls", targetText, FactResolution.Syntactic, invocation, tree);
+        var memberName = memberAccess.Name.Identifier.ValueText;
+        var targetText = $"{NormalizeNode(memberAccess.Expression)}.{memberName}";
+        return MakeCandidate(ownerId, "calls", targetText, FactResolution.Syntactic, invocation, tree) with
+        {
+            ReceiverText = NormalizeNode(memberAccess.Expression),
+            ReceiverTypeText = declaredReceiverType,
+            MemberName = memberName,
+            ArgumentCount = invocation.ArgumentList.Arguments.Count,
+            ArgumentTypes = ArgumentTypesFor(invocation.ArgumentList.Arguments),
+        };
+    }
+
+    /// <summary>
+    /// One simple type name per argument, read from the argument expression's own syntax alone (no
+    /// <see cref="SemanticModel"/>): a literal's implied type, an object-creation's or cast's or
+    /// <c>default(...)</c>'s named type. An argument whose type cannot be read this way (e.g. a bare
+    /// identifier) yields <c>null</c> rather than a guess.
+    /// </summary>
+    private static ImmutableArray<string?> ArgumentTypesFor(SeparatedSyntaxList<ArgumentSyntax> arguments) =>
+        arguments.Select(static argument => ArgumentTypeName(argument.Expression)).ToImmutableArray();
+
+    private static string? ArgumentTypeName(ExpressionSyntax expression) => expression switch
+    {
+        LiteralExpressionSyntax literal => LiteralTypeName(literal),
+        ObjectCreationExpressionSyntax creation => SimpleTypeName(creation.Type),
+        CastExpressionSyntax cast => SimpleTypeName(cast.Type),
+        DefaultExpressionSyntax defaultExpression => SimpleTypeName(defaultExpression.Type),
+        _ => null,
+    };
+
+    private static string? LiteralTypeName(LiteralExpressionSyntax literal) => literal.Kind() switch
+    {
+        SyntaxKind.StringLiteralExpression or SyntaxKind.Utf8StringLiteralExpression => "string",
+        SyntaxKind.CharacterLiteralExpression => "char",
+        SyntaxKind.TrueLiteralExpression or SyntaxKind.FalseLiteralExpression => "bool",
+        SyntaxKind.NumericLiteralExpression => NumericLiteralTypeName(literal.Token.Text),
+        _ => null,
+    };
+
+    /// <summary>
+    /// A numeric literal's implied type from its own suffix/shape - the same rule the C# language
+    /// applies, read from the token text rather than a bound type.
+    /// </summary>
+    private static string NumericLiteralTypeName(string text)
+    {
+        if (text.EndsWith("m", StringComparison.OrdinalIgnoreCase))
+        {
+            return "decimal";
+        }
+
+        if (text.EndsWith("f", StringComparison.OrdinalIgnoreCase))
+        {
+            return "float";
+        }
+
+        if (text.EndsWith("d", StringComparison.OrdinalIgnoreCase))
+        {
+            return "double";
+        }
+
+        var isHexOrBinary = text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            || text.StartsWith("0b", StringComparison.OrdinalIgnoreCase);
+        if (!isHexOrBinary && text.Contains('.', StringComparison.Ordinal))
+        {
+            return "double";
+        }
+
+        if (text.EndsWith("ul", StringComparison.OrdinalIgnoreCase) || text.EndsWith("lu", StringComparison.OrdinalIgnoreCase))
+        {
+            return "ulong";
+        }
+
+        if (text.EndsWith("u", StringComparison.OrdinalIgnoreCase))
+        {
+            return "uint";
+        }
+
+        if (text.EndsWith("l", StringComparison.OrdinalIgnoreCase))
+        {
+            return "long";
+        }
+
+        return "int";
     }
 
     private static SyntacticRelationCandidate MakeCandidate(

@@ -137,6 +137,45 @@ public sealed class FactualModelTests
         Assert.Equal(FactResolution.Unresolved, fact.Header.Resolution);
     }
 
+    [Fact]
+    public void RelationFact_MethodAndCandidates_CanBeConstructedExplicitly()
+    {
+        var relationId = RelationFactId.Create(Document.ToFactId(), "calls", "target=x", 1);
+        var candidateOne = SymbolFactId.CreateSyntactic(Project, "Feature.cs", "method", "A").ToFactId();
+        var candidateTwo = SymbolFactId.CreateSyntactic(Project, "Feature.cs", "method", "B").ToFactId();
+        var fact = new RelationFact(
+            Header(relationId.ToFactId(), FactKind.Relation, FactResolution.Candidate),
+            relationId,
+            Document.ToFactId(),
+            TargetId: null,
+            RelationPartition.Structural,
+            "calls",
+            UnresolvedReason: null,
+            Details: [],
+            Method: ResolutionMethod.Candidate,
+            Candidates: [candidateOne, candidateTwo]);
+
+        Assert.Equal(ResolutionMethod.Candidate, fact.Method);
+        Assert.Equal([candidateOne, candidateTwo], fact.Candidates.ToArray());
+    }
+
+    [Fact]
+    public void RelationFact_MethodAndCandidates_DefaultToExactAndEmpty()
+    {
+        var relationId = RelationFactId.Create(Document.ToFactId(), "calls", "target=x", 1);
+        var fact = new RelationFact(
+            Header(relationId.ToFactId(), FactKind.Relation, FactResolution.Exact),
+            relationId,
+            Document.ToFactId(),
+            Target.ToFactId(),
+            RelationPartition.Structural,
+            "calls",
+            null);
+
+        Assert.Equal(ResolutionMethod.Exact, fact.Method);
+        Assert.True(fact.Candidates.IsDefaultOrEmpty);
+    }
+
     [Theory]
     [InlineData(RelationPartition.CompileTime, false)]
     [InlineData(RelationPartition.Inheritance, false)]
@@ -298,6 +337,38 @@ public sealed class FactualModelTests
     [Fact]
     public void ColumnUsage_UndeclaredMember_IsRejectedRatherThanNamed() =>
         Assert.Throws<ArgumentOutOfRangeException>(() => DatabaseFactWire.Name((ColumnUsage)99));
+
+    [Fact]
+    public void ResolutionMethod_DeclaresTheFullMethodSet() =>
+        Assert.Equal(
+            ["Exact", "Candidate", "Syntactic", "Configured", "Convention", "Dynamic", "Heuristic", "Unresolved"],
+            Enum.GetNames<ResolutionMethod>());
+
+    [Theory]
+    [InlineData(ResolutionMethod.Exact, "exact")]
+    [InlineData(ResolutionMethod.Candidate, "candidate")]
+    [InlineData(ResolutionMethod.Syntactic, "syntactic")]
+    [InlineData(ResolutionMethod.Configured, "configured")]
+    [InlineData(ResolutionMethod.Convention, "convention")]
+    [InlineData(ResolutionMethod.Dynamic, "dynamic")]
+    [InlineData(ResolutionMethod.Heuristic, "heuristic")]
+    [InlineData(ResolutionMethod.Unresolved, "unresolved")]
+    public void ResolutionMethod_WireName_IsTheSpecifiedLiteral(ResolutionMethod method, string expected) =>
+        Assert.Equal(expected, ResolutionMethodWire.Name(method));
+
+    [Fact]
+    public void ResolutionMethod_EveryMember_RoundTripsThroughItsWireString() =>
+        Assert.All(
+            Enum.GetValues<ResolutionMethod>(),
+            method => Assert.Equal(method, ResolutionMethodWire.Parse(ResolutionMethodWire.Name(method))));
+
+    [Fact]
+    public void ResolutionMethod_UndeclaredMember_IsRejectedRatherThanNamed() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => ResolutionMethodWire.Name((ResolutionMethod)99));
+
+    [Fact]
+    public void ResolutionMethodWire_UndeclaredWireValue_IsRejectedRatherThanParsed() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => ResolutionMethodWire.Parse("bogus"));
 
     [Fact]
     public void CoverageFact_TracksDiagnosticReferencesForInventoriedScope()

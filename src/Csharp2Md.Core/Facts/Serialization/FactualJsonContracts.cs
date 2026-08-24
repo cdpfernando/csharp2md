@@ -136,7 +136,13 @@ public sealed record RelationFactJson(
     [property: JsonPropertyOrder(4)] string Partition,
     [property: JsonPropertyOrder(5)] string RelationKind,
     [property: JsonPropertyOrder(6)] string? UnresolvedReason,
-    [property: JsonPropertyOrder(7)] ImmutableArray<RelationDetailJson>? Details = null);
+    [property: JsonPropertyOrder(7)] ImmutableArray<RelationDetailJson>? Details = null,
+    // Non-nullable and required as of schema v5 (T4). FactStore.MapRelation has read RelationFact.Method
+    // explicitly since T23; the "exact" default here only still matters for RelationFact.cs's own
+    // transitional constructor default (RELR-01's comment there), for the same orphaned Detection/*
+    // producers that default applies to.
+    [property: JsonPropertyOrder(8)] string ResolutionMethod = "exact",
+    [property: JsonPropertyOrder(9)] ImmutableArray<string>? Candidates = null);
 
 public sealed record RelationDetailJson(
     [property: JsonPropertyOrder(0)] string Key,

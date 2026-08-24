@@ -1,11 +1,10 @@
-using System.Text;
 using System.Text.Json;
 
 namespace Csharp2Md.Core.Facts.Serialization;
 
 public static class FactualJsonSerializer
 {
-    public const int SchemaVersion = 4;
+    public const int SchemaVersion = 5;
 
     public static byte[] Serialize(FactualJsonDocument document)
     {
@@ -16,9 +15,34 @@ public static class FactualJsonSerializer
         }
 
         var canonical = Canonicalize(document);
-        var json = JsonSerializer.Serialize(canonical, FactualJsonContext.Default.FactualJsonDocument)
-            .Replace("\r\n", "\n", StringComparison.Ordinal);
-        return Encoding.UTF8.GetBytes(json.EndsWith('\n') ? json : json + '\n');
+        // A large aggregate fragment (e.g. the run's single relation or database fragment, AD-018) can
+        // serialize to a JSON payload large enough that materializing it as a UTF-16 string first - the
+        // string overload's own transcoding step - fails to allocate. Writing UTF-8 bytes directly skips
+        // that intermediate string entirely.
+        var utf8 = JsonSerializer.SerializeToUtf8Bytes(canonical, FactualJsonContext.Default.FactualJsonDocument);
+        var normalized = NormalizeNewLines(utf8);
+        return normalized is [.., (byte)'\n'] ? normalized : [.. normalized, (byte)'\n'];
+    }
+
+    /// <summary>
+    /// Collapses CRLF to LF in place. Safe because System.Text.Json always escapes a string value's own
+    /// \r/\n as the two-character sequences "\r"/"\n" - a raw CR-LF byte pair can only come from
+    /// WriteIndented's own structural line breaks, never from content.
+    /// </summary>
+    private static byte[] NormalizeNewLines(byte[] utf8)
+    {
+        var writeIndex = 0;
+        for (var readIndex = 0; readIndex < utf8.Length; readIndex++)
+        {
+            if (utf8[readIndex] == (byte)'\r' && readIndex + 1 < utf8.Length && utf8[readIndex + 1] == (byte)'\n')
+            {
+                continue;
+            }
+
+            utf8[writeIndex++] = utf8[readIndex];
+        }
+
+        return writeIndex == utf8.Length ? utf8 : utf8[..writeIndex];
     }
 
     public static FactualJsonDocument Deserialize(ReadOnlySpan<byte> utf8Json) =>

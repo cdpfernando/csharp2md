@@ -4,6 +4,7 @@ using Csharp2Md.Core.Analysis.DataAccess;
 using Csharp2Md.Core.Analysis.Indexes;
 using Csharp2Md.Core.Analysis.Inventory;
 using Csharp2Md.Core.Analysis.Relations;
+using Csharp2Md.Core.Analysis.Relations.Resolution;
 using Csharp2Md.Core.Analysis.Semantics;
 using Csharp2Md.Core.Analysis.Semantics.MSBuild;
 using Csharp2Md.Core.Analysis.Semantics.Roslyn;
@@ -113,7 +114,6 @@ public sealed class AnalysisEngine
 
         var store = new FactStore(request.OutputRoot);
         var storedFragments = ImmutableArray.CreateBuilder<StoredFactFragment>();
-        var validatedFragments = ImmutableArray.CreateBuilder<ValidatedFactFragment>();
         var coverageFacts = ImmutableArray.CreateBuilder<IFact>();
         var symbolFacts = ImmutableArray.CreateBuilder<SymbolFact>();
         var coverageOverrides = ImmutableArray.CreateBuilder<ScopeCoverageInput>();
@@ -121,6 +121,10 @@ public sealed class AnalysisEngine
         // Pass one of database access discovery accumulates here across the whole run; pass two reads
         // the snapshot once the document loop is done.
         var databaseClaims = new DatabaseClaimAccumulator();
+        // Pass one of relation resolution accumulates here across the whole run, mirroring
+        // databaseClaims; pass two (RelationResolver) reads the snapshot once the document loop and
+        // database resolution are both done (AD-018).
+        var relationClaims = new RelationClaimAccumulator();
         var resultDiagnostics = new List<string>(inventory.Diagnostics.Select(static diagnostic => diagnostic.Message));
         var loadedExtensions = ImmutableArray.CreateBuilder<string>();
         var analysedProjects = new HashSet<ProjectFactId>();
@@ -152,9 +156,9 @@ public sealed class AnalysisEngine
                     try
                     {
                         var projectResult = await AnalyzeProjectAsync(
-                                request, project, store, storedFragments, validatedFragments, coverageFacts,
+                                request, project, store, storedFragments, coverageFacts,
                                 symbolFacts, coverageOverrides, analysisDiagnostics, resultDiagnostics,
-                                loadedExtensions, databaseClaims, cancellationToken)
+                                loadedExtensions, databaseClaims, relationClaims, cancellationToken)
                             .ConfigureAwait(false);
                         documentCount += projectResult.DocumentCount;
                         structuralFailure |= projectResult.StructuralFailure;
@@ -186,21 +190,74 @@ public sealed class AnalysisEngine
         // Pass two of database access discovery. It runs here and not per document because the
         // configuration naming an entity's table commonly lives in another document, and
         // configured-over-convention precedence is undecidable until every document has been seen.
-        var database = DatabaseFragmentBuilder.Build(
-            DatabaseMappingResolver.Resolve(databaseClaims.ToSnapshot(), symbolIndex), _validate);
+        var databaseResolution = DatabaseMappingResolver.Resolve(databaseClaims.ToSnapshot(), symbolIndex);
+        var database = DatabaseFragmentBuilder.Build(databaseResolution, _validate);
         analysisDiagnostics.AddRange(database.Diagnostics);
+        // RelationProjector/DatabaseAggregateProjector only react to RelationFact/ComponentFact and
+        // DatabaseObjectFact/DatabaseColumnFact, which exist solely inside these two pass-two aggregate
+        // fragments - never inside a per-document or per-project fragment. Projecting from just these two
+        // (instead of every validated fragment the whole run has produced) keeps this bounded by the
+        // aggregate size rather than by total codebase size.
+        var aggregateFragments = ImmutableArray.CreateBuilder<ValidatedFactFragment>();
         if (database.Fragment is { } databaseFragment)
         {
             storedFragments.Add(store.Persist(databaseFragment));
-            validatedFragments.Add(databaseFragment);
+            aggregateFragments.Add(databaseFragment);
         }
         else if (!database.Diagnostics.IsEmpty)
         {
             structuralFailure = true;
         }
 
-        var databaseAggregate = DatabaseAggregateProjector.Project(validatedFragments);
+        var databaseAggregate = DatabaseAggregateProjector.Project(aggregateFragments);
         analysisDiagnostics.AddRange(databaseAggregate.Diagnostics);
+
+        // Pass two of relation resolution (AD-018): runs once the run's complete SymbolIndex and the
+        // database resolution both exist, since RELR-32's database relations arrive as already-targeted
+        // claims from databaseResolution.Relations. knownFactIds is the union of every identity the run
+        // actually produced - symbols, database nodes, and persisted documents (an inferred-publish
+        // claim's owner falls back to its document when no enclosing member exists) - so
+        // ExistingTargetStrategy (RELR-02/03) and C2M-FV-002 can tell a proven reference from a dangling one.
+        relationClaims.AddResolved(databaseResolution.Relations);
+        var knownFactIds = symbolIndex.Symbols.Select(static symbol => symbol.SymbolId.ToFactId())
+            .Concat(databaseResolution.Objects.Select(static entry => entry.ObjectId.ToFactId()))
+            .Concat(databaseResolution.Columns.Select(static entry => entry.ColumnId.ToFactId()))
+            .Concat(accumulated.OfType<DocumentFact>().Select(static document => document.Header.Id))
+            .ToHashSet();
+        // AddResolved's claims carry evidence from whichever document DatabaseMappingResolver read them
+        // from, but relationClaims only records a document's extent when that same document also
+        // produced at least one syntax-only relation claim (RelationClaimAccumulator's own memory rule,
+        // T6). A document that is pure SQL text with no calls/creates/etc - OrderSqlQueries.cs in the
+        // fixture - has database claims but zero relation claims, so its extent would otherwise be
+        // missing here; databaseResolution.Documents is the superset databaseClaims already recorded.
+        var relationSnapshot = relationClaims.ToSnapshot();
+        var relationSnapshotWithDatabaseDocuments = relationSnapshot with
+        {
+            Documents = relationSnapshot.Documents
+                .Concat(databaseResolution.Documents)
+                .DistinctBy(static document => document.DocumentId)
+                .OrderBy(static document => document.DocumentId.Value, StringComparer.Ordinal)
+                .ToImmutableArray(),
+        };
+        var relationResolution = RelationResolver.Default.Resolve(
+            relationSnapshotWithDatabaseDocuments, symbolIndex, knownFactIds, cancellationToken);
+        // The resolver's own C2M-RELR-* diagnostics (unresolved/ambiguous/dynamic targets, a throwing
+        // strategy) are distinct from RelationFragmentBuilder.Build's ValidationDiagnostics (C2M-FV-*
+        // only) - unlike DatabaseMappingResolver.Resolve, which never produces diagnostics of its own,
+        // this pass-two step does, and RELR-37's diagnostics must reach diagnostics.json and the run's
+        // own summary just as any other analysis diagnostic does.
+        analysisDiagnostics.AddRange(relationResolution.Diagnostics);
+        var relations = RelationFragmentBuilder.Build(relationResolution, knownFactIds, _validate);
+        analysisDiagnostics.AddRange(relations.Diagnostics);
+        if (relations.Fragment is { } relationFragment)
+        {
+            storedFragments.Add(store.Persist(relationFragment));
+            aggregateFragments.Add(relationFragment);
+        }
+        else if (!relations.Diagnostics.IsEmpty)
+        {
+            structuralFailure = true;
+        }
 
         resultDiagnostics.AddRange(analysisDiagnostics.Select(static diagnostic => diagnostic.Message));
         var honestCoverage = CoverageProjector.Project(new CoverageProjectionRequest(
@@ -209,7 +266,7 @@ public sealed class AnalysisEngine
             request.Topic, request.Domain, "3.0.1", request.Options.Mode, effectiveMode, request.Options.Trust,
             loadedExtensions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray(),
             new ManifestCoverage(inventory.Services.Length, projectCount, documentCount),
-            storedFragments.ToImmutable(), honestCoverage, RelationProjector.Project(validatedFragments),
+            storedFragments.ToImmutable(), honestCoverage, RelationProjector.Project(aggregateFragments),
             databaseAggregate);
         new CanonicalAggregateWriter().WritePrepared(request.OutputRoot, snapshot, TimeProvider.System);
 
@@ -226,7 +283,6 @@ public sealed class AnalysisEngine
         InventoryProject project,
         FactStore store,
         ImmutableArray<StoredFactFragment>.Builder storedFragments,
-        ImmutableArray<ValidatedFactFragment>.Builder validatedFragments,
         ImmutableArray<IFact>.Builder coverageFacts,
         ImmutableArray<SymbolFact>.Builder symbolFacts,
         ImmutableArray<ScopeCoverageInput>.Builder coverageOverrides,
@@ -234,6 +290,7 @@ public sealed class AnalysisEngine
         List<string> resultDiagnostics,
         ImmutableArray<string>.Builder loadedExtensions,
         DatabaseClaimAccumulator databaseClaims,
+        RelationClaimAccumulator relationClaims,
         CancellationToken cancellationToken)
     {
         var projectId = ProjectFactId.Create(project.RelativePath);
@@ -307,13 +364,10 @@ public sealed class AnalysisEngine
                     .Where(static symbol => symbol.ContainsErrorSymbol)
                     .Select(static symbol => symbol.SymbolId)
                     .ToHashSet();
-                var relationFacts = RelationCollector.CreateFacts(
-                    extraction.Document.DocumentId, relativePath, extraction.RelationCandidates);
                 var baseline = new IFact[] { documentFact }
                     .Concat(extraction.Document.Sections)
-                    .Concat(extraction.Symbols.Where(symbol => !errorIds.Contains(symbol.SymbolId)))
-                    .Concat(relationFacts);
-                var enrichment = document.EnrichedSymbols.Cast<IFact>().Concat(document.EnrichedRelations);
+                    .Concat(extraction.Symbols.Where(symbol => !errorIds.Contains(symbol.SymbolId)));
+                var enrichment = document.EnrichedSymbols.Cast<IFact>();
                 var merged = FactMerger.Merge(baseline, enrichment, document.Diagnostics);
                 analysisDiagnostics.AddRange(merged.StructuralDiagnostics);
                 if (!merged.IsValid)
@@ -339,7 +393,6 @@ public sealed class AnalysisEngine
                 var fragment = validation.Fragment!;
                 var stored = store.Persist(fragment);
                 storedFragments.Add(stored);
-                validatedFragments.Add(fragment);
                 persistedDocumentIds.Add(documentFact.DocumentId);
                 coverageFacts.Add(fragment.Facts.OfType<DocumentFact>().Single());
                 databaseClaims.Add(
@@ -347,6 +400,18 @@ public sealed class AnalysisEngine
                     relativePath,
                     LineLengths(document.Source.SourceText).ToImmutableArray(),
                     extraction.DatabaseClaims);
+                // AD-018: syntax-only mode never attempted semantic refinement, so this document's
+                // baseline claims (CreateClaims) are the whole story; trusted mode already merged that
+                // same baseline with its refinement inside RefineClaims (T13), so EnrichedRelations is
+                // complete by itself and must not be re-merged with a second CreateClaims call.
+                var documentRelationClaims = document.Attempted
+                    ? document.EnrichedRelations
+                    : RelationCollector.CreateClaims(documentFact.DocumentId, relativePath, extraction.RelationCandidates);
+                relationClaims.Add(
+                    documentFact.DocumentId,
+                    relativePath,
+                    LineLengths(document.Source.SourceText).ToImmutableArray(),
+                    documentRelationClaims);
                 symbolFacts.AddRange(fragment.Facts.OfType<SymbolFact>());
                 coverageOverrides.Add(new ScopeCoverageInput(
                     documentFact.DocumentId.ToFactId(), CoverageApplicability.Applicable,
@@ -381,7 +446,6 @@ public sealed class AnalysisEngine
             {
                 var fragment = validation.Fragment!;
                 storedFragments.Add(store.Persist(fragment));
-                validatedFragments.Add(fragment);
                 coverageFacts.AddRange(fragment.Facts.Where(static fact => fact is ProjectFact or TargetFact));
             }
             else

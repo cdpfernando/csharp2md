@@ -51,77 +51,31 @@ public sealed class DatabaseFragmentBuilderTests : IDisposable
             column.ObjectId);
     }
 
-    // Every persistence relation lands in the data partition with detector provenance and evidence,
-    // which is what FactValidator's C2M-FV-005 rule demands of a runtime relation.
+    // RELR-32: DatabaseFragmentBuilder no longer mints relation facts at all - resolution.Relations
+    // leaves DatabaseMappingResolver.Resolve as RawRelation claims for the RelationClaimAccumulator
+    // instead (AD-018: RelationResolver is the only writer of RelationFact). A resolution carrying only
+    // relations and no objects/columns therefore now has nothing for this builder to build.
     [Fact]
-    public void Build_Relations_LandInTheDataPartitionWithDetectorProvenanceAndEvidence()
+    public void Build_ResolutionWithOnlyRelationsAndNoObjectsOrColumns_YieldsNoFragment()
     {
-        var fragment = Built(FullyMappedOrder());
-
-        var relations = fragment.Facts.OfType<RelationFact>().ToArray();
-        Assert.NotEmpty(relations);
-        Assert.All(relations, relation =>
-        {
-            Assert.Equal(RelationPartition.Data, relation.Partition);
-            Assert.NotEmpty(relation.Header.Evidence);
-            Assert.Contains(relation.Header.Provenance, provenance => provenance.DetectorId is not null);
-        });
-    }
-
-    // DAD-14 survives the round trip into facts: an untargeted relation keeps its stated reason.
-    [Fact]
-    public void Build_ConventionMapping_KeepsItsUnresolvedReasonOnTheFact()
-    {
-        var fragment = Built(ResolverScenario.Resolve(
+        var resolution = ResolverScenario.Resolve(
             ResolverScenario.Symbols(ResolverScenario.Entity("Order")),
-            ResolverScenario.EntitySet("Order", "Orders")));
+            ResolverScenario.EntitySet("Order", "Orders"));
+        Assert.Empty(resolution.Objects);
+        Assert.Empty(resolution.Columns);
+        Assert.NotEmpty(resolution.Relations);
 
-        var mapsTo = Assert.Single(
-            fragment.Facts.OfType<RelationFact>(), relation => relation.RelationKind == "maps-to");
-        Assert.Null(mapsTo.TargetId);
-        Assert.Equal("convention-mapping", mapsTo.UnresolvedReason);
-    }
+        var result = DatabaseFragmentBuilder.Build(resolution, FactValidator.Validate);
 
-    // Two identical observations in one member must not collapse onto one identity (C2M-FV-001).
-    [Fact]
-    public void Build_TwoIdenticalAccessesInOneMember_YieldTwoDistinctRelationIdentities()
-    {
-        var first = ResolverScenario.EntitySetAccess("Order", "Orders", DatabaseOperation.Read);
-        var second = first with
-        {
-            Evidence = new Evidence(first.Evidence.DocumentId, first.Evidence.RelativePath, 14, 1, 14, 40),
-        };
-
-        var result = DatabaseFragmentBuilder.Build(
-            ResolverScenario.Resolve(ResolverScenario.Symbols(ResolverScenario.Entity("Order")), first, second),
-            FactValidator.Validate);
-
+        Assert.Null(result.Fragment);
         Assert.Empty(result.Diagnostics);
-        var reads = result.Fragment!.Facts.OfType<RelationFact>()
-            .Where(relation => relation.RelationKind == "reads")
-            .ToArray();
-        Assert.Equal(2, reads.Length);
-        Assert.Equal(2, reads.Select(relation => relation.RelationId.Value).Distinct(StringComparer.Ordinal).Count());
     }
 
-    // Preserved SQL spans lines, and the identity grammar accepts only canonical single-line values.
-    [Fact]
-    public void Build_RelationCarryingMultilineSql_ProducesACanonicalIdentity()
-    {
-        var fragment = Built(ResolverScenario.Resolve(
-            ResolverScenario.Symbols(),
-            ResolverScenario.SqlAccess(null, null, DatabaseOperation.Update) with
-            {
-                ShapeConfidence = FactResolution.Unresolved,
-                UnresolvedReason = "unreadable-sql-target",
-                SqlText = "UPDATE (SELECT 1)\n  SET x = 1",
-            }));
-
-        var relation = Assert.Single(fragment.Facts.OfType<RelationFact>());
-
-        Assert.DoesNotContain('\n', relation.RelationId.Value);
-        Assert.DoesNotContain("  ", relation.RelationId.Value, StringComparison.Ordinal);
-    }
+    // The relation-carrying test coverage this file used to hold (data-partition/evidence assignment,
+    // duplicate-observation survival, multi-line SQL text preservation, an untargeted relation's stated
+    // reason) now lives in DatabaseMappingResolverTests.cs against DatabaseMappingResolver.Resolve's own
+    // RawRelation output, since that is where those properties are actually set (RELR-32); building a
+    // fragment out of them is no longer part of the round trip this file exercises.
 
     // A run over a codebase with no persistence code produces no fragment and no diagnostic.
     [Fact]

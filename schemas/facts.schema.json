@@ -20,7 +20,7 @@
     "coverage"
   ],
   "properties": {
-    "schema_version": { "const": 4 },
+    "schema_version": { "const": 5 },
     "solutions": { "type": "array", "items": { "$ref": "#/$defs/solution_fact" } },
     "projects": { "type": "array", "items": { "$ref": "#/$defs/project_fact" } },
     "targets": { "type": "array", "items": { "$ref": "#/$defs/target_fact" } },
@@ -39,6 +39,7 @@
     "fact_kind": { "enum": ["solution", "project", "target", "document", "source-section", "symbol", "component", "relation", "database-object", "database-column"] },
     "database_object_kind": { "enum": ["table", "view", "procedure", "function", "unknown"] },
     "relation_partition": { "enum": ["compile-time", "inheritance", "dependency-injection", "http", "grpc", "events", "structural", "data"] },
+    "resolution_method": { "enum": ["exact", "candidate", "syntactic", "configured", "convention", "dynamic", "heuristic", "unresolved"] },
     "fact_level": { "enum": ["solution", "project", "target", "document", "detector"] },
     "coverage_applicability": { "enum": ["applicable", "not-applicable"] },
     "coverage_attempt": { "enum": ["not-attempted", "attempted"] },
@@ -58,7 +59,7 @@
     "symbol_fact": { "type": "object", "required": ["header", "symbol_id", "document_id", "symbol_kind", "contains_error_symbol", "base_and_interface_ids", "attributes", "relevant_type_references", "name", "fully_qualified_name", "signature", "arity", "parameter_types"], "properties": { "semantics": { "$ref": "#/$defs/symbol_semantics" }, "namespace": { "type": "string" }, "containing_type": { "type": "string" }, "containing_symbol_id": { "type": "string" } } },
     "symbol_semantics": { "type": "object", "required": ["implemented_member_ids"] },
     "component_fact": { "type": "object", "required": ["header", "component_id", "component_kind", "project_ids"] },
-    "relation_fact": { "type": "object", "required": ["header", "relation_id", "source_id", "partition", "relation_kind"], "properties": { "details": { "type": "array", "items": { "$ref": "#/$defs/relation_detail" } } } },
+    "relation_fact": { "type": "object", "required": ["header", "relation_id", "source_id", "partition", "relation_kind", "resolution_method"], "properties": { "details": { "type": "array", "items": { "$ref": "#/$defs/relation_detail" } }, "resolution_method": { "$ref": "#/$defs/resolution_method" }, "candidates": { "type": "array", "items": { "type": "string" } } } },
     "relation_detail": { "type": "object", "required": ["key", "value"] },
     "database_object_fact": { "type": "object", "required": ["header", "object_id", "connection_name", "kind", "name"], "properties": { "kind": { "$ref": "#/$defs/database_object_kind" } } },
     "database_column_fact": { "type": "object", "required": ["header", "column_id", "object_id", "name"] },

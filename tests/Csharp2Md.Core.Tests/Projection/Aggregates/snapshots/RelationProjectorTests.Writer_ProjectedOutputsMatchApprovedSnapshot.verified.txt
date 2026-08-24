@@ -41,7 +41,8 @@ flowchart LR
       "source_id": "id1:project;path=src%2FOrders%2FOrders.csproj",
       "target_id": "id1:project;path=src%2FPayments%2FPayments.csproj",
       "partition": "compile-time",
-      "relation_kind": "project-reference"
+      "relation_kind": "project-reference",
+      "resolution_method": "exact"
     }
   ]
 }

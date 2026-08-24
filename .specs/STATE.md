@@ -120,7 +120,7 @@
 - **Trade-off**: Two code paths now exist for "how a relation fact gets produced" — this feature's kinds live in `Analysis/Syntax` + `Analysis/Relations`, while `GrpcRelationDetector`/`CompileTimeReferenceDetector`/`DependencyInjectionDetector`/`AspNetCoreDetector` remain in `Detection/*`, still unwired, still orphaned. `DetectorHost` and those four detectors are not removed (still used/tested in isolation) but their fate — finish wiring them the same way, port them to the new pattern, or retire them — is an explicit open question for a future feature, not resolved here.
 - **Scope**: Relation-fact production for `RelationCollector`'s ten kinds; the `Detection`/`DetectorHost` abstraction's future is out of scope for this decision.
 - **Date**: 2026-08-19
-- **Status**: active
+- **Status**: partially superseded by AD-018 (relation enrichment merge point only; the pass-one wiring stands)
 
 ### AD-016
 - **Decision**: Persistence discovery introduces a new fact family (`DatabaseObjectFact`, `DatabaseColumnFact`) whose identity is minted **only** from a name proven by a source string literal or explicit configuration (`ToTable("tb_order")`, `HasColumnName("order_status")`, a table name the SQL tokenizer read out of a literal statement). A name reached by EF convention, by interpolated or concatenated SQL, or by any other inference never mints a node: its relation keeps `target_id: null`, carries the observed `target_text`, an `unresolved_reason` where applicable, and a non-`Exact` resolution (`Heuristic` for convention, `Candidate` for ambiguous, `Unresolved` for unreadable).
@@ -138,7 +138,180 @@
 - **Date**: 2026-08-20
 - **Status**: active
 
+### AD-018
+- **Decision**: `RelationCollector` emits `RawRelation` **claims** rather than facts. A `RelationClaimAccumulator` buffers them together with the `DocumentExtent`s their evidence will be validated against, and `RelationResolver` is the only component that mints a `RelationFact` — in pass two, once `SymbolIndex` exists. Document fragments no longer carry relations; every relation in a run lives in one solution-level fragment. The factual fragment schema moves from version 4 to version 5.
+- **Reason**: `SymbolIndex` is built after the document loop completes, so a relation persisted during the loop can never have been resolved against it. Every alternative either lets a resolved aggregate contradict an unresolved fragment, or rewrites artifacts already written to content-addressed paths. Making the collector produce claims is what `data-access-discovery` already does with `RawDatabaseClaim` (documented there as "never serialized"), and it makes "the resolver is the sole writer of `RelationFact`" structural instead of a convention that a later contributor can quietly break.
+- **Trade-off**: Resolution context (receiver text, member name, argument types, declaration bindings) is held in memory for the whole run and never appears in the output, so a wrong edge cannot be diagnosed from the artifacts alone — only from a re-run. The alternative, serializing that context as `RelationDetail` entries, was rejected because details feed the identity fingerprint and would have churned every `relation_id`. A set of existing tests and snapshots that assert relations inside document fragments must be rewritten to the new location.
+- **Scope**: Relation production and persistence, and the factual fragment wire contract. Partially supersedes AD-015: relation enrichment is merged at the claim level by `FactResolutionAlgebra.Stronger` instead of at the fact level by `FactMerger`'s same-identity/`ResolutionRank` logic. The pass-one wiring AD-015 chose (`SyntaxFactExtractor.Extract` plus `TrustedSemanticProjectProcessor.BindDocuments`, not `DetectorHost`) is unchanged, as is AD-015's statement about the orphaned `Detection/` tree.
+- **Date**: 2026-08-21
+- **Status**: active
+
+### AD-019
+- **Decision**: A relation carries a `ResolutionMethod` (`exact`, `candidate`, `syntactic`, `configured`, `convention`, `dynamic`, `heuristic`, `unresolved`) alongside — not instead of — its header's `FactResolution`. No part of a fact's identity may derive from its resolution outcome, so resolution state is a first-class field and never a `RelationDetail`.
+- **Reason**: `FactResolution` answers "how proven is this fact?" and is aggregated across every fact family by `FactResolutionAlgebra`; `ResolutionMethod` answers "by what route did we reach this target?" and is meaningful only on a relation. Extending `FactResolution` with `Configured`/`Convention`/`Dynamic` would drag those states into every symbol, document and project header and would supersede AD-016's convention-to-`Heuristic` mapping for no gain. The field-not-detail rule is mechanically forced: `RelationFactId` is minted from a fingerprint of the details, so a resolution-bearing detail would change a relation's identity every time its resolution improved.
+- **Trade-off**: Two resolution vocabularies now coexist on one fact, and a consumer must learn which question each answers. Collapsing them into one enum would have been conceptually tidier at the cost of a breaking change across every fact family.
+- **Scope**: The relation fact's wire contract and the identity rule for all fact families. Conforms to AD-011 and AD-016: a target is still proven only by a semantic binding, an index match, or a source literal.
+- **Date**: 2026-08-21
+- **Status**: active
+
+### AD-020
+- **Decision**: `relation-resolver` does not attempt to make `raw/dependencies.mmd` carry a real edge, even though spec.md's own P1 Success Criteria and T30's Done-when list both name it. `RelationResolverEndToEndTests` proves the other five P1 Independent Tests plus that `dependencies.mmd` is written and non-empty; it does not assert an edge.
+- **Reason**: Two independent, pre-existing gaps make an edge unreachable regardless of how well relations resolve. First, no production code path anywhere constructs a `ComponentFact` (`grep -rln "new ComponentFact(" src/Csharp2Md.Core/` returns nothing) — the entire `Detection/` tree that would presumably produce one is orphaned from `AnalyzeAsync`, as AD-015 already documented. Second, and separately, `RelationProjector.Mermaid` builds `componentByProject` keyed by `ComponentIndexEntry.ProjectIds` (project-shaped `FactId`s) but looks candidate edges up by `relation.SourceId`/`TargetId` (symbol- or document-shaped `FactId`s) — a key-shape mismatch that would still miss every lookup even if `ComponentFact`s existed. design.md's Reuse table assumed `Mermaid`'s existing `TargetId is not null` filter was the only blocker and would "start passing" once relations resolve; that assumption is false on both counts. Confirmed by a real end-to-end run over `fixtures/SyntheticSolution`: `raw/dependencies.mmd` is `"flowchart LR\n"` with zero edges even with real, resolved relation targets in place. User confirmed (2026-08-21, in response to an explicit AskUserQuestion) to drop the edge assertion and record this as an open finding rather than expand scope to fix `Mermaid`'s lookup or wire up component detection.
+- **Trade-off**: spec.md's P1 Success Criteria line ("a non-empty `raw/dependencies.mmd` with at least one edge outside the `data` partition") stays unmet by this feature. A future feature must both wire some producer of `ComponentFact` (finishing or replacing the orphaned `Detection/` tree per AD-015) and fix `RelationProjector.Mermaid`'s project-vs-symbol/document key mismatch before that criterion is achievable.
+- **Scope**: `RelationResolverEndToEndTests`'s coverage of spec.md's dependencies.mmd Success Criterion only. Does not touch `RelationProjector`, `Detection/`, or component detection. Extends AD-015's open question about the orphaned `Detection/` tree with a second, independent blocker in `RelationProjector.Mermaid` itself.
+- **Date**: 2026-08-21
+- **Status**: active
+
 ## Handoff
+
+- **Feature**: `component-graph` (`.specs/features/component-graph/`) — **planned, not started.** Specify,
+  Design and Tasks are all complete and **user-approved** (2026-08-22). Execute has not begun; no production
+  code has been written for it and nothing has been committed.
+- **Phase / Task**: Execute, about to start at **T1**. 0 of 17 tasks done.
+- **Branch**: still `feat/relation-resolver`, HEAD `69a9006`, stacked on `feat/data-access-discovery` (which
+  is stacked on `master`). Neither branch is pushed to any remote; no PR opened. Pushing/opening a PR
+  requires explicit user go-ahead per AD-007 — not requested or given. **No branch has been cut for
+  `component-graph`** — decide that with the user before T1 (prior features each got their own stacked
+  branch; AD-007 requires a feature branch, and this feature carries a `refactor(projection)!` break at T9).
+- **In-progress** (file:line): none.
+- **Next step**: run Execute from T1. The user chose **"approve, I'll execute later"**, so do not start
+  without them asking. The sub-agent offer was presented and **not yet answered** — 17 tasks pack into 3
+  batches (Phases 1+2 = T1-T8, Phases 3+4 = T9-T15, Phase 5 = T16-T17); one-worker-per-phase (5 workers) and
+  inline execution were both offered as alternatives. Ask which before dispatching anything.
+- **Blockers**: None.
+- **Two pipeline fixes committed this session** (2026-08-22), both pre-existing working-tree changes the
+  user asked to land before Execute begins. Neither changes output; both were verified against the full
+  gate before committing:
+  - `fe3448e` `perf(facts): serialize a fragment straight to UTF-8 bytes` — `FactualJsonSerializer` no
+    longer materializes the payload as a UTF-16 string before encoding it. AD-018 puts every relation in
+    one solution-level fragment, which can grow large enough that the intermediate string fails to
+    allocate. CRLF normalization moved to an in-place byte pass.
+  - `69a9006` `perf(analysis): bound aggregate projection to the pass-two fragments` — `AnalysisEngine`'s
+    `validatedFragments` retained one fragment per document and per project for the whole run, so peak
+    memory grew with codebase size. **That directly contradicted AD-008**, whose stated purpose is a
+    pipeline bounded by catalogs and aggregates rather than by how much source it read; the fix restores
+    that guarantee rather than establishing a new one, so no new `AD-NNN` is warranted. The replacement
+    `aggregateFragments` builder is scoped to pass two, and both aggregate projectors now read one
+    explicitly scoped collection instead of the same growing builder at two different points in the run.
+    Per-document and per-project fragments are still persisted and still reach the manifest through
+    `storedFragments`.
+
+  `component-graph`'s design.md quotes `aggregateFragments` in its `AnalysisEngine` wiring snippet; that
+  identifier is now in `HEAD`, so T2 and T11 apply as written.
+- **Gate at close**: `dotnet build -c Release` clean, `dotnet format --verify-no-changes` clean,
+  `dotnet test` 1850/1851 — the single failure is the pre-existing documented
+  `DotnetMsBuildEvaluatorTests.ImportedProject_ReturnsImportPathsAndDiscardsExpandedXml` flake, unchanged
+  from the previous session's baseline and unrelated to either commit.
+- **Uncommitted files — untracked**: the same long-standing paths carried by every prior handoff —
+  `.agents/`, `.claude/`, `.cursor/`, `.windsurf/`, `.specs/features/csharp2md-v3/context.md`,
+  `.specs/features/data-access-discovery/context.md` and `design.md`,
+  `.specs/features/relation-collector/context.md` and `design.md`, two dated Markdown files, `AGENTS.md`,
+  `CLAUDE.md`, `fixtures/launch-manifest.json`, `research/`, `src/Csharp2Md.Cli/Properties/`. Now also
+  `.specs/features/component-graph/` (spec.md, design.md, tasks.md).
+
+## Planning Record — Component Graph (2026-08-22)
+
+- **What it closes**: AD-020. A live CLI run over `fixtures/SyntheticSolution` during Design confirmed
+  `raw/dependencies.mmd` is exactly `"flowchart LR\n"` — zero nodes, zero edges — while the same run resolves
+  **15 cross-project relations** and **11 relations into proven database objects**. Both of AD-020's blockers
+  were re-verified rather than taken on trust: `grep` finds no `new ComponentFact(` outside one test file,
+  and `RelationProjector.Mermaid`'s `componentByProject` is keyed by project-shaped `FactId`s while relation
+  endpoints are symbol-, document- or database-shaped.
+- **Spec**: 35 requirements. P1 `COMP-01`..`COMP-32` across four stories (components exist; deduped edges
+  render; database objects are nodes; omissions are counted). P2 `COMP-40`/`COMP-41` (service-level rollup)
+  and P3 `COMP-50` (placeholder nodes for unresolved endpoints) deliberately out of the task list.
+  `validate_spec.py` exits 0.
+- **User decisions (AskUserQuestion, all three recorded as confirmed assumptions in spec.md)**: one component
+  per **project** (not per service); edges **deduped** by (source, target, partition, kind) with a count;
+  **database objects are nodes** alongside projects. Service granularity was additionally ruled out by
+  evidence — `Acme.Shared.Contracts` belongs to both `.slnx` files, which trips
+  `RelationProjector`'s one-project-one-component invariant on this repo's own fixture.
+- **Design**: `ComponentFragmentBuilder` (mints one `ComponentFact` per `ProjectFact`), a pure
+  `GraphNodeIndex` (endpoint `FactId` → node, resolved by walking facts, never by parsing id text — AD-014),
+  and a new `ComponentGraphProjector` owning `dependencies.mmd` and `components.md`. `RelationProjector`
+  narrows to its partition job. Architecture chosen by the user over two alternatives.
+- **No schema bump**: `schemas/facts.schema.json` already lists `components` in `required` and `"component"`
+  in `fact_kind`. `FactualJsonSerializer.SchemaVersion` stays at **5**. Verified by reading the schema.
+- **Two corrections the live run forced into the spec**: every `ProjectFact` reports `syntactic` in the
+  default syntax-only mode, so a component's resolution **mirrors its project's** rather than being a
+  hardcoded `Exact`; and `Acme.DoesNotExist` gets a `ProjectFact` despite the file being absent, so the run
+  yields **5** components, not 4.
+- **Critical trap recorded in design.md's Risks table**: `RelationProjector.Project` is invoked inline inside
+  the `snapshot` constructor at `AnalysisEngine.cs:269`, *after* `CoverageProjector.Project` at line 263, so
+  any diagnostic a projector emits from there never reaches `diagnostics.json`. This is the same defect the
+  relation-resolver session found in `RelationFragmentBuilder` (T23). T11 therefore requires asserting
+  `C2M-CG-001` against the **written file**, not the projector's return value.
+- **Tasks**: 17 tasks, 5 phases. `validate_tasks.py` exits 0 (2 expected `Tests: none` warnings on the two
+  document-only tasks). One design amendment was made during breakdown and written back into design.md:
+  `ComponentGraphProjection` also carries `ImmutableArray<ComponentGraphEdge> Edges`, so edge selection (T4)
+  is verifiable without the renderer (T5).
+- **Standing skip**: the Verifier's discrimination sensor is skipped for this feature, as for every prior
+  one, recorded in `tasks.md`'s header.
+
+## Historical Handoff — RelationResolver
+
+- **Feature**: RelationResolver (`.specs/features/relation-resolver/`) — **done.** Turns the pipeline's
+  relation stubs into proven edges: `RelationResolver` is now the sole reachable writer of `RelationFact`,
+  reading the run's complete `SymbolIndex` against every buffered `RawRelation` claim in a pass-two stage,
+  through a fixed five-strategy chain (`ExistingTarget` → `DatabaseRelation` → `ReceiverType` → `SymbolIndex`
+  → `Unresolved`).
+- **Phase / Task**: Execute — **all 32 tasks complete across 6 phases**; feature-level validation **PASSED**
+  on the first Verifier pass (two Minor spec-precision gaps found and fixed immediately after, before this
+  handoff was written — see below). Discrimination sensor skipped by standing user request (same as
+  `symbol-index`/`relation-collector`/`data-access-discovery`), recorded in `tasks.md`'s header.
+- **Branch**: `feat/relation-resolver`, cut from `feat/data-access-discovery` (the user's explicit choice —
+  `AskUserQuestion`, "stacked, not from master"), HEAD `dea05f5`. 34 commits. Not pushed to any remote.
+- **Specify/Design/Tasks (prior session, 2026-08-21)**: spec.md — 49 requirements, P1 `RELR-01`..`RELR-39`
+  across five stories, P2 `RELR-40`..`RELR-45` and P3 `RELR-46`..`RELR-49` deliberately out of this task
+  list's scope. design.md — five-strategy chain, claim-based collector-to-resolver seam (mirrors
+  `RawDatabaseClaim`, never serialized). tasks.md — 32 tasks, 6 phases. User chose "one sub-agent per phase"
+  for execution.
+- **Execution (this session)**: Phases 1-3 (T1-T14) ran via dispatched sub-agents as planned. **Phase 4's
+  sub-agent hit the account's monthly API spend limit mid-T15 and terminated.** The user's only instruction
+  was "continue" — interpreted (matching this same project's own documented precedent, e.g.
+  data-access-discovery's Phase 5 interruption) as authorization to keep implementing directly in the main
+  session rather than retry sub-agent dispatch. Phases 4, 5 and 6 (T15-T32) were completed this way, each
+  task still following the full implement → gate → atomic-commit cycle.
+- **Eight real production bugs found and fixed during wiring (T23)**, each via direct CLI/`dotnet test`
+  runs rather than assumption: `RelationClaimAccumulator`'s "no claim → no extent" rule dropped
+  cross-referenced documents for pure-SQL claims; `DatabaseMappingResolver`'s `ProducerMethod` was
+  hardcoded to `Configured` regardless of the claim's actual proof strength; `DatabaseRelationStrategy`'s
+  generic fallback hardcoded `Unresolved` instead of deriving from `ShapeConfidence`;
+  `FactStore.MapRelation` never read `RelationFact.Method`/`Candidates` at all, so every persisted relation
+  showed `"exact"` regardless of truth; `RelationFragmentBuilder.Build`'s diagnostics were validator-only,
+  so the resolver's own `C2M-RELR-*` codes never reached `diagnostics.json`. Full detail in the T23 commit
+  body (`dd94e76`).
+- **AD-020 (new decision this session)**: spec.md's Success Criterion "a non-empty `raw/dependencies.mmd`
+  with at least one edge outside the `data` partition" is **not met**, by explicit user decision after being
+  shown the trade-off (`AskUserQuestion`). Two independent, pre-existing gaps make it unreachable regardless
+  of resolution quality: no production path anywhere constructs a `ComponentFact` (the `Detection/` tree
+  that would is still orphaned, per AD-015), and separately `RelationProjector.Mermaid`'s
+  `componentByProject` lookup is keyed by project-shaped `FactId`s while relation `Source`/`TargetId`s are
+  symbol- or document-shaped, so it would still miss even if a `ComponentFact` existed. Confirmed by a real
+  run: `raw/dependencies.mmd` is `"flowchart LR\n"` with zero edges even with real, resolved relation
+  targets in place. `RelationResolverEndToEndTests.cs`'s corresponding test proves only that the file is
+  written and non-empty, not that it has an edge — this is the honest, narrower claim. **Closing this gap
+  for real needs a future feature**: wire some `ComponentFact` producer and fix `Mermaid`'s key mismatch.
+- **Verifier (fresh sub-agent, author != verifier) → PASS.** All 39 P1 acceptance criteria independently
+  re-derived and confirmed against real `file:line` assertions; two T32 commit-body citations were wrong and
+  corrected (RELR-10, RELR-25 — the underlying behaviour was still covered elsewhere, so not gaps). Two
+  Minor spec-precision gaps found: RELR-05 (`ReceiverTypeStrategy` forwards `ArgumentCount`/`ArgumentTypes`
+  into the lookup but no test exercised non-default values) and RELR-20 ("preserve the claim's
+  `FactProvenance`" was asserted with a vacuous `NotEmpty`, since `RawRelation` carries no provenance field
+  by design). Both fixed same-session (`dea05f5`) with a genuine overload-discriminating test and a pinned
+  `DetectorId` assertion, respectively; re-verified green. One cosmetic stale comment
+  (`FactualJsonContracts.cs`, pointed at a `SPEC_DEVIATION` note T32's rewrite had already removed) also
+  fixed. `.specs/features/relation-resolver/validation.md` is the persisted report, updated in place to
+  reflect the post-fix state; `validate_state.py relation-resolver` exits 0. Four lessons distilled to
+  `.specs/lessons.json` (L-007..L-010).
+- **Gate at close**: `dotnet build -c Release` clean, `dotnet format --verify-no-changes` clean,
+  `dotnet test` 1850/1851 passing (the one failure is the pre-existing documented
+  `DotnetMsBuildEvaluatorTests` flake, unrelated to this feature — carried unchanged across every session
+  that has touched this branch). Test count 859 → 968 `[Fact]`/`[Theory]` attributes (+109).
+- **Not decided**: whether to push the two stacked branches and open a PR (needs explicit user go-ahead
+  per AD-007); what to work on next.
+
+## Historical Handoff — Database Access Discovery
 
 - **Feature**: Database Access Discovery (`.specs/features/data-access-discovery/`) — **done.** A stage that
   maps every interaction the analysed code has with a database: EF Core entities/tables/columns and literal

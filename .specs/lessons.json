@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 7,
+  "next_id": 11,
   "lessons": [
     {
       "id": "L-001",
@@ -112,6 +112,78 @@
       ],
       "created": "2026-08-19T14:19:30Z",
       "last_seen": "2026-08-19T14:19:30Z"
+    },
+    {
+      "id": "L-007",
+      "key": "spec_precision_gap::when a criterion names the specific inputs a lookup must be built from assert each input actually changes the result not just that the lookup succeeds",
+      "text": "When a criterion names the specific inputs a lookup must be built from, assert each input actually changes the result, not just that the lookup succeeds",
+      "signal": "spec_precision_gap",
+      "scope": "relations",
+      "status": "candidate",
+      "features": [
+        "relation-resolver"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "RELR-05 src/Csharp2Md.Core/Analysis/Relations/Resolution/ReceiverTypeStrategy.cs:47 (relations)"
+      ],
+      "created": "2026-08-21T15:22:46Z",
+      "last_seen": "2026-08-21T15:22:46Z"
+    },
+    {
+      "id": "L-008",
+      "key": "spec_precision_gap::assert the exact identity of an appended provenance or metadata entry not merely that the collection is non empty",
+      "text": "Assert the exact identity of an appended provenance or metadata entry, not merely that the collection is non-empty",
+      "signal": "spec_precision_gap",
+      "scope": "facts",
+      "status": "candidate",
+      "features": [
+        "relation-resolver"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "RELR-20 tests/Csharp2Md.Core.Tests/Analysis/Relations/RelationFragmentBuilderTests.cs:29 (facts)"
+      ],
+      "created": "2026-08-21T15:22:46Z",
+      "last_seen": "2026-08-21T15:22:46Z"
+    },
+    {
+      "id": "L-009",
+      "key": "spec_deviation::when an identity is minted by the orchestrator have a strategy return a description of its diagnostic rather than a built one that would need the identity first",
+      "text": "When an identity is minted by the orchestrator, have a strategy return a description of its diagnostic rather than a built one that would need the identity first",
+      "signal": "spec_deviation",
+      "scope": "relations",
+      "status": "candidate",
+      "features": [
+        "relation-resolver"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/Csharp2Md.Core/Analysis/Relations/Resolution/IRelationResolutionStrategy.cs:31 (relations)"
+      ],
+      "created": "2026-08-21T15:22:54Z",
+      "last_seen": "2026-08-21T15:22:54Z"
+    },
+    {
+      "id": "L-010",
+      "key": "spec_deviation::pass the set of identities the run actually produced explicitly into a resolver an index over one fact family cannot answer whether a target from another family exists",
+      "text": "Pass the set of identities the run actually produced explicitly into a resolver; an index over one fact family cannot answer whether a target from another family exists",
+      "signal": "spec_deviation",
+      "scope": "relations",
+      "status": "candidate",
+      "features": [
+        "relation-resolver"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/Csharp2Md.Core/Analysis/Relations/Resolution/RelationResolver.cs:76 (relations)"
+      ],
+      "created": "2026-08-21T15:22:54Z",
+      "last_seen": "2026-08-21T15:22:54Z"
     }
   ]
 }

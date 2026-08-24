@@ -262,7 +262,8 @@ public sealed class SymbolIndexTests
             ArgumentCount = 1,
         });
 
-        Assert.Equal(one.SymbolId, Assert.Single(found).SymbolId);
+        Assert.Equal(one.SymbolId, Assert.Single(found.Methods).SymbolId);
+        Assert.Equal(1, found.TiedCandidateCount);
     }
 
     [Fact]
@@ -281,8 +282,8 @@ public sealed class SymbolIndexTests
         });
         var unfiltered = index.FindMethods(new MethodLookup { Name = "Authorize", ReceiverType = "global::Acme.Api" });
 
-        Assert.Equal(none.SymbolId, Assert.Single(zeroArguments).SymbolId);
-        Assert.Equal(3, unfiltered.Length);
+        Assert.Equal(none.SymbolId, Assert.Single(zeroArguments.Methods).SymbolId);
+        Assert.Equal(3, unfiltered.Methods.Length);
     }
 
     [Fact]
@@ -303,9 +304,12 @@ public sealed class SymbolIndexTests
         // The exact-type match deliberately sorts *after* the mismatched candidate by Id ordinal, so
         // only argument-type ranking - never the ordinal tie-break - can put it first.
         Assert.True(string.CompareOrdinal(matching.SymbolId.Value, mismatched.SymbolId.Value) > 0);
-        Assert.Equal(2, found.Length);
-        Assert.Equal(matching.SymbolId, found[0].SymbolId);
-        Assert.Equal(mismatched.SymbolId, found[1].SymbolId);
+        Assert.Equal(2, found.Methods.Length);
+        Assert.Equal(matching.SymbolId, found.Methods[0].SymbolId);
+        Assert.Equal(mismatched.SymbolId, found.Methods[1].SymbolId);
+        // The two candidates have different scores (one matches the argument type, one does not),
+        // so only the top-scoring one ties with itself.
+        Assert.Equal(1, found.TiedCandidateCount);
     }
 
     [Fact]
@@ -325,7 +329,7 @@ public sealed class SymbolIndexTests
             Name = "Authorize",
             ReceiverType = "Gateway",
             ArgumentCount = 0,
-        }));
+        }).Methods);
     }
 
     [Fact]
@@ -343,7 +347,7 @@ public sealed class SymbolIndexTests
             ArgumentCount = 2,
         });
 
-        var method = Assert.Single(found);
+        var method = Assert.Single(found.Methods);
         Assert.Equal("AuthorizePayment", method.Name);
         Assert.Equal("global::Acme.Payments.PaymentsService", method.ContainingType);
         Assert.Equal(2, method.ParameterTypes.Length);
@@ -353,7 +357,7 @@ public sealed class SymbolIndexTests
             Name = "AuthorizePayment",
             ReceiverType = "PaymentsService",
             ArgumentCount = 1,
-        }));
+        }).Methods);
     }
 
     [Fact]
@@ -389,6 +393,7 @@ public sealed class SymbolIndexTests
 
         Assert.Equal(SymbolLookupStatus.Unique, result.Status);
         Assert.Equal("OrderService", Assert.Single(result.Candidates).Name);
+        Assert.Equal(1, result.TiedCandidateCount);
     }
 
     [Fact]
@@ -409,6 +414,31 @@ public sealed class SymbolIndexTests
         Assert.Equal(
             new[] { first, second }.Select(static symbol => symbol.SymbolId.Value).Order(StringComparer.Ordinal),
             result.Candidates.Select(static symbol => symbol.SymbolId.Value));
+        Assert.Equal(2, result.TiedCandidateCount);
+    }
+
+    [Fact]
+    public void FindCandidates_TwoTiedAtBestRankPlusALowerTierCandidate_TiedCandidateCountExcludesTheLowerTierOne()
+    {
+        var tiedFirst = Symbol("Handler", "global::Acme.Shared.Handler", projectId: ProjectId, documentPath: "First.cs")
+            with
+        { Namespace = "Acme.Shared" };
+        var tiedSecond = Symbol("Handler", "global::Acme.Shared.Handler", projectId: ProjectId, documentPath: "Second.cs")
+            with
+        { Namespace = "Acme.Shared" };
+        var lowerTier = Symbol("Handler", "global::Other.Far.Handler", projectId: OtherProjectId, documentPath: "Far.cs")
+            with
+        { Namespace = "Other.Far" };
+        var index = Build(tiedFirst, tiedSecond, lowerTier);
+
+        var result = index.FindCandidates(new SymbolLookup { Name = "Handler", Namespace = "Acme.Shared" });
+
+        Assert.Equal(SymbolLookupStatus.Ambiguous, result.Status);
+        Assert.Equal(3, result.Candidates.Length);
+        Assert.Equal(2, result.TiedCandidateCount);
+        Assert.Equal(
+            new[] { tiedFirst, tiedSecond }.Select(static symbol => symbol.SymbolId.Value).Order(StringComparer.Ordinal),
+            result.Candidates.Take(result.TiedCandidateCount).Select(static symbol => symbol.SymbolId.Value));
     }
 
     [Fact]
@@ -420,6 +450,7 @@ public sealed class SymbolIndexTests
 
         Assert.Equal(SymbolLookupStatus.NotFound, result.Status);
         Assert.Empty(result.Candidates);
+        Assert.Equal(0, result.TiedCandidateCount);
     }
 
     [Fact]
@@ -468,6 +499,9 @@ public sealed class SymbolIndexTests
             new[] { inContainingType, inNamespace, inImportedNamespace, inSameProject, elsewhere }
                 .Select(static symbol => symbol.SymbolId.Value),
             result.Candidates.Select(static symbol => symbol.SymbolId.Value));
+        // Five candidates span five different priority tiers here - proves TiedCandidateCount reports
+        // only the winning tier's size, not the full returned pool's length.
+        Assert.Equal(1, result.TiedCandidateCount);
     }
 
     [Fact]

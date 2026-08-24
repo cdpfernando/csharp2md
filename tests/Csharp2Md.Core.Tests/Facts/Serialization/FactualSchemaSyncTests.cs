@@ -30,6 +30,7 @@ public sealed class FactualSchemaSyncTests
         { "fact_resolution", typeof(FactResolution) },
         { "fact_kind", typeof(FactKind) },
         { "relation_partition", typeof(RelationPartition) },
+        { "resolution_method", typeof(ResolutionMethod) },
         { "database_object_kind", typeof(DatabaseObjectKind) },
         { "fact_level", typeof(FactLevel) },
         { "coverage_applicability", typeof(CoverageApplicability) },
@@ -39,14 +40,14 @@ public sealed class FactualSchemaSyncTests
     };
 
     [Fact]
-    public void RootRequiredProperties_MatchFactualDocumentExactlyAndSchemaVersionIsFour()
+    public void RootRequiredProperties_MatchFactualDocumentExactlyAndSchemaVersionIsFive()
     {
         using var schema = OpenSchema();
         var required = Required(schema.RootElement);
         var contract = typeof(FactualJsonDocument).GetProperties().Select(static property => Snake(property.Name)).Order().ToArray();
 
         Assert.Equal(contract, required);
-        Assert.Equal(4, schema.RootElement.GetProperty("properties").GetProperty("schema_version").GetProperty("const").GetInt32());
+        Assert.Equal(5, schema.RootElement.GetProperty("properties").GetProperty("schema_version").GetProperty("const").GetInt32());
         Assert.Equal(FactualJsonSerializer.SchemaVersion, schema.RootElement.GetProperty("properties").GetProperty("schema_version").GetProperty("const").GetInt32());
     }
 

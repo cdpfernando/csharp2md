@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using Csharp2Md.Core.Analysis.Contracts;
+using Csharp2Md.Core.Facts.Model;
+using Csharp2Md.Core.Facts.Serialization;
 using Csharp2Md.Core.Projection.Aggregates;
 using VerifyXunit;
 
@@ -146,6 +148,46 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
         return Verifier.Verify(File.ReadAllText(Path.Combine(_root, "raw", "facts", "manifest.json")), "json").UseDirectory("snapshots");
     }
 
+    [Fact]
+    public void Write_ARunWithNoRelations_StillWritesResolutionJsonAtVersion1WithEveryCountZero()
+    {
+        new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot(), TimeProvider.System);
+
+        var path = Path.Combine(_root, "raw", "facts", "relations", "resolution.json");
+        Assert.True(File.Exists(path));
+        using var resolution = JsonDocument.Parse(File.ReadAllText(path));
+        Assert.Equal(1, resolution.RootElement.GetProperty("schema_version").GetInt32());
+        Assert.Equal("resolution", resolution.RootElement.GetProperty("kind").GetString());
+        Assert.Equal(0, resolution.RootElement.GetProperty("total").GetInt32());
+        Assert.Equal(8, resolution.RootElement.GetProperty("by_partition").GetArrayLength());
+    }
+
+    [Fact]
+    public void Write_ARunWithRelations_WritesResolutionJsonWithMatchingCountsAndLeavesPartitionEnvelopesAtVersion2()
+    {
+        var relation = new RelationFactJson(
+            new FactHeaderJson("id1:relation;owner=x;kind=calls;claim=y;ordinal=1", "relation", "syntactic", [], [], []),
+            "id1:relation;owner=x;kind=calls;claim=y;ordinal=1", "id1:syntactic-symbol;owner=x", null,
+            "structural", "calls", null, null, "syntactic", null);
+        var projection = new RelationProjectionResult(
+            [.. Enum.GetValues<RelationPartition>().Select(partition =>
+                new RelationPartitionProjection(partition, partition == RelationPartition.Structural ? [relation] : []))],
+            [], "flowchart LR\n", "# Components\n");
+
+        new CanonicalAggregateWriter().Write(_root, _input, false, Snapshot() with { Relations = projection }, TimeProvider.System);
+
+        var structuralPath = Path.Combine(_root, "raw", "facts", "relations", "structural.json");
+        using var structural = JsonDocument.Parse(File.ReadAllText(structuralPath));
+        Assert.Equal(2, structural.RootElement.GetProperty("schema_version").GetInt32());
+
+        using var resolution = JsonDocument.Parse(File.ReadAllText(Path.Combine(_root, "raw", "facts", "relations", "resolution.json")));
+        Assert.Equal(1, resolution.RootElement.GetProperty("total").GetInt32());
+        Assert.Equal(1, resolution.RootElement.GetProperty("by_method").GetProperty("syntactic").GetInt32());
+        var structuralMetrics = resolution.RootElement.GetProperty("by_partition").EnumerateArray()
+            .Single(entry => entry.GetProperty("partition").GetString() == "structural");
+        Assert.Equal(1, structuralMetrics.GetProperty("total").GetInt32());
+    }
+
     private static AggregateOutputSnapshot Snapshot() => new(
         "architecture", "system-design", "3.0.0", AnalysisMode.SyntaxOnly, AnalysisMode.SyntaxOnly,
         TrustMode.Untrusted, [], new ManifestCoverage(1, 1, 2), []);
@@ -157,6 +199,7 @@ public sealed class CanonicalAggregateWriterTests : IDisposable
         "raw/facts/diagnostics.json", "raw/facts/manifest.json", "raw/facts/relations/compile-time.json",
         "raw/facts/relations/data.json", "raw/facts/relations/dependency-injection.json", "raw/facts/relations/events.json",
         "raw/facts/relations/grpc.json", "raw/facts/relations/http.json", "raw/facts/relations/inheritance.json",
+        "raw/facts/relations/resolution.json",
         "raw/facts/relations/structural.json", "raw/facts/solutions.json", "raw/log.md", "raw/topic.yaml",
     ];
 

@@ -102,7 +102,7 @@ public sealed class FactualJsonTests
         Assert.Equal(
             ["global::System.String"],
             symbol.GetProperty("parameter_types").EnumerateArray().Select(static item => item.GetString()!).ToArray());
-        Assert.Equal(4, json.RootElement.GetProperty("schema_version").GetInt32());
+        Assert.Equal(5, json.RootElement.GetProperty("schema_version").GetInt32());
     }
 
     [Fact]
@@ -141,6 +141,84 @@ public sealed class FactualJsonTests
         Assert.Equal("Feature", mapped.Name);
         Assert.Equal(0, mapped.Arity);
         Assert.Empty(mapped.ParameterTypes);
+    }
+
+    [Fact]
+    public void SerializeAndDeserialize_RelationWithTargetAndNoCandidates_RoundTripsResolutionMethod()
+    {
+        var document = EmptyDocument() with
+        {
+            Relations = [new RelationFactJson(
+                Header("id1:relation;owner=x;kind=calls;claim=a;ordinal=1", "relation"),
+                "id1:relation;owner=x;kind=calls;claim=a;ordinal=1",
+                "id1:symbol;owner=x",
+                "id1:symbol;owner=y",
+                "structural",
+                "calls",
+                UnresolvedReason: null,
+                Details: null,
+                ResolutionMethod: "syntactic",
+                Candidates: null)],
+        };
+
+        var restored = FactualJsonSerializer.Deserialize(FactualJsonSerializer.Serialize(document));
+
+        var relation = Assert.Single(restored.Relations);
+        Assert.Equal("id1:symbol;owner=y", relation.TargetId);
+        Assert.Equal("syntactic", relation.ResolutionMethod);
+        Assert.Null(relation.Candidates);
+    }
+
+    [Fact]
+    public void SerializeAndDeserialize_RelationWithCandidatesAndNoTarget_RoundTripsOrdinalOrderedCandidates()
+    {
+        var document = EmptyDocument() with
+        {
+            Relations = [new RelationFactJson(
+                Header("id1:relation;owner=x;kind=calls;claim=a;ordinal=1", "relation"),
+                "id1:relation;owner=x;kind=calls;claim=a;ordinal=1",
+                "id1:symbol;owner=x",
+                TargetId: null,
+                "structural",
+                "calls",
+                UnresolvedReason: null,
+                Details: null,
+                ResolutionMethod: "candidate",
+                Candidates: ["id1:symbol;owner=a", "id1:symbol;owner=b"])],
+        };
+
+        var restored = FactualJsonSerializer.Deserialize(FactualJsonSerializer.Serialize(document));
+
+        var relation = Assert.Single(restored.Relations);
+        Assert.Null(relation.TargetId);
+        Assert.Equal("candidate", relation.ResolutionMethod);
+        Assert.Equal(["id1:symbol;owner=a", "id1:symbol;owner=b"], relation.Candidates!.Value.ToArray());
+    }
+
+    [Fact]
+    public void Serialize_RelationResolutionFields_AppearAfterDetailsAtOrdersEightAndNine()
+    {
+        var document = EmptyDocument() with
+        {
+            Relations = [new RelationFactJson(
+                Header("id1:relation;owner=x;kind=calls;claim=a;ordinal=1", "relation"),
+                "id1:relation;owner=x;kind=calls;claim=a;ordinal=1",
+                "id1:symbol;owner=x",
+                "id1:symbol;owner=y",
+                "structural",
+                "calls",
+                UnresolvedReason: null,
+                Details: [new RelationDetailJson("member", "Authorize")],
+                ResolutionMethod: "syntactic",
+                Candidates: ["id1:symbol;owner=a"])],
+        };
+
+        using var json = JsonDocument.Parse(FactualJsonSerializer.Serialize(document));
+
+        var relation = json.RootElement.GetProperty("relations").EnumerateArray().Single();
+        Assert.Equal(
+            ["header", "relation_id", "source_id", "target_id", "partition", "relation_kind", "details", "resolution_method", "candidates"],
+            relation.EnumerateObject().Select(static property => property.Name).ToArray());
     }
 
     private static readonly ProjectFactId MapperProject = ProjectFactId.Create("src/App/App.csproj");
@@ -281,8 +359,8 @@ public sealed class FactualJsonTests
     [Theory]
     [InlineData(2)]
     [InlineData(3)]
-    [InlineData(5)]
-    public void Serialize_SchemaVersionOtherThanFour_IsRejected(int schemaVersion) =>
+    [InlineData(4)]
+    public void Serialize_SchemaVersionOtherThanFive_IsRejected(int schemaVersion) =>
         Assert.Throws<ArgumentException>(() =>
             FactualJsonSerializer.Serialize(EmptyDocument() with { SchemaVersion = schemaVersion }));
 

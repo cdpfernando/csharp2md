@@ -147,6 +147,8 @@ public sealed class AggregateRelationPartitionFixture : IAsyncLifetime
     public string[] WrittenPartitionNames() =>
         Directory.EnumerateFiles(PartitionDirectory, "*.json")
             .Select(Path.GetFileNameWithoutExtension)
+            // resolution.json (RELR-35) is a metrics summary, not a RelationPartition member's own file.
+            .Where(static name => name != "resolution")
             .Order(StringComparer.Ordinal)
             .ToArray()!;
 }

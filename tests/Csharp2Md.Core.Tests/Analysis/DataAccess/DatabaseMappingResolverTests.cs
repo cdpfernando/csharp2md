@@ -1,5 +1,6 @@
 using Csharp2Md.Core.Analysis.DataAccess;
 using Csharp2Md.Core.Analysis.Indexes;
+using Csharp2Md.Core.Analysis.Relations;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
@@ -46,10 +47,10 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.Symbols(entity),
             ResolverScenario.EntitySet("Order", "Orders"));
 
-        var mapsTo = Assert.Single(resolution.Relations, relation => relation.RelationKind == "maps-to");
-        Assert.Equal(entity.SymbolId.ToFactId(), mapsTo.SourceId);
+        var mapsTo = Assert.Single(resolution.Relations, relation => relation.Kind == "maps-to");
+        Assert.Equal(entity.SymbolId.ToFactId(), mapsTo.OwnerId);
         Assert.Null(mapsTo.TargetId);
-        Assert.Equal(FactResolution.Heuristic, mapsTo.Resolution);
+        Assert.Equal(FactResolution.Heuristic, mapsTo.ShapeConfidence);
         Assert.Equal("Orders", ResolverScenario.Detail(mapsTo, "target_text"));
         Assert.Equal("convention", ResolverScenario.Detail(mapsTo, "mapping"));
         Assert.Equal("convention-mapping", mapsTo.UnresolvedReason);
@@ -66,10 +67,10 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.EntitySet("Order", "Orders", "Data/OrderDbContext.cs"),
             ResolverScenario.ConfiguredTable("Order", "tb_order", "Data/OrderConfiguration.cs"));
 
-        var mapsTo = Assert.Single(resolution.Relations, relation => relation.RelationKind == "maps-to");
-        Assert.Equal(entity.SymbolId.ToFactId(), mapsTo.SourceId);
+        var mapsTo = Assert.Single(resolution.Relations, relation => relation.Kind == "maps-to");
+        Assert.Equal(entity.SymbolId.ToFactId(), mapsTo.OwnerId);
         Assert.Equal(Assert.Single(resolution.Objects).ObjectId.ToFactId(), mapsTo.TargetId);
-        Assert.Equal(FactResolution.Exact, mapsTo.Resolution);
+        Assert.Equal(FactResolution.Exact, mapsTo.ShapeConfidence);
         Assert.Equal("configured", ResolverScenario.Detail(mapsTo, "mapping"));
         Assert.Equal("tb_order", ResolverScenario.Detail(mapsTo, "target_text"));
         Assert.Null(mapsTo.UnresolvedReason);
@@ -84,7 +85,7 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.EntitySet("Order", "Orders", "Data/OrderDbContext.cs"),
             ResolverScenario.ConfiguredTable("Order", "tb_order", "Data/OrderConfiguration.cs"));
 
-        var mapsTo = Assert.Single(resolution.Relations, relation => relation.RelationKind == "maps-to");
+        var mapsTo = Assert.Single(resolution.Relations, relation => relation.Kind == "maps-to");
 
         Assert.Equal("Data/OrderConfiguration.cs", mapsTo.Evidence.RelativePath);
     }
@@ -98,7 +99,7 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.EntitySet("Order", "Orders"),
             ResolverScenario.ConfiguredTable("Order", "tb_order", "Data/OrderConfiguration.cs"));
 
-        var mapsTo = Assert.Single(resolution.Relations, relation => relation.RelationKind == "maps-to");
+        var mapsTo = Assert.Single(resolution.Relations, relation => relation.Kind == "maps-to");
 
         Assert.Equal("configured", ResolverScenario.Detail(mapsTo, "mapping"));
     }
@@ -112,10 +113,10 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.ConfiguredTable("Order", "tb_order", "Data/AaaConfiguration.cs"),
             ResolverScenario.EntitySet("Order", "Orders", "Data/ZzzDbContext.cs"));
 
-        var mapsTo = Assert.Single(resolution.Relations, relation => relation.RelationKind == "maps-to");
+        var mapsTo = Assert.Single(resolution.Relations, relation => relation.Kind == "maps-to");
 
         Assert.Equal("configured", ResolverScenario.Detail(mapsTo, "mapping"));
-        Assert.Equal(FactResolution.Exact, mapsTo.Resolution);
+        Assert.Equal(FactResolution.Exact, mapsTo.ShapeConfidence);
     }
 
     // DAD-01: one exposes per DbSet property, sourced at the declaring context, naming the entity.
@@ -126,8 +127,8 @@ public sealed class DatabaseMappingResolverTests
 
         var resolution = ResolverScenario.Resolve(ResolverScenario.Symbols(ResolverScenario.Entity("Order")), claim);
 
-        var exposes = Assert.Single(resolution.Relations, relation => relation.RelationKind == "exposes");
-        Assert.Equal(claim.OwnerId, exposes.SourceId);
+        var exposes = Assert.Single(resolution.Relations, relation => relation.Kind == "exposes");
+        Assert.Equal(claim.OwnerId, exposes.OwnerId);
         Assert.Null(exposes.TargetId);
         Assert.Equal("Order", ResolverScenario.Detail(exposes, "target_text"));
         Assert.False(string.IsNullOrWhiteSpace(exposes.UnresolvedReason));
@@ -142,10 +143,10 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.EntitySet("Order", "Orders", "Data/OrderDbContext.cs"),
             ResolverScenario.EntitySet("Order", "LegacyOrders", "Data/LegacyDbContext.cs"));
 
-        var exposes = resolution.Relations.Where(relation => relation.RelationKind == "exposes").ToArray();
+        var exposes = resolution.Relations.Where(relation => relation.Kind == "exposes").ToArray();
 
         Assert.Equal(2, exposes.Length);
-        Assert.Equal(2, exposes.Select(relation => relation.SourceId).Distinct().Count());
+        Assert.Equal(2, exposes.Select(relation => relation.OwnerId).Distinct().Count());
     }
 
     // Spec Edge Case: with no configuration, one convention mapping per distinct DbSet property name.
@@ -157,7 +158,7 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.EntitySet("Order", "Orders", "Data/OrderDbContext.cs"),
             ResolverScenario.EntitySet("Order", "LegacyOrders", "Data/LegacyDbContext.cs"));
 
-        var mapsTo = resolution.Relations.Where(relation => relation.RelationKind == "maps-to").ToArray();
+        var mapsTo = resolution.Relations.Where(relation => relation.Kind == "maps-to").ToArray();
 
         Assert.Equal(
             ["LegacyOrders", "Orders"],
@@ -174,7 +175,7 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.EntitySet("Order", "LegacyOrders", "Data/LegacyDbContext.cs"),
             ResolverScenario.ConfiguredTable("Order", "tb_order", "Data/OrderConfiguration.cs"));
 
-        var mapsTo = Assert.Single(resolution.Relations, relation => relation.RelationKind == "maps-to");
+        var mapsTo = Assert.Single(resolution.Relations, relation => relation.Kind == "maps-to");
 
         Assert.Equal("configured", ResolverScenario.Detail(mapsTo, "mapping"));
     }
@@ -188,7 +189,7 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.ConfiguredTable("Order", "tb_order"));
 
         Assert.Single(resolution.Objects);
-        Assert.DoesNotContain(resolution.Relations, relation => relation.RelationKind == "maps-to");
+        Assert.DoesNotContain(resolution.Relations, relation => relation.Kind == "maps-to");
     }
 
     // Two types share the entity's simple name, so no single symbol can source the mapping.
@@ -201,7 +202,7 @@ public sealed class DatabaseMappingResolverTests
                 ResolverScenario.Entity("Order", "Acme.Legacy.Order", "Legacy/Order.cs")),
             ResolverScenario.ConfiguredTable("Order", "tb_order"));
 
-        Assert.DoesNotContain(resolution.Relations, relation => relation.RelationKind == "maps-to");
+        Assert.DoesNotContain(resolution.Relations, relation => relation.Kind == "maps-to");
     }
 
     // Two documents configuring the same table converge on one node carrying both evidence spans.
@@ -252,10 +253,10 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.ConfiguredColumn("Order", "Status", "order_status"));
 
         var mapping = Assert.Single(
-            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
-        Assert.Equal(property.SymbolId.ToFactId(), mapping.SourceId);
+            resolution.Relations, relation => relation.Kind == "maps-property-to-column");
+        Assert.Equal(property.SymbolId.ToFactId(), mapping.OwnerId);
         Assert.Equal(Assert.Single(resolution.Columns).ColumnId.ToFactId(), mapping.TargetId);
-        Assert.Equal(FactResolution.Exact, mapping.Resolution);
+        Assert.Equal(FactResolution.Exact, mapping.ShapeConfidence);
         Assert.Equal("order_status", ResolverScenario.Detail(mapping, "target_text"));
         Assert.Equal("configured", ResolverScenario.Detail(mapping, "mapping"));
         Assert.Null(mapping.UnresolvedReason);
@@ -272,10 +273,10 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.EntitySet("Order", "Orders"));
 
         var mapping = Assert.Single(
-            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
-        Assert.Equal(property.SymbolId.ToFactId(), mapping.SourceId);
+            resolution.Relations, relation => relation.Kind == "maps-property-to-column");
+        Assert.Equal(property.SymbolId.ToFactId(), mapping.OwnerId);
         Assert.Null(mapping.TargetId);
-        Assert.Equal(FactResolution.Heuristic, mapping.Resolution);
+        Assert.Equal(FactResolution.Heuristic, mapping.ShapeConfidence);
         Assert.Equal("Status", ResolverScenario.Detail(mapping, "target_text"));
         Assert.Equal("convention", ResolverScenario.Detail(mapping, "mapping"));
         Assert.Equal("convention-mapping", mapping.UnresolvedReason);
@@ -294,12 +295,12 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.ConfiguredColumn("Order", "Status", "order_status"));
 
         var mappings = resolution.Relations
-            .Where(relation => relation.RelationKind == "maps-property-to-column")
+            .Where(relation => relation.Kind == "maps-property-to-column")
             .ToDictionary(relation => ResolverScenario.Detail(relation, "target_text")!);
 
         Assert.Equal(2, mappings.Count);
-        Assert.Equal(FactResolution.Exact, mappings["order_status"].Resolution);
-        Assert.Equal(FactResolution.Heuristic, mappings["Amount"].Resolution);
+        Assert.Equal(FactResolution.Exact, mappings["order_status"].ShapeConfidence);
+        Assert.Equal(FactResolution.Heuristic, mappings["Amount"].ShapeConfidence);
         Assert.Null(mappings["Amount"].TargetId);
     }
 
@@ -317,9 +318,9 @@ public sealed class DatabaseMappingResolverTests
 
         Assert.Empty(resolution.Columns);
         var mapping = Assert.Single(
-            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
+            resolution.Relations, relation => relation.Kind == "maps-property-to-column");
         Assert.Null(mapping.TargetId);
-        Assert.Equal(FactResolution.Unresolved, mapping.Resolution);
+        Assert.Equal(FactResolution.Unresolved, mapping.ShapeConfidence);
         Assert.Equal("unmapped-owning-object", mapping.UnresolvedReason);
         Assert.Equal("order_status", ResolverScenario.Detail(mapping, "target_text"));
     }
@@ -335,7 +336,7 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.ConfiguredTable("Invoice", "tb_invoice"));
 
         Assert.DoesNotContain(
-            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
+            resolution.Relations, relation => relation.Kind == "maps-property-to-column");
     }
 
     // The convention mapping is evidenced at the claim that proved the entity is mapped, which is the
@@ -350,7 +351,7 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.EntitySet("Order", "Orders", "Data/OrderDbContext.cs"));
 
         var mapping = Assert.Single(
-            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
+            resolution.Relations, relation => relation.Kind == "maps-property-to-column");
 
         Assert.Equal("Data/OrderDbContext.cs", mapping.Evidence.RelativePath);
     }
@@ -366,7 +367,7 @@ public sealed class DatabaseMappingResolverTests
 
         Assert.Single(resolution.Columns);
         Assert.DoesNotContain(
-            resolution.Relations, relation => relation.RelationKind == "maps-property-to-column");
+            resolution.Relations, relation => relation.Kind == "maps-property-to-column");
     }
 
     // DAD-07: a DbSet read targets the entity's mapped object and names the precise operation.
@@ -380,8 +381,8 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.ConfiguredTable("Order", "tb_order"),
             access);
 
-        var reads = Assert.Single(resolution.Relations, relation => relation.RelationKind == "reads");
-        Assert.Equal(access.OwnerId, reads.SourceId);
+        var reads = Assert.Single(resolution.Relations, relation => relation.Kind == "reads");
+        Assert.Equal(access.OwnerId, reads.OwnerId);
         Assert.Equal(Assert.Single(resolution.Objects).ObjectId.ToFactId(), reads.TargetId);
         Assert.Equal("read", ResolverScenario.Detail(reads, "operation"));
         Assert.Equal("Orders", ResolverScenario.Detail(reads, "target_text"));
@@ -397,10 +398,10 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.EntitySet("Order", "Orders"),
             ResolverScenario.EntitySetAccess("Order", "Orders", DatabaseOperation.Read));
 
-        var reads = Assert.Single(resolution.Relations, relation => relation.RelationKind == "reads");
+        var reads = Assert.Single(resolution.Relations, relation => relation.Kind == "reads");
         Assert.Null(reads.TargetId);
         Assert.Equal("Orders", ResolverScenario.Detail(reads, "target_text"));
-        Assert.Equal(FactResolution.Heuristic, reads.Resolution);
+        Assert.Equal(FactResolution.Heuristic, reads.ShapeConfidence);
         Assert.Equal("convention-mapping", reads.UnresolvedReason);
     }
 
@@ -418,7 +419,7 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.ConfiguredTable("Order", "tb_order"),
             ResolverScenario.EntitySetAccess("Order", "Orders", operation));
 
-        var writes = Assert.Single(resolution.Relations, relation => relation.RelationKind == "writes");
+        var writes = Assert.Single(resolution.Relations, relation => relation.Kind == "writes");
 
         Assert.Equal(expected, ResolverScenario.Detail(writes, "operation"));
     }
@@ -435,7 +436,7 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.ConfiguredColumn("Order", "Status", "order_status"),
             ResolverScenario.LinqColumn("Order", "Status", ColumnUsage.Read));
 
-        var read = Assert.Single(resolution.Relations, relation => relation.RelationKind == "reads-column");
+        var read = Assert.Single(resolution.Relations, relation => relation.Kind == "reads-column");
         Assert.Equal("read", ResolverScenario.Detail(read, "usage"));
         Assert.Equal("Status", ResolverScenario.Detail(read, "target_text"));
         Assert.Equal(Assert.Single(resolution.Columns).ColumnId.ToFactId(), read.TargetId);
@@ -452,11 +453,11 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.EntitySet("Order", "Orders"),
             ResolverScenario.LinqColumn("Order", "Id", ColumnUsage.Filter));
 
-        var filter = Assert.Single(resolution.Relations, relation => relation.RelationKind == "filters-by");
+        var filter = Assert.Single(resolution.Relations, relation => relation.Kind == "filters-by");
         Assert.Equal("filter", ResolverScenario.Detail(filter, "usage"));
         Assert.Equal("Id", ResolverScenario.Detail(filter, "target_text"));
         Assert.Null(filter.TargetId);
-        Assert.Equal(FactResolution.Heuristic, filter.Resolution);
+        Assert.Equal(FactResolution.Heuristic, filter.ShapeConfidence);
         Assert.Equal("convention-mapping", filter.UnresolvedReason);
     }
 
@@ -476,11 +477,11 @@ public sealed class DatabaseMappingResolverTests
             write);
 
         var written = Assert.Single(
-            resolution.Relations, relation => relation.RelationKind == "writes-column");
-        Assert.Equal(write.OwnerId, written.SourceId);
+            resolution.Relations, relation => relation.Kind == "writes-column");
+        Assert.Equal(write.OwnerId, written.OwnerId);
         Assert.Equal(Assert.Single(resolution.Columns).ColumnId.ToFactId(), written.TargetId);
         Assert.Equal("write", ResolverScenario.Detail(written, "usage"));
-        Assert.Equal(FactResolution.Heuristic, written.Resolution);
+        Assert.Equal(FactResolution.Heuristic, written.ShapeConfidence);
     }
 
     // DAD-12: the same property on two exposed entities is ambiguous, never a coin flip.
@@ -498,9 +499,9 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.TrackedWrite("Status", "entity.Status"));
 
         var written = Assert.Single(
-            resolution.Relations, relation => relation.RelationKind == "writes-column");
+            resolution.Relations, relation => relation.Kind == "writes-column");
         Assert.Null(written.TargetId);
-        Assert.Equal(FactResolution.Candidate, written.Resolution);
+        Assert.Equal(FactResolution.Candidate, written.ShapeConfidence);
         Assert.Equal("entity.Status", ResolverScenario.Detail(written, "target_text"));
         Assert.Equal("ambiguous-entity-attribution", written.UnresolvedReason);
     }
@@ -517,7 +518,7 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.TrackedWrite("Nickname", "person.Nickname"));
 
         Assert.DoesNotContain(
-            resolution.Relations, relation => relation.RelationKind == "writes-column");
+            resolution.Relations, relation => relation.Kind == "writes-column");
     }
 
     // DAD-22: a literal-proven SQL target mints a node and the access points at it.
@@ -531,7 +532,7 @@ public sealed class DatabaseMappingResolverTests
         var node = Assert.Single(resolution.Objects);
         Assert.Equal("Orders", node.Name);
         Assert.Equal(DatabaseObjectKind.Unknown, node.Kind);
-        var reads = Assert.Single(resolution.Relations, relation => relation.RelationKind == "reads");
+        var reads = Assert.Single(resolution.Relations, relation => relation.Kind == "reads");
         Assert.Equal(node.ObjectId.ToFactId(), reads.TargetId);
         Assert.Equal("read", ResolverScenario.Detail(reads, "operation"));
     }
@@ -545,7 +546,7 @@ public sealed class DatabaseMappingResolverTests
             ResolverScenario.SqlAccess("usp_Sync", DatabaseObjectKind.Procedure, DatabaseOperation.Execute));
 
         Assert.Equal(DatabaseObjectKind.Procedure, Assert.Single(resolution.Objects).Kind);
-        var executes = Assert.Single(resolution.Relations, relation => relation.RelationKind == "executes");
+        var executes = Assert.Single(resolution.Relations, relation => relation.Kind == "executes");
         Assert.Equal("execute", ResolverScenario.Detail(executes, "operation"));
     }
 
@@ -562,10 +563,10 @@ public sealed class DatabaseMappingResolverTests
             });
 
         Assert.Empty(resolution.Objects);
-        var reads = Assert.Single(resolution.Relations, relation => relation.RelationKind == "reads");
+        var reads = Assert.Single(resolution.Relations, relation => relation.Kind == "reads");
         Assert.Null(reads.TargetId);
         Assert.Equal("dynamic-table", ResolverScenario.Detail(reads, "target_text"));
-        Assert.Equal(FactResolution.Unresolved, reads.Resolution);
+        Assert.Equal(FactResolution.Unresolved, reads.ShapeConfidence);
         Assert.Equal("dynamic-sql", reads.UnresolvedReason);
     }
 
@@ -582,7 +583,7 @@ public sealed class DatabaseMappingResolverTests
                 SqlText = "UPDATE (SELECT 1) SET x = 1",
             });
 
-        var writes = Assert.Single(resolution.Relations, relation => relation.RelationKind == "writes");
+        var writes = Assert.Single(resolution.Relations, relation => relation.Kind == "writes");
         Assert.Null(writes.TargetId);
         Assert.Equal("UPDATE (SELECT 1) SET x = 1", ResolverScenario.Detail(writes, "sql"));
         Assert.Equal("unreadable-sql-target", writes.UnresolvedReason);
@@ -602,7 +603,7 @@ public sealed class DatabaseMappingResolverTests
         var column = Assert.Single(resolution.Columns);
         Assert.Equal("Status", column.Name);
         Assert.Equal(Assert.Single(resolution.Objects).ObjectId, column.ObjectId);
-        var written = Assert.Single(resolution.Relations, relation => relation.RelationKind == "writes-column");
+        var written = Assert.Single(resolution.Relations, relation => relation.Kind == "writes-column");
         Assert.Equal(column.ColumnId.ToFactId(), written.TargetId);
         Assert.Equal("write", ResolverScenario.Detail(written, "usage"));
     }
@@ -618,7 +619,7 @@ public sealed class DatabaseMappingResolverTests
             access,
             ResolverScenario.SqlColumn(access, "Id", ColumnUsage.Filter));
 
-        var filter = Assert.Single(resolution.Relations, relation => relation.RelationKind == "filters-by");
+        var filter = Assert.Single(resolution.Relations, relation => relation.Kind == "filters-by");
         Assert.Equal("filter", ResolverScenario.Detail(filter, "usage"));
         Assert.Equal("Id", ResolverScenario.Detail(filter, "target_text"));
     }
@@ -643,7 +644,7 @@ public sealed class DatabaseMappingResolverTests
             });
 
         Assert.Empty(resolution.Columns);
-        var written = Assert.Single(resolution.Relations, relation => relation.RelationKind == "writes-column");
+        var written = Assert.Single(resolution.Relations, relation => relation.Kind == "writes-column");
         Assert.Null(written.TargetId);
         Assert.False(string.IsNullOrWhiteSpace(written.UnresolvedReason));
     }
@@ -669,6 +670,99 @@ public sealed class DatabaseMappingResolverTests
         Assert.All(
             resolution.Relations.Where(relation => relation.TargetId is null),
             relation => Assert.False(string.IsNullOrWhiteSpace(relation.UnresolvedReason)));
+    }
+
+    // T14/RELR-32: every relation this resolver produces is a Data-partition claim carrying real
+    // evidence - what DatabaseFragmentBuilderTests used to assert on the minted RelationFact now holds
+    // on the RawRelation claim itself, since minting moves to RelationResolver (AD-018).
+    [Fact]
+    public void Resolve_EveryRelation_IsADataPartitionClaimCarryingEvidence()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(
+                ResolverScenario.Entity("Order"),
+                ResolverScenario.EntityProperty("Status", "Order")),
+            ResolverScenario.EntitySet("Order", "Orders"),
+            ResolverScenario.ConfiguredTable("Order", "tb_order"),
+            ResolverScenario.ConfiguredColumn("Order", "Status", "order_status"),
+            ResolverScenario.EntitySetAccess("Order", "Orders", DatabaseOperation.Read));
+
+        Assert.NotEmpty(resolution.Relations);
+        Assert.All(resolution.Relations, relation =>
+        {
+            Assert.Equal(RelationPartition.Data, relation.Partition);
+            Assert.NotEqual(default, relation.Evidence);
+        });
+    }
+
+    // RELR-02/RELR-32: a relation whose target this resolver already proved (a configured mapping)
+    // reports the method that proved it, so RelationResolver's ExistingTargetStrategy (T19) can pass it
+    // straight through instead of re-deriving it.
+    [Fact]
+    public void Resolve_RelationCarryingAnAlreadyProvenTarget_ReportsConfiguredAsTheProducerMethod()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(ResolverScenario.Entity("Order")),
+            ResolverScenario.ConfiguredTable("Order", "tb_order", "Data/OrderConfiguration.cs"));
+
+        var mapsTo = Assert.Single(resolution.Relations, relation => relation.Kind == "maps-to");
+
+        Assert.NotNull(mapsTo.TargetId);
+        Assert.Equal(ResolutionMethod.Configured, mapsTo.ProducerMethod);
+    }
+
+    // An untargeted relation reports no producer method - DatabaseRelationStrategy (T20) decides
+    // configured/convention/dynamic once it reads the claim's own "mapping" detail.
+    [Fact]
+    public void Resolve_UntargetedRelation_ReportsNoProducerMethod()
+    {
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(ResolverScenario.Entity("Order")),
+            ResolverScenario.EntitySet("Order", "Orders"));
+
+        var mapsTo = Assert.Single(resolution.Relations, relation => relation.Kind == "maps-to");
+
+        Assert.Null(mapsTo.ProducerMethod);
+    }
+
+    // C2M-FV-001's identity-collapse concern, at the claim layer: two identical observations in one
+    // member must both survive as distinct claims rather than collapsing into one - RelationResolver
+    // (T21) is what disambiguates them into distinct RelationFactIds later.
+    [Fact]
+    public void Resolve_TwoIdenticalAccessesInOneMember_BothSurviveAsDistinctClaims()
+    {
+        var first = ResolverScenario.EntitySetAccess("Order", "Orders", DatabaseOperation.Read);
+        var second = first with
+        {
+            Evidence = new Evidence(first.Evidence.DocumentId, first.Evidence.RelativePath, 14, 1, 14, 40),
+        };
+
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(ResolverScenario.Entity("Order")), first, second);
+
+        var reads = resolution.Relations.Where(relation => relation.Kind == "reads").ToArray();
+        Assert.Equal(2, reads.Length);
+        Assert.Equal(2, reads.Select(relation => relation.Evidence).Distinct().Count());
+    }
+
+    // Preserved SQL can span lines; canonicalizing it for an identity fingerprint is RelationResolver's
+    // concern (T21/T22), not this resolver's - the claim just carries the raw text unmangled.
+    [Fact]
+    public void Resolve_RelationCarryingMultilineSql_PreservesTheRawTextWithoutThrowing()
+    {
+        const string multiLineSql = "UPDATE (SELECT 1)\n  SET x = 1";
+
+        var resolution = ResolverScenario.Resolve(
+            ResolverScenario.Symbols(),
+            ResolverScenario.SqlAccess(null, null, DatabaseOperation.Update) with
+            {
+                ShapeConfidence = FactResolution.Unresolved,
+                UnresolvedReason = "unreadable-sql-target",
+                SqlText = multiLineSql,
+            });
+
+        var relation = Assert.Single(resolution.Relations);
+        Assert.Equal(multiLineSql, ResolverScenario.Detail(relation, "sql"));
     }
 }
 
@@ -714,7 +808,7 @@ internal static class ResolverScenario
         string documentPath = "Model/Order.cs") =>
         Symbol(name, $"{containingType}.{name}", "property", documentPath, containingType);
 
-    public static string? Detail(ResolvedDatabaseRelation relation, string key) =>
+    public static string? Detail(RawRelation relation, string key) =>
         relation.Details.SingleOrDefault(detail => detail.Key == key).Value;
 
     public static RawDatabaseClaim EntitySet(

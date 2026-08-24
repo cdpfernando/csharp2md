@@ -33,121 +33,110 @@ public sealed class RelationCollectorTests
 
     [Theory]
     [MemberData(nameof(AllKinds))]
-    public void CreateFacts_OneCandidatePerKind_MapsToTheDocumentedPartition(
+    public void CreateClaims_OneCandidatePerKind_MapsToTheDocumentedPartition(
         string relationKind, RelationPartition expectedPartition, string observedTarget)
     {
         var candidates = ImmutableArray.Create(Candidate(relationKind, observedTarget, FactResolution.Syntactic));
 
-        var facts = RelationCollector.CreateFacts(DocumentId, "Worker.cs", candidates);
+        var claims = RelationCollector.CreateClaims(DocumentId, "Worker.cs", candidates);
 
-        var fact = Assert.Single(facts);
-        Assert.Equal(relationKind, fact.RelationKind);
-        Assert.Equal(expectedPartition, fact.Partition);
+        var claim = Assert.Single(claims);
+        Assert.Equal(relationKind, claim.Kind);
+        Assert.Equal(expectedPartition, claim.Partition);
     }
 
     [Fact]
-    public void CreateFacts_EveryFact_CarriesEvidenceProvenanceNullTargetAndUnresolvedReason()
+    public void CreateClaims_EveryClaim_CarriesEvidenceAndNoResolvedTargetYet()
     {
         var candidates = ImmutableArray.CreateRange(
             AllKinds.Select(row => Candidate((string)row[0]!, (string)row[2]!, FactResolution.Syntactic)));
 
-        var facts = RelationCollector.CreateFacts(DocumentId, "Worker.cs", candidates);
+        var claims = RelationCollector.CreateClaims(DocumentId, "Worker.cs", candidates);
 
-        Assert.Equal(candidates.Length, facts.Length);
-        Assert.All(facts, fact =>
+        Assert.Equal(candidates.Length, claims.Length);
+        Assert.All(claims, claim =>
         {
-            Assert.NotEmpty(fact.Header.Evidence);
-            Assert.Contains(fact.Header.Provenance, provenance => provenance.DetectorId is not null);
-            Assert.Null(fact.TargetId);
-            Assert.False(string.IsNullOrWhiteSpace(fact.UnresolvedReason));
+            Assert.NotEqual(default, claim.Evidence);
+            Assert.Null(claim.TargetId);
+            Assert.Null(claim.ProducerMethod);
+            // RELR-16: resolving what a claim could not resolve - and saying why - is
+            // RelationResolver's job in pass two; the collector no longer states a reason at all.
+            Assert.Null(claim.UnresolvedReason);
         });
     }
 
     [Fact]
-    public void CreateFacts_HttpCallObservedTarget_SplitsIntoSeparateHttpMethodAndRouteDetails()
+    public void CreateClaims_HttpCallObservedTarget_SplitsIntoSeparateHttpMethodAndRouteDetails()
     {
         var candidates = ImmutableArray.Create(
             Candidate("http-call", "http_method=POST|route=payments/authorize", FactResolution.Syntactic));
 
-        var fact = Assert.Single(RelationCollector.CreateFacts(DocumentId, "Worker.cs", candidates));
+        var claim = Assert.Single(RelationCollector.CreateClaims(DocumentId, "Worker.cs", candidates));
 
-        Assert.Equal(2, fact.Details.Length);
-        Assert.Contains(fact.Details, detail => detail is { Key: "http_method", Value: "POST" });
-        Assert.Contains(fact.Details, detail => detail is { Key: "route", Value: "payments/authorize" });
-        Assert.DoesNotContain(fact.Details, detail => detail.Key == "target_text");
+        Assert.Equal(2, claim.Details.Length);
+        Assert.Contains(claim.Details, detail => detail is { Key: "http_method", Value: "POST" });
+        Assert.Contains(claim.Details, detail => detail is { Key: "route", Value: "payments/authorize" });
+        Assert.DoesNotContain(claim.Details, detail => detail.Key == "target_text");
     }
 
     [Fact]
-    public void CreateFacts_HttpCallRouteSpansMultipleLines_CanonicalizesTheClaimFingerprintInsteadOfThrowing()
+    public void CreateClaims_HttpCallRouteSpansMultipleLines_PreservesTheRawTextWithoutThrowing()
     {
-        // Regression: a non-literal route argument (e.g. an object-initializer expression) is
-        // captured verbatim by SyntaxFactExtractor and can span multiple lines. The claim
-        // fingerprint feeding RelationFactId.Create must still satisfy
-        // FactIdGrammar.RequireCanonicalText (no \r, \n, \t, double-spaces, or leading/trailing
-        // whitespace), even though the persisted "route" detail value keeps the original text.
+        // Regression guard: a non-literal route argument (e.g. an object-initializer expression) is
+        // captured verbatim by SyntaxFactExtractor and can span multiple lines. Claim construction
+        // must not throw over that shape, and the "route" detail must keep the original raw text -
+        // canonicalizing it for a claim fingerprint is RelationResolver's concern (T21), not this
+        // collector's, since claims no longer mint a RelationFactId here.
         var multiLineRoute = "new PayrollProposalFilters {\n  PageNumber = 1,\n  PageSize = 20\n}";
         var candidates = ImmutableArray.Create(
             Candidate("http-call", $"http_method=GET|route={multiLineRoute}", FactResolution.Syntactic));
 
-        var fact = Assert.Single(RelationCollector.CreateFacts(DocumentId, "Worker.cs", candidates));
+        var claim = Assert.Single(RelationCollector.CreateClaims(DocumentId, "Worker.cs", candidates));
 
-        Assert.Contains(fact.Details, detail => detail is { Key: "route" } && detail.Value == multiLineRoute);
-        Assert.DoesNotContain('\n', fact.RelationId.Value);
-        Assert.DoesNotContain('\r', fact.RelationId.Value);
-        Assert.DoesNotContain('\t', fact.RelationId.Value);
+        Assert.Contains(claim.Details, detail => detail is { Key: "route" } && detail.Value == multiLineRoute);
     }
 
     [Fact]
-    public void CreateFacts_NonHttpCallKind_WrapsObservedTargetAsOneTargetTextDetail()
+    public void CreateClaims_NonHttpCallKind_WrapsObservedTargetAsOneTargetTextDetail()
     {
         var candidates = ImmutableArray.Create(Candidate("creates", "PaymentAuthorizer", FactResolution.Syntactic));
 
-        var fact = Assert.Single(RelationCollector.CreateFacts(DocumentId, "Worker.cs", candidates));
+        var claim = Assert.Single(RelationCollector.CreateClaims(DocumentId, "Worker.cs", candidates));
 
-        var detail = Assert.Single(fact.Details);
+        var detail = Assert.Single(claim.Details);
         Assert.Equal("target_text", detail.Key);
         Assert.Equal("PaymentAuthorizer", detail.Value);
     }
 
     [Fact]
-    public void CreateFacts_TwoCandidatesSameKindAndTarget_GetDistinctOrdinalDisambiguatedIds()
+    public void CreateClaims_TwoCandidatesSameKindAndTarget_BothSurviveAsDistinctClaims()
     {
+        // Ordinal-disambiguated identity now belongs to RelationResolver (T21) - not this collector -
+        // so what this layer must still prove is that neither occurrence is deduplicated away: both
+        // claims survive, distinguished by the evidence of their own call site.
         var candidates = ImmutableArray.Create(
             Candidate("calls", "paymentsClient.AuthorizePayment", FactResolution.Syntactic, startLine: 10),
             Candidate("calls", "paymentsClient.AuthorizePayment", FactResolution.Syntactic, startLine: 20));
 
-        var facts = RelationCollector.CreateFacts(DocumentId, "Worker.cs", candidates);
+        var claims = RelationCollector.CreateClaims(DocumentId, "Worker.cs", candidates);
 
-        Assert.Equal(2, facts.Length);
-        Assert.Equal(2, facts.Select(fact => fact.RelationId.Value).Distinct().Count());
-        Assert.Contains(";ordinal=1", facts[0].RelationId.Value, StringComparison.Ordinal);
-        Assert.Contains(";ordinal=2", facts[1].RelationId.Value, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void CreateFacts_RealisticDocumentInput_PassesFactValidatorCleanly()
-    {
-        var candidates = ImmutableArray.CreateRange(
-            AllKinds.Select(row => Candidate((string)row[0]!, (string)row[2]!, FactResolution.Syntactic)));
-
-        var facts = RelationCollector.CreateFacts(DocumentId, "Worker.cs", candidates);
-
-        var result = FactValidator.Validate(FactValidationInput.Create(
-            facts.Cast<IFact>(),
-            documents: [DocumentExtent.Create(DocumentId, "Worker.cs", Enumerable.Repeat(200, 50))],
-            knownFactIds: [OwnerId]));
-
-        Assert.True(result.IsValid, string.Join(" | ", result.ValidationDiagnostics.Select(d => d.Message)));
+        Assert.Equal(2, claims.Length);
+        Assert.All(claims, claim => Assert.Equal("calls", claim.Kind));
+        Assert.All(claims, claim => Assert.Single(claim.Details, detail => detail is { Key: "target_text", Value: "paymentsClient.AuthorizePayment" }));
+        Assert.Equal(2, claims.Select(claim => claim.Evidence).Distinct().Count());
+        Assert.Contains(claims, claim => claim.Evidence.StartLine == 10);
+        Assert.Contains(claims, claim => claim.Evidence.StartLine == 20);
     }
 
     private static SyntacticRelationCandidate Candidate(
         string relationKind, string observedTarget, FactResolution resolution, int startLine = 1) =>
         new(OwnerId, relationKind, observedTarget, resolution, startLine, 1, startLine, 10);
 
-    // T13: RelationCollector.Refine - semantic refinement sharing RelationFactId with CreateFacts.
+    // T13: RelationCollector.RefineClaims - semantic refinement merged into the baseline claim by
+    // FactResolutionAlgebra.Stronger (AD-018), replacing the old fact-level rank merge.
 
     [Fact]
-    public void Refine_PublishAsyncThroughVariable_ProducesPublishesFactWithInferredTargetTextThatCreateFactsCannot()
+    public void RefineClaims_PublishAsyncThroughVariable_DiscoversAPublishesClaimThatCreateClaimsCannot()
     {
         const string source = """
             using Acme.Contracts;
@@ -168,42 +157,46 @@ public sealed class RelationCollectorTests
         // spec.md's Assumptions table: no explicit <T> and the argument isn't an object-creation
         // expression, so the syntax-only pass yields no "publishes" candidate for this call at all.
         Assert.DoesNotContain(extraction.RelationCandidates, candidate => candidate.RelationKind == "publishes");
-        var baseline = RelationCollector.CreateFacts(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates);
-        Assert.DoesNotContain(baseline, fact => fact.RelationKind == "publishes");
+        var baseline = RelationCollector.CreateClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates);
+        Assert.DoesNotContain(baseline, claim => claim.Kind == "publishes");
 
-        var refined = RelationCollector.Refine(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
+        var refined = RelationCollector.RefineClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
 
-        var publish = Assert.Single(refined, fact => fact.RelationKind == "publishes");
+        var publish = Assert.Single(refined, claim => claim.Kind == "publishes");
         Assert.Contains(publish.Details, detail => detail is { Key: "target_text", Value: "PaymentProcessed" });
     }
 
     [Fact]
-    public void Refine_AndCreateFacts_MintIdenticalRelationFactIdsForTheSameCandidateList()
+    public void RefineClaims_FirstBaseListEntryNamedLikeAnInterfaceButActuallyAClass_ReplacesTheHeuristicGuessAndKeepsTheStrongerShapeConfidence()
     {
+        // "IRepository" satisfies the syntax-only naming heuristic (starts with I + uppercase), so the
+        // baseline guesses "implements" at FactResolution.Heuristic even though it is really a class -
+        // exactly the case semantic refinement exists to correct.
         const string source = """
             namespace App;
 
-            public class Base { }
-            public interface IMarker { }
+            public class IRepository { }
 
-            public sealed class Worker : Base, IMarker
+            public sealed class Worker : IRepository
             {
             }
             """;
         var (extraction, model) = Compile(source);
 
-        var baseline = RelationCollector.CreateFacts(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates);
-        var refined = RelationCollector.Refine(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
+        var baseline = RelationCollector.CreateClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates);
+        var refined = RelationCollector.RefineClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
 
-        Assert.Equal(2, baseline.Length);
-        Assert.Equal(2, refined.Length);
-        Assert.All(refined, refinedFact =>
-            Assert.Contains(baseline, baselineFact => baselineFact.RelationId == refinedFact.RelationId));
-        Assert.All(refined, refinedFact => Assert.Equal(FactResolution.Syntactic, refinedFact.Header.Resolution));
+        var baselineClaim = Assert.Single(baseline);
+        Assert.Equal("implements", baselineClaim.Kind);
+        Assert.Equal(FactResolution.Heuristic, baselineClaim.ShapeConfidence);
+
+        var refinedClaim = Assert.Single(refined);
+        Assert.Equal("inherits", refinedClaim.Kind);
+        Assert.Equal(FactResolution.Syntactic, refinedClaim.ShapeConfidence);
     }
 
     [Fact]
-    public void Refine_UnresolvedBaseListEntry_ProducesNoEnrichmentAndDoesNotThrow()
+    public void RefineClaims_UnresolvedBaseListEntry_LeavesTheBaselineClaimUntouchedRatherThanDroppingIt()
     {
         const string source = """
             namespace App;
@@ -214,9 +207,15 @@ public sealed class RelationCollectorTests
             """;
         var (extraction, model) = Compile(source);
 
-        var refined = RelationCollector.Refine(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
+        var baseline = RelationCollector.CreateClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates);
+        var refined = RelationCollector.RefineClaims(extraction.Document.DocumentId, "Worker.cs", extraction.RelationCandidates, model);
 
-        Assert.Empty(refined);
+        var baselineClaim = Assert.Single(baseline);
+        var refinedClaim = Assert.Single(refined);
+        Assert.Equal(baselineClaim.Kind, refinedClaim.Kind);
+        Assert.Equal(baselineClaim.Partition, refinedClaim.Partition);
+        Assert.Equal(baselineClaim.ShapeConfidence, refinedClaim.ShapeConfidence);
+        Assert.True(baselineClaim.Details.SequenceEqual(refinedClaim.Details));
     }
 
     private static (SyntaxFactExtraction Extraction, SemanticModel Model) Compile(string workerSource, string relativePath = "Worker.cs")

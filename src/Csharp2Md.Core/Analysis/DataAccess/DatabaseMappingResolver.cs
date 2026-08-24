@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using Csharp2Md.Core.Analysis.Indexes;
+using Csharp2Md.Core.Analysis.Relations;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
 using Csharp2Md.Core.Facts.Model;
@@ -29,29 +30,24 @@ internal sealed record ResolvedDatabaseColumn(
     ImmutableArray<DataAccessAnalyzerId> AnalyzerIds);
 
 /// <summary>
-/// One persistence relation the resolver decided on: its source, the target it could prove (or
-/// <c>null</c> plus a reason when it could not), and the details design.md's relation table names.
+/// Everything pass two decided. <see cref="Objects"/> and <see cref="Columns"/> still become
+/// <c>DatabaseFragmentBuilder</c>'s solution-level fragment; <see cref="Relations"/> (RELR-32) are
+/// claims for the <c>RelationClaimAccumulator</c>, never facts this record's own fragment carries.
 /// </summary>
-internal sealed record ResolvedDatabaseRelation(
-    FactId SourceId,
-    FactId? TargetId,
-    string RelationKind,
-    FactResolution Resolution,
-    string? UnresolvedReason,
-    ImmutableArray<RelationDetail> Details,
-    Evidence Evidence,
-    DataAccessAnalyzerId AnalyzerId);
-
-/// <summary>Everything pass two decided, ready to become one solution-level fragment.</summary>
 internal sealed record DatabaseResolution(
     ImmutableArray<ResolvedDatabaseObject> Objects,
     ImmutableArray<ResolvedDatabaseColumn> Columns,
-    ImmutableArray<ResolvedDatabaseRelation> Relations,
+    ImmutableArray<RawRelation> Relations,
     ImmutableArray<DocumentExtent> Documents)
 {
     public static DatabaseResolution Empty { get; } = new([], [], [], []);
 
-    public bool IsEmpty => Objects.IsEmpty && Columns.IsEmpty && Relations.IsEmpty;
+    /// <summary>
+    /// Whether <c>DatabaseFragmentBuilder</c> has nothing left to build - judged on
+    /// <see cref="Objects"/>/<see cref="Columns"/> alone now that <see cref="Relations"/> no longer
+    /// feeds that fragment (RELR-32).
+    /// </summary>
+    public bool IsEmpty => Objects.IsEmpty && Columns.IsEmpty;
 }
 
 /// <summary>
@@ -121,7 +117,7 @@ internal static class DatabaseMappingResolver
 
         var objects = new ObjectCatalogue();
         var columns = new ColumnCatalogue();
-        var relations = ImmutableArray.CreateBuilder<ResolvedDatabaseRelation>();
+        var relations = ImmutableArray.CreateBuilder<RawRelation>();
 
         // Every configured table is read before any mapping is emitted, which is what makes DAD-04's
         // precedence independent of the order documents were analysed in.
@@ -137,6 +133,47 @@ internal static class DatabaseMappingResolver
         return new DatabaseResolution(
             objects.ToImmutable(), columns.ToImmutable(), relations.ToImmutable(), snapshot.Documents);
     }
+
+    /// <summary>
+    /// Builds one <see cref="RawRelation"/> claim in the <c>Data</c> partition, carrying whatever target
+    /// this resolver already proved (RELR-32). RELR-02: when <paramref name="targetId"/> is set, the
+    /// claim also reports the method that proved it, derived from <paramref name="resolution"/> - a
+    /// source literal (an explicit configuration call, or a SQL statement the reader tokenized) proves
+    /// <see cref="ResolutionMethod.Configured"/>, while a single-match tracked-write attribution
+    /// (<see cref="EmitTrackedWrite"/>) proves only <see cref="ResolutionMethod.Heuristic"/> - it is
+    /// still a real target, but inferred from a unique name match, not read from source. A null target
+    /// defers the configured/convention/dynamic classification to <c>DatabaseRelationStrategy</c> (T20),
+    /// which reads the <c>mapping</c> detail this claim's <paramref name="details"/> already carries.
+    /// </summary>
+    private static RawRelation RelationClaim(
+        FactId sourceId,
+        FactId? targetId,
+        string relationKind,
+        FactResolution resolution,
+        string? unresolvedReason,
+        ImmutableArray<RelationDetail> details,
+        Evidence evidence) =>
+        new()
+        {
+            Kind = relationKind,
+            OwnerId = sourceId,
+            Evidence = evidence,
+            ShapeConfidence = resolution,
+            Partition = RelationPartition.Data,
+            Details = details,
+            TargetId = targetId,
+            ProducerMethod = targetId is null ? null : ProvenTargetMethod(resolution),
+            UnresolvedReason = unresolvedReason,
+        };
+
+    /// <summary>
+    /// <see cref="FactResolution.Heuristic"/> is the only shape confidence a proven (non-null) target
+    /// carries that is not a source-literal proof - every other value this resolver assigns to a proven
+    /// target (<see cref="FactResolution.Exact"/> for a configuration call, <see cref="FactResolution.Syntactic"/>
+    /// for a resolved SQL statement's object) is read from source, so <see cref="ResolutionMethod.Configured"/>.
+    /// </summary>
+    private static ResolutionMethod ProvenTargetMethod(FactResolution resolution) =>
+        resolution == FactResolution.Heuristic ? ResolutionMethod.Heuristic : ResolutionMethod.Configured;
 
     /// <summary>
     /// DAD-03: one node per configured table literal, and the entity-to-object map every later stage
@@ -168,7 +205,7 @@ internal static class DatabaseMappingResolver
     /// </summary>
     private static void EmitEntitySetExposures(
         DatabaseClaimSnapshot snapshot,
-        ImmutableArray<ResolvedDatabaseRelation>.Builder relations)
+        ImmutableArray<RawRelation>.Builder relations)
     {
         foreach (var claim in snapshot.Claims)
         {
@@ -177,15 +214,14 @@ internal static class DatabaseMappingResolver
                 continue;
             }
 
-            relations.Add(new ResolvedDatabaseRelation(
+            relations.Add(RelationClaim(
                 claim.OwnerId,
                 null,
                 ExposesKind,
                 claim.ShapeConfidence,
                 EntitySetTargetReason,
                 [new RelationDetail(TargetTextKey, entityName)],
-                claim.Evidence,
-                claim.AnalyzerId));
+                claim.Evidence));
         }
     }
 
@@ -228,7 +264,7 @@ internal static class DatabaseMappingResolver
         DatabaseClaimSnapshot snapshot,
         ISymbolIndex symbols,
         Dictionary<string, DatabaseObjectFactId> objectByEntity,
-        ImmutableArray<ResolvedDatabaseRelation>.Builder relations)
+        ImmutableArray<RawRelation>.Builder relations)
     {
         var mappedEntities = new Dictionary<string, RawDatabaseClaim>(StringComparer.Ordinal);
         var configured = new HashSet<string>(StringComparer.Ordinal);
@@ -243,15 +279,14 @@ internal static class DatabaseMappingResolver
                 continue;
             }
 
-            relations.Add(new ResolvedDatabaseRelation(
+            relations.Add(RelationClaim(
                 source,
                 objectId.ToFactId(),
                 MapsToKind,
                 FactResolution.Exact,
                 null,
                 [new RelationDetail(TargetTextKey, tableName), new RelationDetail(MappingKey, ConfiguredMapping)],
-                claim.Evidence,
-                claim.AnalyzerId));
+                claim.Evidence));
             mappedEntities[entityName] = claim;
         }
 
@@ -267,15 +302,14 @@ internal static class DatabaseMappingResolver
                 continue;
             }
 
-            relations.Add(new ResolvedDatabaseRelation(
+            relations.Add(RelationClaim(
                 source,
                 null,
                 MapsToKind,
                 FactResolution.Heuristic,
                 ConventionMappingReason,
                 [new RelationDetail(TargetTextKey, setName), new RelationDetail(MappingKey, ConventionMapping)],
-                claim.Evidence,
-                claim.AnalyzerId));
+                claim.Evidence));
             mappedEntities.TryAdd(entityName, claim);
         }
 
@@ -291,7 +325,7 @@ internal static class DatabaseMappingResolver
         ISymbolIndex symbols,
         Dictionary<string, RawDatabaseClaim> mappedEntities,
         Dictionary<(string Entity, string Property), DatabaseColumnFactId> columnByProperty,
-        ImmutableArray<ResolvedDatabaseRelation>.Builder relations)
+        ImmutableArray<RawRelation>.Builder relations)
     {
         var configured = new HashSet<(string Entity, string Property)>();
         foreach (var claim in snapshot.Claims)
@@ -307,15 +341,14 @@ internal static class DatabaseMappingResolver
             var columnId = columnByProperty.TryGetValue((entityName, propertyName), out var resolved)
                 ? resolved.ToFactId()
                 : (FactId?)null;
-            relations.Add(new ResolvedDatabaseRelation(
+            relations.Add(RelationClaim(
                 source,
                 columnId,
                 MapsPropertyToColumnKind,
                 columnId is null ? FactResolution.Unresolved : FactResolution.Exact,
                 columnId is null ? UnmappedOwningObjectReason : null,
                 [new RelationDetail(TargetTextKey, columnName), new RelationDetail(MappingKey, ConfiguredMapping)],
-                claim.Evidence,
-                claim.AnalyzerId));
+                claim.Evidence));
         }
 
         foreach (var (entityName, anchor) in mappedEntities.OrderBy(static entry => entry.Key, StringComparer.Ordinal))
@@ -328,7 +361,7 @@ internal static class DatabaseMappingResolver
                     continue;
                 }
 
-                relations.Add(new ResolvedDatabaseRelation(
+                relations.Add(RelationClaim(
                     property.SymbolId.ToFactId(),
                     null,
                     MapsPropertyToColumnKind,
@@ -338,8 +371,7 @@ internal static class DatabaseMappingResolver
                         new RelationDetail(TargetTextKey, property.Name),
                         new RelationDetail(MappingKey, ConventionMapping),
                     ],
-                    anchor.Evidence,
-                    anchor.AnalyzerId));
+                    anchor.Evidence));
             }
         }
     }
@@ -367,7 +399,7 @@ internal static class DatabaseMappingResolver
         DatabaseClaimSnapshot snapshot,
         Dictionary<string, DatabaseObjectFactId> objectByEntity,
         ObjectCatalogue objects,
-        ImmutableArray<ResolvedDatabaseRelation>.Builder relations)
+        ImmutableArray<RawRelation>.Builder relations)
     {
         var sqlObjectByStatement = new Dictionary<Evidence, DatabaseObjectFactId>();
         foreach (var claim in snapshot.Claims)
@@ -380,7 +412,7 @@ internal static class DatabaseMappingResolver
             if (claim is { EntityText: { } entityName, PropertyText: { } setName })
             {
                 var mapped = objectByEntity.TryGetValue(entityName, out var objectId);
-                relations.Add(new ResolvedDatabaseRelation(
+                relations.Add(RelationClaim(
                     claim.OwnerId,
                     mapped ? objectId.ToFactId() : null,
                     AccessKind(claim.Operation),
@@ -390,8 +422,7 @@ internal static class DatabaseMappingResolver
                         new RelationDetail(OperationKey, DatabaseFactWire.Name(claim.Operation)),
                         new RelationDetail(TargetTextKey, setName),
                     ],
-                    claim.Evidence,
-                    claim.AnalyzerId));
+                    claim.Evidence));
                 continue;
             }
 
@@ -405,15 +436,14 @@ internal static class DatabaseMappingResolver
                 sqlObjectByStatement[claim.Evidence] = minted;
             }
 
-            relations.Add(new ResolvedDatabaseRelation(
+            relations.Add(RelationClaim(
                 claim.OwnerId,
                 sqlObjectId?.ToFactId(),
                 AccessKind(claim.Operation),
                 claim.ShapeConfidence,
                 sqlObjectId is null ? Reason(claim) : null,
                 AccessDetails(claim),
-                claim.Evidence,
-                claim.AnalyzerId));
+                claim.Evidence));
         }
 
         return sqlObjectByStatement;
@@ -450,7 +480,7 @@ internal static class DatabaseMappingResolver
         Dictionary<(string Entity, string Property), DatabaseColumnFactId> columnByProperty,
         Dictionary<Evidence, DatabaseObjectFactId> sqlObjectByStatement,
         ColumnCatalogue columns,
-        ImmutableArray<ResolvedDatabaseRelation>.Builder relations)
+        ImmutableArray<RawRelation>.Builder relations)
     {
         var exposedEntities = snapshot.Claims
             .Where(static claim => claim.Kind is DatabaseClaimKind.EntitySetExposed)
@@ -524,7 +554,7 @@ internal static class DatabaseMappingResolver
             // DAD-11: one match attributes the write heuristically - the entity is inferred from a name
             // match, never proven. DAD-12: several matches stay a candidate rather than a coin flip.
             var columnId = matches is [var single] ? ColumnOf(single, propertyName) : null;
-            relations.Add(new ResolvedDatabaseRelation(
+            relations.Add(RelationClaim(
                 claim.OwnerId,
                 columnId?.ToFactId(),
                 ColumnKind(claim.Usage),
@@ -536,8 +566,7 @@ internal static class DatabaseMappingResolver
                     new RelationDetail(UsageKey, DatabaseFactWire.Name(claim.Usage)),
                     new RelationDetail(TargetTextKey, observedText),
                 ],
-                claim.Evidence,
-                claim.AnalyzerId));
+                claim.Evidence));
         }
     }
 
@@ -547,8 +576,8 @@ internal static class DatabaseMappingResolver
         string observedText,
         FactResolution resolution,
         string? unresolvedReason,
-        ImmutableArray<ResolvedDatabaseRelation>.Builder relations) =>
-        relations.Add(new ResolvedDatabaseRelation(
+        ImmutableArray<RawRelation>.Builder relations) =>
+        relations.Add(RelationClaim(
             claim.OwnerId,
             columnId?.ToFactId(),
             ColumnKind(claim.Usage),
@@ -558,8 +587,7 @@ internal static class DatabaseMappingResolver
                 new RelationDetail(UsageKey, DatabaseFactWire.Name(claim.Usage)),
                 new RelationDetail(TargetTextKey, observedText),
             ],
-            claim.Evidence,
-            claim.AnalyzerId));
+            claim.Evidence));
 
     /// <summary>DAD-14: the claim's own reason, or the resolver's floor when it carried none.</summary>
     private static string Reason(RawDatabaseClaim claim) =>

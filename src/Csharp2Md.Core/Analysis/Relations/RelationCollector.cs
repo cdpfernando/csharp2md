@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Csharp2Md.Core.Analysis.Syntax;
 using Csharp2Md.Core.Facts.Identity;
 using Csharp2Md.Core.Facts.Metadata;
@@ -11,19 +10,13 @@ using Microsoft.CodeAnalysis.Text;
 namespace Csharp2Md.Core.Analysis.Relations;
 
 /// <summary>
-/// Turns <see cref="SyntacticRelationCandidate"/>s into real <see cref="RelationFact"/>s. Every fact
-/// this collector produces carries evidence, detector provenance, a null <c>TargetId</c>, and a
-/// populated <c>UnresolvedReason</c> (RELC-09/RELC-10/RELC-11) - resolving <c>target_text</c> into a
-/// proven target identity is a future <c>RelationResolver</c>'s job, not this collector's.
+/// Turns <see cref="SyntacticRelationCandidate"/>s into <see cref="RawRelation"/> claims. Resolving
+/// <c>target_text</c> into a proven target identity - and minting the <see cref="RelationFact"/> that
+/// carries the outcome - is <c>RelationResolver</c>'s job in pass two (AD-018); this collector only
+/// records what pass one observed.
 /// </summary>
 internal static class RelationCollector
 {
-    private const string UnresolvedReasonText =
-        "RelationCollector records only the observed syntactic shape; target resolution is deferred to a future RelationResolver.";
-
-    private static readonly DetectorId CollectorDetectorId = DetectorId.Create("io.csharp2md.relation-collector");
-    private static readonly FactProvenance Provenance = new("csharp2md.syntax", "1", CollectorDetectorId, "1.0.0");
-
     private static readonly ImmutableHashSet<string> PublishMemberNames =
         ImmutableHashSet.Create(StringComparer.Ordinal, "Publish", "PublishAsync");
 
@@ -31,41 +24,66 @@ internal static class RelationCollector
     /// Baseline, syntax-only materialization - safe to call unconditionally, with no
     /// <see cref="SemanticModel"/> dependency.
     /// </summary>
-    public static ImmutableArray<RelationFact> CreateFacts(
+    public static ImmutableArray<RawRelation> CreateClaims(
         DocumentFactId documentId,
         string relativePath,
         ImmutableArray<SyntacticRelationCandidate> candidates)
     {
-        var ordinals = new Dictionary<string, int>(StringComparer.Ordinal);
-        var facts = ImmutableArray.CreateBuilder<RelationFact>(candidates.Length);
+        var claims = ImmutableArray.CreateBuilder<RawRelation>(candidates.Length);
         foreach (var candidate in candidates)
         {
-            var details = DetailsFor(candidate.RelationKind, candidate.ObservedTarget);
-            var ordinal = NextOrdinal(ordinals, candidate.RelationKind, ClaimFor(details));
-            var id = RelationFactId.Create(candidate.OwnerId, candidate.RelationKind, ClaimFor(details), ordinal);
-            facts.Add(BuildFact(
-                id, candidate.OwnerId, documentId, relativePath,
-                candidate.StartLine, candidate.StartColumn, candidate.EndLine, candidate.EndColumn,
-                candidate.RelationKind, candidate.ShapeConfidence, details));
+            claims.Add(BuildClaim(documentId, relativePath, candidate, candidate.RelationKind, candidate.ShapeConfidence));
         }
 
-        return facts.ToImmutable();
+        return claims.ToImmutable();
     }
 
     /// <summary>
-    /// Semantic-refinement path, called only when a <see cref="SemanticModel"/> bound successfully.
-    /// Walks the exact same canonically-ordered <paramref name="candidates"/> list <see cref="CreateFacts"/>
-    /// would receive (design.md's named reproducibility risk), so a candidate that refines
-    /// successfully mints the identical <see cref="RelationFactId"/> as its baseline counterpart and
-    /// <c>FactMerger</c> picks the winner by resolution rank. A candidate that can't be improved (an
-    /// error/candidate symbol, or a kind this collector does not refine) simply produces no
-    /// enrichment - it never throws and never regresses the baseline. Additionally discovers
-    /// <c>publishes</c> relations the syntax-only pass could not read any target from at all (a
-    /// <c>PublishAsync(message)</c> call through a variable, with no explicit type argument and no
-    /// object-creation argument - spec.md's Assumptions table), resolved here via the invoked method's
-    /// constructed generic type argument, exactly as the retired <c>MessagingRelationDetector</c> did.
+    /// The claim <see cref="CreateClaims"/> would produce for one candidate, under a possibly-refined
+    /// <paramref name="relationKind"/> and <paramref name="shapeConfidence"/> - shared with
+    /// <see cref="RefineClaims"/> so a refined candidate's claim carries exactly the same fields a
+    /// baseline claim would, save for the refinement itself.
     /// </summary>
-    public static ImmutableArray<RelationFact> Refine(
+    private static RawRelation BuildClaim(
+        DocumentFactId documentId,
+        string relativePath,
+        SyntacticRelationCandidate candidate,
+        string relationKind,
+        FactResolution shapeConfidence) =>
+        new()
+        {
+            Kind = relationKind,
+            OwnerId = candidate.OwnerId,
+            Evidence = new Evidence(
+                documentId, relativePath,
+                candidate.StartLine, candidate.StartColumn, candidate.EndLine, candidate.EndColumn),
+            ShapeConfidence = shapeConfidence,
+            Partition = PartitionFor(relationKind),
+            Details = DetailsFor(relationKind, candidate.ObservedTarget),
+            TargetText = candidate.ObservedTarget,
+            ReceiverText = candidate.ReceiverText,
+            ReceiverTypeText = candidate.ReceiverTypeText,
+            MemberName = candidate.MemberName,
+            ArgumentCount = candidate.ArgumentCount,
+            ArgumentTypes = candidate.ArgumentTypes,
+            Namespace = candidate.Namespace,
+            Imports = candidate.Imports,
+        };
+
+    /// <summary>
+    /// Semantic-refinement path, called only when a <see cref="SemanticModel"/> bound successfully.
+    /// Starts from the exact same <see cref="CreateClaims"/> baseline the syntax-only pass would
+    /// produce for <paramref name="candidates"/>, then merges a refined base-list claim into its
+    /// baseline counterpart by <see cref="FactResolutionAlgebra.Stronger"/> (AD-018) rather than
+    /// relying on a later fact-level rank merge. A candidate that can't be improved (an error/candidate
+    /// symbol, or a kind this collector does not refine) leaves its baseline claim untouched in the
+    /// result - it is never dropped. Additionally discovers <c>publishes</c> relations the syntax-only
+    /// pass could not read any target from at all (a <c>PublishAsync(message)</c> call through a
+    /// variable, with no explicit type argument and no object-creation argument - spec.md's Assumptions
+    /// table), resolved here via the invoked method's constructed generic type argument, exactly as the
+    /// retired <c>MessagingRelationDetector</c> did.
+    /// </summary>
+    public static ImmutableArray<RawRelation> RefineClaims(
         DocumentFactId documentId,
         string relativePath,
         ImmutableArray<SyntacticRelationCandidate> candidates,
@@ -73,19 +91,13 @@ internal static class RelationCollector
     {
         ArgumentNullException.ThrowIfNull(model);
 
-        var ordinals = new Dictionary<string, int>(StringComparer.Ordinal);
-        var facts = ImmutableArray.CreateBuilder<RelationFact>();
+        var claims = CreateClaims(documentId, relativePath, candidates).ToArray();
         var root = model.SyntaxTree.GetRoot();
         var text = model.SyntaxTree.GetText();
 
-        foreach (var candidate in candidates)
+        for (var index = 0; index < candidates.Length; index++)
         {
-            // The ordinal counter advances for every candidate exactly as CreateFacts' does, whether
-            // or not this candidate ends up refined - keeping a later candidate sharing this kind+claim
-            // synced to the same ordinal CreateFacts would assign it.
-            var details = DetailsFor(candidate.RelationKind, candidate.ObservedTarget);
-            var ordinal = NextOrdinal(ordinals, candidate.RelationKind, ClaimFor(details));
-
+            var candidate = candidates[index];
             if (candidate.RelationKind is not ("inherits" or "implements"))
             {
                 continue;
@@ -97,16 +109,20 @@ internal static class RelationCollector
                 continue;
             }
 
-            var id = RelationFactId.Create(candidate.OwnerId, refinedKind, ClaimFor(details), ordinal);
-            facts.Add(BuildFact(
-                id, candidate.OwnerId, documentId, relativePath,
-                candidate.StartLine, candidate.StartColumn, candidate.EndLine, candidate.EndColumn,
-                refinedKind, FactResolution.Syntactic, details));
+            var baseline = claims[index];
+            claims[index] = baseline with
+            {
+                Kind = refinedKind,
+                Partition = PartitionFor(refinedKind),
+                ShapeConfidence = FactResolutionAlgebra.Stronger(baseline.ShapeConfidence, FactResolution.Syntactic),
+            };
         }
 
-        facts.AddRange(DiscoverInferredPublishes(documentId, relativePath, root, model, ordinals));
+        var merged = ImmutableArray.CreateBuilder<RawRelation>(claims.Length);
+        merged.AddRange(claims);
+        merged.AddRange(DiscoverInferredPublishClaims(documentId, relativePath, root, model));
 
-        return facts.ToImmutable();
+        return merged.ToImmutable();
     }
 
     /// <summary>
@@ -143,12 +159,11 @@ internal static class RelationCollector
     /// invoked method's constructed type argument when the receiver implements a qualifying
     /// publish-shaped interface member (ported from the retired <c>MessagingRelationDetector</c>).
     /// </summary>
-    private static IEnumerable<RelationFact> DiscoverInferredPublishes(
+    private static IEnumerable<RawRelation> DiscoverInferredPublishClaims(
         DocumentFactId documentId,
         string relativePath,
         SyntaxNode root,
-        SemanticModel model,
-        Dictionary<string, int> ordinals)
+        SemanticModel model)
     {
         foreach (var invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
@@ -174,19 +189,25 @@ internal static class RelationCollector
                 continue;
             }
 
-            // Refine has no access to SyntaxFactExtractor's per-declaration owner map; it falls back to
-            // the document itself, the same identity SyntaxFactExtractor.ResolveOwner already documents
-            // for code with no local enclosing-member owner (top-level statements).
+            // RefineClaims has no access to SyntaxFactExtractor's per-declaration owner map; it falls
+            // back to the document itself, the same identity SyntaxFactExtractor.ResolveOwner already
+            // documents for code with no local enclosing-member owner (top-level statements).
             var ownerId = documentId.ToFactId();
             var details = DetailsFor("publishes", typeArgument.Name);
-            var ordinal = NextOrdinal(ordinals, "publishes", ClaimFor(details));
-            var id = RelationFactId.Create(ownerId, "publishes", ClaimFor(details), ordinal);
             var span = model.SyntaxTree.GetLineSpan(invocation.Span);
-            yield return BuildFact(
-                id, ownerId, documentId, relativePath,
-                span.StartLinePosition.Line + 1, span.StartLinePosition.Character + 1,
-                span.EndLinePosition.Line + 1, span.EndLinePosition.Character + 1,
-                "publishes", FactResolution.Syntactic, details);
+            yield return new RawRelation
+            {
+                Kind = "publishes",
+                OwnerId = ownerId,
+                Evidence = new Evidence(
+                    documentId, relativePath,
+                    span.StartLinePosition.Line + 1, span.StartLinePosition.Character + 1,
+                    span.EndLinePosition.Line + 1, span.EndLinePosition.Character + 1),
+                ShapeConfidence = FactResolution.Syntactic,
+                Partition = PartitionFor("publishes"),
+                Details = details,
+                TargetText = typeArgument.Name,
+            };
         }
     }
 
@@ -232,53 +253,6 @@ internal static class RelationCollector
         var end = text.Lines[endLine - 1].Start + (endColumn - 1);
         return TextSpan.FromBounds(start, end);
     }
-
-    private static RelationFact BuildFact(
-        RelationFactId id,
-        FactId sourceId,
-        DocumentFactId documentId,
-        string relativePath,
-        int startLine,
-        int startColumn,
-        int endLine,
-        int endColumn,
-        string relationKind,
-        FactResolution resolution,
-        ImmutableArray<RelationDetail> details)
-    {
-        var header = FactHeader.Create(
-            id.ToFactId(),
-            FactKind.Relation,
-            resolution,
-            [Provenance],
-            [new Evidence(documentId, relativePath, startLine, startColumn, endLine, endColumn)]);
-        return new RelationFact(header, id, sourceId, null, PartitionFor(relationKind), relationKind, UnresolvedReasonText, details);
-    }
-
-    private static int NextOrdinal(Dictionary<string, int> ordinals, string relationKind, string claim)
-    {
-        var key = $"{relationKind}\0{claim}";
-        var ordinal = ordinals.GetValueOrDefault(key) + 1;
-        ordinals[key] = ordinal;
-        return ordinal;
-    }
-
-    private static string ClaimFor(ImmutableArray<RelationDetail> details) =>
-        Canonicalize(string.Join('|', details.Select(static detail => $"{detail.Key}={detail.Value}")));
-
-    /// <summary>
-    /// Collapses whitespace so the result satisfies <c>FactIdGrammar.RequireCanonicalText</c>. A
-    /// detail's raw source text (e.g. <c>http-call</c>'s <c>route</c>, captured verbatim from the
-    /// argument expression) can span multiple lines when the expression itself does, e.g. an object
-    /// initializer - normalize before it becomes part of a claim fingerprint.
-    /// </summary>
-    private static string Canonicalize(string value)
-    {
-        var collapsed = WhitespaceRun.Replace(value, " ");
-        return collapsed.Trim();
-    }
-
-    private static readonly Regex WhitespaceRun = new(@"\s+", RegexOptions.Compiled);
 
     /// <summary>
     /// Every kind wraps its observed target as one <c>target_text</c> detail, except

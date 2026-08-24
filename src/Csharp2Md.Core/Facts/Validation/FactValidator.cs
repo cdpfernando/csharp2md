@@ -145,6 +145,21 @@ internal static class FactValidator
         {
             errors.Add(Error(relation, "C2M-FV-007", "missing-unresolved-reason"));
         }
+
+        var forbidsTarget = relation.Method is
+            ResolutionMethod.Candidate or
+            ResolutionMethod.Dynamic or
+            ResolutionMethod.Unresolved;
+
+        if (relation.TargetId is not null && forbidsTarget)
+        {
+            errors.Add(Error(relation, "C2M-FV-008", "target-requires-a-resolving-method"));
+        }
+
+        if (!relation.Candidates.IsDefaultOrEmpty && relation.Method != ResolutionMethod.Candidate)
+        {
+            errors.Add(Error(relation, "C2M-FV-008", "candidates-require-candidate-method"));
+        }
     }
 
     private static AnalysisDiagnostic Error(IFact fact, string code, string rule, params DiagnosticData[] data) =>

@@ -283,6 +283,96 @@ public sealed class FactValidatorTests
         Assert.Equal(relation, Assert.Single(result.Fragment!.Facts));
     }
 
+    [Theory]
+    [InlineData(ResolutionMethod.Exact, true)]
+    [InlineData(ResolutionMethod.Syntactic, true)]
+    [InlineData(ResolutionMethod.Configured, true)]
+    [InlineData(ResolutionMethod.Convention, true)]
+    [InlineData(ResolutionMethod.Heuristic, true)]
+    [InlineData(ResolutionMethod.Candidate, false)]
+    [InlineData(ResolutionMethod.Dynamic, false)]
+    [InlineData(ResolutionMethod.Unresolved, false)]
+    public void Validate_EveryResolutionMethodWithItsLegalTargetShape_IsAccepted(ResolutionMethod method, bool hasTarget)
+    {
+        var candidates = method == ResolutionMethod.Candidate
+            ? ImmutableArray.Create(Target.ToFactId())
+            : default;
+        var relation = Relation(
+            RelationPartition.CompileTime,
+            "type-reference",
+            hasTarget ? Target.ToFactId() : null,
+            FactResolution.Exact,
+            unresolvedReason: hasTarget ? null : "not proved by this run",
+            method: method,
+            candidates: candidates);
+
+        var result = Validate([relation], knownIds: hasTarget ? [Target.ToFactId()] : []);
+
+        Assert.True(result.IsValid);
+        Assert.DoesNotContain(result.ValidationDiagnostics, diagnostic => diagnostic.Code == "C2M-FV-008");
+    }
+
+    [Theory]
+    [InlineData(ResolutionMethod.Candidate)]
+    [InlineData(ResolutionMethod.Dynamic)]
+    [InlineData(ResolutionMethod.Unresolved)]
+    public void Validate_NonResolvingMethodCarryingATarget_RejectsAndNamesTheRule(ResolutionMethod method)
+    {
+        var relation = Relation(
+            RelationPartition.CompileTime,
+            "type-reference",
+            Target.ToFactId(),
+            FactResolution.Exact,
+            method: method);
+
+        var result = Validate([relation], knownIds: [Target.ToFactId()]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ValidationDiagnostics, diagnostic =>
+            diagnostic.Code == "C2M-FV-008"
+            && Rule(diagnostic) == "target-requires-a-resolving-method"
+            && diagnostic.ScopeId == relation.Header.Id);
+    }
+
+    [Fact]
+    public void Validate_CandidatesPresentWithoutCandidateMethod_RejectsAndNamesTheRule()
+    {
+        var relation = Relation(
+            RelationPartition.CompileTime,
+            "type-reference",
+            null,
+            FactResolution.Unresolved,
+            unresolvedReason: "not proved by this run",
+            method: ResolutionMethod.Unresolved,
+            candidates: ImmutableArray.Create(Target.ToFactId()));
+
+        var result = Validate([relation]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ValidationDiagnostics, diagnostic =>
+            diagnostic.Code == "C2M-FV-008" && Rule(diagnostic) == "candidates-require-candidate-method");
+    }
+
+    [Fact]
+    public void Validate_TargetAndCandidatesBothInvalidForTheirMethod_RejectsBothRules()
+    {
+        var relation = Relation(
+            RelationPartition.CompileTime,
+            "type-reference",
+            Target.ToFactId(),
+            FactResolution.Exact,
+            method: ResolutionMethod.Unresolved,
+            candidates: ImmutableArray.Create(Target.ToFactId()));
+
+        var result = Validate([relation], knownIds: [Target.ToFactId()]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ValidationDiagnostics, diagnostic =>
+            diagnostic.Code == "C2M-FV-008" && Rule(diagnostic) == "target-requires-a-resolving-method");
+        Assert.Contains(result.ValidationDiagnostics, diagnostic =>
+            diagnostic.Code == "C2M-FV-008" && Rule(diagnostic) == "candidates-require-candidate-method");
+    }
+
     [Fact]
     public void Validate_HeaderDiagnosticReferenceToAbsentDiagnostic_IsRejected()
     {
@@ -429,7 +519,9 @@ public sealed class FactValidatorTests
         FactResolution resolution,
         bool detectorProvenance = true,
         IEnumerable<Evidence>? evidence = null,
-        string? unresolvedReason = null)
+        string? unresolvedReason = null,
+        ResolutionMethod method = ResolutionMethod.Exact,
+        ImmutableArray<FactId> candidates = default)
     {
         var id = RelationFactId.Create(Document.ToFactId(), relationKind, "claim", 1);
         var provenance = detectorProvenance
@@ -447,7 +539,9 @@ public sealed class FactValidatorTests
             target,
             partition,
             relationKind,
-            unresolvedReason);
+            unresolvedReason,
+            Method: method,
+            Candidates: candidates);
     }
 
     private static string? Rule(AnalysisDiagnostic diagnostic) =>

@@ -50,6 +50,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: spec.md Edge Cases (yaml fence independent of source backtick-run length) (testing)
 - last seen: 2026-08-19T14:19:30Z
 
+### L-007 - When a criterion names the specific inputs a lookup must be built from, assert each input actually changes the result, not just that the lookup succeeds
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `relations` · harmful: 0
+- features: relation-resolver
+- evidence: RELR-05 src/Csharp2Md.Core/Analysis/Relations/Resolution/ReceiverTypeStrategy.cs:47 (relations)
+- last seen: 2026-08-21T15:22:46Z
+
+### L-008 - Assert the exact identity of an appended provenance or metadata entry, not merely that the collection is non-empty
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `facts` · harmful: 0
+- features: relation-resolver
+- evidence: RELR-20 tests/Csharp2Md.Core.Tests/Analysis/Relations/RelationFragmentBuilderTests.cs:29 (facts)
+- last seen: 2026-08-21T15:22:46Z
+
+### L-009 - When an identity is minted by the orchestrator, have a strategy return a description of its diagnostic rather than a built one that would need the identity first
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `relations` · harmful: 0
+- features: relation-resolver
+- evidence: src/Csharp2Md.Core/Analysis/Relations/Resolution/IRelationResolutionStrategy.cs:31 (relations)
+- last seen: 2026-08-21T15:22:54Z
+
+### L-010 - Pass the set of identities the run actually produced explicitly into a resolver; an index over one fact family cannot answer whether a target from another family exists
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `relations` · harmful: 0
+- features: relation-resolver
+- evidence: src/Csharp2Md.Core/Analysis/Relations/Resolution/RelationResolver.cs:76 (relations)
+- last seen: 2026-08-21T15:22:54Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
