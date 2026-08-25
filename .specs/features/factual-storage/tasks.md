@@ -1394,7 +1394,7 @@ exposes quarantine separately from confirmed facts and relations.
 
 ---
 
-#### T43: Analysis surface does not include the reader
+#### T43: Analysis surface does not include the reader ✅
 
 **What**: Assert `FactualPackageReader` is not an exported Analysis type. Keep CLI free of a Domain
 project reference (re-asserted in T47).
@@ -1410,10 +1410,10 @@ project reference (re-asserted in T47).
 
 **Done when**:
 
-- [ ] Public Analysis types do not include `FactualPackageReader` or `PackageReadResult`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Phase-end slopwatch is clean over Phase 7
-- [ ] Test count recorded (no silent deletions)
+- [x] Public Analysis types do not include `FactualPackageReader` or `PackageReadResult`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Phase-end slopwatch is clean over Phase 7
+- [x] Test count recorded (no silent deletions) — Analysis.Tests 90 passed, 0 failed (was 89; +1 reader-absent); Storage.Tests 137 passed, 0 failed; BUILD Release 0 warnings; `dotnet format --verify-no-changes`; Full 790 passed, 0 failed (Domain 544 + Analysis 90 + Storage 137 + Projection 3 + Cli 16; was 753; +37 across Phase 7); slopwatch 0 issues
 
 **Tests**: unit
 **Gate**: build

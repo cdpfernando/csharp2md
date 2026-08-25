@@ -58,6 +58,16 @@ public sealed class AnalysisPublicSurfaceTests
     }
 
     [Fact]
+    [Trait("Requirement", "STOR-35")]
+    public void PublicSurface_DoesNotIncludeFactualPackageReaderOrPackageReadResult()
+    {
+        var names = PublicSurfaceTypes().Select(type => type.Name).ToHashSet(StringComparer.Ordinal);
+
+        Assert.DoesNotContain("FactualPackageReader", names);
+        Assert.DoesNotContain("PackageReadResult", names);
+    }
+
+    [Fact]
     [Trait("Requirement", "ENG-12")]
     [Trait("Requirement", "STOR-35")]
     public void PublicSurface_DoesNotExposePassClassifierAdapterOrStageTypes()
