@@ -607,7 +607,7 @@ directory.
 
 ---
 
-#### T16: Map an empty snapshot to envelopes
+#### T16: Map an empty snapshot to envelopes ✅
 
 **What**: Add `DomainMapper.ToWire` / `FromWire` for `FactualSnapshot.Empty`: envelopes with count 0, coverage
 zeros, `run_certification.status = not_evaluated`, empty payload dictionaries. `FromWire` returns Empty
@@ -624,10 +624,10 @@ through Domain `Create` of nothing.
 
 **Done when**:
 
-- [ ] Empty ToWire has no payload records and every family count 0 on the manifest
-- [ ] FromWire of that document equals `FactualSnapshot.Empty` under Domain equality
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Empty ToWire has no payload records and every family count 0 on the manifest
+- [x] FromWire of that document equals `FactualSnapshot.Empty` under Domain equality
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 35 passed, 0 failed (was 31; +4)
 
 **Tests**: unit
 **Gate**: quick
