@@ -1579,9 +1579,9 @@ projects (ENG-49).
 
 **Done when**:
 
-- [ ] The directory exists and contains at least one `.slnx` or `.csproj`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] The directory exists and contains at least one `.slnx` or `.csproj`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
