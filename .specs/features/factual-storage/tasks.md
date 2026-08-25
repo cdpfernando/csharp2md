@@ -1633,7 +1633,7 @@ requested solution exits 2. Drive the structural path with an injected engine or
 
 ### Phase 9: Traceability close
 
-#### T51: Cover STOR-01 through STOR-61 with traits
+#### T51: Cover STOR-01 through STOR-61 with traits ✅
 
 **What**: Add Storage.Tests `RequirementCoverageTests` mirroring Domain's TAX coverage: every `STOR-01`
 through `STOR-61` is carried by at least one `[Trait("Requirement", "STOR-nn")]` in the test assemblies this
@@ -1650,10 +1650,10 @@ feature owns (Storage, Analysis, CLI), and every carried STOR trait is well-form
 
 **Done when**:
 
-- [ ] Uncovered STOR-nn list is empty; malformed IDs fail the format scanner
-- [ ] Domain registry drift gate still passes (STOR-09)
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Uncovered STOR-nn list is empty; malformed IDs fail the format scanner
+- [x] Domain registry drift gate still passes (STOR-09)
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 140 passed, 0 failed (was 137; +3 coverage scanner); Analysis.Tests 90 passed, 0 failed; Cli.Tests 24 passed, 0 failed; Domain.Tests 544 passed, 0 failed
 
 **Tests**: unit
 **Gate**: full
