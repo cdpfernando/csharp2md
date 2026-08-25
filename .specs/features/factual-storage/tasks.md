@@ -1662,7 +1662,7 @@ feature owns (Storage, Analysis, CLI), and every carried STOR trait is well-form
 
 ---
 
-#### T52: Green solution
+#### T52: Green solution ✅
 
 **What**: `dotnet test csharp2md.slnx` passes. No new public Analysis types beyond the T5 allowlist. No
 Storage classifier types. CLI still has no Domain reference.
@@ -1678,10 +1678,10 @@ Storage classifier types. CLI still has no Domain reference.
 
 **Done when**:
 
-- [ ] `dotnet test csharp2md.slnx` exits 0
-- [ ] Isolation pins above still pass
-- [ ] Phase-end slopwatch is clean over Phase 9
-- [ ] Test count recorded (no silent deletions)
+- [x] `dotnet test csharp2md.slnx` exits 0
+- [x] Isolation pins above still pass
+- [x] Phase-end slopwatch is clean over Phase 9
+- [x] Test count recorded (no silent deletions) — BUILD Release 0 warnings; `dotnet format --verify-no-changes`; solution 801 passed, 0 failed (Domain 544 + Analysis 90 + Storage 140 + Projection 3 + Cli 24; was 798; +3 from T51); slopwatch 0 issues
 
 **Tests**: unit
 **Gate**: build
