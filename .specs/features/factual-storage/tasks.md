@@ -896,7 +896,7 @@ payloads, and `run_certification.status = failed`. Remaining valid artifacts sta
 
 ---
 
-#### T26: Candidates and unknowns are not abort-class
+#### T26: Candidates and unknowns are not abort-class ✅
 
 **What**: A document with candidates, unresolved records or open frontiers and no abort-class failure
 validates successfully. Certification stays `not_evaluated` when quarantine is empty.
@@ -912,10 +912,10 @@ validates successfully. Certification stays `not_evaluated` when quarantine is e
 
 **Done when**:
 
-- [ ] Candidate-only and frontier-only fixtures validate without throwing
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Phase-end slopwatch is clean over Phase 4
-- [ ] Test count recorded (no silent deletions)
+- [x] Candidate-only and frontier-only fixtures validate without throwing
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Phase-end slopwatch is clean over Phase 4
+- [x] Test count recorded (no silent deletions) — Storage.Tests 84 passed, 0 failed (was 82; +2 candidates/frontiers); BUILD Release 0 warnings; `dotnet format --verify-no-changes`; solution 733 passed, 0 failed; slopwatch 0 issues
 
 **Tests**: unit
 **Gate**: build

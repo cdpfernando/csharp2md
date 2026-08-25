@@ -227,6 +227,36 @@ public sealed class PackageValidatorTests
         Assert.Equal("failed", report.Document.RunCertification.Status);
     }
 
+    [Fact]
+    [Trait("Requirement", "STOR-33")]
+    public void Validate_CandidateOnly_SucceedsWithNotEvaluatedCertification()
+    {
+        var document = DomainMapper.ToWire(CandidateSnapshot(), Context);
+        Assert.False(document.Candidates.IsEmpty);
+
+        var report = PackageValidator.Validate(document);
+
+        Assert.Equal(document.Candidates.Length, report.Document.Candidates.Length);
+        Assert.Equal(document.Candidates[0].Kind, report.Document.Candidates[0].Kind);
+        Assert.True(report.Quarantine.IsEmpty);
+        Assert.Equal("not_evaluated", report.Document.RunCertification.Status);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-33")]
+    public void Validate_FrontierOnly_SucceedsWithNotEvaluatedCertification()
+    {
+        var document = DomainMapper.ToWire(FrontierSnapshot(), Context);
+        Assert.False(document.Frontiers.IsEmpty);
+
+        var report = PackageValidator.Validate(document);
+
+        Assert.Equal(document.Frontiers.Length, report.Document.Frontiers.Length);
+        Assert.Equal(document.Frontiers[0].Cause, report.Document.Frontiers[0].Cause);
+        Assert.True(report.Quarantine.IsEmpty);
+        Assert.Equal("not_evaluated", report.Document.RunCertification.Status);
+    }
+
     private static SolutionDto ValidSolutionDto() =>
         DomainMapper.ToWire(SolutionSnapshot(), Context).Solutions[0];
 
@@ -283,6 +313,25 @@ public sealed class PackageValidatorTests
             EvidenceMethod.Syntactic);
         return new FactualSnapshot([], [], [relation], [], [], []);
     }
+
+    private static FactualSnapshot CandidateSnapshot()
+    {
+        var link = CandidateLink.Create(
+            RelationKind.Contains,
+            Solution.Create(AcmeSolution).Reference,
+            Project.Create(AcmeProject).Reference,
+            EvidenceChain.Create([Occurrence()]));
+        return new FactualSnapshot([], [], [], [link], [], []);
+    }
+
+    private static FactualSnapshot FrontierSnapshot()
+    {
+        var frontier = OpenFrontier.Create(Occurrence(), FrontierCause.FurtherContinuationObserved);
+        return new FactualSnapshot([], [], [], [], [], [frontier]);
+    }
+
+    private static ObservationIdentity Occurrence() =>
+        new(Solution.Create(AcmeSolution).Reference, ObservationKind.Invocation, NormalizedPayload.Create([]), 1);
 
     private static WorkspaceIdentity Workspace => WorkspaceIdentity.Create("acme");
 
