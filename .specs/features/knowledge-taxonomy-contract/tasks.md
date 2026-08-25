@@ -1177,11 +1177,11 @@ saying why.
 
 **Done when**:
 
-- [ ] Construction without a cause is rejected naming the parameter
-- [ ] The cause is a closed vocabulary value, not free text, and an undefined value is rejected
-- [ ] The candidate carries the evidence that was available when it was rejected
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Construction without a cause is rejected naming the parameter
+- [x] The cause is a closed vocabulary value, not free text, and an undefined value is rejected
+- [x] The candidate carries the evidence that was available when it was rejected
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 301 passed, 0 failed (3 new tests)
 
 **Tests**: unit
 **Gate**: quick
