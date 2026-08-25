@@ -1689,12 +1689,12 @@ references
 
 **Done when**:
 
-- [ ] Two runs against unchanged tables produce byte-identical output, compared as bytes
-- [ ] Output has no BOM, LF endings only, two-space indent, and keys in the declared order
-- [ ] The emitted document enumerates every family, fact type, observation kind, facet axis with its values, relation with its triples and minimum evidence method, mapping role, proof axis and version axis
-- [ ] The writer lives in the test project and `Csharp2Md.Domain` still declares no JSON dependency
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Two runs against unchanged tables produce byte-identical output, compared as bytes
+- [x] Output has no BOM, LF endings only, two-space indent, and keys in the declared order
+- [x] The emitted document enumerates every family, fact type, observation kind, facet axis with its values, relation with its triples and minimum evidence method, mapping role, proof axis and version axis
+- [x] The writer lives in the test project and `Csharp2Md.Domain` still declares no JSON dependency
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 493 passed (480 baseline + 13 new)
 
 **Tests**: unit
 **Gate**: quick
