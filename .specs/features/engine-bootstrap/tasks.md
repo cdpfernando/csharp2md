@@ -1470,10 +1470,10 @@ security-boundary tests (ENG-52, ENG-53).
 
 **Done when**:
 
-- [ ] `src/Csharp2Md.Core` does not exist
-- [ ] slnx has no Core project path
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`
-- [ ] Test count recorded (no silent deletions)
+- [x] `src/Csharp2Md.Core` does not exist
+- [x] slnx has no Core project path
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: none
 **Gate**: build
