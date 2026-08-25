@@ -301,8 +301,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ENG-53 | P1: Legacy excision with a port ledger | Tasks | In Tasks |
 | ENG-54 | P1: Legacy excision with a port ledger | Tasks | In Tasks |
 | ENG-55 | P1: Reachable relation shape guards | Tasks | Verified |
-| ENG-56 | P1: Reachable relation shape guards | Tasks | In Tasks |
-| ENG-57 | P1: Reachable relation shape guards | Tasks | In Tasks |
+| ENG-56 | P1: Reachable relation shape guards | Tasks | Verified |
+| ENG-57 | P1: Reachable relation shape guards | Tasks | Verified |
 | ENG-58 | P1: Reachable relation shape guards | Tasks | Verified |
 | ENG-59 | P1: Reachable relation shape guards | Tasks | In Tasks |
 | ENG-60 | P1: Reachable relation shape guards | Tasks | In Tasks |

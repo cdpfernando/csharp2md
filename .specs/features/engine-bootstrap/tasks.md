@@ -233,11 +233,11 @@ symbol; the other three on the source symbol). Test ENG-55 only through `Create`
 
 **Done when**:
 
-- [ ] `targets` through `Create` with an outbound boundary operation is rejected
-- [ ] `operates-on` through `Create` with a non data-object/data-field target is rejected
-- [ ] A missing `targetFact` for those kinds is rejected naming `targetFact`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `targets` through `Create` with an outbound boundary operation is rejected
+- [x] `operates-on` through `Create` with a non data-object/data-field target is rejected
+- [x] A missing `targetFact` for those kinds is rejected naming `targetFact`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

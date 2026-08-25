@@ -1,6 +1,7 @@
 using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
+using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
 using Csharp2Md.Domain.Registry;
@@ -58,8 +59,35 @@ public sealed class RelationMatrixTests
             RelationKind.Invokes => SourceCallable("Caller", triple.TargetFactType),
             RelationKind.ImplementsOperation => SourceCallable("Handle", triple.TargetFactType),
             RelationKind.AccessesData => SourceCallable("Load", triple.TargetFactType),
+            RelationKind.Targets => TargetShaped(triple.SourceFactType, InboundOperation()),
+            RelationKind.OperatesOn => TargetShaped(triple.SourceFactType, SampleDataObject()),
             _ => (Reference(triple.SourceFactType), Reference(triple.TargetFactType), null, null),
         };
+    }
+
+    private static (FactReference Source, FactReference Target, IFact? SourceFact, IFact? TargetFact) TargetShaped(
+        string sourceFactType,
+        IFact targetFact) =>
+        (Reference(sourceFactType), targetFact.Reference, null, targetFact);
+
+    private static BoundaryOperation InboundOperation() =>
+        BoundaryOperation.Create(
+            CallableSymbol("Charge").Reference,
+            new FactReference(new FactId("component", "id1:component;name=payments-api"), "Component"),
+            BoundaryDirection.Inbound,
+            protocolOperationKey: StructuralLiteral.Create(LiteralRole.ProtocolName, "POST /charge", "protocolOperationKey"));
+
+    private static DataObject SampleDataObject()
+    {
+        var store = DataStore.Create(
+            DataStoreTechnology.Relational,
+            StructuralLiteral.Create(LiteralRole.ClientName, "orders-db", "name"));
+        return DataObject.Create(
+            store.Reference,
+            DataObjectForm.Table,
+            StructuralLiteral.Create(LiteralRole.SchemaName, "dbo", "schemaName"),
+            StructuralLiteral.Create(LiteralRole.TableName, "Orders", "tableName"),
+            MappingStateKind.ExplicitConfirmation);
     }
 
     private static (FactReference Source, FactReference Target, IFact? SourceFact, IFact? TargetFact) SourceCallable(

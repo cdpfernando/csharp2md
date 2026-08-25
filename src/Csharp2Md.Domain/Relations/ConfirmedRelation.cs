@@ -117,6 +117,17 @@ public sealed record ConfirmedRelation
 
                 RelationShapeGuards.RequireCallableIfNeeded(kind, callableSource, nameof(sourceFact));
                 break;
+            case RelationKind.Targets:
+            case RelationKind.OperatesOn:
+                if (targetFact is null)
+                {
+                    throw new ArgumentException(
+                        $"Relation '{kind}' requires {nameof(targetFact)}.",
+                        nameof(targetFact));
+                }
+
+                RelationShapeGuards.RequireLegalTargetShape(kind, targetFact);
+                break;
         }
 
         RelationShapeGuards.RequirePayloadRoleForUsesContract(kind, facets);
