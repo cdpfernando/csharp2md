@@ -199,7 +199,7 @@ from `AnalysisIsolationTests` forbidden project references (AD-016). Keep Storag
 
 ---
 
-#### T2: Add FactualSnapshot
+#### T2: Add FactualSnapshot ✅
 
 **What**: Add `FactualSnapshot` on the Analysis storage surface with `Empty`, the six Domain arrays from
 design.md, and `Merge` that concatenates arrays. Collision is not a merge error.
@@ -216,10 +216,10 @@ design.md, and `Merge` that concatenates arrays. Collision is not a merge error.
 
 **Done when**:
 
-- [ ] `Empty` has default empty arrays for every property
-- [ ] `Merge` concatenates; a test concatenates two snapshots that share an identity and does not throw
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `Empty` has default empty arrays for every property
+- [x] `Merge` concatenates; a test concatenates two snapshots that share an identity and does not throw
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

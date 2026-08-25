@@ -19,6 +19,7 @@ public sealed class AnalysisPublicSurfaceTests
         "StagedFragment",
         "ArtifactRole",
         "CommittedPublication",
+        "FactualSnapshot",
     ];
 
     private static readonly string[] ForbiddenSurfaceTokens =
