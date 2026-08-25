@@ -1,0 +1,22 @@
+
+{
+  "services": [
+    {
+      "path": "SyntheticSolution/Acme.Orders",
+      "name": "Acme.Orders",
+      "projects": ["Acme.Orders.csproj"]
+    },
+    {
+      "path": "SyntheticSolution/Acme.Payments",
+      "name": "Acme.Payments",
+      "projects": ["Acme.Payments.csproj"]
+    },
+    {
+      "path": "SyntheticSolution/Acme.Broken",
+      "name": "Acme.Broken",
+      "projects": ["Acme.Broken.csproj"]
+    }
+  ]
+}
+
+

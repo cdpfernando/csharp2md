@@ -10,6 +10,8 @@ Workstream 2, [`engine-bootstrap`](features/engine-bootstrap/spec.md), is comple
 
 Workstream 3, [`factual-storage`](features/factual-storage/spec.md), is complete, verified and on `feat/factual-storage` (`4c4948b`). Verifier report: `.specs/features/factual-storage/validation.md` (PASS, 801 tests).
 
+Workstream 4, [`roslyn-observation-extraction`](features/roslyn-observation-extraction/spec.md), is in Execute: `tasks.md` approved; phases 1–3 (T1–T18) dispatched to sequential batch workers.
+
 Normative documentation:
 
 - [`CONTEXT.md`](../CONTEXT.md)
@@ -126,6 +128,15 @@ Normative documentation:
 - **Date**: 2026-08-25
 - **Status**: active.
 
+### AD-017 — Snapshot carries package diagnostics
+
+- **Decision**: `FactualSnapshot` includes operational diagnostics and suspected-secret evidence. Pipeline stages append them; Persistence stages the snapshot; Storage maps them into `diagnostics.json`. Stages never write the envelope themselves.
+- **Reason**: workstream 3 left the diagnostics envelope empty; this workstream must name missing projects, compile failures, unsupported documents and suspected secrets in the committed package; the write port is the only legal path into that envelope. Workstreams 5A–5D will use the same slot.
+- **Trade-off**: the snapshot grows beyond taxonomy records. Diagnostics stay an Analysis/Storage package contract, so Domain still has no `DiagnosticRecord` type.
+- **Scope**: `FactualSnapshot`, Storage `DomainMapper`, and every later pipeline stage that records diagnostics.
+- **Date**: 2026-08-25
+- **Status**: active.
+
 ## Standing engineering constraints
 
 - Retrieval-led reasoning is mandatory for .NET/Roslyn work; never invent a Roslyn API.
@@ -133,14 +144,15 @@ Normative documentation:
 - Structural corruption aborts atomic publication; legitimate unknowns and candidates do not.
 - Secrets are never duplicated into facts, observations, indexes or diagnostics.
 - The tlc-spec-driven discrimination sensor remains skipped; the user runs Stryker manually. All other verifier steps remain required when feature execution begins.
+- The only versioned analysis fixture is `fixtures/SyntheticSolution`. `fixtures/eShop` and `fixtures/eShopOnContainers` are local clones (gitignored). After each feature Verifier, run `LocalCorpus` analyze tests when those clones exist; skip when they do not. Never add those apps to git.
 
 ## Handoff
 
-- **Feature**: `factual-storage` — `.specs/features/factual-storage/`
-- **Phase / Task**: Execute complete. T1–T52 plus post-T52 `4c4948b`. Verifier PASS.
-- **Completed**: T1 `e614a6b` through T52 `341ba6e` (52 atomic commits) plus `4c4948b` (Windows staging-swap retry). Gate: 801 passed, 0 failed.
-- **In-progress** (file:line): none.
-- **Next step**: Feature is closed. Do not start workstream 4 until the user asks. Untracked `context.md` / `design.md` for this feature are still uncommitted if they should land with the branch.
+- **Feature**: `roslyn-observation-extraction` — `.specs/features/roslyn-observation-extraction/`
+- **Phase / Task**: Execute. Batch 1 (Phase 1, T1–T6) dispatched; Batches 2–3 (Phases 2–3, T7–T18) wait on Batch 1.
+- **Completed**: Workstream 3 `factual-storage` on `master` (`a48c82a`). Spec, design, and tasks for workstream 4 are approved.
+- **In-progress** (file:line): Phase 1 T1 — `src/Csharp2Md.Analysis/Storage/DiagnosticRecord.cs`
+- **Next step**: Batch worker 1 completes T1–T6 with one atomic commit each; orchestrator then dispatches Phase 2.
 - **Blockers**: none.
-- **Uncommitted files**: none of the feature artifacts. Noise (do not commit): `.agents/`, `.claude/`, `.cursor/`, `.windsurf/`, `fixtures/launch-manifest.json`, `research/`, `architecture-knowledge-engine-roadmap.md`, `docs/architecture/README.md`.
-- **Branch**: `feat/factual-storage`
+- **Uncommitted files**: feature specs under `.specs/features/roslyn-observation-extraction/`, `.specs/STATE.md`, plus unrelated noise (skill copies, fixtures, research). Workers must not commit that noise.
+- **Branch**: `feat/roslyn-observation-extraction`
