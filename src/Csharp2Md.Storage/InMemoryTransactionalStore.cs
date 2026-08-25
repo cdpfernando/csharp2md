@@ -4,15 +4,28 @@ namespace Csharp2Md.Storage;
 
 public sealed class InMemoryTransactionalStore : ITransactionalStore
 {
-    public IStoreSession Open(string solutionKey) => new Session(solutionKey);
+    private readonly Dictionary<string, CommittedPublication> _publications = new(StringComparer.Ordinal);
+
+    public IStoreSession Open(string solutionKey) => new Session(this, solutionKey);
+
+    public bool TryGetPublication(string solutionKey, out CommittedPublication publication) =>
+        _publications.TryGetValue(solutionKey, out publication!);
+
+    private void Publish(CommittedPublication publication) =>
+        _publications[publication.SolutionKey] = publication;
 
     private sealed class Session : IStoreSession
     {
+        private readonly InMemoryTransactionalStore _store;
         private readonly string _solutionKey;
         private readonly List<StagedFragment> _staged = [];
         private bool _committed;
 
-        public Session(string solutionKey) => _solutionKey = solutionKey;
+        public Session(InMemoryTransactionalStore store, string solutionKey)
+        {
+            _store = store;
+            _solutionKey = solutionKey;
+        }
 
         public void Stage(StagedFragment fragment) => _staged.Add(fragment);
 
@@ -33,7 +46,9 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
                     .OrderBy(fragment => fragment.CanonicalKey, StringComparer.Ordinal))
                 .ToImmutableArray();
 
-            return new CommittedPublication(_solutionKey, ordered);
+            var publication = new CommittedPublication(_solutionKey, ordered);
+            _store.Publish(publication);
+            return publication;
         }
 
         public void Abort() => _staged.Clear();

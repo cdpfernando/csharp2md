@@ -636,10 +636,10 @@ replaces the publication; an abort after a prior commit leaves that publication 
 
 **Done when**:
 
-- [ ] Abort then commit of a new session does not contain aborted fragments
-- [ ] Commit, then abort a second session, then read: the first publication is unchanged
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Abort then commit of a new session does not contain aborted fragments
+- [x] Commit, then abort a second session, then read: the first publication is unchanged
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

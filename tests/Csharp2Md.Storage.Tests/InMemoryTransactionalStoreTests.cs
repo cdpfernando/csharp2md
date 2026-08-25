@@ -127,6 +127,87 @@ public sealed class InMemoryTransactionalStoreTests
         Assert.Throws<InvalidOperationException>(session.Commit);
     }
 
+    [Fact]
+    [Trait("Requirement", "ENG-25")]
+    public void AbortThenCommitOfNewSession_DoesNotContainAbortedFragments()
+    {
+        var store = new InMemoryTransactionalStore();
+        var first = store.Open("solution-a");
+        first.Stage(Fragment(ArtifactRole.Payload, "aborted", [9]));
+        first.Abort();
+
+        var second = store.Open("solution-a");
+        second.Stage(Fragment(ArtifactRole.Payload, "kept", [4]));
+        second.Stage(Fragment(ArtifactRole.Manifest, "manifest", [0x4D]));
+        var publication = second.Commit();
+
+        Assert.DoesNotContain(
+            publication.ArtifactsInPublicationOrder,
+            fragment => fragment.CanonicalKey == "aborted");
+        Assert.Equal(2, publication.ArtifactsInPublicationOrder.Length);
+        AssertFragment(publication.ArtifactsInPublicationOrder[0], ArtifactRole.Payload, "kept", [4]);
+        AssertFragment(publication.ArtifactsInPublicationOrder[1], ArtifactRole.Manifest, "manifest", [0x4D]);
+
+        Assert.True(store.TryGetPublication("solution-a", out var stored));
+        Assert.Equal(publication, stored);
+        Assert.DoesNotContain(stored.ArtifactsInPublicationOrder, fragment => fragment.CanonicalKey == "aborted");
+    }
+
+    [Fact]
+    [Trait("Requirement", "ENG-24")]
+    public void CommitThenAbortSecondSession_LeavesPriorPublicationUnchanged()
+    {
+        var store = new InMemoryTransactionalStore();
+        var first = store.Open("solution-a");
+        first.Stage(Fragment(ArtifactRole.Payload, "prior", [1]));
+        first.Stage(Fragment(ArtifactRole.Manifest, "manifest", [0x4D]));
+        var prior = first.Commit();
+
+        var second = store.Open("solution-a");
+        second.Stage(Fragment(ArtifactRole.Payload, "would-replace", [99]));
+        second.Abort();
+
+        Assert.True(store.TryGetPublication("solution-a", out var stored));
+        Assert.Equal(prior, stored);
+        Assert.Equal("prior", stored.ArtifactsInPublicationOrder[0].CanonicalKey);
+        Assert.True(stored.ArtifactsInPublicationOrder[0].Payload.AsSpan().SequenceEqual((ReadOnlySpan<byte>)[1]));
+        Assert.Equal(ArtifactRole.Manifest, stored.ArtifactsInPublicationOrder[1].Role);
+        Assert.DoesNotContain(
+            stored.ArtifactsInPublicationOrder,
+            fragment => fragment.CanonicalKey == "would-replace");
+    }
+
+    [Fact]
+    [Trait("Requirement", "ENG-24")]
+    public void FirstRunAbort_LeavesNoPublication()
+    {
+        var store = new InMemoryTransactionalStore();
+        var session = store.Open("solution-a");
+        session.Stage(Fragment(ArtifactRole.Payload, "aborted", [9]));
+        session.Abort();
+
+        Assert.False(store.TryGetPublication("solution-a", out _));
+    }
+
+    [Fact]
+    [Trait("Requirement", "ENG-24")]
+    public void LaterSuccessfulCommit_ReplacesThePublicationForTheKey()
+    {
+        var store = new InMemoryTransactionalStore();
+        var first = store.Open("solution-a");
+        first.Stage(Fragment(ArtifactRole.Payload, "old", [1]));
+        first.Commit();
+
+        var second = store.Open("solution-a");
+        second.Stage(Fragment(ArtifactRole.Payload, "new", [2]));
+        var replacement = second.Commit();
+
+        Assert.True(store.TryGetPublication("solution-a", out var stored));
+        Assert.Equal(replacement, stored);
+        AssertFragment(Assert.Single(stored.ArtifactsInPublicationOrder), ArtifactRole.Payload, "new", [2]);
+        Assert.DoesNotContain(stored.ArtifactsInPublicationOrder, fragment => fragment.CanonicalKey == "old");
+    }
+
     private static ImmutableArray<StagedFragment> CommitInOrder(params StagedFragment[] fragments)
     {
         var session = new InMemoryTransactionalStore().Open("solution-a");
