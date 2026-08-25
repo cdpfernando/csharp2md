@@ -318,8 +318,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-49 | P1: CLI `--output` and a valid empty package | Execute (T46) | Implementing |
 | STOR-50 | P1: CLI `--output` and a valid empty package | Execute (T33, T46) | Implementing |
 | STOR-51 | P1: CLI `--output` and a valid empty package | Execute (T46) | Implementing |
-| STOR-52 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
-| STOR-53 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
+| STOR-52 | P1: CLI `--output` and a valid empty package | Execute (T47) | Implementing |
+| STOR-53 | P1: CLI `--output` and a valid empty package | Execute (T47) | Implementing |
 | STOR-54 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
 | STOR-55 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
 | STOR-56 | P1: Session isolation and cleanup | Tasks | In Tasks |

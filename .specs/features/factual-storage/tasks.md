@@ -1517,7 +1517,7 @@ output directory.
 
 ---
 
-#### T47: Keep leftover options gone and CLI off Domain
+#### T47: Keep leftover options gone and CLI off Domain ✅
 
 **What**: CLI still has no `--topic`, `--domain`, `--manifest`, `--trust`,
 `--include-source-generators` or `--analysis-timeout`. CLI.csproj still has no Domain project reference.
@@ -1533,10 +1533,10 @@ output directory.
 
 **Done when**:
 
-- [ ] Removed-option list is those six names; `--output` is allowed
-- [ ] CliIsolationTests still asserts no Domain reference
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Removed-option list is those six names; `--output` is allowed
+- [x] CliIsolationTests still asserts no Domain reference
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Cli.Tests 21 passed, 0 failed (unchanged; STOR-52/STOR-53 traits on existing assertions)
 
 **Tests**: unit
 **Gate**: quick

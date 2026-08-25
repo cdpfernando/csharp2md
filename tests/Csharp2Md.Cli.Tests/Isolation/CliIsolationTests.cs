@@ -13,6 +13,7 @@ public sealed class CliIsolationTests
 
     [Fact]
     [Trait("Requirement", "ENG-08")]
+    [Trait("Requirement", "STOR-53")]
     public void CliCsproj_ProjectReferencesEqualAnalysisStorageAndProjection()
     {
         var names = ReadProjectReferenceNames()
