@@ -579,7 +579,7 @@ directory.
 
 ---
 
-#### T15: Embedded registry matches the committed file
+#### T15: Embedded registry matches the committed file ✅
 
 **What**: Assert the Storage embedded `taxonomy-registry.json` bytes equal
 `contracts/taxonomy-registry.json`. Re-run the Domain registry drift gate so STOR-09 stays true.
@@ -595,10 +595,10 @@ directory.
 
 **Done when**:
 
-- [ ] Embed bytes equal the committed registry file; the failure names both paths
-- [ ] `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj` still passes the registry drift gate
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Embed bytes equal the committed registry file; the failure names both paths
+- [x] `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj` still passes the registry drift gate
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 31 passed, 0 failed (was 29; +2); Domain.Tests 544 passed, 0 failed
 
 **Tests**: unit
 **Gate**: full
