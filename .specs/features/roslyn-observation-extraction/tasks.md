@@ -891,11 +891,11 @@ failures name the path on stderr.
 
 **Done when**:
 
-- [ ] A fake unpublished outcome with Detail `link.cs` writes that string to stderr
-- [ ] Committed outcomes still print no `csharp2md:` diagnostic line
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean on this phase's changes
+- [x] A fake unpublished outcome with Detail `link.cs` writes that string to stderr
+- [x] Committed outcomes still print no `csharp2md:` diagnostic line
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean on this phase's changes
 
 **Tests**: unit
 **Gate**: build

@@ -110,6 +110,11 @@ internal static class CommandFactory
                 detail += " (structural corruption)";
             }
 
+            if (outcome.Detail is { Length: > 0 } named)
+            {
+                detail += $" {named}";
+            }
+
             error.WriteLine($"csharp2md:{detail} {outcome.LogicalRelativePath}");
         }
     }
