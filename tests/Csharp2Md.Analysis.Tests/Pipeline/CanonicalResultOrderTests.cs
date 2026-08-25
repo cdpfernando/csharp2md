@@ -1,4 +1,5 @@
 using Csharp2Md.Analysis;
+using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage;
 
@@ -8,10 +9,11 @@ public sealed class CanonicalResultOrderTests
 {
     [Fact]
     [Trait("Requirement", "ENG-34")]
+    [Trait("Requirement", "ROSE-59")]
     public async Task AnalyzeAsync_ShuffledInput_OrdersOutcomesByNormalizedLogicalPath()
     {
         var store = new InMemoryTransactionalStore();
-        var engine = new AnalysisEngine(store);
+        var engine = new AnalysisEngine(store, StubStages.CreateDefault());
 
         var shuffled = await engine.AnalyzeAsync(
             AnalysisRequest.Create([@"zeta\b.sln", "alpha/a.sln"]),

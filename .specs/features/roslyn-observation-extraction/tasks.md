@@ -535,12 +535,12 @@ the injectable empty walking skeleton.
 
 **Done when**:
 
-- [ ] Fake-path tests no longer call `new AnalysisEngine(store)` without stages
-- [ ] `DefaultPipelineZerosTests` and `PersistenceManifestTests` still use the production constructor on
+- [x] Fake-path tests no longer call `new AnalysisEngine(store)` without stages
+- [x] `DefaultPipelineZerosTests` and `PersistenceManifestTests` still use the production constructor on
       `Acme.Orders.slnx`
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean on this phase's changes
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean on this phase's changes
 
 **Tests**: unit
 **Gate**: build
