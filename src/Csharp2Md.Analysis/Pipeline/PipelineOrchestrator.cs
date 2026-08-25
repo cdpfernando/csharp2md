@@ -47,6 +47,11 @@ internal sealed class PipelineOrchestrator
                 {
                     return PipelineRunResult.Corrupted(hasUnknownsOrCandidatesOrFrontiers);
                 }
+
+                if (result.AbortPublication)
+                {
+                    return PipelineRunResult.Aborted(hasUnknownsOrCandidatesOrFrontiers);
+                }
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -75,6 +80,9 @@ internal readonly record struct PipelineRunResult(
 
     public static PipelineRunResult Corrupted(bool hasUnknownsOrCandidatesOrFrontiers) =>
         new(PipelineCompletion.StructuralCorruption, null, true, hasUnknownsOrCandidatesOrFrontiers);
+
+    public static PipelineRunResult Aborted(bool hasUnknownsOrCandidatesOrFrontiers) =>
+        new(PipelineCompletion.Aborted, null, false, hasUnknownsOrCandidatesOrFrontiers);
 }
 
 internal enum PipelineCompletion
@@ -83,4 +91,5 @@ internal enum PipelineCompletion
     Cancelled,
     Failed,
     StructuralCorruption,
+    Aborted,
 }

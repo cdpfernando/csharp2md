@@ -26,6 +26,61 @@ public sealed class StageSubstitutionTests
     }
 
     [Fact]
+    [Trait("Requirement", "ROSE-22")]
+    public async Task AnalyzeAsync_AbortPublication_UnpublishedWithoutStructuralCorruptionAndCopiesDetail()
+    {
+        const string detail = "MSBuildWorkspace could not open alpha.sln";
+        var executed = new List<string>();
+        var aborting = new ResultStage(
+            "Semantic Analysis",
+            new StageResult(0, 0, 0, StructuralCorruption: false, HasUnknownsOrCandidatesOrFrontiers: false, AbortPublication: true),
+            executed,
+            context => context.Detail = detail);
+        var stages = StubStages.CreateDefault()
+            .SetItem(1, aborting)
+            .SetItem(2, new RecordingStage("Observation Extraction", executed))
+            .SetItem(5, new RecordingStage("Persistence", executed));
+        var engine = new AnalysisEngine(new SessionStore(), stages);
+        var request = AnalysisRequest.Create(["alpha.sln"]);
+
+        var result = await engine.AnalyzeAsync(request, CancellationToken.None);
+
+        var outcome = Assert.Single(result.Solutions);
+        Assert.Equal(PublicationStatus.Unpublished, outcome.Status);
+        Assert.False(outcome.StructuralCorruption);
+        Assert.Equal(detail, outcome.Detail);
+        Assert.True(result.HasUnpublishedSolution);
+        Assert.Equal(["Semantic Analysis"], executed);
+        Assert.DoesNotContain("Observation Extraction", outcome.Stages.Select(report => report.Name));
+        Assert.DoesNotContain("Persistence", outcome.Stages.Select(report => report.Name));
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-22")]
+    public async Task AnalyzeAsync_StructuralCorruption_StillTakesTheCorruptionPath()
+    {
+        var executed = new List<string>();
+        var corrupted = new ResultStage(
+            "Validation and Coverage",
+            new StageResult(0, 0, 0, StructuralCorruption: true, HasUnknownsOrCandidatesOrFrontiers: false),
+            executed);
+        var stages = StubStages.CreateDefault()
+            .SetItem(4, corrupted)
+            .SetItem(5, new RecordingStage("Persistence", executed));
+        var engine = new AnalysisEngine(new SessionStore(), stages);
+        var request = AnalysisRequest.Create(["alpha.sln"]);
+
+        var result = await engine.AnalyzeAsync(request, CancellationToken.None);
+
+        var outcome = Assert.Single(result.Solutions);
+        Assert.Equal(PublicationStatus.Unpublished, outcome.Status);
+        Assert.True(outcome.StructuralCorruption);
+        Assert.Null(outcome.FailingStage);
+        Assert.Equal(["Validation and Coverage"], executed);
+        Assert.DoesNotContain("Persistence", outcome.Stages.Select(report => report.Name));
+    }
+
+    [Fact]
     [Trait("Requirement", "ENG-14")]
     public void Substitution_DoesNotChangeTheOrchestratorType()
     {

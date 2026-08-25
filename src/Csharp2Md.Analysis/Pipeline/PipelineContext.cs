@@ -12,6 +12,8 @@ internal sealed class PipelineContext
 
     public ImmutableArray<StageReport> Reports => [.. _reports];
 
+    public string? Detail { get; set; }
+
     public PipelineContext(IStoreSession session, string solutionPath)
     {
         ArgumentNullException.ThrowIfNull(session);

@@ -330,11 +330,11 @@ Do not treat this path as `PublicationRejectedException`.
 
 **Done when**:
 
-- [ ] A substitute stage with `AbortPublication: true` unpublished that solution, left
+- [x] A substitute stage with `AbortPublication: true` unpublished that solution, left
       `StructuralCorruption` false, and copied Detail
-- [ ] A `StructuralCorruption: true` result still takes the corruption path
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A `StructuralCorruption: true` result still takes the corruption path
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

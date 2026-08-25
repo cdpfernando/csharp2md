@@ -78,21 +78,27 @@ internal sealed class ResultStage : IPipelineStage
 {
     private readonly StageResult _result;
     private readonly List<string>? _executed;
+    private readonly Action<PipelineContext>? _onExecute;
 
-    public ResultStage(string name, StageResult result, List<string>? executed = null)
+    public ResultStage(
+        string name,
+        StageResult result,
+        List<string>? executed = null,
+        Action<PipelineContext>? onExecute = null)
     {
         Name = name;
         _result = result;
         _executed = executed;
+        _onExecute = onExecute;
     }
 
     public string Name { get; }
 
     public ValueTask<StageResult> ExecuteAsync(PipelineContext context, CancellationToken cancellationToken)
     {
-        _ = context;
         _ = cancellationToken;
         _executed?.Add(Name);
+        _onExecute?.Invoke(context);
         return ValueTask.FromResult(_result);
     }
 }
