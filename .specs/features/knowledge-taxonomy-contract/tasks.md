@@ -1272,11 +1272,11 @@ factories and order-independent owner sets.
 
 **Done when**:
 
-- [ ] Component owners supplied in two orders, with a duplicate, produce one identity
-- [ ] Each type's identity components are validated and each omission rejected by name
-- [ ] An external system is identified without any absolute address or credential-bearing component
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Component owners supplied in two orders, with a duplicate, produce one identity
+- [x] Each type's identity components are validated and each omission rejected by name
+- [x] An external system is identified without any absolute address or credential-bearing component
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 344 passed, 0 failed
 
 **Tests**: unit
 **Gate**: quick
