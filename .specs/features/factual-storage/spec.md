@@ -295,7 +295,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-26 | P1: Commit-time structural gates | Execute (T21) | Implementing |
 | STOR-27 | P1: Commit-time structural gates | Execute (T22) | Implementing |
 | STOR-28 | P1: Commit-time structural gates | Execute (T22) | Implementing |
-| STOR-29 | P1: Commit-time structural gates | Tasks | In Tasks |
+| STOR-29 | P1: Commit-time structural gates | Execute (T23) | Implementing |
 | STOR-30 | P1: Commit-time structural gates | Tasks | In Tasks |
 | STOR-31 | P1: Commit-time structural gates | Tasks | In Tasks |
 | STOR-32 | P1: Commit-time structural gates | Tasks | In Tasks |

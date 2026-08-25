@@ -138,11 +138,50 @@ public sealed class PackageValidatorTests
         Assert.Contains(fact.Identity.Id, exception.Detail, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [Trait("Requirement", "STOR-29")]
+    [InlineData("/opt/app")]
+    [InlineData("\\server\\share")]
+    [InlineData("C:/windows/system32")]
+    public void Validate_AbsoluteFilesystemPath_AbortsNamingTheField(string absolutePath)
+    {
+        var document = DomainMapper.ToWire(ComponentSnapshot(), Context);
+        var renamed = document.Components[0] with { Name = absolutePath };
+        renamed = renamed with { ContentSha256 = CanonicalJson.PayloadContentSha256(renamed) };
+        var mutated = document with { Components = [renamed] };
+
+        var exception = Assert.Throws<PublicationRejectedException>(() => PackageValidator.Validate(mutated));
+
+        Assert.Equal("absolute-path", exception.Gate);
+        Assert.Contains("name", exception.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-29")]
+    public void Validate_RelativePathInDomainPathField_DoesNotAbort()
+    {
+        const string relativePath = "src/Acme.Payments/Invoice.cs";
+        var document = DomainMapper.ToWire(DocumentSnapshot(), Context);
+
+        Assert.Equal(relativePath, document.Documents[0].RelativePath);
+
+        var report = PackageValidator.Validate(document);
+
+        Assert.Equal(relativePath, report.Document.Documents[0].RelativePath);
+        Assert.True(report.Quarantine.IsEmpty);
+    }
+
     private static SolutionDto ValidSolutionDto() =>
         DomainMapper.ToWire(SolutionSnapshot(), Context).Solutions[0];
 
     private static FactualSnapshot SolutionSnapshot() =>
         new([Solution.Create(AcmeSolution)], [], [], [], [], []);
+
+    private static FactualSnapshot DocumentSnapshot() =>
+        new([Document.Create(AcmeProject, "src/Acme.Payments/Invoice.cs")], [], [], [], [], []);
+
+    private static FactualSnapshot ComponentSnapshot() =>
+        new([Component.Create(AcmeSolution, "Payments.Api", [])], [], [], [], [], []);
 
     private static FactualSnapshot ObservationSnapshot() =>
         new(

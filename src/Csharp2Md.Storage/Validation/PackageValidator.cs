@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Storage.Mapping;
@@ -29,6 +30,7 @@ public static class PackageValidator
         EnsureRegisteredKinds(document);
         EnsureUniqueFactIdentities(document);
         EnsureContentHashes(document);
+        EnsureNoAbsolutePaths(document);
         return new ValidationReport(document, document.Quarantine);
     }
 
@@ -291,4 +293,76 @@ public static class PackageValidator
 
     private static string RelationIdentity(string kind, string sourceId, string targetId) =>
         kind + ":" + sourceId + ":" + targetId;
+
+    private static void EnsureNoAbsolutePaths(WireDocument document)
+    {
+        ScanRecords(document.Solutions);
+        ScanRecords(document.Projects);
+        ScanRecords(document.Documents);
+        ScanRecords(document.Symbols);
+        ScanRecords(document.Components);
+        ScanRecords(document.DeploymentUnits);
+        ScanRecords(document.EntryPoints);
+        ScanRecords(document.BoundaryOperations);
+        ScanRecords(document.ExternalSystems);
+        ScanRecords(document.Contracts);
+        ScanRecords(document.ContractBindings);
+        ScanRecords(document.ContractRevisions);
+        ScanRecords(document.DataStores);
+        ScanRecords(document.DataObjects);
+        ScanRecords(document.DataFields);
+        ScanRecords(document.DataOperations);
+        ScanRecords(document.ConfigurationBindings);
+
+        foreach (var records in document.Observations.Values)
+        {
+            ScanRecords(records);
+        }
+
+        foreach (var records in document.ConfirmedRelations.Values)
+        {
+            ScanRecords(records);
+        }
+
+        ScanRecords(document.Candidates);
+        ScanRecords(document.Unresolved);
+        ScanRecords(document.Frontiers);
+        ScanRecords(document.Quarantine);
+    }
+
+    private static void ScanRecords<T>(ImmutableArray<T> records)
+    {
+        foreach (var dto in records)
+        {
+            ScanNode(JsonNode.Parse(CanonicalJson.Write(dto).AsSpan()), string.Empty);
+        }
+    }
+
+    private static void ScanNode(JsonNode? node, string field)
+    {
+        switch (node)
+        {
+            case JsonValue value when value.TryGetValue<string>(out var text) && IsAbsolutePath(text):
+                throw new PublicationRejectedException("absolute-path", field);
+            case JsonObject obj:
+                foreach (var property in obj)
+                {
+                    ScanNode(property.Value, property.Key);
+                }
+
+                break;
+            case JsonArray array:
+                foreach (var item in array)
+                {
+                    ScanNode(item, field);
+                }
+
+                break;
+        }
+    }
+
+    private static bool IsAbsolutePath(string text) =>
+        text.Length > 0
+        && (text[0] is '/' or '\\'
+            || (text.Length >= 2 && char.IsAsciiLetter(text[0]) && text[1] == ':'));
 }

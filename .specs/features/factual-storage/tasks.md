@@ -810,7 +810,7 @@ identity.
 
 ---
 
-#### T23: Abort on absolute filesystem paths
+#### T23: Abort on absolute filesystem paths ✅
 
 **What**: Validator scans every JSON string; a rooted path (`/`, `\`, or `X:`) fails gate `absolute-path`,
 naming the field.
@@ -826,10 +826,10 @@ naming the field.
 
 **Done when**:
 
-- [ ] Fixtures covering `/`, `\` and `C:` abort and name the field
-- [ ] A relative path in a Domain path field does not abort
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Fixtures covering `/`, `\` and `C:` abort and name the field
+- [x] A relative path in a Domain path field does not abort
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 79 passed, 0 failed (was 75; +4 absolute-path)
 
 **Tests**: unit
 **Gate**: quick
