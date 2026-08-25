@@ -36,7 +36,10 @@ internal sealed class InventoryStage : IPipelineStage
         }
 
         var root = AuthorizedRoot.Compute(solutionPath, existing);
-        PathGuard.RejectEscapes(root, solutionPath);
+        if (!TryGuard(context, root, solutionPath, out var abort))
+        {
+            return ValueTask.FromResult(abort);
+        }
 
         var factSet = InventoryFacts.Create(solutionPath, listed, root);
         context.Accumulator.AddFact(factSet.Solution);
@@ -46,7 +49,11 @@ internal sealed class InventoryStage : IPipelineStage
 
         foreach (var projectPath in existing)
         {
-            PathGuard.RejectEscapes(root, projectPath);
+            if (!TryGuard(context, root, projectPath, out abort))
+            {
+                return ValueTask.FromResult(abort);
+            }
+
             var relativeProject = Path.GetRelativePath(root, projectPath).Replace('\\', '/');
             var projectId = ProjectId.Create(factSet.Solution.Id, relativeProject);
             var project = factSet.Projects.First(candidate => candidate.Id.Equals(projectId));
@@ -63,7 +70,11 @@ internal sealed class InventoryStage : IPipelineStage
             {
                 var absolute = Path.GetFullPath(
                     Path.Combine(root, document.RelativePath.Replace('/', Path.DirectorySeparatorChar)));
-                PathGuard.RejectEscapes(root, absolute);
+                if (!TryGuard(context, root, absolute, out abort))
+                {
+                    return ValueTask.FromResult(abort);
+                }
+
                 context.Accumulator.AddFact(document);
                 factCount++;
             }
@@ -118,5 +129,27 @@ internal sealed class InventoryStage : IPipelineStage
         }
 
         return frameworks.ToImmutable();
+    }
+
+    private static bool TryGuard(PipelineContext context, string root, string path, out StageResult abort)
+    {
+        try
+        {
+            PathGuard.RejectEscapes(root, path);
+            abort = default;
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            context.Detail = path;
+            abort = new StageResult(
+                0,
+                0,
+                0,
+                StructuralCorruption: false,
+                HasUnknownsOrCandidatesOrFrontiers: false,
+                AbortPublication: true);
+            return false;
+        }
     }
 }

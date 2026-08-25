@@ -247,7 +247,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-04 | P1: Authorized inventory | Tasks (T19) | Implemented |
 | ROSE-05 | P1: Authorized inventory | Tasks (T20, T43) | Implemented |
 | ROSE-06 | P1: Authorized inventory | Tasks (T20) | Implemented |
-| ROSE-07 | P1: Authorized inventory | Tasks (T16, T23) | Pending |
+| ROSE-07 | P1: Authorized inventory | Tasks (T16, T23) | Implemented |
 | ROSE-08 | P1: Authorized inventory | Tasks (T18) | Implemented |
 | ROSE-09 | P1: Authorized inventory | Tasks (T17) | Implemented |
 | ROSE-10 | P1: Authorized inventory | Tasks (T17) | Implemented |
@@ -303,7 +303,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-60 | P1: Commit the extracted graph | Tasks (T53) | Pending |
 | ROSE-61 | P1: Commit the extracted graph | Tasks (T56) | Pending |
 | ROSE-62 | P1: Commit the extracted graph | Tasks (T56) | Pending |
-| ROSE-63 | P1: Commit the extracted graph | Tasks (T23, T62) | Pending |
+| ROSE-63 | P1: Commit the extracted graph | Tasks (T23, T62) | Implemented |
 | ROSE-64 | P1: Commit the extracted graph | Tasks (T55, T63) | Pending |
 
 **Coverage:** 64 total, 64 mapped to tasks, 0 unmapped

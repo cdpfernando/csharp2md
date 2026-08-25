@@ -863,10 +863,10 @@ byte-identical.
 
 **Done when**:
 
-- [ ] A planted escape symlink unpublished that solution; Detail names the symlink path
-- [ ] `StructuralCorruption` is false; a prior committed publication's bytes are unchanged
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A planted escape symlink unpublished that solution; Detail names the symlink path
+- [x] `StructuralCorruption` is false; a prior committed publication's bytes are unchanged
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
