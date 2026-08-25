@@ -951,9 +951,9 @@ Context7 for the exact `Project` / `Compilation` members; do not invent them.
 
 **Done when**:
 
-- [ ] After Strip, `AnalyzerReferences` is empty on the returned project
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] After Strip, `AnalyzerReferences` is empty on the returned project
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
