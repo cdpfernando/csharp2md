@@ -397,12 +397,12 @@ path change.
 
 **Done when**:
 
-- [ ] Without a logical key, moving the project to a different logical relative path yields a different identity
-- [ ] With a logical key, the same move yields the identical identity
-- [ ] The logical key is validated as canonical text and rejected otherwise, naming the parameter
-- [ ] The owning solution participates in the identity: the same relative path under two solutions is distinct
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Without a logical key, moving the project to a different logical relative path yields a different identity
+- [x] With a logical key, the same move yields the identical identity
+- [x] The logical key is validated as canonical text and rejected otherwise, naming the parameter
+- [x] The owning solution participates in the identity: the same relative path under two solutions is distinct
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 59 total, 0 failed
 
 **Tests**: unit
 **Gate**: quick
