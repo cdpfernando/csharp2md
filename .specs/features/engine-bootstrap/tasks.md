@@ -842,11 +842,11 @@ order. Persistence stubs a single Manifest fragment. No stage type is public (EN
 
 **Done when**:
 
-- [ ] The eight names equal Inventory through Batch Composition as design.md lists
-- [ ] Default stubs return zeros and no corruption
-- [ ] No public Analysis type is named `IPipelineStage` or a stub class
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] The eight names equal Inventory through Batch Composition as design.md lists
+- [x] Default stubs return zeros and no corruption
+- [x] No public Analysis type is named `IPipelineStage` or a stub class
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
