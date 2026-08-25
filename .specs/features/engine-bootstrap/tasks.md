@@ -1153,11 +1153,11 @@ graph type materialized (ENG-32, ENG-33, ENG-35, ENG-36).
 
 **Done when**:
 
-- [ ] Outcomes are three entries; middle `Unpublished` with `FailingStage` set
-- [ ] Context identity differs per solution
-- [ ] Reflection on the engine after the run finds no `Microsoft.CodeAnalysis.Compilation` instance field
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Outcomes are three entries; middle `Unpublished` with `FailingStage` set
+- [x] Context identity differs per solution
+- [x] Reflection on the engine after the run finds no `Microsoft.CodeAnalysis.Compilation` instance field
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
