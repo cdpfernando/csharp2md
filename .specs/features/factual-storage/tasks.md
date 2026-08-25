@@ -1193,7 +1193,7 @@ lock, and leaves the last successful package byte-identical; no new manifest is 
 
 ---
 
-#### T36: I/O errors abort and preserve
+#### T36: I/O errors abort and preserve ✅
 
 **What**: When create/write/replace fails (permission, simulated I/O), throw gate `io`, name the error, abort,
 and leave the last valid package unchanged.
@@ -1209,9 +1209,9 @@ and leave the last valid package unchanged.
 
 **Done when**:
 
-- [ ] A forced I/O failure during staging names `io` and keeps the prior package
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A forced I/O failure during staging names `io` and keeps the prior package
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 97 passed, 0 failed (was 96; +1 staging I/O abort)
 
 **Tests**: unit
 **Gate**: quick
