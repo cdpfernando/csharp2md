@@ -1872,12 +1872,12 @@ one test trait, and update the spec's traceability table to Verified.
 
 **Done when**:
 
-- [ ] The expected ID set is generated as `TAX-01`..`TAX-91`, not hand-listed
-- [ ] Every ID has at least one test carrying its trait; the failure message names the uncovered IDs
-- [ ] A trait naming an ID outside the range also fails, so a typo cannot masquerade as coverage
-- [ ] The spec traceability table and coverage line are updated in the same commit
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] The expected ID set is generated as `TAX-01`..`TAX-91`, not hand-listed
+- [x] Every ID has at least one test carrying its trait; the failure message names the uncovered IDs
+- [x] A trait naming an ID outside the range also fails, so a typo cannot masquerade as coverage
+- [x] The spec traceability table and coverage line are updated in the same commit
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: build

@@ -293,103 +293,103 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| TAX-01 | P1: Isolated domain assembly | Tasks | In Tasks |
-| TAX-02 | P1: Isolated domain assembly | Tasks | In Tasks |
-| TAX-03 | P1: Isolated domain assembly | Tasks | In Tasks |
-| TAX-04 | P1: Isolated domain assembly | Tasks | In Tasks |
-| TAX-05 | P1: Isolated domain assembly | Tasks | In Tasks |
-| TAX-06 | P1: Isolated domain assembly | Tasks | In Tasks |
-| TAX-07 | P1: Fact families and typed identities | Tasks | In Tasks |
-| TAX-08 | P1: Fact families and typed identities | Tasks | In Tasks |
-| TAX-09 | P1: Fact families and typed identities | Tasks | In Tasks |
-| TAX-10 | P1: Fact families and typed identities | Tasks | In Tasks |
-| TAX-11 | P1: Fact families and typed identities | Tasks | In Tasks |
-| TAX-12 | P1: Fact families and typed identities | Tasks | In Tasks |
-| TAX-13 | P1: Fact families and typed identities | Tasks | In Tasks |
-| TAX-14 | P1: Fact families and typed identities | Tasks | In Tasks |
-| TAX-15 | P1: Fact families and typed identities | Tasks | In Tasks |
-| TAX-16 | P1: Fact families and typed identities | Tasks | In Tasks |
-| TAX-17 | P1: Fact families and typed identities | Tasks | In Tasks |
-| TAX-18 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-19 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-20 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-21 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-22 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-23 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-24 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-25 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-26 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-27 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-28 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-29 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-30 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-31 | P1: Closed facet vocabularies | Tasks | In Tasks |
-| TAX-32 | P1: Observation contract | Tasks | In Tasks |
-| TAX-33 | P1: Observation contract | Tasks | In Tasks |
-| TAX-34 | P1: Observation contract | Tasks | In Tasks |
-| TAX-35 | P1: Observation contract | Tasks | In Tasks |
-| TAX-36 | P1: Observation contract | Tasks | In Tasks |
-| TAX-37 | P1: Observation contract | Tasks | In Tasks |
-| TAX-38 | P1: Observation contract | Tasks | In Tasks |
-| TAX-39 | P1: Observation contract | Tasks | In Tasks |
-| TAX-40 | P1: Observation contract | Tasks | In Tasks |
-| TAX-41 | P1: Observation contract | Tasks | In Tasks |
-| TAX-42 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-43 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-44 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-45 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-46 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-47 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-48 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-49 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-50 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-51 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-52 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-53 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-54 | P1: Relation matrix enforced at construction | Tasks | In Tasks |
-| TAX-55 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-56 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-57 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-58 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-59 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-60 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-61 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-62 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-63 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-64 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-65 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-66 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-67 | P1: Proof states and confirmed-relation invariants | Tasks | In Tasks |
-| TAX-68 | P1: Identity grammar and determinism | Tasks | In Tasks |
-| TAX-69 | P1: Identity grammar and determinism | Tasks | In Tasks |
-| TAX-70 | P1: Identity grammar and determinism | Tasks | In Tasks |
-| TAX-71 | P1: Identity grammar and determinism | Tasks | In Tasks |
-| TAX-72 | P1: Identity grammar and determinism | Tasks | In Tasks |
-| TAX-73 | P1: Identity grammar and determinism | Tasks | In Tasks |
-| TAX-74 | P1: Identity grammar and determinism | Tasks | In Tasks |
-| TAX-75 | P1: Identity grammar and determinism | Tasks | In Tasks |
-| TAX-76 | P1: Identity grammar and determinism | Tasks | In Tasks |
-| TAX-77 | P1: Identity grammar and determinism | Tasks | In Tasks |
-| TAX-78 | P1: Identity grammar and determinism | Tasks | In Tasks |
-| TAX-79 | P1: Literal allowlist and secret exclusion | Tasks | In Tasks |
-| TAX-80 | P1: Literal allowlist and secret exclusion | Tasks | In Tasks |
-| TAX-81 | P1: Literal allowlist and secret exclusion | Tasks | In Tasks |
-| TAX-82 | P1: Literal allowlist and secret exclusion | Tasks | In Tasks |
-| TAX-83 | P1: Version axes and registry drift gate | Tasks | In Tasks |
-| TAX-84 | P1: Version axes and registry drift gate | Tasks | In Tasks |
-| TAX-85 | P1: Version axes and registry drift gate | Tasks | In Tasks |
-| TAX-86 | P1: Version axes and registry drift gate | Tasks | In Tasks |
-| TAX-87 | P1: Version axes and registry drift gate | Tasks | In Tasks |
-| TAX-88 | P1: Version axes and registry drift gate | Tasks | In Tasks |
-| TAX-89 | P1: Version axes and registry drift gate | Tasks | In Tasks |
-| TAX-90 | P1: Version axes and registry drift gate | Tasks | In Tasks |
-| TAX-91 | P1: Version axes and registry drift gate | Tasks | In Tasks |
+| TAX-01 | P1: Isolated domain assembly | Tasks | Verified |
+| TAX-02 | P1: Isolated domain assembly | Tasks | Verified |
+| TAX-03 | P1: Isolated domain assembly | Tasks | Verified |
+| TAX-04 | P1: Isolated domain assembly | Tasks | Verified |
+| TAX-05 | P1: Isolated domain assembly | Tasks | Verified |
+| TAX-06 | P1: Isolated domain assembly | Tasks | Verified |
+| TAX-07 | P1: Fact families and typed identities | Tasks | Verified |
+| TAX-08 | P1: Fact families and typed identities | Tasks | Verified |
+| TAX-09 | P1: Fact families and typed identities | Tasks | Verified |
+| TAX-10 | P1: Fact families and typed identities | Tasks | Verified |
+| TAX-11 | P1: Fact families and typed identities | Tasks | Verified |
+| TAX-12 | P1: Fact families and typed identities | Tasks | Verified |
+| TAX-13 | P1: Fact families and typed identities | Tasks | Verified |
+| TAX-14 | P1: Fact families and typed identities | Tasks | Verified |
+| TAX-15 | P1: Fact families and typed identities | Tasks | Verified |
+| TAX-16 | P1: Fact families and typed identities | Tasks | Verified |
+| TAX-17 | P1: Fact families and typed identities | Tasks | Verified |
+| TAX-18 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-19 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-20 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-21 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-22 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-23 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-24 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-25 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-26 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-27 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-28 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-29 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-30 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-31 | P1: Closed facet vocabularies | Tasks | Verified |
+| TAX-32 | P1: Observation contract | Tasks | Verified |
+| TAX-33 | P1: Observation contract | Tasks | Verified |
+| TAX-34 | P1: Observation contract | Tasks | Verified |
+| TAX-35 | P1: Observation contract | Tasks | Verified |
+| TAX-36 | P1: Observation contract | Tasks | Verified |
+| TAX-37 | P1: Observation contract | Tasks | Verified |
+| TAX-38 | P1: Observation contract | Tasks | Verified |
+| TAX-39 | P1: Observation contract | Tasks | Verified |
+| TAX-40 | P1: Observation contract | Tasks | Verified |
+| TAX-41 | P1: Observation contract | Tasks | Verified |
+| TAX-42 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-43 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-44 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-45 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-46 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-47 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-48 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-49 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-50 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-51 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-52 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-53 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-54 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-55 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-56 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-57 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-58 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-59 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-60 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-61 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-62 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-63 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-64 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-65 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-66 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-67 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
+| TAX-68 | P1: Identity grammar and determinism | Tasks | Verified |
+| TAX-69 | P1: Identity grammar and determinism | Tasks | Verified |
+| TAX-70 | P1: Identity grammar and determinism | Tasks | Verified |
+| TAX-71 | P1: Identity grammar and determinism | Tasks | Verified |
+| TAX-72 | P1: Identity grammar and determinism | Tasks | Verified |
+| TAX-73 | P1: Identity grammar and determinism | Tasks | Verified |
+| TAX-74 | P1: Identity grammar and determinism | Tasks | Verified |
+| TAX-75 | P1: Identity grammar and determinism | Tasks | Verified |
+| TAX-76 | P1: Identity grammar and determinism | Tasks | Verified |
+| TAX-77 | P1: Identity grammar and determinism | Tasks | Verified |
+| TAX-78 | P1: Identity grammar and determinism | Tasks | Verified |
+| TAX-79 | P1: Literal allowlist and secret exclusion | Tasks | Verified |
+| TAX-80 | P1: Literal allowlist and secret exclusion | Tasks | Verified |
+| TAX-81 | P1: Literal allowlist and secret exclusion | Tasks | Verified |
+| TAX-82 | P1: Literal allowlist and secret exclusion | Tasks | Verified |
+| TAX-83 | P1: Version axes and registry drift gate | Tasks | Verified |
+| TAX-84 | P1: Version axes and registry drift gate | Tasks | Verified |
+| TAX-85 | P1: Version axes and registry drift gate | Tasks | Verified |
+| TAX-86 | P1: Version axes and registry drift gate | Tasks | Verified |
+| TAX-87 | P1: Version axes and registry drift gate | Tasks | Verified |
+| TAX-88 | P1: Version axes and registry drift gate | Tasks | Verified |
+| TAX-89 | P1: Version axes and registry drift gate | Tasks | Verified |
+| TAX-90 | P1: Version axes and registry drift gate | Tasks | Verified |
+| TAX-91 | P1: Version axes and registry drift gate | Tasks | Verified |
 
 **ID format:** `TAX-[NUMBER]`
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 91 total, 91 mapped to tasks, 0 unmapped ⚠️
+**Coverage:** 91 total, 91 mapped to tasks, 91 covered by tests, 0 unmapped
 
 ---
 
