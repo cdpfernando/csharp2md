@@ -1750,11 +1750,11 @@ collection is enumerated on the emission path, so the drift gate is deterministi
 
 **Done when**:
 
-- [ ] Every registry member the writer reads is an `ImmutableArray` or a value, asserted by reflection over the writer's dependencies
-- [ ] No `FrozenSet` or `FrozenDictionary` member is reachable from the writer's projection path
-- [ ] Emission order matches declared order for every table, asserted element by element rather than by count
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every registry member the writer reads is an `ImmutableArray` or a value, asserted by reflection over the writer's dependencies
+- [x] No `FrozenSet` or `FrozenDictionary` member is reachable from the writer's projection path
+- [x] Emission order matches declared order for every table, asserted element by element rather than by count
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 506 passed (497 baseline + 9 new)
 
 **Tests**: unit
 **Gate**: quick
