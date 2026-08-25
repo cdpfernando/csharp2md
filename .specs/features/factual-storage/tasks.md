@@ -1311,7 +1311,7 @@ for that solution. The committed child is untouched.
 
 ### Phase 7: Factual package reader
 
-#### T40: Read a committed package into Domain types
+#### T40: Read a committed package into Domain types ✅
 
 **What**: Add `FactualPackageReader.Read(string packageDirectory)` returning `PackageReadResult` with
 snapshot, quarantine, coverage and certification. Happy path: Domain equality with the written graph.
@@ -1327,9 +1327,9 @@ snapshot, quarantine, coverage and certification. Happy path: Domain equality wi
 
 **Done when**:
 
-- [ ] Read-back of a committed fixture package equals the original snapshot under Domain equality
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Read-back of a committed fixture package equals the original snapshot under Domain equality
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 133 passed, 0 failed (was 101; +32 committed-package read-back)
 
 **Tests**: unit
 **Gate**: quick

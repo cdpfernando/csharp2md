@@ -276,7 +276,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-07 | P1: Versioned wire contracts for every Domain family | Execute (T13) | Implementing |
 | STOR-08 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Implementing |
 | STOR-09 | P1: Versioned wire contracts for every Domain family | Execute (T15) | Implementing |
-| STOR-10 | P1: Canonical round-trip through Domain construction | Execute (T17) | Implementing |
+| STOR-10 | P1: Canonical round-trip through Domain construction | Execute (T17, T40) | Implementing |
 | STOR-11 | P1: Canonical round-trip through Domain construction | Execute (T4) | Implementing |
 | STOR-12 | P1: Canonical round-trip through Domain construction | Execute (T4) | Implementing |
 | STOR-13 | P1: Canonical round-trip through Domain construction | Execute (T16) | Implementing |
@@ -300,7 +300,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-31 | P1: Commit-time structural gates | Execute (T35) | Implementing |
 | STOR-32 | P1: Commit-time structural gates | Execute (T25) | Implementing |
 | STOR-33 | P1: Commit-time structural gates | Execute (T26) | Implementing |
-| STOR-34 | P1: Factual package reader | Tasks | In Tasks |
+| STOR-34 | P1: Factual package reader | Execute (T40) | Implementing |
 | STOR-35 | P1: Factual package reader | Execute (T5) | Implementing |
 | STOR-36 | P1: Factual package reader | Tasks | In Tasks |
 | STOR-37 | P1: Factual package reader | Tasks | In Tasks |
