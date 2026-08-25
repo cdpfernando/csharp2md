@@ -322,8 +322,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-53 | P1: CLI `--output` and a valid empty package | Execute (T47) | Implementing |
 | STOR-54 | P1: CLI `--output` and a valid empty package | Execute (T48) | Implementing |
 | STOR-55 | P1: CLI `--output` and a valid empty package | Execute (T48) | Implementing |
-| STOR-56 | P1: Session isolation and cleanup | Tasks | In Tasks |
-| STOR-57 | P1: Session isolation and cleanup | Tasks | In Tasks |
+| STOR-56 | P1: Session isolation and cleanup | Execute (T50) | Implementing |
+| STOR-57 | P1: Session isolation and cleanup | Execute (T50) | Implementing |
 | STOR-58 | P1: Session isolation and cleanup | Execute (T39) | Implementing |
 | STOR-59 | P1: Session isolation and cleanup | Execute (T37) | Implementing |
 | STOR-60 | P1: Session isolation and cleanup | Execute (T29) | Implementing |

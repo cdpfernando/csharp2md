@@ -1602,7 +1602,7 @@ requested solution exits 2. Drive the structural path with an injected engine or
 
 ---
 
-#### T50: Isolate multi-solution commit and abort
+#### T50: Isolate multi-solution commit and abort ✅
 
 **What**: Two `--solution` values commit or abort independently under their own children. One solution's
 `PublicationRejectedException` does not block the other from committing. CLI exit 2 if any unpublished.
@@ -1618,11 +1618,11 @@ requested solution exits 2. Drive the structural path with an injected engine or
 
 **Done when**:
 
-- [ ] Two solutions, second Commit throws: first child is a valid package, second child unchanged or absent
-- [ ] Process exit code is 2
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Phase-end slopwatch is clean over Phase 8
-- [ ] Test count recorded (no silent deletions)
+- [x] Two solutions, second Commit throws: first child is a valid package, second child unchanged or absent
+- [x] Process exit code is 2
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Phase-end slopwatch is clean over Phase 8
+- [x] Test count recorded (no silent deletions) — Cli.Tests 24 passed, 0 failed (was 23; +1 multi-solution isolation); Analysis.Tests 90 passed, 0 failed; BUILD Release 0 warnings; `dotnet format --verify-no-changes`; Full 798 passed, 0 failed (Domain 544 + Analysis 90 + Storage 137 + Projection 3 + Cli 24; was 790; +8 across Phase 8); slopwatch 0 issues
 
 **Tests**: unit
 **Gate**: build
