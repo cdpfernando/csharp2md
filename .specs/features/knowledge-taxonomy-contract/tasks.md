@@ -1369,13 +1369,13 @@ its mapping state.
 
 **Done when**:
 
-- [ ] Exactly four types in the family
-- [ ] `technology`, `form` and `operation` accept only registered axis values, and `unknown` is accepted as registered
-- [ ] Table, schema and field names enter only as structural literals; a connection string cannot be supplied
-- [ ] Each type's mapping state is one of the three closed states
-- [ ] Case-differing names produce distinct identities under ordinal comparison
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Exactly four types in the family
+- [x] `technology`, `form` and `operation` accept only registered axis values, and `unknown` is accepted as registered
+- [x] Table, schema and field names enter only as structural literals; a connection string cannot be supplied
+- [x] Each type's mapping state is one of the three closed states
+- [x] Case-differing names produce distinct identities under ordinal comparison
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 388 passed, 0 failed
 
 **Tests**: unit
 **Gate**: quick
