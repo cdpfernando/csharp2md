@@ -615,11 +615,11 @@ resolution, evidence method and a confidence gradient in one enum
 
 **Done when**:
 
-- [ ] Set equality against `Invocation`, `ObjectCreation`, `TypeUsage`, `BaseType`, `AttributeUsage`, `Assignment`, `Configuration`, `RouteDeclaration`, `MessageOperation`, `DataAccess`
-- [ ] `EmissionTier` has exactly two members
-- [ ] No kind names a Roslyn syntax or symbol concept
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Set equality against `Invocation`, `ObjectCreation`, `TypeUsage`, `BaseType`, `AttributeUsage`, `Assignment`, `Configuration`, `RouteDeclaration`, `MessageOperation`, `DataAccess`
+- [x] `EmissionTier` has exactly two members
+- [x] No kind names a Roslyn syntax or symbol concept
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 101 passed (98 baseline + 3 new)
 
 **Tests**: unit
 **Gate**: quick
