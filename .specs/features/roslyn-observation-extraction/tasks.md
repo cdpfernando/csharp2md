@@ -802,11 +802,11 @@ unknowns, and does not abort the solution.
 
 **Done when**:
 
-- [ ] Analyzing the fixture records `missing-project` for `Acme.DoesNotExist` and still returns success
+- [x] Analyzing the fixture records `missing-project` for `Acme.DoesNotExist` and still returns success
       from Inventory
-- [ ] `HasUnknownsOrCandidatesOrFrontiers` is true
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `HasUnknownsOrCandidatesOrFrontiers` is true
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
