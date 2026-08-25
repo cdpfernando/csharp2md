@@ -1545,7 +1545,7 @@ output directory.
 
 ---
 
-#### T48: Unknowns exit 0; structural abort exits 2
+#### T48: Unknowns exit 0; structural abort exits 2 ✅
 
 **What**: Unknowns/candidates/frontiers with a committed package exit 0. Structural unpublished for any
 requested solution exits 2. Drive the structural path with an injected engine or store that throws
@@ -1562,10 +1562,10 @@ requested solution exits 2. Drive the structural path with an injected engine or
 
 **Done when**:
 
-- [ ] Unknowns + committed → exit 0 and a package exists when using the filesystem adapter
-- [ ] Structural abort → exit 2
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Unknowns + committed → exit 0 and a package exists when using the filesystem adapter
+- [x] Structural abort → exit 2
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Cli.Tests 23 passed, 0 failed (was 21; +2 unknowns+package and PublicationRejectedException → 2)
 
 **Tests**: unit
 **Gate**: quick

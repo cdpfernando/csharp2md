@@ -1,4 +1,6 @@
 using Csharp2Md.Analysis;
+using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Storage;
 
 namespace Csharp2Md.Cli.Tests;
 
@@ -6,6 +8,7 @@ public sealed class AnalyzeExitCodeTests
 {
     [Fact]
     [Trait("Requirement", "ENG-42")]
+    [Trait("Requirement", "STOR-55")]
     public async Task Analyze_WhenAnySolutionIsUnpublished_Exits2()
     {
         var solutionPath = ExistingFixturePath();
@@ -30,6 +33,7 @@ public sealed class AnalyzeExitCodeTests
 
     [Fact]
     [Trait("Requirement", "ENG-43")]
+    [Trait("Requirement", "STOR-54")]
     public async Task Analyze_WhenOnlyUnknownsAreReported_Exits0()
     {
         var solutionPath = ExistingFixturePath();
@@ -89,6 +93,62 @@ public sealed class AnalyzeExitCodeTests
         }
     }
 
+    [Fact]
+    [Trait("Requirement", "STOR-54")]
+    public async Task Analyze_WhenUnknownsAreReported_FilesystemAdapterStillWritesAPackage()
+    {
+        var solutionPath = ExistingFixturePath();
+        IAnalysisEngine unknowns = new FakeAnalysisEngine(new AnalysisResult(
+        [
+            new SolutionOutcome(
+                solutionPath,
+                solutionPath.Replace('\\', '/'),
+                PublicationStatus.Committed,
+                failingStage: null,
+                structuralCorruption: false,
+                hasUnknownsOrCandidatesOrFrontiers: true,
+                stages: []),
+        ]));
+
+        var unknownsExit = await CliInvoke.RunAsync(
+            ["analyze", "--solution", solutionPath, "--output", CliTestPaths.UniqueOutputPath()],
+            unknowns);
+        Assert.Equal(0, unknownsExit.ExitCode);
+
+        var outputPath = CliTestPaths.UniqueOutputPath();
+        try
+        {
+            IAnalysisEngine engine = new AnalysisEngine(new FilesystemTransactionalStore(outputPath));
+            var (exitCode, _, _) = await CliInvoke.RunAsync(
+                ["analyze", "--solution", solutionPath, "--output", outputPath],
+                engine);
+
+            Assert.Equal(0, exitCode);
+            Assert.Equal(
+                "manifest.json",
+                Path.GetFileName(Assert.Single(
+                    Directory.EnumerateFiles(outputPath, "manifest.json", SearchOption.AllDirectories))));
+        }
+        finally
+        {
+            CliTestPaths.TryDeleteDirectory(outputPath);
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-55")]
+    public async Task Analyze_WhenCommitThrowsPublicationRejected_Exits2()
+    {
+        var solutionPath = ExistingFixturePath();
+        IAnalysisEngine engine = new AnalysisEngine(new RejectingTransactionalStore());
+
+        var (exitCode, _, _) = await CliInvoke.RunAsync(
+            ["analyze", "--solution", solutionPath, "--output", CliTestPaths.UniqueOutputPath()],
+            engine);
+
+        Assert.Equal(2, exitCode);
+    }
+
     private static string ExistingFixturePath()
     {
         var solutionPath = Path.Combine(
@@ -112,5 +172,24 @@ public sealed class AnalyzeExitCodeTests
 
         public Task<AnalysisResult> AnalyzeAsync(AnalysisRequest request, CancellationToken cancellationToken) =>
             Task.FromResult(_result);
+    }
+
+    private sealed class RejectingTransactionalStore : ITransactionalStore
+    {
+        public IStoreSession Open(string solutionKey) => new Session();
+
+        private sealed class Session : IStoreSession
+        {
+            public void Stage(FactualSnapshot snapshot)
+            {
+            }
+
+            public CommittedPublication Commit() =>
+                throw new PublicationRejectedException("schema", "facts/structural.json");
+
+            public void Abort()
+            {
+            }
+        }
     }
 }
