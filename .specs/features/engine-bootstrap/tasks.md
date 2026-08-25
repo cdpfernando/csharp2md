@@ -1442,11 +1442,11 @@ security-boundary tests (ENG-52, ENG-53).
 
 **Done when**:
 
-- [ ] Every Core area listed in the design reuse tables has a row with a SHA
-- [ ] The two named test suites appear with `Re-establish in` workstream 4 and 8
-- [ ] A test reads the ledger and asserts those two names are present
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every Core area listed in the design reuse tables has a row with a SHA
+- [x] The two named test suites appear with `Re-establish in` workstream 4 and 8
+- [x] A test reads the ledger and asserts those two names are present
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
