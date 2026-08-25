@@ -195,12 +195,12 @@ and no `ProjectReference`, and register it in `csharp2md.slnx` under the `src` f
 
 **Done when**:
 
-- [ ] `TargetFramework` is `net10.0` and the project declares no package or project reference of its own
-- [ ] The project appears in `csharp2md.slnx` under `/src/` and legacy entries are untouched
-- [ ] The project holds no reference to `Csharp2Md.Core` and `Csharp2Md.Core.csproj` is unmodified
-- [ ] A placeholder-free build: the project contains at least one real type so the assembly is not empty
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] `TargetFramework` is `net10.0` and the project declares no package or project reference of its own
+- [x] The project appears in `csharp2md.slnx` under `/src/` and legacy entries are untouched
+- [x] The project holds no reference to `Csharp2Md.Core` and `Csharp2Md.Core.csproj` is unmodified
+- [x] A placeholder-free build: the project contains at least one real type so the assembly is not empty
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: none
 **Gate**: build

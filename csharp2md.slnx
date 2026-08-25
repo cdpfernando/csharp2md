@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Csharp2Md.Cli/Csharp2Md.Cli.csproj" />
     <Project Path="src/Csharp2Md.Core/Csharp2Md.Core.csproj" />
+    <Project Path="src/Csharp2Md.Domain/Csharp2Md.Domain.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Csharp2Md.Core.Tests/Csharp2Md.Core.Tests.csproj" />
