@@ -1624,12 +1624,12 @@ candidate or an unresolved record can never become an edge in the confirmed grap
 
 **Done when**:
 
-- [ ] A confirmed relation is accepted
-- [ ] A candidate and an unresolved record are each rejected naming the offending resolution
-- [ ] The set is enumerable in deterministic order and adding the same relation twice is idempotent
-- [ ] No member exposes a way to mutate a contained relation
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A confirmed relation is accepted
+- [x] A candidate and an unresolved record are each rejected naming the offending resolution
+- [x] The set is enumerable in deterministic order and adding the same relation twice is idempotent
+- [x] No member exposes a way to mutate a contained relation
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 455 passed (450 baseline + 5 new)
 
 **Tests**: unit
 **Gate**: quick
