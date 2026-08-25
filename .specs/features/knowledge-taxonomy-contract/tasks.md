@@ -676,12 +676,12 @@ against it without a circular dependency.
 
 **Done when**:
 
-- [ ] The pairing is total and injective in both directions for every axis, asserted by reflection over the enum members rather than by a hand-listed set
-- [ ] A wire value is never derived from a CLR member name: a rename would fail the pairing test
-- [ ] An undefined value reached by cast is rejected with the axis name and the rejected value in the message
-- [ ] `unknown` resolves to a registered wire value on all three persistence axes and is not treated as absent
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] The pairing is total and injective in both directions for every axis, asserted by reflection over the enum members rather than by a hand-listed set
+- [x] A wire value is never derived from a CLR member name: a rename would fail the pairing test
+- [x] An undefined value reached by cast is rejected with the axis name and the rejected value in the message
+- [x] `unknown` resolves to a registered wire value on all three persistence axes and is not treated as absent
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions) — Domain.Tests: 146 passed (104 baseline + 42 new); full solution: 1578 passed / 1 pre-existing unrelated failure (`MigrationLedgerTests.BaselineCategory_StillHasARepresentativeV3Test`) / 0 caused by this task
 
 **Tests**: unit
 **Gate**: build
