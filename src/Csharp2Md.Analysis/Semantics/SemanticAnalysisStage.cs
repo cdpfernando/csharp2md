@@ -30,6 +30,7 @@ internal sealed class SemanticAnalysisStage : IPipelineStage
         const string configuration = "Debug";
         var compilations = ImmutableArray.CreateBuilder<Compilation>();
         var recordedSdkProjects = new HashSet<string>(StringComparer.Ordinal);
+        var recordedCompileErrors = new HashSet<string>(StringComparer.Ordinal);
         var hasUnknowns = false;
         try
         {
@@ -69,10 +70,31 @@ internal sealed class SemanticAnalysisStage : IPipelineStage
                     var compilation = await CompilationSanitizer.Strip(project)
                         .GetCompilationAsync(cancellationToken)
                         .ConfigureAwait(false);
-                    if (compilation is not null)
+                    if (compilation is null)
                     {
-                        compilations.Add(compilation);
+                        continue;
                     }
+
+                    compilations.Add(compilation);
+                    if (!compilation.GetDiagnostics(cancellationToken)
+                        .Any(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
+                    {
+                        continue;
+                    }
+
+                    var identity = string.IsNullOrEmpty(project.FilePath)
+                        ? project.Name.Replace('\\', '/')
+                        : ToRelativeIdentity(project.FilePath, context.SolutionPath);
+                    if (!recordedCompileErrors.Add(identity))
+                    {
+                        continue;
+                    }
+
+                    hasUnknowns = true;
+                    context.Accumulator.AddDiagnostic(new DiagnosticRecord(
+                        "compilation-error",
+                        $"The project '{identity}' produced compilation diagnostics of error severity.",
+                        identity));
                 }
             }
         }

@@ -1063,10 +1063,10 @@ unknowns, and do not abort. Later extraction still sees occurrences that bind.
 
 **Done when**:
 
-- [ ] Analyzing `Acme.Orders.slnx` records `compilation-error` for `Acme.Broken` and still commits
-- [ ] Loadable projects in that solution still produce a compilation
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Analyzing `Acme.Orders.slnx` records `compilation-error` for `Acme.Broken` and still commits
+- [x] Loadable projects in that solution still produce a compilation
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

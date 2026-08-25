@@ -94,6 +94,67 @@ public sealed class SemanticAnalysisStageTests
                 tree.FilePath.Contains("OrdersController.cs", StringComparison.OrdinalIgnoreCase)));
     }
 
+    [Fact]
+    [Trait("Requirement", "ROSE-23")]
+    public async Task ExecuteAsync_CompileErrorProject_RecordsCompilationErrorAndKeepsLoadableCompilation()
+    {
+        // Acme.Broken never yields compile diagnostics because its SDK never loads.
+        // This temp tree is the documented stand-in: one healthy project and one C# error.
+        var tree = Directory.CreateTempSubdirectory("csharp2md-cserror-");
+        try
+        {
+            var solutionPath = WriteCompileErrorSolution(tree.FullName);
+            var context = new PipelineContext(new SwallowingSession(), solutionPath);
+            await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+
+            var result = await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+
+            Assert.False(result.AbortPublication);
+            Assert.False(result.StructuralCorruption);
+            Assert.True(result.HasUnknownsOrCandidatesOrFrontiers);
+
+            var compileError = Assert.Single(
+                context.Accumulator.ToSnapshot().Diagnostics,
+                record => string.Equals(record.Code, "compilation-error", StringComparison.Ordinal));
+            Assert.Equal("Broken/Broken.csproj", compileError.IdentityOrKey);
+            Assert.False(Path.IsPathRooted(compileError.IdentityOrKey));
+            Assert.Contains("Broken/Broken.csproj", compileError.Message, StringComparison.Ordinal);
+
+            Assert.Contains(
+                context.Compilations,
+                compilation => compilation.SyntaxTrees.Any(tree =>
+                    tree.FilePath.Contains("Good.cs", StringComparison.OrdinalIgnoreCase)));
+            Assert.Contains(
+                context.Compilations,
+                compilation => compilation.SyntaxTrees.Any(tree =>
+                    tree.FilePath.Contains("Broken.cs", StringComparison.OrdinalIgnoreCase)));
+            Assert.Empty(context.Accumulator.ToSnapshot().Facts.OfType<Csharp2Md.Domain.Facts.Symbol>());
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-23")]
+    public async Task AnalyzeAsync_AcmeOrdersWithSemanticStage_StillCommits()
+    {
+        var stages = StubStages.CreateDefault()
+            .SetItem(0, new InventoryStage())
+            .SetItem(1, new SemanticAnalysisStage());
+        var engine = new AnalysisEngine(new InMemoryTransactionalStore(), stages);
+
+        var result = await engine.AnalyzeAsync(
+            AnalysisRequest.Create([AcmeOrdersSolutionPath()]),
+            CancellationToken.None);
+
+        var outcome = Assert.Single(result.Solutions);
+        Assert.Equal(PublicationStatus.Committed, outcome.Status);
+        Assert.False(outcome.StructuralCorruption);
+        Assert.True(outcome.HasUnknownsOrCandidatesOrFrontiers);
+    }
+
     private static bool PathsEqual(string left, string right) =>
         string.Equals(Path.GetFullPath(left), Path.GetFullPath(right), StringComparison.OrdinalIgnoreCase);
 
@@ -111,6 +172,37 @@ public sealed class SemanticAnalysisStageTests
             fileName);
         Assert.True(File.Exists(path), $"Expected fixture at '{path}'.");
         return path;
+    }
+
+    private static string WriteCompileErrorSolution(string root)
+    {
+        var goodDir = Path.Combine(root, "Good");
+        var brokenDir = Path.Combine(root, "Broken");
+        Directory.CreateDirectory(goodDir);
+        Directory.CreateDirectory(brokenDir);
+
+        const string sdkProject = """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+              </PropertyGroup>
+            </Project>
+            """;
+        File.WriteAllText(Path.Combine(goodDir, "Good.csproj"), sdkProject);
+        File.WriteAllText(Path.Combine(goodDir, "Good.cs"), "class Good;");
+        File.WriteAllText(Path.Combine(brokenDir, "Broken.csproj"), sdkProject);
+        File.WriteAllText(Path.Combine(brokenDir, "Broken.cs"), """class Broken { int M() => "compile-error"; }""");
+
+        var solutionPath = Path.Combine(root, "App.slnx");
+        File.WriteAllText(
+            solutionPath,
+            """
+            <Solution>
+              <Project Path="Good/Good.csproj" />
+              <Project Path="Broken/Broken.csproj" />
+            </Solution>
+            """);
+        return solutionPath;
     }
 
     private sealed class ThrowingOpenFactory : IMsBuildWorkspaceFactory
