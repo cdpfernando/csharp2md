@@ -459,7 +459,7 @@ method, diagnostic, document hash and extractor version.
 
 ---
 
-#### T11: Relation DTOs
+#### T11: Relation DTOs ✅
 
 **What**: Add wire DTOs for ConfirmedRelation, CandidateLink, UnresolvedRecord and OpenFrontier. Confirmed
 relation DTO includes evidence method and fields Domain `Create` needs (AD-015).
@@ -476,9 +476,9 @@ relation DTO includes evidence method and fields Domain `Create` needs (AD-015).
 
 **Done when**:
 
-- [ ] One DTO per STOR-03 record; confirmed kind uses registry `WireName`
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`
-- [ ] Test count recorded (no silent deletions)
+- [x] One DTO per STOR-03 record; confirmed kind uses registry `WireName`
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`
+- [x] Test count recorded (no silent deletions) — no tests in this task; Release build 0 warnings, 0 errors
 
 **Tests**: none
 **Gate**: build

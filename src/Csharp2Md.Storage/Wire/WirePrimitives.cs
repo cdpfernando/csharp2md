@@ -17,3 +17,7 @@ public sealed record SourceSpanDto(int StartLine, int StartColumn, int EndLine, 
 public sealed record EvidenceLocatorDto(string Document, string RelativePath, SourceSpanDto Span);
 
 public sealed record BindingDiagnosticDto(string Code, string Message);
+
+public sealed record FacetBindingEntryDto(string AxisName, string WireValue);
+
+public sealed record ClassifierIdentityDto(string Id, int Version);
