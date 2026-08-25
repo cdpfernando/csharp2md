@@ -360,12 +360,12 @@ identity sets `StructuralCorruption`. `AddObservation` unions by identity and ke
 
 **Done when**:
 
-- [ ] Unequal facts with one identity set `StructuralCorruption`
-- [ ] Two observations that differ only in span collapse to one identity; bound wins over unbound
-- [ ] `ToSnapshot()` includes facts, observations, relations, diagnostics and suspected secrets
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean on this phase's changes
+- [x] Unequal facts with one identity set `StructuralCorruption`
+- [x] Two observations that differ only in span collapse to one identity; bound wins over unbound
+- [x] `ToSnapshot()` includes facts, observations, relations, diagnostics and suspected secrets
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean on this phase's changes
 
 **Tests**: unit
 **Gate**: build

@@ -261,7 +261,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-18 | P1: Structural facts | Tasks (T51) | Pending |
 | ROSE-19 | P1: Structural facts | Tasks (T51) | Pending |
 | ROSE-20 | P1: Structural facts | Tasks (T51) | Pending |
-| ROSE-21 | P1: Structural facts | Tasks (T6) | Pending |
+| ROSE-21 | P1: Structural facts | Tasks (T6) | Implemented |
 | ROSE-22 | P1: Semantic Roslyn binding | Tasks (T5, T25, T28) | Implemented |
 | ROSE-23 | P1: Semantic Roslyn binding | Tasks (T30) | Pending |
 | ROSE-24 | P1: Semantic Roslyn binding | Tasks (T25, T31) | Pending |
@@ -284,7 +284,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-41 | P1: Observation ledger | Tasks (T50) | Pending |
 | ROSE-42 | P1: Observation ledger | Tasks (T46, T49, T50) | Pending |
 | ROSE-43 | P1: Observation ledger | Tasks (T38, T44) | Pending |
-| ROSE-44 | P1: Observation ledger | Tasks (T6, T38, T44) | Pending |
+| ROSE-44 | P1: Observation ledger | Tasks (T6, T38, T44) | Implemented |
 | ROSE-45 | P1: Observation ledger | Tasks (T40) | Pending |
 | ROSE-46 | P1: Observation ledger | Tasks (T38, T39, T41) | Pending |
 | ROSE-47 | P1: Observation ledger | Tasks (T39, T47) | Pending |

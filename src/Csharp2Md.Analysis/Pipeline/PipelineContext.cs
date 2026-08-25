@@ -14,12 +14,15 @@ internal sealed class PipelineContext
 
     public string? Detail { get; set; }
 
+    public SnapshotAccumulator Accumulator { get; }
+
     public PipelineContext(IStoreSession session, string solutionPath)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(solutionPath);
         Session = session;
         SolutionPath = solutionPath;
+        Accumulator = new SnapshotAccumulator();
     }
 
     public void Record(StageReport report)
