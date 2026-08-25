@@ -289,7 +289,7 @@ opaque-byte round-trip and the "does not expose Domain" assertions (superseded b
 
 ---
 
-#### T5: Allowlist snapshot types on the Analysis surface
+#### T5: Allowlist snapshot types on the Analysis surface ✅
 
 **What**: Add `FactualSnapshot` and `PublicationRejectedException` to
 `AnalysisPublicSurfaceTests` allowed public type names. Keep pass/classifier/adapter/stage names forbidden.
@@ -305,10 +305,10 @@ opaque-byte round-trip and the "does not expose Domain" assertions (superseded b
 
 **Done when**:
 
-- [ ] The two new types are allowlisted; no other new public Analysis type appears
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Phase-end slopwatch is clean over Phase 1
-- [ ] Test count recorded (no silent deletions)
+- [x] The two new types are allowlisted; no other new public Analysis type appears
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Phase-end slopwatch is clean over Phase 1
+- [x] Test count recorded (no silent deletions): Analysis.Tests 86 passed; solution 664 passed, 0 failed, 0 skipped
 
 **Tests**: unit
 **Gate**: build

@@ -301,7 +301,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-32 | P1: Commit-time structural gates | Tasks | In Tasks |
 | STOR-33 | P1: Commit-time structural gates | Tasks | In Tasks |
 | STOR-34 | P1: Factual package reader | Tasks | In Tasks |
-| STOR-35 | P1: Factual package reader | Tasks | In Tasks |
+| STOR-35 | P1: Factual package reader | Execute (T5) | Implementing |
 | STOR-36 | P1: Factual package reader | Tasks | In Tasks |
 | STOR-37 | P1: Factual package reader | Tasks | In Tasks |
 | STOR-38 | P1: Factual package reader | Tasks | In Tasks |
