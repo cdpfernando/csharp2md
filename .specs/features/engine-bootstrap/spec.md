@@ -305,8 +305,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ENG-57 | P1: Reachable relation shape guards | Tasks | Verified |
 | ENG-58 | P1: Reachable relation shape guards | Tasks | Verified |
 | ENG-59 | P1: Reachable relation shape guards | Tasks | Verified |
-| ENG-60 | P1: Reachable relation shape guards | Tasks | In Tasks |
-| ENG-61 | P1: Reachable relation shape guards | Tasks | In Tasks |
+| ENG-60 | P1: Reachable relation shape guards | Tasks | Verified |
+| ENG-61 | P1: Reachable relation shape guards | Tasks | Verified |
 
 **ID format:** `ENG-[NUMBER]`
 

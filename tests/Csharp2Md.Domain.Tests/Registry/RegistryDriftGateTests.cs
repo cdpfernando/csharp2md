@@ -9,6 +9,7 @@ public sealed class RegistryDriftGateTests
 
     [Fact]
     [Trait("Requirement", "TAX-86")]
+    [Trait("Requirement", "ENG-60")]
     public void CommittedRegistry_MatchesFreshEmission_ByteForByte()
     {
         var committedBytes = File.ReadAllBytes(TaxonomyRegistryWriter.CommittedPath);
@@ -17,6 +18,22 @@ public sealed class RegistryDriftGateTests
         Assert.True(
             committedBytes.AsSpan().SequenceEqual(freshBytes),
             $"contracts/taxonomy-registry.json has drifted from the emitter: {DescribeDifference(committedBytes, freshBytes)}");
+    }
+
+    [Fact]
+    [Trait("Requirement", "ENG-61")]
+    public void TaxonomyTraceability_Tax46And50And51And53_ReadVerifiedWithNoSpecPrecisionGap()
+    {
+        var path = Path.Combine(
+            DomainTestPaths.RepoRoot, ".specs", "features", "knowledge-taxonomy-contract", "spec.md");
+        var lines = File.ReadAllLines(path);
+
+        foreach (var id in new[] { "TAX-46", "TAX-50", "TAX-51", "TAX-53" })
+        {
+            var line = Assert.Single(lines, candidate => candidate.StartsWith($"| {id} ", StringComparison.Ordinal));
+            Assert.Contains("| Verified |", line, StringComparison.Ordinal);
+            Assert.DoesNotContain("spec-precision gap", line, StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     [Fact]

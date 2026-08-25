@@ -292,11 +292,11 @@ with no spec-precision-gap clause (ENG-61).
 
 **Done when**:
 
-- [ ] `CommittedRegistry_MatchesFreshEmission_ByteForByte` still passes
-- [ ] The four TAX rows no longer mention a spec-precision gap
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean over this phase's changes
+- [x] `CommittedRegistry_MatchesFreshEmission_ByteForByte` still passes
+- [x] The four TAX rows no longer mention a spec-precision gap
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean over this phase's changes
 
 **Tests**: unit
 **Gate**: build
