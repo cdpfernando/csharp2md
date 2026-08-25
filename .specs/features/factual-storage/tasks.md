@@ -1338,7 +1338,7 @@ snapshot, quarantine, coverage and certification. Happy path: Domain equality wi
 
 ---
 
-#### T41: Reject truncated packages and non-packages
+#### T41: Reject truncated packages and non-packages ✅
 
 **What**: Missing manifest or abort-class gate failure: named rejection, no partial snapshot. A random
 directory is `not-a-package` naming the path.
@@ -1354,10 +1354,10 @@ directory is `not-a-package` naming the path.
 
 **Done when**:
 
-- [ ] Truncated package (manifest removed) names the gate and returns no snapshot
-- [ ] Random directory names the path; result has no snapshot
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Truncated package (manifest removed) names the gate and returns no snapshot
+- [x] Random directory names the path; result has no snapshot
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 136 passed, 0 failed (was 133; +3 unreadable-package rejection)
 
 **Tests**: unit
 **Gate**: quick
