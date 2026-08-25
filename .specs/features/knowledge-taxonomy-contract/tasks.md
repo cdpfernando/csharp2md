@@ -1241,12 +1241,12 @@ immutable records with validating `Create` factories, `Symbol` carrying its face
 
 **Done when**:
 
-- [ ] Exactly four types in the family, each exposing `Reference` and `Family`
-- [ ] Every identity component is validated at construction; each omission rejected naming the component
-- [ ] `Symbol` carries `SymbolFacetSet` and there is no `Callable` type
-- [ ] Each type's `Reference.FactType` matches its registry descriptor name exactly
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Exactly four types in the family, each exposing `Reference` and `Family`
+- [x] Every identity component is validated at construction; each omission rejected naming the component
+- [x] `Symbol` carries `SymbolFacetSet` and there is no `Callable` type
+- [x] Each type's `Reference.FactType` matches its registry descriptor name exactly
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 330 passed, 0 failed
 
 **Tests**: unit
 **Gate**: quick
