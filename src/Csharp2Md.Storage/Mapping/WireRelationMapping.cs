@@ -20,16 +20,18 @@ internal static class WireRelationMapping
             .Single(descriptor => descriptor.Kind == relation.Kind)
             .MinimumEvidenceMethod;
 
-        return new ConfirmedRelationDto(
-            WireName(relation.Kind),
-            WireFactMapping.ToDto(relation.Source),
-            WireFactMapping.ToDto(relation.Target),
-            [.. relation.Facets.Entries.Select(entry => new FacetBindingEntryDto(entry.AxisName, entry.WireValue))],
-            [.. relation.DerivedFrom.DerivedFrom.Select(WireObservationMapping.ToDto)],
-            new ProofAgentIdentityDto(relation.Classifier.Id, relation.Classifier.Version),
-            [.. relation.AnalysisVariants.Select(variant => variant.Value)],
-            minimumEvidence.ToString(),
-            string.Empty);
+        return PayloadHash.Attach(
+            new ConfirmedRelationDto(
+                WireName(relation.Kind),
+                WireFactMapping.ToDto(relation.Source),
+                WireFactMapping.ToDto(relation.Target),
+                [.. relation.Facets.Entries.Select(entry => new FacetBindingEntryDto(entry.AxisName, entry.WireValue))],
+                [.. relation.DerivedFrom.DerivedFrom.Select(WireObservationMapping.ToDto)],
+                new ProofAgentIdentityDto(relation.Classifier.Id, relation.Classifier.Version),
+                [.. relation.AnalysisVariants.Select(variant => variant.Value)],
+                minimumEvidence.ToString(),
+                string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
     }
 
     public static ConfirmedRelation FromDto(ConfirmedRelationDto dto)
@@ -47,12 +49,14 @@ internal static class WireRelationMapping
     }
 
     public static CandidateLinkDto ToDto(CandidateLink relation) =>
-        new(
-            WireName(relation.Kind),
-            WireFactMapping.ToDto(relation.Source),
-            WireFactMapping.ToDto(relation.ProposedTarget),
-            [.. relation.DerivedFrom.DerivedFrom.Select(WireObservationMapping.ToDto)],
-            string.Empty);
+        PayloadHash.Attach(
+            new CandidateLinkDto(
+                WireName(relation.Kind),
+                WireFactMapping.ToDto(relation.Source),
+                WireFactMapping.ToDto(relation.ProposedTarget),
+                [.. relation.DerivedFrom.DerivedFrom.Select(WireObservationMapping.ToDto)],
+                string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static CandidateLink FromDto(CandidateLinkDto dto) =>
         CandidateLink.Create(
@@ -62,12 +66,14 @@ internal static class WireRelationMapping
             EvidenceChain.Create(dto.DerivedFrom.Select(WireObservationMapping.FromDto)));
 
     public static UnresolvedRecordDto ToDto(UnresolvedRecord record) =>
-        new(
-            WireName(record.Kind),
-            WireFactMapping.ToDto(record.Source),
-            record.Cause.ToString(),
-            [.. record.Available.DerivedFrom.Select(WireObservationMapping.ToDto)],
-            string.Empty);
+        PayloadHash.Attach(
+            new UnresolvedRecordDto(
+                WireName(record.Kind),
+                WireFactMapping.ToDto(record.Source),
+                record.Cause.ToString(),
+                [.. record.Available.DerivedFrom.Select(WireObservationMapping.ToDto)],
+                string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static UnresolvedRecord FromDto(UnresolvedRecordDto dto) =>
         UnresolvedRecord.Create(
@@ -77,10 +83,12 @@ internal static class WireRelationMapping
             EvidenceChain.Create(dto.Available.Select(WireObservationMapping.FromDto)));
 
     public static OpenFrontierDto ToDto(OpenFrontier frontier) =>
-        new(
-            WireObservationMapping.ToDto(frontier.Occurrence),
-            frontier.Cause.ToString(),
-            string.Empty);
+        PayloadHash.Attach(
+            new OpenFrontierDto(
+                WireObservationMapping.ToDto(frontier.Occurrence),
+                frontier.Cause.ToString(),
+                string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static OpenFrontier FromDto(OpenFrontierDto dto) =>
         OpenFrontier.Create(

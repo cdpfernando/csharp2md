@@ -16,14 +16,16 @@ internal static class WireObservationMapping
         TaxonomyTables.Default.ObservationKinds.Single(descriptor => descriptor.WireName == wireName).Kind;
 
     public static ObservationDto ToDto(Observation observation) =>
-        new(
-            ToDto(observation.Identity),
-            ToDto(observation.Locator),
-            observation.ExtractionMethod.ToString(),
-            new BindingDiagnosticDto(observation.Diagnostic.Code, observation.Diagnostic.Message),
-            observation.DocumentHash.Value,
-            observation.ExtractorVersion.Value,
-            string.Empty);
+        PayloadHash.Attach(
+            new ObservationDto(
+                ToDto(observation.Identity),
+                ToDto(observation.Locator),
+                observation.ExtractionMethod.ToString(),
+                new BindingDiagnosticDto(observation.Diagnostic.Code, observation.Diagnostic.Message),
+                observation.DocumentHash.Value,
+                observation.ExtractorVersion.Value,
+                string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static Observation FromDto(ObservationDto dto) =>
         Observation.Create(

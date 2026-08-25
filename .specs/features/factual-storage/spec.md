@@ -294,7 +294,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-25 | P1: Commit-time structural gates | Tasks | In Tasks |
 | STOR-26 | P1: Commit-time structural gates | Tasks | In Tasks |
 | STOR-27 | P1: Commit-time structural gates | Tasks | In Tasks |
-| STOR-28 | P1: Commit-time structural gates | Tasks | In Tasks |
+| STOR-28 | P1: Commit-time structural gates | Execute (T19) | Implementing |
 | STOR-29 | P1: Commit-time structural gates | Tasks | In Tasks |
 | STOR-30 | P1: Commit-time structural gates | Tasks | In Tasks |
 | STOR-31 | P1: Commit-time structural gates | Tasks | In Tasks |
@@ -308,7 +308,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-39 | P1: Compact payload layout | Tasks | In Tasks |
 | STOR-40 | P1: Compact payload layout | Tasks | In Tasks |
 | STOR-41 | P1: Compact payload layout | Tasks | In Tasks |
-| STOR-42 | P1: Compact payload layout | Tasks | In Tasks |
+| STOR-42 | P1: Compact payload layout | Execute (T19) | Implementing |
 | STOR-43 | P1: Compact payload layout | Tasks | In Tasks |
 | STOR-44 | P1: Compact payload layout | Execute (T6) | Implementing |
 | STOR-45 | P1: Compact payload layout | Tasks | In Tasks |

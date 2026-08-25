@@ -694,7 +694,7 @@ evidence method and materialized facts when the shape requires them (AD-015).
 
 ---
 
-#### T19: Attach and verify content_sha256
+#### T19: Attach and verify content_sha256 ✅
 
 **What**: When writing a payload record, set `content_sha256` to SHA-256 of the canonical JSON object with
 that property omitted. `CanonicalJson` / mapper share that rule. A test mutates the hash and shows a mismatch
@@ -711,11 +711,11 @@ the validator will use in T22.
 
 **Done when**:
 
-- [ ] Hash is over the canonical object without `content_sha256`
-- [ ] Two writes of the same record produce identical hashes; a tampered hash does not match
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Phase-end slopwatch is clean over Phase 3
-- [ ] Test count recorded (no silent deletions)
+- [x] Hash is over the canonical object without `content_sha256`
+- [x] Two writes of the same record produce identical hashes; a tampered hash does not match
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Phase-end slopwatch is clean over Phase 3
+- [x] Test count recorded (no silent deletions) — Storage.Tests 68 passed, 0 failed (was 66; +2 content-hash); BUILD Release 0 warnings; `dotnet format --verify-no-changes`; solution 717 passed, 0 failed; slopwatch 0 issues
 
 **Tests**: unit
 **Gate**: build

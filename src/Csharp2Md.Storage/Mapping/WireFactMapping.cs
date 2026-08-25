@@ -75,87 +75,121 @@ internal static class WireFactMapping
     }
 
     public static SolutionDto ToDto(Solution fact) =>
-        new(ToDto(fact.Reference), fact.Id.Value, string.Empty);
+        PayloadHash.Attach(
+            new SolutionDto(ToDto(fact.Reference), fact.Id.Value, string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static ProjectDto ToDto(Project fact) =>
-        new(ToDto(fact.Reference), fact.Id.Value, string.Empty);
+        PayloadHash.Attach(
+            new ProjectDto(ToDto(fact.Reference), fact.Id.Value, string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static DocumentDto ToDto(Document fact) =>
-        new(ToDto(fact.Reference), fact.OwningProject.Value, fact.RelativePath, string.Empty);
+        PayloadHash.Attach(
+            new DocumentDto(ToDto(fact.Reference), fact.OwningProject.Value, fact.RelativePath, string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static SymbolDto ToDto(Symbol fact) =>
-        new(
-            ToDto(fact.Reference),
-            fact.OwningProject.Value,
-            fact.Signature.Value,
-            [.. fact.Facets.Facets.Select(FacetAxes.WireValue)],
-            string.Empty);
+        PayloadHash.Attach(
+            new SymbolDto(
+                ToDto(fact.Reference),
+                fact.OwningProject.Value,
+                fact.Signature.Value,
+                [.. fact.Facets.Facets.Select(FacetAxes.WireValue)],
+                string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static ComponentDto ToDto(Component fact) =>
-        new(ToDto(fact.Reference), fact.Solution.Value, fact.Name, [.. fact.Owners.Select(ToDto)], string.Empty);
+        PayloadHash.Attach(
+            new ComponentDto(ToDto(fact.Reference), fact.Solution.Value, fact.Name, [.. fact.Owners.Select(ToDto)], string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static DeploymentUnitDto ToDto(DeploymentUnit fact) =>
-        new(ToDto(fact.Reference), fact.Solution.Value, fact.Name, string.Empty);
+        PayloadHash.Attach(
+            new DeploymentUnitDto(ToDto(fact.Reference), fact.Solution.Value, fact.Name, string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static EntryPointDto ToDto(EntryPoint fact) =>
-        new(ToDto(fact.Reference), ToDto(fact.Symbol), ToDto(fact.OwningComponent), string.Empty);
+        PayloadHash.Attach(
+            new EntryPointDto(ToDto(fact.Reference), ToDto(fact.Symbol), ToDto(fact.OwningComponent), string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static BoundaryOperationDto ToDto(BoundaryOperation fact) =>
-        new(
-            ToDto(fact.Reference),
-            ToDto(fact.Symbol),
-            ToDto(fact.OwningComponent),
-            FacetAxes.WireValue(fact.Direction),
-            fact.Protocol is { } protocol ? FacetAxes.WireValue(protocol) : null,
-            fact.DestinationScope,
-            fact.HttpMethod,
-            fact.Route is { } route ? ToDto(route) : null,
-            fact.ProtocolOperationKey is { } key ? ToDto(key) : null,
-            string.Empty);
+        PayloadHash.Attach(
+            new BoundaryOperationDto(
+                ToDto(fact.Reference),
+                ToDto(fact.Symbol),
+                ToDto(fact.OwningComponent),
+                FacetAxes.WireValue(fact.Direction),
+                fact.Protocol is { } protocol ? FacetAxes.WireValue(protocol) : null,
+                fact.DestinationScope,
+                fact.HttpMethod,
+                fact.Route is { } route ? ToDto(route) : null,
+                fact.ProtocolOperationKey is { } key ? ToDto(key) : null,
+                string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static ExternalSystemDto ToDto(ExternalSystem fact) =>
-        new(ToDto(fact.Reference), fact.Solution.Value, ToDto(fact.Name), string.Empty);
+        PayloadHash.Attach(
+            new ExternalSystemDto(ToDto(fact.Reference), fact.Solution.Value, ToDto(fact.Name), string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static ContractDto ToDto(Contract fact) =>
-        new(ToDto(fact.Reference), ToDto(fact.Proof), string.Empty);
+        PayloadHash.Attach(
+            new ContractDto(ToDto(fact.Reference), ToDto(fact.Proof), string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static ContractBindingDto ToDto(ContractBinding fact) =>
-        new(ToDto(fact.Reference), ToDto(fact.Operation), fact.PayloadRole, ToDto(fact.ClrSymbol), ToDto(fact.Contract), string.Empty);
+        PayloadHash.Attach(
+            new ContractBindingDto(ToDto(fact.Reference), ToDto(fact.Operation), fact.PayloadRole, ToDto(fact.ClrSymbol), ToDto(fact.Contract), string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static ContractRevisionDto ToDto(ContractRevision fact) =>
-        new(ToDto(fact.Reference), ToDto(fact.Contract), fact.StructuralFingerprint, string.Empty);
+        PayloadHash.Attach(
+            new ContractRevisionDto(ToDto(fact.Reference), ToDto(fact.Contract), fact.StructuralFingerprint, string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static DataStoreDto ToDto(DataStore fact) =>
-        new(ToDto(fact.Reference), FacetAxes.WireValue(fact.Technology), ToDto(fact.Name), string.Empty);
+        PayloadHash.Attach(
+            new DataStoreDto(ToDto(fact.Reference), FacetAxes.WireValue(fact.Technology), ToDto(fact.Name), string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static DataObjectDto ToDto(DataObject fact) =>
-        new(
-            ToDto(fact.Reference),
-            ToDto(fact.Store),
-            FacetAxes.WireValue(fact.Form),
-            ToDto(fact.SchemaName),
-            ToDto(fact.TableName),
-            FacetAxes.WireValue(fact.MappingState),
-            string.Empty);
+        PayloadHash.Attach(
+            new DataObjectDto(
+                ToDto(fact.Reference),
+                ToDto(fact.Store),
+                FacetAxes.WireValue(fact.Form),
+                ToDto(fact.SchemaName),
+                ToDto(fact.TableName),
+                FacetAxes.WireValue(fact.MappingState),
+                string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static DataFieldDto ToDto(DataField fact) =>
-        new(
-            ToDto(fact.Reference),
-            ToDto(fact.DataObject),
-            ToDto(fact.FieldName),
-            FacetAxes.WireValue(fact.MappingState),
-            string.Empty);
+        PayloadHash.Attach(
+            new DataFieldDto(
+                ToDto(fact.Reference),
+                ToDto(fact.DataObject),
+                ToDto(fact.FieldName),
+                FacetAxes.WireValue(fact.MappingState),
+                string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static DataOperationDto ToDto(DataOperation fact) =>
-        new(
-            ToDto(fact.Reference),
-            ToDto(fact.Target),
-            FacetAxes.WireValue(fact.Operation),
-            FacetAxes.WireValue(fact.MappingState),
-            string.Empty);
+        PayloadHash.Attach(
+            new DataOperationDto(
+                ToDto(fact.Reference),
+                ToDto(fact.Target),
+                FacetAxes.WireValue(fact.Operation),
+                FacetAxes.WireValue(fact.MappingState),
+                string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static ConfigurationBindingDto ToDto(ConfigurationBinding fact) =>
-        new(ToDto(fact.Reference), ToDto(fact.BoundFact), ToDto(fact.ConfigurationKey), string.Empty);
+        PayloadHash.Attach(
+            new ConfigurationBindingDto(ToDto(fact.Reference), ToDto(fact.BoundFact), ToDto(fact.ConfigurationKey), string.Empty),
+            static (dto, hash) => dto with { ContentSha256 = hash });
 
     public static Solution FromDto(SolutionDto dto) =>
         Solution.Create(SolutionIdFromValue(dto.SolutionId));
