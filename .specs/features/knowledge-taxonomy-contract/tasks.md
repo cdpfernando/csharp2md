@@ -1148,11 +1148,11 @@ reverse-DNS identifier and a positive version.
 
 **Done when**:
 
-- [ ] A non-lowercase, non-reverse-DNS or dotless identifier is rejected
-- [ ] A non-positive version is rejected
-- [ ] Reading an uninitialized value throws `InvalidOperationException`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A non-lowercase, non-reverse-DNS or dotless identifier is rejected
+- [x] A non-positive version is rejected
+- [x] Reading an uninitialized value throws `InvalidOperationException`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 298 passed, 0 failed (8 new tests)
 
 **Tests**: unit
 **Gate**: quick
