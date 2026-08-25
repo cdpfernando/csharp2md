@@ -833,11 +833,11 @@ and reports a non-zero fact count on the fixture. `PipelineStages.CreateDefault(
 
 **Done when**:
 
-- [ ] Production default engine on `Acme.Orders.slnx` reports Inventory fact count > 0
-- [ ] Semantic Analysis through Batch Composition still report 0/0/0
-- [ ] `SkipUnrecognizedProjects` is not required yet; missing projects stay diagnostics
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Production default engine on `Acme.Orders.slnx` reports Inventory fact count > 0
+- [x] Semantic Analysis through Batch Composition still report 0/0/0
+- [x] `SkipUnrecognizedProjects` is not required yet; missing projects stay diagnostics
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

@@ -253,7 +253,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-10 | P1: Authorized inventory | Tasks (T17) | Implemented |
 | ROSE-11 | P1: Authorized inventory | Tasks (T21) | Implemented |
 | ROSE-12 | P1: Authorized inventory | Tasks (T29) | Pending |
-| ROSE-13 | P1: Structural facts | Tasks (T17, T22) | Pending |
+| ROSE-13 | P1: Structural facts | Tasks (T17, T22) | Implemented |
 | ROSE-14 | P1: Structural facts | Tasks (T33, T37) | Pending |
 | ROSE-15 | P1: Structural facts | Tasks (T34) | Pending |
 | ROSE-16 | P1: Structural facts | Tasks (T35) | Pending |

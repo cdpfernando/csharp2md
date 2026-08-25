@@ -1,5 +1,8 @@
+using System.Xml.Linq;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Identity;
 
 namespace Csharp2Md.Analysis.Inventory;
 
@@ -33,6 +36,46 @@ internal sealed class InventoryStage : IPipelineStage
         }
 
         var root = AuthorizedRoot.Compute(solutionPath, existing);
+        PathGuard.RejectEscapes(root, solutionPath);
+
+        var factSet = InventoryFacts.Create(solutionPath, listed, root);
+        context.Accumulator.AddFact(factSet.Solution);
+        var factCount = 1;
+        var csharpDocuments = ImmutableArray.CreateBuilder<Document>();
+        var targetFrameworks = new SortedSet<string>(StringComparer.Ordinal);
+
+        foreach (var projectPath in existing)
+        {
+            PathGuard.RejectEscapes(root, projectPath);
+            var relativeProject = Path.GetRelativePath(root, projectPath).Replace('\\', '/');
+            var projectId = ProjectId.Create(factSet.Solution.Id, relativeProject);
+            var project = factSet.Projects.First(candidate => candidate.Id.Equals(projectId));
+            context.Accumulator.AddFact(project);
+            factCount++;
+
+            foreach (var tfm in ReadDeclaredTargetFrameworks(projectPath))
+            {
+                targetFrameworks.Add(tfm);
+            }
+
+            var inventoried = DocumentInventory.Collect(root, project, projectPath);
+            foreach (var document in inventoried.Documents)
+            {
+                var absolute = Path.GetFullPath(
+                    Path.Combine(root, document.RelativePath.Replace('/', Path.DirectorySeparatorChar)));
+                PathGuard.RejectEscapes(root, absolute);
+                context.Accumulator.AddFact(document);
+                factCount++;
+            }
+
+            foreach (var diagnostic in inventoried.Diagnostics)
+            {
+                context.Accumulator.AddDiagnostic(diagnostic);
+            }
+
+            csharpDocuments.AddRange(inventoried.CSharpDocuments);
+        }
+
         foreach (var absent in missing)
         {
             var relative = Path.GetRelativePath(root, absent).Replace('\\', '/');
@@ -42,11 +85,38 @@ internal sealed class InventoryStage : IPipelineStage
                 relative));
         }
 
+        context.DeclaredTargetFrameworks = [.. targetFrameworks];
+        context.CSharpDocuments = csharpDocuments.ToImmutable();
+
         return ValueTask.FromResult(new StageResult(
-            0,
+            factCount,
             0,
             0,
             StructuralCorruption: false,
             HasUnknownsOrCandidatesOrFrontiers: missing.Count > 0));
+    }
+
+    private static ImmutableArray<string> ReadDeclaredTargetFrameworks(string projectFilePath)
+    {
+        var document = XDocument.Load(projectFilePath);
+        var frameworks = ImmutableArray.CreateBuilder<string>();
+        foreach (var element in document.Descendants())
+        {
+            if (element.Name.LocalName == "TargetFramework"
+                && !string.IsNullOrWhiteSpace(element.Value))
+            {
+                frameworks.Add(element.Value.Trim());
+            }
+            else if (element.Name.LocalName == "TargetFrameworks"
+                && !string.IsNullOrWhiteSpace(element.Value))
+            {
+                frameworks.AddRange(
+                    element.Value.Split(
+                        ';',
+                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            }
+        }
+
+        return frameworks.ToImmutable();
     }
 }

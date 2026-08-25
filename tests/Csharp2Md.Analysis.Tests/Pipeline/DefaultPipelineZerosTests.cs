@@ -7,9 +7,9 @@ namespace Csharp2Md.Analysis.Tests.Pipeline;
 public sealed class DefaultPipelineZerosTests
 {
     [Fact]
+    [Trait("Requirement", "ROSE-13")]
     [Trait("Requirement", "ENG-15")]
-    [Trait("Requirement", "STOR-50")]
-    public async Task AnalyzeAsync_DefaultStubs_ReportZeroCountsAndCommittedStatus()
+    public async Task AnalyzeAsync_DefaultPipeline_InventoryFactsAreNonZeroAndLaterStagesStayZero()
     {
         var solutionPath = Path.Combine(
             AnalysisTestPaths.RepoRoot,
@@ -27,9 +27,16 @@ public sealed class DefaultPipelineZerosTests
         var outcome = Assert.Single(result.Solutions);
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
         Assert.False(result.HasUnpublishedSolution);
+        Assert.True(outcome.HasUnknownsOrCandidatesOrFrontiers);
         Assert.Equal(8, outcome.Stages.Length);
 
-        for (var index = 0; index < StubStages.DeclaredNames.Length; index++)
+        var inventory = outcome.Stages[0];
+        Assert.Equal("Inventory", inventory.Name);
+        Assert.True(inventory.FactCount > 0, $"Inventory fact count was {inventory.FactCount}.");
+        Assert.Equal(0, inventory.ObservationCount);
+        Assert.Equal(0, inventory.RelationCount);
+
+        for (var index = 1; index < StubStages.DeclaredNames.Length; index++)
         {
             var report = outcome.Stages[index];
             Assert.Equal(StubStages.DeclaredNames[index], report.Name);

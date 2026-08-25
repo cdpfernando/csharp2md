@@ -1,4 +1,5 @@
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Facts;
 
 namespace Csharp2Md.Analysis.Pipeline;
 
@@ -15,6 +16,10 @@ internal sealed class PipelineContext
     public string? Detail { get; set; }
 
     public SnapshotAccumulator Accumulator { get; }
+
+    public ImmutableArray<string> DeclaredTargetFrameworks { get; set; } = [];
+
+    public ImmutableArray<Document> CSharpDocuments { get; set; } = [];
 
     public PipelineContext(IStoreSession session, string solutionPath)
     {
