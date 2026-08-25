@@ -1841,12 +1841,12 @@ mutable collection member and no mutating method.
 
 **Done when**:
 
-- [ ] Every type is scanned; the assertion fails naming the offending type and member
-- [ ] Collection-typed members are `ImmutableArray` or an immutable set, never `List`, array or `IList`
-- [ ] Observations specifically are asserted immutable, closing TAX-41 at its own criterion
-- [ ] A negative control proves the scan catches a settable property
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every type is scanned; the assertion fails naming the offending type and member
+- [x] Collection-typed members are `ImmutableArray` or an immutable set, never `List`, array or `IList`
+- [x] Observations specifically are asserted immutable, closing TAX-41 at its own criterion
+- [x] A negative control proves the scan catches a settable property
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
