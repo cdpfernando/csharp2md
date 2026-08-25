@@ -1366,7 +1366,7 @@ directory is `not-a-package` naming the path.
 
 ---
 
-#### T42: Expose quarantine separately from the snapshot
+#### T42: Expose quarantine separately from the snapshot ✅
 
 **What**: When the package contains quarantined records, `Read` returns the valid Domain snapshot and
 exposes quarantine separately from confirmed facts and relations.
@@ -1382,10 +1382,10 @@ exposes quarantine separately from confirmed facts and relations.
 
 **Done when**:
 
-- [ ] Snapshot omits the quarantined derived record; `Quarantine` contains it
-- [ ] Certification is `failed`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Snapshot omits the quarantined derived record; `Quarantine` contains it
+- [x] Certification is `failed`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 137 passed, 0 failed (was 136; +1 quarantine-separated read)
 
 **Tests**: unit
 **Gate**: quick
