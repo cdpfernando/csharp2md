@@ -284,8 +284,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ENG-36 | P1: Multi-solution isolation and determinism | Tasks | Verified |
 | ENG-37 | P1: Provisional analyze CLI | Tasks | Verified |
 | ENG-38 | P1: Provisional analyze CLI | Tasks | Verified |
-| ENG-39 | P1: Provisional analyze CLI | Tasks | In Tasks |
-| ENG-40 | P1: Provisional analyze CLI | Tasks | In Tasks |
+| ENG-39 | P1: Provisional analyze CLI | Tasks | Verified |
+| ENG-40 | P1: Provisional analyze CLI | Tasks | Verified |
 | ENG-41 | P1: Provisional analyze CLI | Tasks | In Tasks |
 | ENG-42 | P1: Provisional analyze CLI | Tasks | In Tasks |
 | ENG-43 | P1: Provisional analyze CLI | Tasks | In Tasks |

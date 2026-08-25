@@ -1297,10 +1297,10 @@ stderr (ENG-39, ENG-40). Duplicate paths reaching the engine map to exit 1 namin
 
 **Done when**:
 
-- [ ] No `--solution` → exit 1, stderr names the option
-- [ ] Missing path → exit 1, stderr names that path
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] No `--solution` → exit 1, stderr names the option
+- [x] Missing path → exit 1, stderr names that path
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
