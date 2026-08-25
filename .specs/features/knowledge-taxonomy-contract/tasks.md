@@ -1720,12 +1720,12 @@ bytes to freshly emitted bytes, failing with the differing entries named.
 
 **Done when**:
 
-- [ ] The committed file is byte-identical to the emitter output on a clean tree
-- [ ] A hand-edited copy fails the gate, and the failure message names the differing entries, not just "files differ"
-- [ ] The gate compares bytes, not a parsed document, so ordering and whitespace changes are caught
-- [ ] The file resolves through the repository-root walk, so the gate passes from any working directory
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] The committed file is byte-identical to the emitter output on a clean tree
+- [x] A hand-edited copy fails the gate, and the failure message names the differing entries, not just "files differ"
+- [x] The gate compares bytes, not a parsed document, so ordering and whitespace changes are caught
+- [x] The file resolves through the repository-root walk, so the gate passes from any working directory
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions) — Domain.Tests: 497 passed (493 baseline + 4 new); full solution: 2075 passed / 1 pre-existing unrelated failure (`MigrationLedgerTests.BaselineCategory_StillHasARepresentativeV3Test`) / 0 caused by this task
 
 **Tests**: unit
 **Gate**: full
