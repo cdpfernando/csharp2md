@@ -553,12 +553,12 @@ as facet values, plus `SymbolFacetSet.Create` producing a normalized, distinct, 
 
 **Done when**:
 
-- [ ] `callable` is a facet value and no `Callable` fact type exists anywhere in the domain
-- [ ] `controller`, `handler`, `repository`, `client` and `service` are facet values, asserted by name
-- [ ] The set is not a `[Flags]` enum: two orders and a duplicate produce one equal, ordered set
-- [ ] An undefined facet reached by cast is rejected naming the axis and the value
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `callable` is a facet value and no `Callable` fact type exists anywhere in the domain
+- [x] `controller`, `handler`, `repository`, `client` and `service` are facet values, asserted by name
+- [x] The set is not a `[Flags]` enum: two orders and a duplicate produce one equal, ordered set
+- [x] An undefined facet reached by cast is rejected naming the axis and the value
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 93 passed (88 baseline + 5 new)
 
 **Tests**: unit
 **Gate**: quick
