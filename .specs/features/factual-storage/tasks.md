@@ -636,7 +636,7 @@ through Domain `Create` of nothing.
 
 ---
 
-#### T17: Round-trip every fact type through Domain Create
+#### T17: Round-trip every fact type through Domain Create ✅
 
 **What**: Extend `DomainMapper` so each of the 17 fact types ToWire/FromWire equals the original under Domain
 equality. Reconstruction calls public `Create` only. Add a Storage.Tests ProjectReference to Domain if
@@ -653,10 +653,10 @@ needed for fixtures.
 
 **Done when**:
 
-- [ ] One fixture per fact type round-trips under Domain equality
-- [ ] No test constructs a Domain fact except through `Create`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] One fixture per fact type round-trips under Domain equality
+- [x] No test constructs a Domain fact except through `Create`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 52 passed, 0 failed (was 35; +17 fact round-trips)
 
 **Tests**: unit
 **Gate**: quick
