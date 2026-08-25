@@ -930,11 +930,11 @@ document-then-path-then-position comparison that makes evidence sort determinist
 
 **Done when**:
 
-- [ ] Comparison is ordinal and total: document, then relative path, then start, then end
-- [ ] Sorting the same locators supplied in two orders yields the same sequence
-- [ ] An absolute or non-normalized relative path is rejected naming the parameter
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Comparison is ordinal and total: document, then relative path, then start, then end
+- [x] Sorting the same locators supplied in two orders yields the same sequence
+- [x] An absolute or non-normalized relative path is rejected naming the parameter
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 9 new tests (EvidenceLocatorTests), 230 total passing
 
 **Tests**: unit
 **Gate**: quick
