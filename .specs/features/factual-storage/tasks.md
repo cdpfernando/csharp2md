@@ -1220,7 +1220,7 @@ and leave the last valid package unchanged.
 
 ---
 
-#### T37: Exclusive lock on overlapping Open
+#### T37: Exclusive lock on overlapping Open ✅
 
 **What**: Overlapping `Open` of the same child uses an exclusive `FileStream` on `<child>.lock` and throws
 gate `lock`, naming the root. Release on Commit and Abort.
@@ -1236,10 +1236,10 @@ gate `lock`, naming the root. Release on Commit and Abort.
 
 **Done when**:
 
-- [ ] Second Open of the same child while the first is live is a named `lock` rejection
-- [ ] After Commit or Abort, a new Open succeeds
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Second Open of the same child while the first is live is a named `lock` rejection
+- [x] After Commit or Abort, a new Open succeeds
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 99 passed, 0 failed (was 97; +2 exclusive FileStream lock)
 
 **Tests**: unit
 **Gate**: quick
