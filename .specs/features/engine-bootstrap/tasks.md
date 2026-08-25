@@ -1182,10 +1182,10 @@ relative path order (ENG-34).
 
 **Done when**:
 
-- [ ] Shuffled input: `Solutions` ordered by `/`-normalized supplied path, ordinal
-- [ ] Corresponding `SolutionOutcome` values are equal
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Shuffled input: `Solutions` ordered by `/`-normalized supplied path, ordinal
+- [x] Corresponding `SolutionOutcome` values are equal
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

@@ -30,6 +30,9 @@ public sealed class AnalysisEngine : IAnalysisEngine
             outcomes.Add(await AnalyzeSolutionAsync(path, cancellationToken).ConfigureAwait(false));
         }
 
+        outcomes.Sort(static (left, right) =>
+            string.Compare(left.LogicalRelativePath, right.LogicalRelativePath, StringComparison.Ordinal));
+
         return new AnalysisResult(outcomes.ToImmutable());
     }
 
