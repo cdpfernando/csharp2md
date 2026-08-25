@@ -461,12 +461,12 @@ order-independence shape
 
 **Done when**:
 
-- [ ] Two simulated clone paths produce byte-identical solution, project, variant and symbol identities
-- [ ] Two input orders produce byte-identical identities for every collection-bearing component
-- [ ] Every required component omitted in turn fails naming that component, with no partial identity emitted
-- [ ] A forced collision fails naming both participating fact types
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Two simulated clone paths produce byte-identical solution, project, variant and symbol identities
+- [x] Two input orders produce byte-identical identities for every collection-bearing component
+- [x] Every required component omitted in turn fails naming that component, with no partial identity emitted
+- [x] A forced collision fails naming both participating fact types
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions) — Csharp2Md.Domain.Tests: 80 total, 0 failed; Csharp2Md.Core.Tests: 1579 total, 1578 passed, 1 pre-existing unrelated failure (`MigrationLedgerTests.BaselineCategory_StillHasARepresentativeV3Test`)
 
 **Tests**: unit
 **Gate**: build
