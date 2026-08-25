@@ -338,14 +338,14 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | TAX-43 | P1: Relation matrix enforced at construction | Tasks | Verified |
 | TAX-44 | P1: Relation matrix enforced at construction | Tasks | Verified |
 | TAX-45 | P1: Relation matrix enforced at construction | Tasks | Verified |
-| TAX-46 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-46 | P1: Relation matrix enforced at construction | Tasks | Verified with spec-precision gap — guard implemented and unit-tested (`RelationShapeGuards.RequireCallableIfNeeded`) but not wired into `ConfirmedRelation.Create`; see `validation.md` |
 | TAX-47 | P1: Relation matrix enforced at construction | Tasks | Verified |
 | TAX-48 | P1: Relation matrix enforced at construction | Tasks | Verified |
 | TAX-49 | P1: Relation matrix enforced at construction | Tasks | Verified |
-| TAX-50 | P1: Relation matrix enforced at construction | Tasks | Verified |
-| TAX-51 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-50 | P1: Relation matrix enforced at construction | Tasks | Verified with spec-precision gap — guard implemented and unit-tested (`RelationShapeGuards.RequireLegalTargetShape`) but not wired into `ConfirmedRelation.Create`; see `validation.md` |
+| TAX-51 | P1: Relation matrix enforced at construction | Tasks | Verified with spec-precision gap — guard implemented and unit-tested (`RelationShapeGuards.RequireLegalTargetShape`) but not wired into `ConfirmedRelation.Create`; see `validation.md` |
 | TAX-52 | P1: Relation matrix enforced at construction | Tasks | Verified |
-| TAX-53 | P1: Relation matrix enforced at construction | Tasks | Verified |
+| TAX-53 | P1: Relation matrix enforced at construction | Tasks | Verified with spec-precision gap — guard implemented and unit-tested (`RelationShapeGuards.RequireSufficientEvidence`) but not wired into `ConfirmedRelation.Create` (which has no `EvidenceMethod` parameter); see `validation.md` |
 | TAX-54 | P1: Relation matrix enforced at construction | Tasks | Verified |
 | TAX-55 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
 | TAX-56 | P1: Proof states and confirmed-relation invariants | Tasks | Verified |
