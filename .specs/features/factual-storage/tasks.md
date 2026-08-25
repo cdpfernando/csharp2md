@@ -838,7 +838,7 @@ naming the field.
 
 ---
 
-#### T24: Abort on structural construction failure
+#### T24: Abort on structural construction failure ✅
 
 **What**: When `FromWire` cannot `Create` a Structural fact or an observation (including allowlist/secret
 failure), validator aborts gate `construction`, naming the identity. Architecture/Contract/Persistence/
@@ -855,10 +855,10 @@ Configuration facts and confirmed relations are not abort-class here (T25).
 
 **Done when**:
 
-- [ ] An out-of-allowlist structural literal aborts and is not stored as a fact
-- [ ] An invalid observation construction aborts similarly
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] An out-of-allowlist structural literal aborts and is not stored as a fact
+- [x] An invalid observation construction aborts similarly
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 81 passed, 0 failed (was 79; +2 construction abort)
 
 **Tests**: unit
 **Gate**: quick

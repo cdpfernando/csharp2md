@@ -171,6 +171,41 @@ public sealed class PackageValidatorTests
         Assert.True(report.Quarantine.IsEmpty);
     }
 
+    [Fact]
+    [Trait("Requirement", "STOR-30")]
+    public void Validate_StructuralFactFailingCreate_AbortsAndIsNotStored()
+    {
+        var document = DomainMapper.ToWire(DocumentSnapshot(), Context);
+        var invalid = document.Documents[0] with { RelativePath = "../nope" };
+        invalid = invalid with { ContentSha256 = CanonicalJson.PayloadContentSha256(invalid) };
+        var mutated = document with { Documents = [invalid] };
+
+        var exception = Assert.Throws<PublicationRejectedException>(() => PackageValidator.Validate(mutated));
+
+        Assert.Equal("construction", exception.Gate);
+        Assert.Contains(invalid.Identity.Id, exception.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-30")]
+    public void Validate_ObservationFailingCreate_AbortsNamingTheIdentity()
+    {
+        var document = DomainMapper.ToWire(ObservationSnapshot(), Context);
+        var wireName = document.Observations.Keys.Single();
+        var original = document.Observations[wireName][0];
+        var invalid = original with { Identity = original.Identity with { OccurrenceOrdinal = 0 } };
+        invalid = invalid with { ContentSha256 = CanonicalJson.PayloadContentSha256(invalid) };
+        var mutated = document with
+        {
+            Observations = document.Observations.SetItem(wireName, [invalid]),
+        };
+
+        var exception = Assert.Throws<PublicationRejectedException>(() => PackageValidator.Validate(mutated));
+
+        Assert.Equal("construction", exception.Gate);
+        Assert.Contains(invalid.Identity.Owner.Id, exception.Detail, StringComparison.Ordinal);
+    }
+
     private static SolutionDto ValidSolutionDto() =>
         DomainMapper.ToWire(SolutionSnapshot(), Context).Solutions[0];
 

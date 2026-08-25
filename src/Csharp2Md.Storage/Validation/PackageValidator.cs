@@ -31,6 +31,7 @@ public static class PackageValidator
         EnsureUniqueFactIdentities(document);
         EnsureContentHashes(document);
         EnsureNoAbsolutePaths(document);
+        EnsureStructuralConstruction(document);
         return new ValidationReport(document, document.Quarantine);
     }
 
@@ -365,4 +366,38 @@ public static class PackageValidator
         text.Length > 0
         && (text[0] is '/' or '\\'
             || (text.Length >= 2 && char.IsAsciiLetter(text[0]) && text[1] == ':'));
+
+    private static void EnsureStructuralConstruction(WireDocument document)
+    {
+        TryCreate(document.Solutions, WireFactMapping.FromDto, static dto => dto.Identity.Id);
+        TryCreate(document.Projects, WireFactMapping.FromDto, static dto => dto.Identity.Id);
+        TryCreate(document.Documents, WireFactMapping.FromDto, static dto => dto.Identity.Id);
+        TryCreate(document.Symbols, WireFactMapping.FromDto, static dto => dto.Identity.Id);
+
+        foreach (var records in document.Observations.Values)
+        {
+            TryCreate(records, WireObservationMapping.FromDto, ObservationIdentity);
+        }
+    }
+
+    private static void TryCreate<TDto, TResult>(
+        ImmutableArray<TDto> records,
+        Func<TDto, TResult> fromDto,
+        Func<TDto, string> identity)
+    {
+        foreach (var dto in records)
+        {
+            try
+            {
+                fromDto(dto);
+            }
+            catch (Exception exception) when (IsConstructionFailure(exception))
+            {
+                throw new PublicationRejectedException("construction", identity(dto));
+            }
+        }
+    }
+
+    private static bool IsConstructionFailure(Exception exception) =>
+        exception is ArgumentException or InvalidOperationException or FormatException or KeyNotFoundException;
 }
