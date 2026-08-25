@@ -1104,7 +1104,7 @@ graph produce byte-identical canonical payload files (exclude measurements). Man
 
 ### Phase 6: Filesystem adapter
 
-#### T33: Filesystem empty commit under a hashed child
+#### T33: Filesystem empty commit under a hashed child ✅
 
 **What**: Add `FilesystemTransactionalStore(string outputRoot)`. Child directory is `s-` plus the first 32
 hex chars of SHA-256(UTF-8 canonical solution key), lowercase. Create a missing output root. Successful
@@ -1122,12 +1122,12 @@ last inside the staging tree then swap. Writes only under `outputRoot`.
 
 **Done when**:
 
-- [ ] N = 1 still uses a child directory, not the output root itself
-- [ ] Child name is not a display name and not an absolute path
-- [ ] Empty package is schema-valid: registry bytes match committed file, family counts 0, manifest last
-- [ ] Missing output root is created
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] N = 1 still uses a child directory, not the output root itself
+- [x] Child name is not a display name and not an absolute path
+- [x] Empty package is schema-valid: registry bytes match committed file, family counts 0, manifest last
+- [x] Missing output root is created
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 91 passed, 0 failed (was 89; +2 empty filesystem commit)
 
 **Tests**: unit
 **Gate**: quick

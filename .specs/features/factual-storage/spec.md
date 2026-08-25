@@ -271,8 +271,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-02 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Implementing |
 | STOR-03 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Implementing |
 | STOR-04 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Implementing |
-| STOR-05 | P1: Versioned wire contracts for every Domain family | Execute (T15) | Implementing |
-| STOR-06 | P1: Versioned wire contracts for every Domain family | Execute (T16) | Implementing |
+| STOR-05 | P1: Versioned wire contracts for every Domain family | Execute (T33) | Implementing |
+| STOR-06 | P1: Versioned wire contracts for every Domain family | Execute (T33) | Implementing |
 | STOR-07 | P1: Versioned wire contracts for every Domain family | Execute (T13) | Implementing |
 | STOR-08 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Implementing |
 | STOR-09 | P1: Versioned wire contracts for every Domain family | Execute (T15) | Implementing |
@@ -280,15 +280,15 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-11 | P1: Canonical round-trip through Domain construction | Execute (T4) | Implementing |
 | STOR-12 | P1: Canonical round-trip through Domain construction | Execute (T4) | Implementing |
 | STOR-13 | P1: Canonical round-trip through Domain construction | Execute (T16) | Implementing |
-| STOR-14 | P1: Filesystem transactional publication | Tasks | In Tasks |
+| STOR-14 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
 | STOR-15 | P1: Filesystem transactional publication | Execute (T27) | Implementing |
-| STOR-16 | P1: Filesystem transactional publication | Execute (T28) | Implementing |
+| STOR-16 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
 | STOR-17 | P1: Filesystem transactional publication | Tasks | In Tasks |
 | STOR-18 | P1: Filesystem transactional publication | Tasks | In Tasks |
-| STOR-19 | P1: Filesystem transactional publication | Tasks | In Tasks |
+| STOR-19 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
 | STOR-20 | P1: Filesystem transactional publication | Tasks | In Tasks |
 | STOR-21 | P1: Filesystem transactional publication | Tasks | In Tasks |
-| STOR-22 | P1: Filesystem transactional publication | Tasks | In Tasks |
+| STOR-22 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
 | STOR-23 | P1: Filesystem transactional publication | Tasks | In Tasks |
 | STOR-24 | P1: Filesystem transactional publication | Execute (T28) | Implementing |
 | STOR-25 | P1: Commit-time structural gates | Execute (T20) | Implementing |
@@ -316,7 +316,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-47 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
 | STOR-48 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
 | STOR-49 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
-| STOR-50 | P1: CLI `--output` and a valid empty package | Execute (T30) | Implementing |
+| STOR-50 | P1: CLI `--output` and a valid empty package | Execute (T33) | Implementing |
 | STOR-51 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
 | STOR-52 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
 | STOR-53 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
