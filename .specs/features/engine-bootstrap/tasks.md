@@ -1636,11 +1636,11 @@ succeeds (ENG-09). Confirm ENG-01 assembly set one last time.
 
 **Done when**:
 
-- [ ] `dotnet test csharp2md.slnx` exit code is 0
-- [ ] `dotnet build csharp2md.slnx -c Release` succeeds with `TreatWarningsAsErrors`
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean over this phase's changes
+- [x] `dotnet test csharp2md.slnx` exit code is 0
+- [x] `dotnet build csharp2md.slnx -c Release` succeeds with `TreatWarningsAsErrors`
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean over this phase's changes
 
 **Tests**: unit
 **Gate**: build

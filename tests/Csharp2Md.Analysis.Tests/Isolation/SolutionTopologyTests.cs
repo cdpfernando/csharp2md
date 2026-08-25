@@ -50,6 +50,17 @@ public sealed class SolutionTopologyTests
             $"csharp2md.slnx is missing allowlisted project path(s): {string.Join(", ", missing)}.");
     }
 
+    [Fact]
+    [Trait("Requirement", "ENG-09")]
+    public void DirectoryBuildProps_TreatsWarningsAsErrors()
+    {
+        var path = Path.Combine(AnalysisTestPaths.RepoRoot, "Directory.Build.props");
+        Assert.True(File.Exists(path), $"Directory.Build.props was not found at '{path}'.");
+
+        var content = File.ReadAllText(path);
+        Assert.Contains("<TreatWarningsAsErrors>true</TreatWarningsAsErrors>", content, StringComparison.Ordinal);
+    }
+
     [Theory]
     [Trait("Requirement", "ENG-01")]
     [MemberData(nameof(NewProductionProjects))]
