@@ -1497,13 +1497,13 @@ classifier version and at least one analysis variant, with `Resolution` as a com
 
 **Done when**:
 
-- [ ] Every required component omitted in turn is rejected naming it
-- [ ] An unregistered triple is rejected naming source fact type, relation and target fact type
-- [ ] An absent target identity is rejected - no dangling edge can be constructed
-- [ ] An empty analysis-variant set is rejected
-- [ ] `Resolution` has no constructor parameter and no setter, proven by reflection, and always reads `Confirmed`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every required component omitted in turn is rejected naming it
+- [x] An unregistered triple is rejected naming source fact type, relation and target fact type
+- [x] An absent target identity is rejected - no dangling edge can be constructed
+- [x] An empty analysis-variant set is rejected
+- [x] `Resolution` has no constructor parameter and no setter, proven by reflection, and always reads `Confirmed`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 416 passed (405 baseline + 11 new)
 
 **Tests**: unit
 **Gate**: quick
