@@ -310,7 +310,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-41 | P1: Compact payload layout | Tasks | In Tasks |
 | STOR-42 | P1: Compact payload layout | Tasks | In Tasks |
 | STOR-43 | P1: Compact payload layout | Tasks | In Tasks |
-| STOR-44 | P1: Compact payload layout | Tasks | In Tasks |
+| STOR-44 | P1: Compact payload layout | Execute (T6) | Implementing |
 | STOR-45 | P1: Compact payload layout | Tasks | In Tasks |
 | STOR-46 | P1: Compact payload layout | Tasks | In Tasks |
 | STOR-47 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |

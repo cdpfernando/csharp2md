@@ -319,7 +319,7 @@ opaque-byte round-trip and the "does not expose Domain" assertions (superseded b
 
 ### Phase 2: Wire DTOs and canonical bytes
 
-#### T6: CanonicalJson encoding
+#### T6: CanonicalJson encoding ✅
 
 **What**: Add `CanonicalJson.Write<T>` / `Read<T>` that emit and parse UTF-8 with no BOM, `\n` newlines and
 indent 2. Snake_case and unmapped-member rejection land in T13 with the source-generated context; this task
@@ -336,10 +336,10 @@ locks the byte rules.
 
 **Done when**:
 
-- [ ] Written bytes have no UTF-8 BOM, use `\n` only, and indent with two spaces
-- [ ] Round-trip of a small DTO preserves values
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Written bytes have no UTF-8 BOM, use `\n` only, and indent with two spaces
+- [x] Round-trip of a small DTO preserves values
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 19 passed, 0 failed (4 new STOR-44 tests)
 
 **Tests**: unit
 **Gate**: quick
