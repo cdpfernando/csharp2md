@@ -20,6 +20,36 @@ public sealed class SolutionTopologyTests
         }
     }
 
+    private static readonly string[] AllowedSolutionProjectPaths =
+    [
+        "src/Csharp2Md.Analysis/Csharp2Md.Analysis.csproj",
+        "src/Csharp2Md.Cli/Csharp2Md.Cli.csproj",
+        "src/Csharp2Md.Domain/Csharp2Md.Domain.csproj",
+        "src/Csharp2Md.Projection/Csharp2Md.Projection.csproj",
+        "src/Csharp2Md.Storage/Csharp2Md.Storage.csproj",
+        "tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj",
+        "tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj",
+        "tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj",
+        "tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj",
+        "tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj",
+    ];
+
+    [Fact]
+    [Trait("Requirement", "ENG-49")]
+    public void Slnx_ListsOnlyAllowlistedProjects()
+    {
+        var listed = ReadAllProjectPaths();
+        var extras = listed.Except(AllowedSolutionProjectPaths, StringComparer.Ordinal).ToArray();
+        var missing = AllowedSolutionProjectPaths.Except(listed, StringComparer.Ordinal).ToArray();
+
+        Assert.True(
+            extras.Length == 0,
+            $"csharp2md.slnx lists extra project path(s): {string.Join(", ", extras)}.");
+        Assert.True(
+            missing.Length == 0,
+            $"csharp2md.slnx is missing allowlisted project path(s): {string.Join(", ", missing)}.");
+    }
+
     [Theory]
     [Trait("Requirement", "ENG-01")]
     [MemberData(nameof(NewProductionProjects))]
@@ -63,6 +93,20 @@ public sealed class SolutionTopologyTests
         Assert.True(
             offending is null,
             $"{projectName} must not declare a package reference to '{offending}' (forbidden prefix '{forbiddenPrefix}').");
+    }
+
+    private static IReadOnlyList<string> ReadAllProjectPaths()
+    {
+        var slnxPath = Path.Combine(AnalysisTestPaths.RepoRoot, "csharp2md.slnx");
+        Assert.True(File.Exists(slnxPath), $"Solution file was not found at '{slnxPath}'.");
+
+        var document = XDocument.Load(slnxPath);
+        return document.Descendants()
+            .Where(element => element.Name.LocalName == "Project")
+            .Select(element => element.Attribute("Path")?.Value)
+            .OfType<string>()
+            .Select(path => path.Replace('\\', '/'))
+            .ToArray();
     }
 
     private static IReadOnlyList<string> ReadSrcFolderProjectPaths()

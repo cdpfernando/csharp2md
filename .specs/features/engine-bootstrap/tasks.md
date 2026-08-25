@@ -1553,9 +1553,9 @@ projects (ENG-49).
 
 **Done when**:
 
-- [ ] Any extra project path fails naming it
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Any extra project path fails naming it
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: solution

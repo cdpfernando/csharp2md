@@ -294,7 +294,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ENG-46 | P1: Legacy excision with a port ledger | Tasks | Verified |
 | ENG-47 | P1: Legacy excision with a port ledger | Tasks | Verified |
 | ENG-48 | P1: Legacy excision with a port ledger | Tasks | Verified |
-| ENG-49 | P1: Legacy excision with a port ledger | Tasks | In Tasks |
+| ENG-49 | P1: Legacy excision with a port ledger | Tasks | Verified |
 | ENG-50 | P1: Legacy excision with a port ledger | Tasks | In Tasks |
 | ENG-51 | P1: Legacy excision with a port ledger | Tasks | In Tasks |
 | ENG-52 | P1: Legacy excision with a port ledger | Tasks | Verified |
