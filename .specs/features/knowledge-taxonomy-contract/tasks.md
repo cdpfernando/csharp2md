@@ -428,12 +428,12 @@ sorting and de-duplication of preprocessor symbols so variant identity is order-
 
 **Done when**:
 
-- [ ] All four components participate: changing any one changes the identity
-- [ ] Symbols supplied in two different orders, and with a duplicate, produce one identity
-- [ ] A non-canonical component is rejected naming the parameter
-- [ ] No absolute path, location or timestamp can enter the variant identity
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] All four components participate: changing any one changes the identity
+- [x] Symbols supplied in two different orders, and with a duplicate, produce one identity
+- [x] A non-canonical component is rejected naming the parameter
+- [x] No absolute path, location or timestamp can enter the variant identity
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 70 total, 0 failed
 
 **Tests**: unit
 **Gate**: quick
