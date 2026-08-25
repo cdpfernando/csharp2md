@@ -408,10 +408,10 @@ convention.
 
 **Done when**:
 
-- [ ] The test project references `Csharp2Md.Storage`
-- [ ] A smoke test loads Storage's `AssemblyMarker`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] The test project references `Csharp2Md.Storage`
+- [x] A smoke test loads Storage's `AssemblyMarker`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

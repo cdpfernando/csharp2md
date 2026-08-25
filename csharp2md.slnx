@@ -10,6 +10,7 @@
     <Project Path="tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj" />
     <Project Path="tests/Csharp2Md.Core.Tests/Csharp2Md.Core.Tests.csproj" />
     <Project Path="tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj" />
+    <Project Path="tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj" />
   </Folder>
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Csharp2Md.RetrievalIndex.Benchmarks/Csharp2Md.RetrievalIndex.Benchmarks.csproj" />
