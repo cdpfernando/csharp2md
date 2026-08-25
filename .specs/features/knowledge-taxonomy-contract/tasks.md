@@ -1088,12 +1088,12 @@ mutating member and no Roslyn type on the contract.
 
 **Done when**:
 
-- [ ] All eight required components present; each omitted in turn is rejected naming the missing component
-- [ ] A missing document hash and a missing extractor version are each rejected by name specifically
-- [ ] Reflection proves the observation surface exposes no `Microsoft.CodeAnalysis` type
-- [ ] Reflection proves no settable property, no `with`-bypassing mutator and no mutable collection member
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] All eight required components present; each omitted in turn is rejected naming the missing component
+- [x] A missing document hash and a missing extractor version are each rejected by name specifically
+- [x] Reflection proves the observation surface exposes no `Microsoft.CodeAnalysis` type
+- [x] Reflection proves no settable property, no `with`-bypassing mutator and no mutable collection member
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 287 passed, 0 failed (13 new tests)
 
 **Tests**: unit
 **Gate**: quick
