@@ -423,10 +423,10 @@ PackageReference items to Analysis. Do not add any `Microsoft.Build.*` PackageRe
 
 **Done when**:
 
-- [ ] Both PackageVersion entries are 5.6.0 and Analysis consumes them
-- [ ] `DirectoryPackages_EveryPackageVersionHasAConsumer` stays green
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Both PackageVersion entries are 5.6.0 and Analysis consumes them
+- [x] `DirectoryPackages_EveryPackageVersionHasAConsumer` stays green
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

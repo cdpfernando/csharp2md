@@ -25,6 +25,39 @@ public sealed class PackageHygieneTests
     }
 
     [Theory]
+    [Trait("Requirement", "ROSE-26")]
+    [InlineData("Microsoft.CodeAnalysis.Workspaces.MSBuild")]
+    [InlineData("Microsoft.CodeAnalysis.CSharp.Workspaces")]
+    public void AnalysisCsproj_ReferencesWorkspacesPackageAtCentralVersion(string packageId)
+    {
+        var csprojPath = Path.Combine(
+            AnalysisTestPaths.RepoRoot,
+            "src",
+            "Csharp2Md.Analysis",
+            "Csharp2Md.Analysis.csproj");
+        Assert.True(File.Exists(csprojPath), $"Analysis project file was not found at '{csprojPath}'.");
+
+        var referenced = AttributeIncludes(XDocument.Load(csprojPath), "PackageReference");
+        Assert.True(
+            referenced.Contains(packageId, StringComparer.Ordinal),
+            $"Csharp2Md.Analysis.csproj must declare a PackageReference to '{packageId}'.");
+
+        var versionsPath = Path.Combine(AnalysisTestPaths.RepoRoot, "Directory.Packages.props");
+        Assert.True(File.Exists(versionsPath), $"Directory.Packages.props was not found at '{versionsPath}'.");
+
+        var version = XDocument.Load(versionsPath)
+            .Descendants()
+            .Where(element => element.Name.LocalName == "PackageVersion"
+                && string.Equals(element.Attribute("Include")?.Value, packageId, StringComparison.Ordinal))
+            .Select(element => element.Attribute("Version")?.Value)
+            .FirstOrDefault();
+
+        Assert.True(
+            version == "5.6.0",
+            $"Directory.Packages.props PackageVersion '{packageId}' must be 5.6.0, but is '{version}'.");
+    }
+
+    [Theory]
     [Trait("Requirement", "ENG-51")]
     [Trait("Requirement", "ROSE-26")]
     [MemberData(nameof(DroppedPackageVersionCases))]
