@@ -20,6 +20,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: TAX-46,TAX-50,TAX-51,TAX-53 / src/Csharp2Md.Domain/Relations/ConfirmedRelation.cs:46-83, RelationShapeGuards.cs:18-101
 - last seen: 2026-08-25T10:32:02Z
 
+### L-002 - When a boundary AC says any production project, enumerate every production assembly in the theory, not a subset closed by a sibling requirement.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `isolation` · harmful: 0
+- features: engine-bootstrap
+- evidence: ENG-06 (isolation)
+- last seen: 2026-08-25T15:35:07Z
+
+### L-003 - When an AC names the process temp directory, snapshot it or record an approved design mitigation; a working-tree snapshot alone does not cover that clause.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `pipeline` · harmful: 0
+- features: engine-bootstrap
+- evidence: ENG-16 (pipeline)
+- last seen: 2026-08-25T15:35:37Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 2,
+  "next_id": 4,
   "lessons": [
     {
       "id": "L-001",
@@ -22,6 +22,42 @@
       ],
       "created": "2026-08-25T10:32:02Z",
       "last_seen": "2026-08-25T10:32:02Z"
+    },
+    {
+      "id": "L-002",
+      "key": "spec_precision_gap::when a boundary ac says any production project enumerate every production assembly in the theory not a subset closed by a sibling requirement",
+      "text": "When a boundary AC says any production project, enumerate every production assembly in the theory, not a subset closed by a sibling requirement.",
+      "signal": "spec_precision_gap",
+      "scope": "isolation",
+      "status": "candidate",
+      "features": [
+        "engine-bootstrap"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "ENG-06 (isolation)"
+      ],
+      "created": "2026-08-25T15:35:07Z",
+      "last_seen": "2026-08-25T15:35:07Z"
+    },
+    {
+      "id": "L-003",
+      "key": "spec_precision_gap::when an ac names the process temp directory snapshot it or record an approved design mitigation a working tree snapshot alone does not cover that clause",
+      "text": "When an AC names the process temp directory, snapshot it or record an approved design mitigation; a working-tree snapshot alone does not cover that clause.",
+      "signal": "spec_precision_gap",
+      "scope": "pipeline",
+      "status": "candidate",
+      "features": [
+        "engine-bootstrap"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "ENG-16 (pipeline)"
+      ],
+      "created": "2026-08-25T15:35:37Z",
+      "last_seen": "2026-08-25T15:35:37Z"
     }
   ]
 }

@@ -4,7 +4,9 @@
 
 The repository is preparing a full architectural replacement. Existing source code and wire schemas are legacy until the roadmap is executed.
 
-Workstream 1, [`knowledge-taxonomy-contract`](features/knowledge-taxonomy-contract/spec.md), is the first replacement feature. Its spec, design and task breakdown are approved; execution has not started.
+Workstream 1, [`knowledge-taxonomy-contract`](features/knowledge-taxonomy-contract/spec.md), is complete and verified.
+
+Workstream 2, [`engine-bootstrap`](features/engine-bootstrap/spec.md), is complete and verified. Spec, design (AD-014, AD-015), tasks, Execute (T1–T52 plus post-T52 absence-test fix) and independent verification are done.
 
 Normative documentation:
 
@@ -95,6 +97,24 @@ Normative documentation:
 - **Date**: 2026-08-24
 - **Status**: active.
 
+### AD-014 — Hexagonal storage port owned by Analysis
+
+- **Decision**: The transactional storage port is declared on `Csharp2Md.Analysis`'s public surface. `Csharp2Md.Storage` implements it and may reference Analysis. Analysis never references Storage, Projection or CLI. `Csharp2Md.Projection` is a compile-only assembly until workstream 6 because the Analysis↔Projection prohibition plus the five-assembly solution list leave no legal place for a projector port.
+- **Reason**: ENG-11 already places the port on Analysis; hexagonal adapters depend on application ports; putting the port in Domain would mix persistence into the taxonomy (AD-006, AD-013).
+- **Trade-off**: Storage depends on Analysis, which looks inverted until the port's home is known. Workstream 6 must introduce a projector seam without a shared abstractions assembly.
+- **Scope**: Analysis, Storage, Projection, CLI, and every later workstream that writes through the port or fills a pipeline stage.
+- **Date**: 2026-08-25
+- **Status**: active.
+
+### AD-015 — ConfirmedRelation construction carries shape and evidence
+
+- **Decision**: `ConfirmedRelation.Create` requires `EvidenceMethod` and, when the registered shape needs them, materialized source and target facts, and invokes `RelationShapeGuards` from that method. `FactReference` remains identity-only.
+- **Reason**: identity-only `Create` left TAX-46/50/51/53 unenforceable through the public API; Domain still has no production consumers, so the break is free (AD-002).
+- **Trade-off**: callers that only have identities cannot construct shape-constrained relations until they materialize facts. That is the point.
+- **Scope**: `Csharp2Md.Domain` and every future classifier that constructs confirmed relations (workstreams 4, 5A–5D).
+- **Date**: 2026-08-25
+- **Status**: active.
+
 ## Standing engineering constraints
 
 - Retrieval-led reasoning is mandatory for .NET/Roslyn work; never invent a Roslyn API.
@@ -105,12 +125,11 @@ Normative documentation:
 
 ## Handoff
 
-- **Feature**: `knowledge-taxonomy-contract` — `.specs/features/knowledge-taxonomy-contract/` — **DONE**. Workstream 1 of the roadmap is complete: `Csharp2Md.Domain` ships as a dependency-free assembly with all five fact families, the observation contract, closed facet/proof vocabularies, the twelve canonical relations, the identity grammar, the five version axes, and the committed `contracts/taxonomy-registry.json` behind its byte-comparison drift gate.
-- **Phase / Task**: All 54 tasks (T1–T54, 11 phases) implemented, gated, and committed (54 atomic commits, `8ba2d3f`..`bd51096`). Independent Verifier ran and returned PASS with 4 spec-precision gaps (not hard failures) — see `.specs/features/knowledge-taxonomy-contract/validation.md`. `validate_state.py knowledge-taxonomy-contract` confirms the report is real (0 errors).
-- **Completed**: Specify → Discuss → Design (AD-013) → Tasks → Execute (9 sub-agent batches, sequential) → Verify. `spec.md` traceability table updated: 87/91 rows "Verified", 4 rows (TAX-46, TAX-50, TAX-51, TAX-53) "Verified with spec-precision gap". `Csharp2Md.Domain.Tests` grew 0→523, all passing; full-solution gate 2101 passed / 1 pre-existing unrelated failure (`MigrationLedgerTests`, out of scope). One candidate lesson recorded (`L-001`, `.specs/lessons.json`).
+- **Feature**: `engine-bootstrap` — `.specs/features/engine-bootstrap/` — **DONE**. Workstream 2 of the roadmap is complete: target assemblies, eight-stage stub pipeline, in-memory storage port, provisional `analyze` CLI, and legacy Core/tests/benchmarks/schemas excised with a committed port ledger.
+- **Phase / Task**: All 52 tasks (T1–T52, 8 phases) implemented, gated, and committed, plus post-T52 `62789a0` adding directory-absence tests for ENG-46/48. Independent Verifier returned PASS with 2 spec-precision gaps (ENG-06, ENG-16) — see `.specs/features/engine-bootstrap/validation.md`. `validate_state.py engine-bootstrap` confirms 0 errors.
+- **Completed**: Specify → Discuss → Design (AD-014, AD-015) → Tasks → Execute (Batches 1–8, T1–T52) → Verify. Discrimination sensor skipped (standing). Last feature commit: `62789a0`.
 - **In-progress** (file:line): none. Feature is closed.
-- **Known limitation carried forward (not fixed in this feature, by design)**: `ConfirmedRelation.Create`'s design.md-approved signature accepts only bare `FactReference` (id + type-name, no facet/instance data), so `RelationShapeGuards.RequireCallableIfNeeded`, `.RequireLegalTargetShape` (×2 shapes) and `.RequireSufficientEvidence` are implemented and unit-tested but have **zero production call sites** — TAX-46/50/51/53's construction-time enforcement is not reachable through the domain's only public relation-construction API. Root cause: `FactReference` is deliberately identity-only so triples validate "without materializing facts" (design.md's own words); the guards need materialized facts/an evidence method the signature doesn't carry. **Next workstream that first constructs `ConfirmedRelation` from real facts (`engine-bootstrap` or `roslyn-observation-extraction`) must either** (a) widen `Create`'s signature with optional shape-carrying parameters so the existing guards run inline, or (b) formalize and test a caller contract requiring those three guards to be invoked against materialized facts before calling `Create`. Full analysis: `validation.md`'s "Findings on the two flagged items" section.
-- **Next step**: Start workstream 2 (`engine-bootstrap`) when the user is ready — create its feature spec under `.specs/features/` per AGENTS.md/CLAUDE.md's "no replacement feature spec exists yet" rule, carrying the above limitation forward as a design input.
+- **Next step**: Start workstream 3 (`factual-storage`) when the user is ready. Do not push unless asked.
 - **Blockers**: none.
-- **Uncommitted files**: none — working tree clean on the feature's own files (pre-existing untracked skill-pack/fixture noise from before this session remains, unrelated to this feature).
+- **Uncommitted files**: `.specs/features/engine-bootstrap/context.md`; `.specs/features/engine-bootstrap/design.md`; `architecture-knowledge-engine-roadmap.md`. Unrelated noise: `.agents/`, `.claude/`, `.cursor/`, `.windsurf/` skill copies, `fixtures/launch-manifest.json`, `research/`. Do not commit the noise.
 - **Branch**: `codex/architecture-knowledge-engine-docs`
