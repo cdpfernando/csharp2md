@@ -273,11 +273,11 @@ is absent from the DTO and from canonical JSON.
 
 **Done when**:
 
-- [ ] `ToWire` copies snapshot diagnostics in stable order
-- [ ] A suspected-secret snapshot produces a `suspected-secret` record whose JSON does not contain the raw
+- [x] `ToWire` copies snapshot diagnostics in stable order
+- [x] A suspected-secret snapshot produces a `suspected-secret` record whose JSON does not contain the raw
       secret and does contain `***` or `[REDACTED]`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
