@@ -15,7 +15,12 @@ public sealed class SolutionTopologyTests
     {
         foreach (var project in NewProductionProjects())
         {
-            yield return [project[0], project[1], "Microsoft.CodeAnalysis"];
+            var projectName = (string)project[0];
+            if (projectName != "Csharp2Md.Analysis")
+            {
+                yield return [project[0], project[1], "Microsoft.CodeAnalysis"];
+            }
+
             yield return [project[0], project[1], "Microsoft.Build"];
         }
     }
@@ -90,8 +95,37 @@ public sealed class SolutionTopologyTests
             $"{projectName} must target net10.0, but TargetFramework is '{targetFramework}'.");
     }
 
+    [Fact]
+    [Trait("Requirement", "ROSE-26")]
+    public void ForbiddenPackageCases_AllowCodeAnalysisOnAnalysisOnly()
+    {
+        var cases = ForbiddenPackageCases()
+            .Select(row => ((string)row[0], (string)row[2]))
+            .ToHashSet();
+
+        Assert.False(
+            cases.Contains(("Csharp2Md.Analysis", "Microsoft.CodeAnalysis")),
+            "Csharp2Md.Analysis must be allowed to reference Microsoft.CodeAnalysis packages.");
+        Assert.True(
+            cases.Contains(("Csharp2Md.Storage", "Microsoft.CodeAnalysis")),
+            "Csharp2Md.Storage must remain forbidden from referencing Microsoft.CodeAnalysis packages.");
+        Assert.True(
+            cases.Contains(("Csharp2Md.Projection", "Microsoft.CodeAnalysis")),
+            "Csharp2Md.Projection must remain forbidden from referencing Microsoft.CodeAnalysis packages.");
+        Assert.True(
+            cases.Contains(("Csharp2Md.Analysis", "Microsoft.Build")),
+            "Csharp2Md.Analysis must remain forbidden from referencing Microsoft.Build packages.");
+        Assert.True(
+            cases.Contains(("Csharp2Md.Storage", "Microsoft.Build")),
+            "Csharp2Md.Storage must remain forbidden from referencing Microsoft.Build packages.");
+        Assert.True(
+            cases.Contains(("Csharp2Md.Projection", "Microsoft.Build")),
+            "Csharp2Md.Projection must remain forbidden from referencing Microsoft.Build packages.");
+    }
+
     [Theory]
     [Trait("Requirement", "ENG-06")]
+    [Trait("Requirement", "ROSE-26")]
     [MemberData(nameof(ForbiddenPackageCases))]
     public void Csproj_DeclaresNoForbiddenPackage(string projectName, string relativePath, string forbiddenPrefix)
     {

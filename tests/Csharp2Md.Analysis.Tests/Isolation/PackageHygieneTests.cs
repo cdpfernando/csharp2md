@@ -6,8 +6,6 @@ public sealed class PackageHygieneTests
 {
     private static readonly string[] DroppedPackageVersions =
     [
-        "Microsoft.CodeAnalysis.CSharp.Workspaces",
-        "Microsoft.CodeAnalysis.Workspaces.MSBuild",
         "YamlDotNet",
     ];
 
@@ -17,8 +15,18 @@ public sealed class PackageHygieneTests
         "Grpc.AspNetCore",
     ];
 
+    [Fact]
+    [Trait("Requirement", "ROSE-26")]
+    public void DroppedPackageVersions_OmitWorkspacesPackagesAndKeepYamlDotNet()
+    {
+        Assert.DoesNotContain("Microsoft.CodeAnalysis.Workspaces.MSBuild", DroppedPackageVersions);
+        Assert.DoesNotContain("Microsoft.CodeAnalysis.CSharp.Workspaces", DroppedPackageVersions);
+        Assert.Contains("YamlDotNet", DroppedPackageVersions);
+    }
+
     [Theory]
     [Trait("Requirement", "ENG-51")]
+    [Trait("Requirement", "ROSE-26")]
     [MemberData(nameof(DroppedPackageVersionCases))]
     public void DirectoryPackages_DoesNotDeclareDroppedPackageVersion(string packageId)
     {

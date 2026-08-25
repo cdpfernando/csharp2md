@@ -394,10 +394,10 @@ all three. Remove `Microsoft.CodeAnalysis.Workspaces.MSBuild` and
 
 **Done when**:
 
-- [ ] Analysis + `Microsoft.CodeAnalysis` is no longer a forbidden case; Storage and Projection still are
-- [ ] The two Workspaces package ids are absent from the dropped list; YamlDotNet stays dropped
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Analysis + `Microsoft.CodeAnalysis` is no longer a forbidden case; Storage and Projection still are
+- [x] The two Workspaces package ids are absent from the dropped list; YamlDotNet stays dropped
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
