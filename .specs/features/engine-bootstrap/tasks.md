@@ -551,10 +551,10 @@ distinct operations (ENG-20).
 
 **Done when**:
 
-- [ ] Staging, commit and abort are separate members
-- [ ] `Open` takes a solution key and returns a session
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Staging, commit and abort are separate members
+- [x] `Open` takes a solution key and returns a session
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
