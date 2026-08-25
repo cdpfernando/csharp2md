@@ -1594,12 +1594,12 @@ continuation never weakens the confirmed relation already at that occurrence.
 
 **Done when**:
 
-- [ ] A frontier is keyed on the observation occurrence, not on the relation
-- [ ] Recording a frontier at an occurrence that already carries a confirmed relation leaves that relation byte-identical, asserted before and after
-- [ ] `frontier` reads `Open` and is not settable
-- [ ] A frontier without a cause is rejected naming the parameter
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A frontier is keyed on the observation occurrence, not on the relation
+- [x] Recording a frontier at an occurrence that already carries a confirmed relation leaves that relation byte-identical, asserted before and after
+- [x] `frontier` reads `Open` and is not settable
+- [x] A frontier without a cause is rejected naming the parameter
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 450 passed (446 baseline + 4 new)
 
 **Tests**: unit
 **Gate**: quick
