@@ -654,10 +654,10 @@ lies outside the authorized root. It does not follow, hash, or copy the target.
 
 **Done when**:
 
-- [ ] A symlink inside the root that points at a file outside it is rejected and the symlink path is named
-- [ ] A regular file inside the root is accepted
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A symlink inside the root that points at a file outside it is rejected and the symlink path is named
+- [x] A regular file inside the root is accepted
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
