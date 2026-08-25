@@ -961,12 +961,12 @@ the field.
 
 **Done when**:
 
-- [ ] Set equality against route, protocol name, channel, schema name, table name, field name, configuration key, client name
-- [ ] One literal per role is accepted, and an undefined role reached by cast is rejected naming the axis
-- [ ] A literal supplied without a role, or with a role the field does not permit, is rejected naming the field
-- [ ] No `string` payload field on any fact or observation bypasses this type, asserted by reflection over the payload-carrying surface
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Set equality against route, protocol name, channel, schema name, table name, field name, configuration key, client name
+- [x] One literal per role is accepted, and an undefined role reached by cast is rejected naming the axis
+- [x] A literal supplied without a role, or with a role the field does not permit, is rejected naming the field
+- [x] No `string` payload field on any fact or observation bypasses this type, asserted by reflection over the payload-carrying surface
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 15 new tests (StructuralLiteralTests), 245 total passing
 
 **Tests**: unit
 **Gate**: quick
