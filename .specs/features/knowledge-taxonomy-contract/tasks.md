@@ -523,12 +523,12 @@ closing the CLR-to-physical mapping to explicit confirmation, conventional candi
 
 **Done when**:
 
-- [ ] Set equality against `relational`, `document`, `key-value`, `cache`, `unknown`
-- [ ] Set equality against `table`, `view`, `collection`, `key-space`, `cache-region`, `unknown`
-- [ ] Set equality against `read`, `insert`, `update`, `delete`, `execute`, `unknown`
-- [ ] Set equality against explicit confirmation, conventional candidate, unresolved - and nothing else
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Set equality against `relational`, `document`, `key-value`, `cache`, `unknown`
+- [x] Set equality against `table`, `view`, `collection`, `key-space`, `cache-region`, `unknown`
+- [x] Set equality against `read`, `insert`, `update`, `delete`, `execute`, `unknown`
+- [x] Set equality against explicit confirmation, conventional candidate, unresolved - and nothing else
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 88 passed (84 baseline + 4 new)
 
 **Tests**: unit
 **Gate**: quick
