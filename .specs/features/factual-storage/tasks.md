@@ -1044,7 +1044,7 @@ manifest fragment. Default pipeline zeros stay zeros.
 
 ---
 
-#### T31: Engine treats publication rejection as structural corruption
+#### T31: Engine treats publication rejection as structural corruption ✅
 
 **What**: `AnalyzeSolutionAsync` wraps `Commit` in try/catch for `PublicationRejectedException`, then
 `Abort`, `Unpublished`, `StructuralCorruption = true`. A store whose `Commit` throws that exception leaves
@@ -1061,10 +1061,10 @@ the prior publication byte-identical and publishes no new manifest.
 
 **Done when**:
 
-- [ ] Thrown `PublicationRejectedException` yields Unpublished + StructuralCorruption + Abort
-- [ ] Prior in-memory publication is unchanged; no new manifest artifact is stored
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Thrown `PublicationRejectedException` yields Unpublished + StructuralCorruption + Abort
+- [x] Prior in-memory publication is unchanged; no new manifest artifact is stored
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Analysis.Tests 88 passed, 0 failed (was 87; +1 publication-rejection)
 
 **Tests**: unit
 **Gate**: quick
