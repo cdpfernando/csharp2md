@@ -6,11 +6,11 @@ Workstream 2 proved staging, commit, abort and manifest-last ordering against an
 
 ## Goals
 
-- [ ] Publish versioned JSON Schemas and round-trip every Domain family plus the package envelopes, with empty families legal.
-- [ ] Ship a filesystem transactional adapter that stages, validates, and publishes the manifest last, preserving the last valid package on abort.
-- [ ] Make Storage the last gate: schema, registry, identity, hash, path and domain-construction checks, with quarantine for invalid derived records and abort for structural corruption.
-- [ ] Expose a Storage reader that returns Domain types from a committed solution package.
-- [ ] Require `analyze --output` and write a schema-valid empty package from the stub pipeline, touching no path outside that root.
+- [x] Publish versioned JSON Schemas and round-trip every Domain family plus the package envelopes, with empty families legal.
+- [x] Ship a filesystem transactional adapter that stages, validates, and publishes the manifest last, preserving the last valid package on abort.
+- [x] Make Storage the last gate: schema, registry, identity, hash, path and domain-construction checks, with quarantine for invalid derived records and abort for structural corruption.
+- [x] Expose a Storage reader that returns Domain types from a committed solution package.
+- [x] Require `analyze --output` and write a schema-valid empty package from the stub pipeline, touching no path outside that root.
 
 ## Out of Scope
 
@@ -267,67 +267,67 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| STOR-01 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Implementing |
-| STOR-02 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Implementing |
-| STOR-03 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Implementing |
-| STOR-04 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Implementing |
-| STOR-05 | P1: Versioned wire contracts for every Domain family | Execute (T33) | Implementing |
-| STOR-06 | P1: Versioned wire contracts for every Domain family | Execute (T33) | Implementing |
-| STOR-07 | P1: Versioned wire contracts for every Domain family | Execute (T13) | Implementing |
-| STOR-08 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Implementing |
-| STOR-09 | P1: Versioned wire contracts for every Domain family | Execute (T15) | Implementing |
-| STOR-10 | P1: Canonical round-trip through Domain construction | Execute (T17, T40) | Implementing |
-| STOR-11 | P1: Canonical round-trip through Domain construction | Execute (T4) | Implementing |
-| STOR-12 | P1: Canonical round-trip through Domain construction | Execute (T4) | Implementing |
-| STOR-13 | P1: Canonical round-trip through Domain construction | Execute (T16) | Implementing |
-| STOR-14 | P1: Filesystem transactional publication | Execute (T33, T45) | Implementing |
-| STOR-15 | P1: Filesystem transactional publication | Execute (T27) | Implementing |
-| STOR-16 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
-| STOR-17 | P1: Filesystem transactional publication | Execute (T35) | Implementing |
-| STOR-18 | P1: Filesystem transactional publication | Execute (T35) | Implementing |
-| STOR-19 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
-| STOR-20 | P1: Filesystem transactional publication | Execute (T34) | Implementing |
-| STOR-21 | P1: Filesystem transactional publication | Execute (T34) | Implementing |
-| STOR-22 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
-| STOR-23 | P1: Filesystem transactional publication | Execute (T36) | Implementing |
-| STOR-24 | P1: Filesystem transactional publication | Execute (T28) | Implementing |
-| STOR-25 | P1: Commit-time structural gates | Execute (T20) | Implementing |
-| STOR-26 | P1: Commit-time structural gates | Execute (T21) | Implementing |
-| STOR-27 | P1: Commit-time structural gates | Execute (T22) | Implementing |
-| STOR-28 | P1: Commit-time structural gates | Execute (T22) | Implementing |
-| STOR-29 | P1: Commit-time structural gates | Execute (T23) | Implementing |
-| STOR-30 | P1: Commit-time structural gates | Execute (T24) | Implementing |
-| STOR-31 | P1: Commit-time structural gates | Execute (T35) | Implementing |
-| STOR-32 | P1: Commit-time structural gates | Execute (T25) | Implementing |
-| STOR-33 | P1: Commit-time structural gates | Execute (T26) | Implementing |
-| STOR-34 | P1: Factual package reader | Execute (T40) | Implementing |
-| STOR-35 | P1: Factual package reader | Execute (T5, T43) | Implementing |
-| STOR-36 | P1: Factual package reader | Execute (T41) | Implementing |
-| STOR-37 | P1: Factual package reader | Execute (T41) | Implementing |
-| STOR-38 | P1: Factual package reader | Execute (T42) | Implementing |
-| STOR-39 | P1: Compact payload layout | Execute (T38) | Implementing |
-| STOR-40 | P1: Compact payload layout | Execute (T38) | Implementing |
-| STOR-41 | P1: Compact payload layout | Execute (T38) | Implementing |
-| STOR-42 | P1: Compact payload layout | Execute (T38) | Implementing |
-| STOR-43 | P1: Compact payload layout | Execute (T38) | Implementing |
-| STOR-44 | P1: Compact payload layout | Execute (T32) | Implementing |
-| STOR-45 | P1: Compact payload layout | Execute (T32) | Implementing |
-| STOR-46 | P1: Compact payload layout | Execute (T38) | Implementing |
-| STOR-47 | P1: CLI `--output` and a valid empty package | Execute (T44, T45, T49) | Implementing |
-| STOR-48 | P1: CLI `--output` and a valid empty package | Execute (T44) | Implementing |
-| STOR-49 | P1: CLI `--output` and a valid empty package | Execute (T46) | Implementing |
-| STOR-50 | P1: CLI `--output` and a valid empty package | Execute (T33, T46) | Implementing |
-| STOR-51 | P1: CLI `--output` and a valid empty package | Execute (T46) | Implementing |
-| STOR-52 | P1: CLI `--output` and a valid empty package | Execute (T47) | Implementing |
-| STOR-53 | P1: CLI `--output` and a valid empty package | Execute (T47) | Implementing |
-| STOR-54 | P1: CLI `--output` and a valid empty package | Execute (T48) | Implementing |
-| STOR-55 | P1: CLI `--output` and a valid empty package | Execute (T48) | Implementing |
-| STOR-56 | P1: Session isolation and cleanup | Execute (T50) | Implementing |
-| STOR-57 | P1: Session isolation and cleanup | Execute (T50) | Implementing |
-| STOR-58 | P1: Session isolation and cleanup | Execute (T39) | Implementing |
-| STOR-59 | P1: Session isolation and cleanup | Execute (T37) | Implementing |
-| STOR-60 | P1: Session isolation and cleanup | Execute (T29) | Implementing |
-| STOR-61 | P1: Session isolation and cleanup | Execute (T29) | Implementing |
+| STOR-01 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Verified |
+| STOR-02 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Verified |
+| STOR-03 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Verified |
+| STOR-04 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Verified |
+| STOR-05 | P1: Versioned wire contracts for every Domain family | Execute (T33) | Verified |
+| STOR-06 | P1: Versioned wire contracts for every Domain family | Execute (T33) | Verified |
+| STOR-07 | P1: Versioned wire contracts for every Domain family | Execute (T13) | Verified |
+| STOR-08 | P1: Versioned wire contracts for every Domain family | Execute (T14) | Verified |
+| STOR-09 | P1: Versioned wire contracts for every Domain family | Execute (T15) | Verified |
+| STOR-10 | P1: Canonical round-trip through Domain construction | Execute (T17, T40) | Verified |
+| STOR-11 | P1: Canonical round-trip through Domain construction | Execute (T4) | Verified |
+| STOR-12 | P1: Canonical round-trip through Domain construction | Execute (T4) | Verified |
+| STOR-13 | P1: Canonical round-trip through Domain construction | Execute (T16) | Verified |
+| STOR-14 | P1: Filesystem transactional publication | Execute (T33, T45) | Verified |
+| STOR-15 | P1: Filesystem transactional publication | Execute (T27) | Verified |
+| STOR-16 | P1: Filesystem transactional publication | Execute (T33) | Verified |
+| STOR-17 | P1: Filesystem transactional publication | Execute (T35) | Verified |
+| STOR-18 | P1: Filesystem transactional publication | Execute (T35) | Verified |
+| STOR-19 | P1: Filesystem transactional publication | Execute (T33) | Verified |
+| STOR-20 | P1: Filesystem transactional publication | Execute (T34) | Verified |
+| STOR-21 | P1: Filesystem transactional publication | Execute (T34) | Verified |
+| STOR-22 | P1: Filesystem transactional publication | Execute (T33) | Verified |
+| STOR-23 | P1: Filesystem transactional publication | Execute (T36) | Verified |
+| STOR-24 | P1: Filesystem transactional publication | Execute (T28) | Verified |
+| STOR-25 | P1: Commit-time structural gates | Execute (T20) | Verified |
+| STOR-26 | P1: Commit-time structural gates | Execute (T21) | Verified |
+| STOR-27 | P1: Commit-time structural gates | Execute (T22) | Verified |
+| STOR-28 | P1: Commit-time structural gates | Execute (T22) | Verified |
+| STOR-29 | P1: Commit-time structural gates | Execute (T23) | Verified |
+| STOR-30 | P1: Commit-time structural gates | Execute (T24) | Verified |
+| STOR-31 | P1: Commit-time structural gates | Execute (T35) | Verified |
+| STOR-32 | P1: Commit-time structural gates | Execute (T25) | Verified |
+| STOR-33 | P1: Commit-time structural gates | Execute (T26) | Verified |
+| STOR-34 | P1: Factual package reader | Execute (T40) | Verified |
+| STOR-35 | P1: Factual package reader | Execute (T5, T43) | Verified |
+| STOR-36 | P1: Factual package reader | Execute (T41) | Verified |
+| STOR-37 | P1: Factual package reader | Execute (T41) | Verified |
+| STOR-38 | P1: Factual package reader | Execute (T42) | Verified |
+| STOR-39 | P1: Compact payload layout | Execute (T38) | Verified |
+| STOR-40 | P1: Compact payload layout | Execute (T38) | Verified |
+| STOR-41 | P1: Compact payload layout | Execute (T38) | Verified |
+| STOR-42 | P1: Compact payload layout | Execute (T38) | Verified |
+| STOR-43 | P1: Compact payload layout | Execute (T38) | Verified |
+| STOR-44 | P1: Compact payload layout | Execute (T32) | Verified |
+| STOR-45 | P1: Compact payload layout | Execute (T32) | Verified |
+| STOR-46 | P1: Compact payload layout | Execute (T38) | Verified |
+| STOR-47 | P1: CLI `--output` and a valid empty package | Execute (T44, T45, T49) | Verified |
+| STOR-48 | P1: CLI `--output` and a valid empty package | Execute (T44) | Verified |
+| STOR-49 | P1: CLI `--output` and a valid empty package | Execute (T46) | Verified |
+| STOR-50 | P1: CLI `--output` and a valid empty package | Execute (T33, T46) | Verified |
+| STOR-51 | P1: CLI `--output` and a valid empty package | Execute (T46) | Verified |
+| STOR-52 | P1: CLI `--output` and a valid empty package | Execute (T47) | Verified |
+| STOR-53 | P1: CLI `--output` and a valid empty package | Execute (T47) | Verified |
+| STOR-54 | P1: CLI `--output` and a valid empty package | Execute (T48) | Verified |
+| STOR-55 | P1: CLI `--output` and a valid empty package | Execute (T48) | Verified |
+| STOR-56 | P1: Session isolation and cleanup | Execute (T50) | Verified |
+| STOR-57 | P1: Session isolation and cleanup | Execute (T50) | Verified |
+| STOR-58 | P1: Session isolation and cleanup | Execute (T39) | Verified |
+| STOR-59 | P1: Session isolation and cleanup | Execute (T37) | Verified |
+| STOR-60 | P1: Session isolation and cleanup | Execute (T29) | Verified |
+| STOR-61 | P1: Session isolation and cleanup | Execute (T29) | Verified |
 
 **ID format:** `STOR-[NUMBER]`
 
@@ -339,10 +339,10 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 ## Success Criteria
 
-- [ ] `csharp2md analyze --solution <fixture> --output <dir>` exits 0 and writes a schema-valid empty package (manifest last, taxonomy-registry copy, every family count 0) only under `<dir>`.
-- [ ] Omitting `--output` exits 1 naming the option. A structural abort exits 2 and leaves the last valid package byte-identical.
-- [ ] One fixture per Domain family round-trips through commit and the Storage reader under Domain equality.
-- [ ] Abort-class fixtures (schema, collision, bad hash, absolute path, allowlist) publish no new manifest. An invalid derived fact lands in quarantine and the rest commits.
-- [ ] Two staging orders of the same graph produce byte-identical canonical payloads. No identity-named directories. No postings or Markdown.
-- [ ] Storage references Domain and does not classify. Analysis public surface has no reader. CLI has no Domain project reference.
-- [ ] Every requirement ID STOR-01 through STOR-61 has at least one test asserting a spec-defined outcome.
+- [x] `csharp2md analyze --solution <fixture> --output <dir>` exits 0 and writes a schema-valid empty package (manifest last, taxonomy-registry copy, every family count 0) only under `<dir>`.
+- [x] Omitting `--output` exits 1 naming the option. A structural abort exits 2 and leaves the last valid package byte-identical.
+- [x] One fixture per Domain family round-trips through commit and the Storage reader under Domain equality.
+- [x] Abort-class fixtures (schema, collision, bad hash, absolute path, allowlist) publish no new manifest. An invalid derived fact lands in quarantine and the rest commits.
+- [x] Two staging orders of the same graph produce byte-identical canonical payloads. No identity-named directories. No postings or Markdown.
+- [x] Storage references Domain and does not classify. Analysis public surface has no reader. CLI has no Domain project reference.
+- [x] Every requirement ID STOR-01 through STOR-61 has at least one test asserting a spec-defined outcome.
