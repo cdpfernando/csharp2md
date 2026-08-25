@@ -868,12 +868,12 @@ enumeration TAX-84 requires is reachable from one place.
 
 **Done when**:
 
-- [ ] Five axes exist as separate members, all at 1, and no axis is derived from another
-- [ ] The registry enumerates every family, fact type, observation kind, facet axis with its values, relation with its triples and minimum evidence method, mapping role, proof axis and version axis
-- [ ] Extending a copied `TaxonomyTables` with an additional axis value or fact type keeps every previously valid identity and every previously registered triple valid
-- [ ] Removing a value from a closed axis, or renaming one, is detected as a non-additive change rather than silently accepted
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Five axes exist as separate members, all at 1, and no axis is derived from another
+- [x] The registry enumerates every family, fact type, observation kind, facet axis with its values, relation with its triples and minimum evidence method, mapping role, proof axis and version axis
+- [x] Extending a copied `TaxonomyTables` with an additional axis value or fact type keeps every previously valid identity and every previously registered triple valid
+- [x] Removing a value from a closed axis, or renaming one, is detected as a non-additive change rather than silently accepted
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions) — Domain.Tests: 199 passed (187 baseline + 12 new); full solution: 1777 passed / 1 pre-existing unrelated failure (`MigrationLedgerTests.BaselineCategory_StillHasARepresentativeV3Test`) / 0 caused by this task
 
 **Tests**: unit
 **Gate**: build
