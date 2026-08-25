@@ -267,12 +267,12 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ENG-19 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-20 | P1: Transactional storage port with atomic publication | Tasks | Verified |
 | ENG-21 | P1: Transactional storage port with atomic publication | Tasks | Verified |
-| ENG-22 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
-| ENG-23 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
+| ENG-22 | P1: Transactional storage port with atomic publication | Tasks | Implementing |
+| ENG-23 | P1: Transactional storage port with atomic publication | Tasks | Verified |
 | ENG-24 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
 | ENG-25 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
 | ENG-26 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
-| ENG-27 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
+| ENG-27 | P1: Transactional storage port with atomic publication | Tasks | Verified |
 | ENG-28 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
 | ENG-29 | P1: Multi-solution isolation and determinism | Tasks | In Tasks |
 | ENG-30 | P1: Multi-solution isolation and determinism | Tasks | In Tasks |

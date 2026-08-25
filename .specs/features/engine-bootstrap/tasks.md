@@ -607,11 +607,11 @@ independent of staging order (ENG-23, ENG-27). A session commits exactly once; a
 
 **Done when**:
 
-- [ ] Staging a manifest then a payload still publishes payload then manifest
-- [ ] Two staging orders of the same payloads yield byte-identical `ArtifactsInPublicationOrder`
-- [ ] A second `Commit` on the same session is rejected
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Staging a manifest then a payload still publishes payload then manifest
+- [x] Two staging orders of the same payloads yield byte-identical `ArtifactsInPublicationOrder`
+- [x] A second `Commit` on the same session is rejected
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

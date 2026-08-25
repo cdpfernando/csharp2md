@@ -67,6 +67,90 @@ public sealed class InMemoryTransactionalStoreTests
             $"Csharp2Md.Storage must not use System.IO, but '{offending.path}' does.");
     }
 
+    [Fact]
+    [Trait("Requirement", "ENG-23")]
+    public void Commit_PublishesPayloadsBeforeManifestEvenWhenManifestWasStagedFirst()
+    {
+        var session = new InMemoryTransactionalStore().Open("solution-a");
+        session.Stage(Fragment(ArtifactRole.Manifest, "manifest", [0x4D]));
+        session.Stage(Fragment(ArtifactRole.Payload, "zeta", [0x5A]));
+        session.Stage(Fragment(ArtifactRole.Payload, "alpha", [0x41]));
+
+        var artifacts = session.Commit().ArtifactsInPublicationOrder;
+
+        Assert.Equal(3, artifacts.Length);
+        AssertFragment(artifacts[0], ArtifactRole.Payload, "alpha", [0x41]);
+        AssertFragment(artifacts[1], ArtifactRole.Payload, "zeta", [0x5A]);
+        AssertFragment(artifacts[2], ArtifactRole.Manifest, "manifest", [0x4D]);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ENG-27")]
+    public void Commit_TwoStagingOrders_YieldByteIdenticalPublicationOrder()
+    {
+        var first = CommitInOrder(
+            Fragment(ArtifactRole.Payload, "b", [2]),
+            Fragment(ArtifactRole.Manifest, "m-z", [9]),
+            Fragment(ArtifactRole.Payload, "a", [1]),
+            Fragment(ArtifactRole.Manifest, "m-a", [8]));
+        var second = CommitInOrder(
+            Fragment(ArtifactRole.Manifest, "m-a", [8]),
+            Fragment(ArtifactRole.Payload, "a", [1]),
+            Fragment(ArtifactRole.Manifest, "m-z", [9]),
+            Fragment(ArtifactRole.Payload, "b", [2]));
+
+        Assert.Equal(first.Length, second.Length);
+        for (var i = 0; i < first.Length; i++)
+        {
+            Assert.Equal(first[i].Role, second[i].Role);
+            Assert.Equal(first[i].CanonicalKey, second[i].CanonicalKey);
+            Assert.True(
+                first[i].Payload.AsSpan().SequenceEqual(second[i].Payload.AsSpan()),
+                $"Payload bytes at index {i} differ.");
+        }
+
+        AssertFragment(first[0], ArtifactRole.Payload, "a", [1]);
+        AssertFragment(first[1], ArtifactRole.Payload, "b", [2]);
+        AssertFragment(first[2], ArtifactRole.Manifest, "m-a", [8]);
+        AssertFragment(first[3], ArtifactRole.Manifest, "m-z", [9]);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ENG-22")]
+    public void Commit_SecondCallOnTheSameSession_IsRejected()
+    {
+        var session = new InMemoryTransactionalStore().Open("solution-a");
+        session.Stage(Fragment(ArtifactRole.Payload, "once", [1]));
+        var first = session.Commit();
+
+        Assert.Equal("once", Assert.Single(first.ArtifactsInPublicationOrder).CanonicalKey);
+        Assert.Throws<InvalidOperationException>(session.Commit);
+    }
+
+    private static ImmutableArray<StagedFragment> CommitInOrder(params StagedFragment[] fragments)
+    {
+        var session = new InMemoryTransactionalStore().Open("solution-a");
+        foreach (var fragment in fragments)
+        {
+            session.Stage(fragment);
+        }
+
+        return session.Commit().ArtifactsInPublicationOrder;
+    }
+
+    private static void AssertFragment(
+        StagedFragment fragment,
+        ArtifactRole role,
+        string canonicalKey,
+        ReadOnlySpan<byte> payload)
+    {
+        Assert.Equal(role, fragment.Role);
+        Assert.Equal(canonicalKey, fragment.CanonicalKey);
+        Assert.True(
+            fragment.Payload.AsSpan().SequenceEqual(payload),
+            $"Payload bytes for '{canonicalKey}' differ.");
+    }
+
     private static StagedFragment Fragment(ArtifactRole role, string canonicalKey, ImmutableArray<byte> payload) =>
         new(role, canonicalKey, payload);
 
