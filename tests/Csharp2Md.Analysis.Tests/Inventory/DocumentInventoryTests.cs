@@ -20,7 +20,7 @@ public sealed class DocumentInventoryTests
             Path.GetDirectoryName(solutionPath) ?? throw new InvalidOperationException(solutionPath),
             "Acme.Orders.csproj"));
 
-        var documents = DocumentInventory.Collect(root, orders, projectPath);
+        var documents = DocumentInventory.Collect(root, orders, projectPath).Documents;
 
         var controller = Assert.Single(
             documents,
@@ -67,7 +67,7 @@ public sealed class DocumentInventoryTests
             var facts = InventoryFacts.Create(solutionPath, listed, root);
             var project = Assert.Single(facts.Projects);
 
-            var documents = DocumentInventory.Collect(root, project, Path.Combine(projectDir, "App.csproj"));
+            var documents = DocumentInventory.Collect(root, project, Path.Combine(projectDir, "App.csproj")).Documents;
 
             Assert.Contains(documents, document => string.Equals(document.RelativePath, "Program.cs", StringComparison.Ordinal));
             Assert.DoesNotContain(
@@ -77,6 +77,105 @@ public sealed class DocumentInventoryTests
                     || document.RelativePath.Contains("cache.cs", StringComparison.Ordinal)
                     || document.RelativePath.Split('/').Any(static segment =>
                         segment is "bin" or "obj" or ".git" or ".vs"));
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-05")]
+    [Trait("Requirement", "ROSE-06")]
+    public void Collect_PlantedJsonUnderProjectDirectory_IsDocumentPlusUnsupportedDiagnostic()
+    {
+        var tree = Directory.CreateTempSubdirectory("csharp2md-doc-inv-json-");
+        try
+        {
+            var projectDir = Path.Combine(tree.FullName, "App");
+            Directory.CreateDirectory(projectDir);
+            File.WriteAllText(
+                Path.Combine(projectDir, "App.csproj"),
+                """
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net10.0</TargetFramework>
+                  </PropertyGroup>
+                </Project>
+                """);
+            File.WriteAllText(Path.Combine(projectDir, "Program.cs"), "class Program;");
+            File.WriteAllText(Path.Combine(projectDir, "notes.json"), """{"ok":true}""");
+            var solutionPath = Path.Combine(projectDir, "App.slnx");
+            File.WriteAllText(solutionPath, """<Solution><Project Path="App.csproj" /></Solution>""");
+
+            var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
+            var root = AuthorizedRoot.Compute(solutionPath, ExistingAbsolutePaths(solutionPath, listed));
+            var facts = InventoryFacts.Create(solutionPath, listed, root);
+            var project = Assert.Single(facts.Projects);
+
+            var inventoried = DocumentInventory.Collect(root, project, Path.Combine(projectDir, "App.csproj"));
+
+            var json = Assert.Single(
+                inventoried.Documents,
+                document => string.Equals(document.RelativePath, "notes.json", StringComparison.Ordinal));
+            Assert.Equal(Document.Create(project.Id, "notes.json"), json);
+            var unsupported = Assert.Single(
+                inventoried.Diagnostics,
+                record => string.Equals(record.IdentityOrKey, "notes.json", StringComparison.Ordinal));
+            Assert.Equal("unsupported-document", unsupported.Code);
+            Assert.False(Path.IsPathRooted(unsupported.IdentityOrKey));
+            Assert.DoesNotContain(
+                inventoried.CSharpDocuments,
+                document => string.Equals(document.RelativePath, "notes.json", StringComparison.Ordinal));
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-05")]
+    [Trait("Requirement", "ROSE-06")]
+    public void Collect_CSharpDocuments_DoNotReceiveUnsupportedDocument()
+    {
+        var tree = Directory.CreateTempSubdirectory("csharp2md-doc-inv-cs-");
+        try
+        {
+            var projectDir = Path.Combine(tree.FullName, "App");
+            Directory.CreateDirectory(projectDir);
+            File.WriteAllText(
+                Path.Combine(projectDir, "App.csproj"),
+                """
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net10.0</TargetFramework>
+                  </PropertyGroup>
+                </Project>
+                """);
+            File.WriteAllText(Path.Combine(projectDir, "Program.cs"), "class Program;");
+            File.WriteAllText(Path.Combine(projectDir, "notes.json"), """{"ok":true}""");
+            var solutionPath = Path.Combine(projectDir, "App.slnx");
+            File.WriteAllText(solutionPath, """<Solution><Project Path="App.csproj" /></Solution>""");
+
+            var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
+            var root = AuthorizedRoot.Compute(solutionPath, ExistingAbsolutePaths(solutionPath, listed));
+            var facts = InventoryFacts.Create(solutionPath, listed, root);
+            var project = Assert.Single(facts.Projects);
+
+            var inventoried = DocumentInventory.Collect(root, project, Path.Combine(projectDir, "App.csproj"));
+
+            Assert.Contains(
+                inventoried.CSharpDocuments,
+                document => string.Equals(document.RelativePath, "Program.cs", StringComparison.Ordinal));
+            Assert.DoesNotContain(
+                inventoried.Diagnostics,
+                record => string.Equals(record.IdentityOrKey, "Program.cs", StringComparison.Ordinal)
+                    || (record.IdentityOrKey is not null
+                        && record.IdentityOrKey.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)));
+            Assert.All(
+                inventoried.Diagnostics,
+                record => Assert.Equal("unsupported-document", record.Code));
         }
         finally
         {

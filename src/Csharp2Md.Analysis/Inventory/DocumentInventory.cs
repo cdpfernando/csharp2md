@@ -1,7 +1,13 @@
 using System.Xml.Linq;
+using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
 
 namespace Csharp2Md.Analysis.Inventory;
+
+internal sealed record InventoriedDocuments(
+    ImmutableArray<Document> Documents,
+    ImmutableArray<Document> CSharpDocuments,
+    ImmutableArray<DiagnosticRecord> Diagnostics);
 
 internal static class DocumentInventory
 {
@@ -24,7 +30,7 @@ internal static class DocumentInventory
         "Resource",
     };
 
-    public static ImmutableArray<Document> Collect(
+    public static InventoriedDocuments Collect(
         string authorizedRoot,
         Project owningProject,
         string projectFilePath)
@@ -58,6 +64,8 @@ internal static class DocumentInventory
         }
 
         var documents = ImmutableArray.CreateBuilder<Document>();
+        var csharpDocuments = ImmutableArray.CreateBuilder<Document>();
+        var diagnostics = ImmutableArray.CreateBuilder<DiagnosticRecord>();
         foreach (var absolute in absolutePaths.OrderBy(path => path, comparison))
         {
             var relative = ToRelativeDocumentPath(root, absolute);
@@ -66,11 +74,28 @@ internal static class DocumentInventory
                 continue;
             }
 
-            documents.Add(Document.Create(owningProject.Id, relative));
+            var document = Document.Create(owningProject.Id, relative);
+            documents.Add(document);
+            if (IsCSharpDocument(relative))
+            {
+                csharpDocuments.Add(document);
+                continue;
+            }
+
+            diagnostics.Add(new DiagnosticRecord(
+                "unsupported-document",
+                "The document is not C# and will not be extracted.",
+                relative));
         }
 
-        return documents.ToImmutable();
+        return new InventoriedDocuments(
+            documents.ToImmutable(),
+            csharpDocuments.ToImmutable(),
+            diagnostics.ToImmutable());
     }
+
+    private static bool IsCSharpDocument(string relativePath) =>
+        relativePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
 
     private static void TryAddInventoriedPath(HashSet<string> absolutePaths, string root, string candidate)
     {

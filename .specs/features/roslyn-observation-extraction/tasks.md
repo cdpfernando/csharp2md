@@ -774,10 +774,10 @@ Relative paths use forward slashes and contain no drive prefix.
 
 **Done when**:
 
-- [ ] A planted `.json` under the project directory becomes a Document plus `unsupported-document`
-- [ ] `.cs` files do not receive that diagnostic
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A planted `.json` under the project directory becomes a Document plus `unsupported-document`
+- [x] `.cs` files do not receive that diagnostic
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
