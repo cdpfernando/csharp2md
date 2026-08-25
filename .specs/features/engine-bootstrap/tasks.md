@@ -263,10 +263,10 @@ the guard's named parameter.
 
 **Done when**:
 
-- [ ] `RequireCallableIfNeeded`, `RequireLegalTargetShape` and `RequireSufficientEvidence` are each shown reachable from `Create`
-- [ ] The test does not call the guard helpers as the act-under-test
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `RequireCallableIfNeeded`, `RequireLegalTargetShape` and `RequireSufficientEvidence` are each shown reachable from `Create`
+- [x] The test does not call the guard helpers as the act-under-test
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
