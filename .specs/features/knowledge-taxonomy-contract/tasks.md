@@ -1779,11 +1779,11 @@ the duplicate, closing TAX-90 at the level the criterion states it.
 
 **Done when**:
 
-- [ ] A duplicated triple fails the emitter, and the message names the relation and both fact types
-- [ ] The same duplication fails registry initialization, proving the emitter inherits the guard rather than re-implementing it
-- [ ] The production table set is unmodified by the test
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] A duplicated triple fails the emitter, and the message names the relation and both fact types
+- [x] The same duplication fails registry initialization, proving the emitter inherits the guard rather than re-implementing it
+- [x] The production table set is unmodified by the test
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions) — Domain.Tests: 509 passed (506 baseline + 3 new); full solution: 2087 passed / 1 pre-existing unrelated failure (`MigrationLedgerTests.BaselineCategory_StillHasARepresentativeV3Test`) / 0 caused by this task
 
 **Tests**: unit
 **Gate**: build
