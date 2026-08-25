@@ -724,10 +724,10 @@ specifies, with results ordered by logical relative path.
 
 **Done when**:
 
-- [ ] `HasUnpublishedSolution` is true iff any outcome is `Unpublished`
-- [ ] `StageReport` carries name and the three zeroable counts
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `HasUnpublishedSolution` is true iff any outcome is `Unpublished`
+- [x] `StageReport` carries name and the three zeroable counts
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
