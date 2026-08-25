@@ -493,12 +493,12 @@ exactly the documented members, and no composite kind combining them.
 
 **Done when**:
 
-- [ ] Set equality against `http`, `grpc`, `messaging`, `cli`, `scheduler`, `function`
-- [ ] Set equality against `inbound`, `outbound`
-- [ ] Set equality against `command`, `query`, `event`, `stream`, `lifecycle`
-- [ ] A reflection assertion proves no type in `Facets` combines protocol, direction and role into one enum
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Set equality against `http`, `grpc`, `messaging`, `cli`, `scheduler`, `function`
+- [x] Set equality against `inbound`, `outbound`
+- [x] Set equality against `command`, `query`, `event`, `stream`, `lifecycle`
+- [x] A reflection assertion proves no type in `Facets` combines protocol, direction and role into one enum
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 84 passed (80 baseline + 4 new)
 
 **Tests**: unit
 **Gate**: quick
