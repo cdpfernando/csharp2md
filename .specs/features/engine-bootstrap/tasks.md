@@ -579,10 +579,10 @@ no `System.IO` usage (ENG-21).
 
 **Done when**:
 
-- [ ] Two keys never share a fragment list
-- [ ] Staging after abort on a new session starts empty
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Two keys never share a fragment list
+- [x] Staging after abort on a new session starts empty
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
