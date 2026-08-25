@@ -1336,14 +1336,14 @@ contracts across owners.
 
 **Done when**:
 
-- [ ] Exactly three types in the family
-- [ ] Constructing a contract from a CLR type with no protocol or schema key is rejected naming the missing proof
-- [ ] Two owners with structurally identical or similarly named payloads and no shared key produce distinct contract identities
-- [ ] Two owners with the same proven protocol or schema key produce one contract identity
-- [ ] A binding requires an operation, a payload role, a CLR symbol and a contract; each omission rejected by name
-- [ ] A revision carries a structural fingerprint that is not a hash of any literal value
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Exactly three types in the family
+- [x] Constructing a contract from a CLR type with no protocol or schema key is rejected naming the missing proof
+- [x] Two owners with structurally identical or similarly named payloads and no shared key produce distinct contract identities
+- [x] Two owners with the same proven protocol or schema key produce one contract identity
+- [x] A binding requires an operation, a payload role, a CLR symbol and a contract; each omission rejected by name
+- [x] A revision carries a structural fingerprint that is not a hash of any literal value
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 370 passed, 0 failed
 
 **Tests**: unit
 **Gate**: quick
