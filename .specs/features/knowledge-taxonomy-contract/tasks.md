@@ -1465,11 +1465,11 @@ shape
 
 **Done when**:
 
-- [ ] Every bound value is validated against its registered axis; an unregistered value is rejected naming axis and value
-- [ ] A binding is ordered and order-independent: two shuffled inputs are equal
-- [ ] A facet axis irrelevant to a relation cannot be bound to it
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every bound value is validated against its registered axis; an unregistered value is rejected naming axis and value
+- [x] A binding is ordered and order-independent: two shuffled inputs are equal
+- [x] A facet axis irrelevant to a relation cannot be bound to it
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 405 passed (399 baseline + 6 new)
 
 **Tests**: unit
 **Gate**: quick
