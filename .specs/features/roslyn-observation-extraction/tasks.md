@@ -684,10 +684,10 @@ the `--solution` token with `/` separators.
 
 **Done when**:
 
-- [ ] Fixture solution id uses workspace `default` and logical path `Acme.Orders.slnx`
-- [ ] `Acme.Shared.Contracts` logical path is relative to `fixtures/SyntheticSolution` with `/`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Fixture solution id uses workspace `default` and logical path `Acme.Orders.slnx`
+- [x] `Acme.Shared.Contracts` logical path is relative to `fixtures/SyntheticSolution` with `/`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
