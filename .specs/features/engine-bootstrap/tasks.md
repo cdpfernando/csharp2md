@@ -810,12 +810,12 @@ no public member exposes Roslyn, MSBuild or `System.Text.Json` (ENG-03, ENG-05, 
 
 **Done when**:
 
-- [ ] `typeof(AnalysisEngine)` is constructible with a fake store
-- [ ] Analysis csproj has no project reference to Storage, Projection, CLI or Domain
-- [ ] Domain still has no package or project reference
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then Full (Domain + Analysis + Storage + Projection tests)
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean over this phase's changes
+- [x] `typeof(AnalysisEngine)` is constructible with a fake store
+- [x] Analysis csproj has no project reference to Storage, Projection, CLI or Domain
+- [x] Domain still has no package or project reference
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then Full (Domain + Analysis + Storage + Projection tests)
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean over this phase's changes
 
 **Tests**: unit
 **Gate**: build
