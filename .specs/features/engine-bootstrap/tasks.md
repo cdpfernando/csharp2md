@@ -464,9 +464,9 @@ Analysis, Storage or CLI.
 
 **Done when**:
 
-- [ ] Each forbidden project name is asserted, and the failure names it
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Each forbidden project name is asserted, and the failure names it
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
