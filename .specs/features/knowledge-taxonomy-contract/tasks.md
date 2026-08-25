@@ -267,14 +267,14 @@ itself instead of aborting anonymously.
 
 **Done when**:
 
-- [ ] An absolute path, a rooted path, a backslash path and a dot-segment path are each rejected
-- [ ] A source location, a label and a timestamp cannot enter an identity: the grammar accepts only declared key-value components
-- [ ] A whitespace-only or non-canonical component is rejected with its parameter name in the exception
-- [ ] An absent optional component encodes as the `-` sentinel rather than throwing
-- [ ] Percent-encoding is uppercase-hex and byte-for-byte identical to the legacy grammar for the same input
-- [ ] Reading an uninitialized `FactId` throws `InvalidOperationException`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] An absolute path, a rooted path, a backslash path and a dot-segment path are each rejected
+- [x] A source location, a label and a timestamp cannot enter an identity: the grammar accepts only declared key-value components
+- [x] A whitespace-only or non-canonical component is rejected with its parameter name in the exception
+- [x] An absent optional component encodes as the `-` sentinel rather than throwing
+- [x] Percent-encoding is uppercase-hex and byte-for-byte identical to the legacy grammar for the same input
+- [x] Reading an uninitialized `FactId` throws `InvalidOperationException`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
