@@ -77,6 +77,7 @@ public sealed record ConfirmedRelation
         }
 
         Registry.RequireRegisteredTriple(kind, source.FactType, target.FactType);
+        RelationShapeGuards.RequirePayloadRoleForUsesContract(kind, facets);
 
         return new ConfirmedRelation(kind, source, target, facets, derivedFrom, classifier, analysisVariants);
     }

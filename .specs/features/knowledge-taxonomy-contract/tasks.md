@@ -1531,13 +1531,13 @@ or a data field, and supplied evidence must meet the relation's registered minim
 
 **Done when**:
 
-- [ ] A `Symbol` without the callable facet is rejected for every callable-requiring relation, named individually
-- [ ] `uses-contract` without a registered payload role is rejected naming the relation and the missing role
-- [ ] `targets` accepts each of its three legal target shapes and rejects an outbound operation and a symbol
-- [ ] `operates-on` accepts a data object and a data field and rejects a data store
-- [ ] Syntactic evidence where semantic is required is rejected naming both methods
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A `Symbol` without the callable facet is rejected for every callable-requiring relation, named individually
+- [x] `uses-contract` without a registered payload role is rejected naming the relation and the missing role
+- [x] `targets` accepts each of its three legal target shapes and rejects an outbound operation and a symbol
+- [x] `operates-on` accepts a data object and a data field and rejects a data store
+- [x] Syntactic evidence where semantic is required is rejected naming both methods
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 437 passed (416 baseline + 21 new)
 
 **Tests**: unit
 **Gate**: quick
