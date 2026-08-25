@@ -1303,13 +1303,13 @@ normalized route, and inbound identity from owning component and protocol operat
 
 **Done when**:
 
-- [ ] Neither type exposes a conversion, cast or factory that derives it from the other
-- [ ] One `Symbol` reference participates in an entry-point fact and a boundary-operation fact at the same time
-- [ ] Outbound HTTP identity changes when any of its six components changes, and is stable otherwise
-- [ ] Inbound identity uses exactly owning component and protocol operation key
-- [ ] The route enters identity only as a normalized structural literal - no raw absolute URL
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Neither type exposes a conversion, cast or factory that derives it from the other
+- [x] One `Symbol` reference participates in an entry-point fact and a boundary-operation fact at the same time
+- [x] Outbound HTTP identity changes when any of its six components changes, and is stable otherwise
+- [x] Inbound identity uses exactly owning component and protocol operation key
+- [x] The route enters identity only as a normalized structural literal - no raw absolute URL
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 357 passed, 0 failed
 
 **Tests**: unit
 **Gate**: quick
