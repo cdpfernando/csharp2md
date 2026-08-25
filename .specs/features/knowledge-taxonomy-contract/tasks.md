@@ -1056,12 +1056,12 @@ ordinal only - never from the evidence locator.
 
 **Done when**:
 
-- [ ] Two observations differing only by evidence locator report one identity
-- [ ] Two observations differing only by occurrence ordinal report distinct identities
-- [ ] A non-positive ordinal is rejected
-- [ ] No location, label or timestamp component appears in the identity string
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Two observations differing only by evidence locator report one identity
+- [x] Two observations differing only by occurrence ordinal report distinct identities
+- [x] A non-positive ordinal is rejected
+- [x] No location, label or timestamp component appears in the identity string
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 274 passed, 0 failed (5 new test methods, 6 executions)
 
 **Tests**: unit
 **Gate**: quick
