@@ -1240,9 +1240,9 @@ csproj, registered under `/tests/`.
 
 **Done when**:
 
-- [ ] The test project references `Csharp2Md.Cli`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] The test project references `Csharp2Md.Cli`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
