@@ -10,4 +10,8 @@
     <InternalsVisibleTo Include="Csharp2Md.Analysis.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Csharp2Md.Domain\Csharp2Md.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
