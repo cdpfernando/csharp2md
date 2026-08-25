@@ -927,10 +927,10 @@ observations and relations on every `StageReport` (ENG-15).
 
 **Done when**:
 
-- [ ] Every stage report has counts 0/0/0
-- [ ] Status is `Committed`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every stage report has counts 0/0/0
+- [x] Status is `Committed`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

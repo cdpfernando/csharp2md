@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Csharp2Md.Analysis\Csharp2Md.Analysis.csproj" />
+    <ProjectReference Include="..\..\src\Csharp2Md.Storage\Csharp2Md.Storage.csproj" />
   </ItemGroup>
 
 </Project>
