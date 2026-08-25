@@ -695,11 +695,11 @@ canonical full path by name (ENG-29, ENG-30, ENG-31).
 
 **Done when**:
 
-- [ ] An empty or default array is rejected naming the missing input
-- [ ] `.\a.sln` and the absolute form of the same file are rejected as a duplicate naming that path
-- [ ] Two distinct paths are accepted
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] An empty or default array is rejected naming the missing input
+- [x] `.\a.sln` and the absolute form of the same file are rejected as a duplicate naming that path
+- [x] Two distinct paths are accepted
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
