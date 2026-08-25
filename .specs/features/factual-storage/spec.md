@@ -273,7 +273,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-04 | P1: Versioned wire contracts for every Domain family | Execute (T12) | Implementing |
 | STOR-05 | P1: Versioned wire contracts for every Domain family | Tasks | In Tasks |
 | STOR-06 | P1: Versioned wire contracts for every Domain family | Tasks | In Tasks |
-| STOR-07 | P1: Versioned wire contracts for every Domain family | Tasks | In Tasks |
+| STOR-07 | P1: Versioned wire contracts for every Domain family | Execute (T13) | Implementing |
 | STOR-08 | P1: Versioned wire contracts for every Domain family | Tasks | In Tasks |
 | STOR-09 | P1: Versioned wire contracts for every Domain family | Tasks | In Tasks |
 | STOR-10 | P1: Canonical round-trip through Domain construction | Tasks | In Tasks |

@@ -517,7 +517,7 @@ as design.md specifies. Manifest entries use relative forward-slash paths and ro
 
 ### Phase 3: Serializer, schemas and mapper
 
-#### T13: Source-generated StorageJsonContext
+#### T13: Source-generated StorageJsonContext ✅
 
 **What**: Add `StorageJsonContext` with `JsonSourceGenerationOptions`:
 `PropertyNamingPolicy = SnakeCaseLower`, `UnmappedMemberHandling = Disallow`, indented, `\n`. Register every
@@ -534,10 +534,10 @@ wire DTO. Point `CanonicalJson` at this context.
 
 **Done when**:
 
-- [ ] Every wire DTO is `[JsonSerializable]`
-- [ ] `CanonicalJson` serializes through the context; a test round-trips one DTO and rejects an unknown property
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every wire DTO is `[JsonSerializable]`
+- [x] `CanonicalJson` serializes through the context; a test round-trips one DTO and rejects an unknown property
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 22 passed, 0 failed (was 19; +3 STOR-07)
 
 **Tests**: unit
 **Gate**: quick
