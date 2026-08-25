@@ -21,8 +21,7 @@ public sealed class PipelineStageFailureTests
                     name,
                     executed,
                     onExecute: index == 0
-                        ? static context => context.Session.Stage(
-                            new StagedFragment(ArtifactRole.Payload, "early", [1]))
+                        ? static context => context.Session.Stage(FactualSnapshot.Empty)
                         : null))
             .ToImmutableArray();
         var store = new InMemoryTransactionalStore();

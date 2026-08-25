@@ -53,7 +53,7 @@ internal sealed class CountingStore : ITransactionalStore
             _store = store;
         }
 
-        public void Stage(StagedFragment fragment) => _inner.Stage(fragment);
+        public void Stage(FactualSnapshot snapshot) => _inner.Stage(snapshot);
 
         public CommittedPublication Commit()
         {

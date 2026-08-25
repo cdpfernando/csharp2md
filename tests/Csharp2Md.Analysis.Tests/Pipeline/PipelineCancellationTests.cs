@@ -19,8 +19,7 @@ public sealed class PipelineCancellationTests
                 executed,
                 onExecute: index switch
                 {
-                    0 => static context => context.Session.Stage(
-                        new StagedFragment(ArtifactRole.Payload, "early", [1])),
+                    0 => static context => context.Session.Stage(FactualSnapshot.Empty),
                     2 => _ => cts.Cancel(),
                     _ => null,
                 }))

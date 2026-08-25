@@ -67,7 +67,7 @@ public sealed class PipelineStageContractTests
 
     private sealed class SwallowingSession : IStoreSession
     {
-        public void Stage(StagedFragment fragment)
+        public void Stage(FactualSnapshot snapshot)
         {
         }
 

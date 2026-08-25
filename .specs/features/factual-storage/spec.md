@@ -281,7 +281,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-12 | P1: Canonical round-trip through Domain construction | Execute (T4) | Implementing |
 | STOR-13 | P1: Canonical round-trip through Domain construction | Execute (T16) | Implementing |
 | STOR-14 | P1: Filesystem transactional publication | Tasks | In Tasks |
-| STOR-15 | P1: Filesystem transactional publication | Tasks | In Tasks |
+| STOR-15 | P1: Filesystem transactional publication | Execute (T27) | Implementing |
 | STOR-16 | P1: Filesystem transactional publication | Tasks | In Tasks |
 | STOR-17 | P1: Filesystem transactional publication | Tasks | In Tasks |
 | STOR-18 | P1: Filesystem transactional publication | Tasks | In Tasks |

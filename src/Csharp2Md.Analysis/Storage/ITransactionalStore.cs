@@ -7,7 +7,7 @@ public interface ITransactionalStore
 
 public interface IStoreSession
 {
-    void Stage(StagedFragment fragment);
+    void Stage(FactualSnapshot snapshot);
 
     CommittedPublication Commit();
 

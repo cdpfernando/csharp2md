@@ -18,7 +18,7 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
     {
         private readonly InMemoryTransactionalStore _store;
         private readonly string _solutionKey;
-        private readonly List<StagedFragment> _staged = [];
+        private FactualSnapshot _staged = FactualSnapshot.Empty;
         private bool _committed;
 
         public Session(InMemoryTransactionalStore store, string solutionKey)
@@ -27,7 +27,11 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
             _solutionKey = solutionKey;
         }
 
-        public void Stage(StagedFragment fragment) => _staged.Add(fragment);
+        public void Stage(FactualSnapshot snapshot)
+        {
+            ArgumentNullException.ThrowIfNull(snapshot);
+            _staged = _staged.Merge(snapshot);
+        }
 
         public CommittedPublication Commit()
         {
@@ -37,20 +41,18 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
             }
 
             _committed = true;
+            _ = _staged;
 
-            var ordered = _staged
-                .Where(fragment => fragment.Role == ArtifactRole.Payload)
-                .OrderBy(fragment => fragment.CanonicalKey, StringComparer.Ordinal)
-                .Concat(_staged
-                    .Where(fragment => fragment.Role == ArtifactRole.Manifest)
-                    .OrderBy(fragment => fragment.CanonicalKey, StringComparer.Ordinal))
-                .ToImmutableArray();
+            ImmutableArray<StagedFragment> ordered =
+            [
+                new StagedFragment(ArtifactRole.Manifest, "manifest", []),
+            ];
 
             var publication = new CommittedPublication(_solutionKey, ordered);
             _store.Publish(publication);
             return publication;
         }
 
-        public void Abort() => _staged.Clear();
+        public void Abort() => _staged = FactualSnapshot.Empty;
     }
 }

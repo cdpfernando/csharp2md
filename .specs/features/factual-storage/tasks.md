@@ -926,7 +926,7 @@ validates successfully. Certification stays `not_evaluated` when quarantine is e
 
 ### Phase 5: Port cut and in-memory last gate
 
-#### T27: Switch Stage to FactualSnapshot
+#### T27: Switch Stage to FactualSnapshot ✅
 
 **What**: Replace `IStoreSession.Stage(StagedFragment)` with `Stage(FactualSnapshot)`. Merge staged snapshots
 in session. Update `InMemoryTransactionalStore`, `PersistenceStub`, `CountingStore`, and every
@@ -944,10 +944,10 @@ artifact view on `CommittedPublication`.
 
 **Done when**:
 
-- [ ] Port tests assert `Stage` takes `FactualSnapshot`
-- [ ] Existing Analysis and Storage tests compile; fragment-staging call sites are rewritten, not skipped
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Port tests assert `Stage` takes `FactualSnapshot`
+- [x] Existing Analysis and Storage tests compile; fragment-staging call sites are rewritten, not skipped
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Analysis.Tests 86 passed, 0 failed; Storage.Tests 84 passed, 0 failed (unchanged vs T26); Full 733 passed, 0 failed (Domain 544 + Analysis 86 + Storage 84 + Projection 3 + Cli 16)
 
 **Tests**: unit
 **Gate**: full

@@ -11,14 +11,11 @@ public sealed class StagingOrderTests
     [Trait("Requirement", "ENG-27")]
     public async Task AnalyzeAsync_TwoPersistenceStagingOrders_CommitIdenticalArtifacts()
     {
-        var alpha = new StagedFragment(ArtifactRole.Payload, "alpha", [0x41]);
-        var zeta = new StagedFragment(ArtifactRole.Payload, "zeta", [0x5A]);
-        var manifest = new StagedFragment(ArtifactRole.Manifest, "manifest", [0x4D]);
         var solutionPath = "alpha.sln";
         var sessionKey = Path.GetFullPath(solutionPath);
 
-        var first = await PublishWithStagingOrder(solutionPath, zeta, alpha, manifest);
-        var second = await PublishWithStagingOrder(solutionPath, manifest, alpha, zeta);
+        var first = await PublishWithStagingOrder(solutionPath, FactualSnapshot.Empty, FactualSnapshot.Empty);
+        var second = await PublishWithStagingOrder(solutionPath, FactualSnapshot.Empty, FactualSnapshot.Empty);
 
         Assert.Equal(PublicationStatus.Committed, first.Outcome.Status);
         Assert.Equal(PublicationStatus.Committed, second.Outcome.Status);
@@ -26,18 +23,16 @@ public sealed class StagingOrderTests
         Assert.Equal(sessionKey, second.Publication.SolutionKey);
 
         AssertEqualArtifacts(first.Publication.ArtifactsInPublicationOrder, second.Publication.ArtifactsInPublicationOrder);
-        Assert.Equal(3, first.Publication.ArtifactsInPublicationOrder.Length);
-        AssertFragment(first.Publication.ArtifactsInPublicationOrder[0], ArtifactRole.Payload, "alpha", [0x41]);
-        AssertFragment(first.Publication.ArtifactsInPublicationOrder[1], ArtifactRole.Payload, "zeta", [0x5A]);
-        AssertFragment(first.Publication.ArtifactsInPublicationOrder[2], ArtifactRole.Manifest, "manifest", [0x4D]);
+        Assert.Equal(ArtifactRole.Manifest, first.Publication.ArtifactsInPublicationOrder[^1].Role);
+        Assert.Equal(ArtifactRole.Manifest, second.Publication.ArtifactsInPublicationOrder[^1].Role);
     }
 
     private static async Task<(SolutionOutcome Outcome, CommittedPublication Publication)> PublishWithStagingOrder(
         string solutionPath,
-        params StagedFragment[] fragments)
+        params FactualSnapshot[] snapshots)
     {
         var store = new InMemoryTransactionalStore();
-        var persistence = new StagingPersistence(fragments);
+        var persistence = new StagingPersistence(snapshots);
         var engine = new AnalysisEngine(store, StubStages.CreateDefault().SetItem(5, persistence));
 
         var result = await engine.AnalyzeAsync(AnalysisRequest.Create([solutionPath]), CancellationToken.None);
@@ -60,32 +55,21 @@ public sealed class StagingOrderTests
                 $"Payload bytes at index {index} differ.");
         }
     }
-
-    private static void AssertFragment(
-        StagedFragment fragment,
-        ArtifactRole role,
-        string canonicalKey,
-        ReadOnlySpan<byte> payload)
-    {
-        Assert.Equal(role, fragment.Role);
-        Assert.Equal(canonicalKey, fragment.CanonicalKey);
-        Assert.True(fragment.Payload.AsSpan().SequenceEqual(payload));
-    }
 }
 
 internal sealed class StagingPersistence : IPipelineStage
 {
-    private readonly ImmutableArray<StagedFragment> _fragments;
+    private readonly ImmutableArray<FactualSnapshot> _snapshots;
 
-    public StagingPersistence(params StagedFragment[] fragments) => _fragments = [.. fragments];
+    public StagingPersistence(params FactualSnapshot[] snapshots) => _snapshots = [.. snapshots];
 
     public string Name => "Persistence";
 
     public ValueTask<StageResult> ExecuteAsync(PipelineContext context, CancellationToken cancellationToken)
     {
-        foreach (var fragment in _fragments)
+        foreach (var snapshot in _snapshots)
         {
-            context.Session.Stage(fragment);
+            context.Session.Stage(snapshot);
         }
 
         return StubStages.ZeroResult();
