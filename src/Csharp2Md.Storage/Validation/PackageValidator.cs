@@ -32,7 +32,7 @@ public static class PackageValidator
         EnsureContentHashes(document);
         EnsureNoAbsolutePaths(document);
         EnsureStructuralConstruction(document);
-        return new ValidationReport(document, document.Quarantine);
+        return QuarantineInvalidDerived(document);
     }
 
     public static T ReadPayloadOrThrow<T>(ReadOnlySpan<byte> utf8, string artifactKey)
@@ -400,4 +400,104 @@ public static class PackageValidator
 
     private static bool IsConstructionFailure(Exception exception) =>
         exception is ArgumentException or InvalidOperationException or FormatException or KeyNotFoundException;
+
+    private static ValidationReport QuarantineInvalidDerived(WireDocument document)
+    {
+        var quarantine = ImmutableArray.CreateBuilder<QuarantineRecordDto>();
+        quarantine.AddRange(document.Quarantine);
+
+        var components = KeepOrQuarantine(document.Components, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var deploymentUnits = KeepOrQuarantine(document.DeploymentUnits, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var entryPoints = KeepOrQuarantine(document.EntryPoints, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var boundaryOperations = KeepOrQuarantine(document.BoundaryOperations, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var externalSystems = KeepOrQuarantine(document.ExternalSystems, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var contracts = KeepOrQuarantine(document.Contracts, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var contractBindings = KeepOrQuarantine(document.ContractBindings, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var contractRevisions = KeepOrQuarantine(document.ContractRevisions, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var dataStores = KeepOrQuarantine(document.DataStores, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var dataObjects = KeepOrQuarantine(document.DataObjects, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var dataFields = KeepOrQuarantine(document.DataFields, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var dataOperations = KeepOrQuarantine(document.DataOperations, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+        var configurationBindings = KeepOrQuarantine(document.ConfigurationBindings, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
+
+        var confirmed = ImmutableDictionary.CreateBuilder<string, ImmutableArray<ConfirmedRelationDto>>(StringComparer.Ordinal);
+        foreach (var (key, records) in document.ConfirmedRelations)
+        {
+            var kept = KeepOrQuarantine(
+                records,
+                WireRelationMapping.FromDto,
+                static dto => dto.Kind,
+                static dto => RelationIdentity(dto.Kind, dto.Source.Id, dto.Target.Id),
+                quarantine);
+            if (!kept.IsEmpty)
+            {
+                confirmed[key] = kept;
+            }
+        }
+
+        var quarantined = quarantine.ToImmutable();
+        var next = document with
+        {
+            Components = components,
+            DeploymentUnits = deploymentUnits,
+            EntryPoints = entryPoints,
+            BoundaryOperations = boundaryOperations,
+            ExternalSystems = externalSystems,
+            Contracts = contracts,
+            ContractBindings = contractBindings,
+            ContractRevisions = contractRevisions,
+            DataStores = dataStores,
+            DataObjects = dataObjects,
+            DataFields = dataFields,
+            DataOperations = dataOperations,
+            ConfigurationBindings = configurationBindings,
+            ConfirmedRelations = confirmed.ToImmutable(),
+            Quarantine = quarantined,
+            RunCertification = quarantined.IsEmpty
+                ? document.RunCertification
+                : new RunCertificationEnvelope("failed"),
+        };
+
+        return new ValidationReport(next, quarantined);
+    }
+
+    private static ImmutableArray<TDto> KeepOrQuarantine<TDto, TResult>(
+        ImmutableArray<TDto> records,
+        Func<TDto, TResult> fromDto,
+        Func<TDto, string> recordKind,
+        Func<TDto, string> identity,
+        ImmutableArray<QuarantineRecordDto>.Builder quarantine)
+    {
+        if (records.IsDefaultOrEmpty)
+        {
+            return records.IsDefault ? [] : records;
+        }
+
+        var kept = ImmutableArray.CreateBuilder<TDto>();
+        foreach (var dto in records)
+        {
+            try
+            {
+                fromDto(dto);
+                kept.Add(dto);
+            }
+            catch (Exception exception) when (IsConstructionFailure(exception))
+            {
+                quarantine.Add(new QuarantineRecordDto(
+                    recordKind(dto),
+                    identity(dto),
+                    "construction",
+                    exception.Message,
+                    PayloadElement(dto)));
+            }
+        }
+
+        return kept.ToImmutable();
+    }
+
+    private static JsonElement PayloadElement<T>(T dto)
+    {
+        using var parsed = JsonDocument.Parse(CanonicalJson.Write(dto).ToArray());
+        return parsed.RootElement.Clone();
+    }
 }

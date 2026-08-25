@@ -867,7 +867,7 @@ Configuration facts and confirmed relations are not abort-class here (T25).
 
 ---
 
-#### T25: Quarantine invalid derived records
+#### T25: Quarantine invalid derived records ✅
 
 **What**: An Architecture, Contract, Persistence or Configuration fact or a confirmed relation that fails
 schema or Domain construction is written to quarantine with a named diagnostic, omitted from canonical
@@ -884,10 +884,10 @@ payloads, and `run_certification.status = failed`. Remaining valid artifacts sta
 
 **Done when**:
 
-- [ ] One invalid derived fact among valid structural facts yields quarantine + remaining facts
-- [ ] Certification is `failed`; the invalid record is absent from canonical payloads
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] One invalid derived fact among valid structural facts yields quarantine + remaining facts
+- [x] Certification is `failed`; the invalid record is absent from canonical payloads
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 82 passed, 0 failed (was 81; +1 quarantine)
 
 **Tests**: unit
 **Gate**: quick

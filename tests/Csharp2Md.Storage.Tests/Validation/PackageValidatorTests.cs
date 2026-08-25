@@ -206,6 +206,27 @@ public sealed class PackageValidatorTests
         Assert.Contains(invalid.Identity.Owner.Id, exception.Detail, StringComparison.Ordinal);
     }
 
+    [Fact]
+    [Trait("Requirement", "STOR-32")]
+    public void Validate_InvalidDerivedFact_QuarantinesAndKeepsRemainingFacts()
+    {
+        var document = DomainMapper.ToWire(SolutionAndComponentSnapshot(), Context);
+        var invalid = document.Components[0] with { Name = "Pay  ments.Api" };
+        invalid = invalid with { ContentSha256 = CanonicalJson.PayloadContentSha256(invalid) };
+        var mutated = document with { Components = [invalid] };
+
+        var report = PackageValidator.Validate(mutated);
+
+        var quarantined = Assert.Single(report.Quarantine);
+        Assert.Equal("construction", quarantined.Gate);
+        Assert.False(string.IsNullOrWhiteSpace(quarantined.Gate));
+        Assert.Contains(invalid.Identity.Id, quarantined.IdentityOrKey, StringComparison.Ordinal);
+        Assert.True(report.Document.Components.IsEmpty);
+        Assert.DoesNotContain(report.Document.Components, dto => dto.Identity.Id == invalid.Identity.Id);
+        Assert.Equal("Solution", Assert.Single(report.Document.Solutions).Identity.FactType);
+        Assert.Equal("failed", report.Document.RunCertification.Status);
+    }
+
     private static SolutionDto ValidSolutionDto() =>
         DomainMapper.ToWire(SolutionSnapshot(), Context).Solutions[0];
 
@@ -217,6 +238,15 @@ public sealed class PackageValidatorTests
 
     private static FactualSnapshot ComponentSnapshot() =>
         new([Component.Create(AcmeSolution, "Payments.Api", [])], [], [], [], [], []);
+
+    private static FactualSnapshot SolutionAndComponentSnapshot() =>
+        new(
+            [Solution.Create(AcmeSolution), Component.Create(AcmeSolution, "Payments.Api", [])],
+            [],
+            [],
+            [],
+            [],
+            []);
 
     private static FactualSnapshot ObservationSnapshot() =>
         new(
