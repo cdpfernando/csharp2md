@@ -1208,12 +1208,12 @@ classifier version.
 
 **Done when**:
 
-- [ ] All nine declared components are required; each omitted in turn is rejected naming it
-- [ ] Every accepted evidence method is a registered `EvidenceMethod`
-- [ ] Every produced facet is a registered axis value
-- [ ] An empty required-observation set is rejected: a promotion with no evidence requirement cannot exist
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] All nine declared components are required; each omitted in turn is rejected naming it
+- [x] Every accepted evidence method is a registered `EvidenceMethod`
+- [x] Every produced facet is a registered axis value
+- [x] An empty required-observation set is rejected: a promotion with no evidence requirement cannot exist
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions) — Domain: 314 passed, 0 failed (13 new tests); full solution: 1578 passed, 1 failed (pre-existing unrelated `MigrationLedgerTests.BaselineCategory_StillHasARepresentativeV3Test`, not caused by this batch)
 
 **Tests**: unit
 **Gate**: build
