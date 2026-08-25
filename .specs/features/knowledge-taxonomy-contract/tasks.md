@@ -332,13 +332,13 @@ throws naming both fact types when two distinct facts collide.
 
 **Done when**:
 
-- [ ] A reference carries the identity and the fact type, and a non-canonical fact type is rejected
-- [ ] Registering the same reference twice is idempotent and does not throw
-- [ ] Registering two distinct fact types on one identity string throws naming both
-- [ ] Comparison is ordinal throughout - two identities differing only in case are distinct
-- [ ] `Count` reflects distinct registered identities
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A reference carries the identity and the fact type, and a non-canonical fact type is rejected
+- [x] Registering the same reference twice is idempotent and does not throw
+- [x] Registering two distinct fact types on one identity string throws naming both
+- [x] Comparison is ordinal throughout - two identities differing only in case are distinct
+- [x] `Count` reflects distinct registered identities
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
