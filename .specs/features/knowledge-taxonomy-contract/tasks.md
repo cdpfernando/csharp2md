@@ -1023,13 +1023,13 @@ and `ExtractorVersion`.
 
 **Done when**:
 
-- [ ] Payload pairs are canonicalized and ordered so two shuffled inputs produce one equal payload
-- [ ] A payload value that is not a `StructuralLiteral` cannot be supplied
-- [ ] A duplicate key is rejected naming the key
-- [ ] `ExtractorVersion` is a monotonic integer and rejects a non-positive value
-- [ ] `BindingDiagnostic` names no Roslyn type
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Payload pairs are canonicalized and ordered so two shuffled inputs produce one equal payload
+- [x] A payload value that is not a `StructuralLiteral` cannot be supplied
+- [x] A duplicate key is rejected naming the key
+- [x] `ExtractorVersion` is a monotonic integer and rejects a non-positive value
+- [x] `BindingDiagnostic` names no Roslyn type
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions) — 15 new tests (NormalizedPayloadTests, ExtractionMetadataTests), 268 total in Csharp2Md.Domain.Tests passing; full-solution run has 1 pre-existing unrelated failure (`MigrationLedgerTests.BaselineCategory_StillHasARepresentativeV3Test`, not in this task's `Where`), 1578/1579 passing in Csharp2Md.Core.Tests
 
 **Tests**: unit
 **Gate**: build
