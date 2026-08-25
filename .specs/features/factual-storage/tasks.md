@@ -375,7 +375,7 @@ fields. Private Domain constructors stay unsourced; these records are the JSON s
 
 ---
 
-#### T8: Architecture fact DTOs
+#### T8: Architecture fact DTOs ✅
 
 **What**: Add wire DTOs for Component, DeploymentUnit, EntryPoint, BoundaryOperation and ExternalSystem.
 **Where**: `src/Csharp2Md.Storage/Wire/ArchitectureFactDtos.cs`
@@ -391,9 +391,9 @@ fields. Private Domain constructors stay unsourced; these records are the JSON s
 
 **Done when**:
 
-- [ ] One DTO per architecture fact type
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`
-- [ ] Test count recorded (no silent deletions)
+- [x] One DTO per architecture fact type
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`
+- [x] Test count recorded (no silent deletions) — no tests in this task; Release build 0 warnings, 0 errors
 
 **Tests**: none
 **Gate**: build
