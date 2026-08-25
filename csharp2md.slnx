@@ -4,6 +4,7 @@
     <Project Path="src/Csharp2Md.Cli/Csharp2Md.Cli.csproj" />
     <Project Path="src/Csharp2Md.Core/Csharp2Md.Core.csproj" />
     <Project Path="src/Csharp2Md.Domain/Csharp2Md.Domain.csproj" />
+    <Project Path="src/Csharp2Md.Projection/Csharp2Md.Projection.csproj" />
     <Project Path="src/Csharp2Md.Storage/Csharp2Md.Storage.csproj" />
   </Folder>
   <Folder Name="/tests/">

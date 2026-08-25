@@ -436,10 +436,10 @@ convention.
 
 **Done when**:
 
-- [ ] The project has no package or project reference
-- [ ] It is listed under `/src/` in `csharp2md.slnx`
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] The project has no package or project reference
+- [x] It is listed under `/src/` in `csharp2md.slnx`
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: none
 **Gate**: build
