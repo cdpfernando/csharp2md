@@ -402,7 +402,7 @@ fields. Private Domain constructors stay unsourced; these records are the JSON s
 
 ---
 
-#### T9: Contract, persistence and configuration DTOs
+#### T9: Contract, persistence and configuration DTOs ✅
 
 **What**: Add wire DTOs for Contract, ContractBinding, ContractRevision, DataStore, DataObject, DataField,
 DataOperation and ConfigurationBinding.
@@ -420,9 +420,9 @@ DataOperation and ConfigurationBinding.
 
 **Done when**:
 
-- [ ] One DTO per remaining fact type in STOR-01
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`
-- [ ] Test count recorded (no silent deletions)
+- [x] One DTO per remaining fact type in STOR-01
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`
+- [x] Test count recorded (no silent deletions) — no tests in this task; Release build 0 warnings, 0 errors
 
 **Tests**: none
 **Gate**: build
