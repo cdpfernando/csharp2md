@@ -1,6 +1,7 @@
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Identity;
 using Microsoft.CodeAnalysis;
 using DomainProject = Csharp2Md.Domain.Facts.Project;
 
@@ -27,10 +28,12 @@ internal sealed class SemanticAnalysisStage : IPipelineStage
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        const string configuration = "Debug";
+        const string configuration = AnalysisVariantFactory.DefaultConfiguration;
         var compilations = ImmutableArray.CreateBuilder<Compilation>();
         var recordedSdkProjects = new HashSet<string>(StringComparer.Ordinal);
         var recordedCompileErrors = new HashSet<string>(StringComparer.Ordinal);
+        var recordedVariants = new HashSet<string>(StringComparer.Ordinal);
+        var variants = ImmutableArray.CreateBuilder<AnalysisVariantId>();
         var hasUnknowns = false;
         try
         {
@@ -76,6 +79,12 @@ internal sealed class SemanticAnalysisStage : IPipelineStage
                     }
 
                     compilations.Add(compilation);
+                    var variant = AnalysisVariantFactory.Create(project, targetFramework, configuration);
+                    if (recordedVariants.Add(variant.Value))
+                    {
+                        variants.Add(variant);
+                    }
+
                     if (!compilation.GetDiagnostics(cancellationToken)
                         .Any(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
                     {
@@ -115,6 +124,7 @@ internal sealed class SemanticAnalysisStage : IPipelineStage
         }
 
         context.Compilations = compilations.ToImmutable();
+        context.AnalysisVariants = variants.ToImmutable();
         return new StageResult(
             0,
             0,

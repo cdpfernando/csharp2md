@@ -1,5 +1,6 @@
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Identity;
 using Microsoft.CodeAnalysis;
 
 namespace Csharp2Md.Analysis.Pipeline;
@@ -23,6 +24,8 @@ internal sealed class PipelineContext
     public ImmutableArray<Csharp2Md.Domain.Facts.Document> CSharpDocuments { get; set; } = [];
 
     public ImmutableArray<Compilation> Compilations { get; set; } = [];
+
+    public ImmutableArray<AnalysisVariantId> AnalysisVariants { get; set; } = [];
 
     public PipelineContext(IStoreSession session, string solutionPath)
     {

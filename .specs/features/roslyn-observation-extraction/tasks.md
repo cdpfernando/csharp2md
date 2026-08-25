@@ -1092,11 +1092,11 @@ CLI flag.
 
 **Done when**:
 
-- [ ] Fixture variants have `environment` `local` and configuration `Debug`
-- [ ] DefineConstants are sorted and taken from the compilation/project for that variant
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean on this phase's changes
+- [x] Fixture variants have `environment` `local` and configuration `Debug`
+- [x] DefineConstants are sorted and taken from the compilation/project for that variant
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean on this phase's changes
 
 **Tests**: unit
 **Gate**: build
