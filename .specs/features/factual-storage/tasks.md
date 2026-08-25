@@ -1485,7 +1485,7 @@ publication.
 
 ---
 
-#### T46: Write a schema-valid empty package only under --output
+#### T46: Write a schema-valid empty package only under --output ✅
 
 **What**: Successful `analyze --solution <fixture> --output <dir>` exits 0, writes a schema-valid empty
 package per solution under that root (registry copy, manifest, counts 0), and does not create, modify or
@@ -1504,11 +1504,11 @@ output directory.
 
 **Done when**:
 
-- [ ] Built-tool invoke on the synthetic fixture exits 0 with a readable empty package under `--output`
-- [ ] Working-tree snapshot excluding the output root is unchanged
-- [ ] In-memory AnalysisEngine runs still write nothing (ENG-16 / STOR-24)
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Built-tool invoke on the synthetic fixture exits 0 with a readable empty package under `--output`
+- [x] Working-tree snapshot excluding the output root is unchanged
+- [x] In-memory AnalysisEngine runs still write nothing (ENG-16 / STOR-24)
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Cli.Tests 21 passed, 0 failed (was 20; +1 schema-valid empty package under `--output`); Analysis.Tests 90 passed, 0 failed
 
 **Tests**: unit
 **Gate**: full

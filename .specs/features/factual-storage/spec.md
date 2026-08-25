@@ -315,9 +315,9 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-46 | P1: Compact payload layout | Execute (T38) | Implementing |
 | STOR-47 | P1: CLI `--output` and a valid empty package | Execute (T44, T45) | Implementing |
 | STOR-48 | P1: CLI `--output` and a valid empty package | Execute (T44) | Implementing |
-| STOR-49 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
-| STOR-50 | P1: CLI `--output` and a valid empty package | Execute (T33) | Implementing |
-| STOR-51 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
+| STOR-49 | P1: CLI `--output` and a valid empty package | Execute (T46) | Implementing |
+| STOR-50 | P1: CLI `--output` and a valid empty package | Execute (T33, T46) | Implementing |
+| STOR-51 | P1: CLI `--output` and a valid empty package | Execute (T46) | Implementing |
 | STOR-52 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
 | STOR-53 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
 | STOR-54 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |

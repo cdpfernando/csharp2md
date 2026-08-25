@@ -17,6 +17,7 @@ public sealed class NoFilesystemWriteTests
 
     [Fact]
     [Trait("Requirement", "ENG-16")]
+    [Trait("Requirement", "STOR-24")]
     public async Task AnalyzeAsync_CompletedStubRun_DoesNotChangeTheWorkingTree()
     {
         var solutionPath = Path.Combine(
