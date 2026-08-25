@@ -1433,12 +1433,12 @@ shape
 
 **Done when**:
 
-- [ ] Exactly five families and exactly seventeen types, asserted by reflection over the assembly, not by a hand-written list of the same names
-- [ ] Symmetric difference between registry descriptors and CLR records is empty in both directions, and the failure message names the offenders
-- [ ] No fact type name matches a facet-only role or a business-rule concept
-- [ ] Every `IFact` implementation is reachable from exactly one family
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Exactly five families and exactly seventeen types, asserted by reflection over the assembly, not by a hand-written list of the same names
+- [x] Symmetric difference between registry descriptors and CLR records is empty in both directions, and the failure message names the offenders
+- [x] No fact type name matches a facet-only role or a business-rule concept
+- [x] Every `IFact` implementation is reachable from exactly one family
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions) — Domain.Tests 399 passed, 0 failed; Core.Tests 1578 passed, 1 failed (pre-existing unrelated `MigrationLedgerTests.BaselineCategory_StillHasARepresentativeV3Test`)
 
 **Tests**: unit
 **Gate**: build
