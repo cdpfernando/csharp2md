@@ -287,8 +287,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ENG-39 | P1: Provisional analyze CLI | Tasks | Verified |
 | ENG-40 | P1: Provisional analyze CLI | Tasks | Verified |
 | ENG-41 | P1: Provisional analyze CLI | Tasks | Verified |
-| ENG-42 | P1: Provisional analyze CLI | Tasks | In Tasks |
-| ENG-43 | P1: Provisional analyze CLI | Tasks | In Tasks |
+| ENG-42 | P1: Provisional analyze CLI | Tasks | Verified |
+| ENG-43 | P1: Provisional analyze CLI | Tasks | Verified |
 | ENG-44 | P1: Provisional analyze CLI | Tasks | Verified |
 | ENG-45 | P1: Provisional analyze CLI | Tasks | In Tasks |
 | ENG-46 | P1: Legacy excision with a port ledger | Tasks | In Tasks |

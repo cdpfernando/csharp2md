@@ -1353,10 +1353,10 @@ diagnostics (if any) to stderr (ENG-41, ENG-44).
 
 **Done when**:
 
-- [ ] Forced unpublished outcome → exit 2
-- [ ] Unknowns without unpublished → exit 0
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Forced unpublished outcome → exit 2
+- [x] Unknowns without unpublished → exit 0
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
