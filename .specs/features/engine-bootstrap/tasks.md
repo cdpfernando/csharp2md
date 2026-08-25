@@ -1325,10 +1325,10 @@ diagnostics (if any) to stderr (ENG-41, ENG-44).
 
 **Done when**:
 
-- [ ] Exit code is 0
-- [ ] Summary is on stdout; diagnostics are not on stdout
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Exit code is 0
+- [x] Summary is on stdout; diagnostics are not on stdout
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
