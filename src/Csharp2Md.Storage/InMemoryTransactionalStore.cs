@@ -1,4 +1,6 @@
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Storage.Mapping;
+using Csharp2Md.Storage.Validation;
 
 namespace Csharp2Md.Storage;
 
@@ -40,19 +42,22 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
                 throw new InvalidOperationException("A store session commits exactly once.");
             }
 
+            var document = DomainMapper.ToWire(_staged, new ManifestContext(_solutionKey, SolutionFileName(_solutionKey)));
+            var report = PackageValidator.Validate(document);
+            var artifacts = PackagePublisher.ToPublicationOrder(report.Document);
+
             _committed = true;
-            _ = _staged;
-
-            ImmutableArray<StagedFragment> ordered =
-            [
-                new StagedFragment(ArtifactRole.Manifest, "manifest", []),
-            ];
-
-            var publication = new CommittedPublication(_solutionKey, ordered);
+            var publication = new CommittedPublication(_solutionKey, artifacts);
             _store.Publish(publication);
             return publication;
         }
 
         public void Abort() => _staged = FactualSnapshot.Empty;
+    }
+
+    private static string SolutionFileName(string solutionKey)
+    {
+        var separator = solutionKey.LastIndexOfAny(['/', '\\']);
+        return separator < 0 ? solutionKey : solutionKey[(separator + 1)..];
     }
 }

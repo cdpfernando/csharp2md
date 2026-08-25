@@ -96,17 +96,27 @@ public static class DomainMapper
             .GroupBy(observation => WireObservationMapping.WireName(observation.Identity.Kind))
             .ToImmutableDictionary(
                 group => group.Key,
-                group => group.Select(WireObservationMapping.ToDto).ToImmutableArray());
+                group => Ordered(
+                    group.Select(WireObservationMapping.ToDto),
+                    static dto => $"{dto.Identity.Owner.Id}:{dto.Identity.Kind}:{dto.Identity.OccurrenceOrdinal}"));
 
         var confirmedDtos = snapshot.ConfirmedRelations
             .GroupBy(relation => WireRelationMapping.WireName(relation.Kind))
             .ToImmutableDictionary(
                 group => group.Key,
-                group => group.Select(WireRelationMapping.ToDto).ToImmutableArray());
+                group => Ordered(
+                    group.Select(WireRelationMapping.ToDto),
+                    static dto => $"{dto.Kind}:{dto.Source.Id}:{dto.Target.Id}"));
 
-        var candidateDtos = snapshot.Candidates.Select(WireRelationMapping.ToDto).ToImmutableArray();
-        var unresolvedDtos = snapshot.Unresolved.Select(WireRelationMapping.ToDto).ToImmutableArray();
-        var frontierDtos = snapshot.Frontiers.Select(WireRelationMapping.ToDto).ToImmutableArray();
+        var candidateDtos = Ordered(
+            snapshot.Candidates.Select(WireRelationMapping.ToDto),
+            static dto => $"{dto.Kind}:{dto.Source.Id}:{dto.ProposedTarget.Id}");
+        var unresolvedDtos = Ordered(
+            snapshot.Unresolved.Select(WireRelationMapping.ToDto),
+            static dto => $"{dto.Kind}:{dto.Source.Id}:{dto.Cause}");
+        var frontierDtos = Ordered(
+            snapshot.Frontiers.Select(WireRelationMapping.ToDto),
+            static dto => $"{dto.Occurrence.Owner.Id}:{dto.Occurrence.Kind}:{dto.Occurrence.OccurrenceOrdinal}");
 
         var versions = TaxonomyVersions.Initial;
         var artifacts = BuildManifestArtifacts(
@@ -130,23 +140,23 @@ public static class DomainMapper
                 context.SolutionFileName,
                 artifacts),
             ReadEmbeddedRegistry(),
-            solutions.ToImmutable(),
-            projects.ToImmutable(),
-            documents.ToImmutable(),
-            symbols.ToImmutable(),
-            components.ToImmutable(),
-            deploymentUnits.ToImmutable(),
-            entryPoints.ToImmutable(),
-            boundaryOperations.ToImmutable(),
-            externalSystems.ToImmutable(),
-            contracts.ToImmutable(),
-            contractBindings.ToImmutable(),
-            contractRevisions.ToImmutable(),
-            dataStores.ToImmutable(),
-            dataObjects.ToImmutable(),
-            dataFields.ToImmutable(),
-            dataOperations.ToImmutable(),
-            configurationBindings.ToImmutable(),
+            Ordered(solutions, static dto => dto.Identity.Id),
+            Ordered(projects, static dto => dto.Identity.Id),
+            Ordered(documents, static dto => dto.Identity.Id),
+            Ordered(symbols, static dto => dto.Identity.Id),
+            Ordered(components, static dto => dto.Identity.Id),
+            Ordered(deploymentUnits, static dto => dto.Identity.Id),
+            Ordered(entryPoints, static dto => dto.Identity.Id),
+            Ordered(boundaryOperations, static dto => dto.Identity.Id),
+            Ordered(externalSystems, static dto => dto.Identity.Id),
+            Ordered(contracts, static dto => dto.Identity.Id),
+            Ordered(contractBindings, static dto => dto.Identity.Id),
+            Ordered(contractRevisions, static dto => dto.Identity.Id),
+            Ordered(dataStores, static dto => dto.Identity.Id),
+            Ordered(dataObjects, static dto => dto.Identity.Id),
+            Ordered(dataFields, static dto => dto.Identity.Id),
+            Ordered(dataOperations, static dto => dto.Identity.Id),
+            Ordered(configurationBindings, static dto => dto.Identity.Id),
             observationDtos,
             confirmedDtos,
             candidateDtos,
@@ -211,6 +221,9 @@ public static class DomainMapper
             unresolvedArr,
             frontiersArr);
     }
+
+    private static ImmutableArray<T> Ordered<T>(IEnumerable<T> items, Func<T, string> identity) =>
+        items.OrderBy(identity, StringComparer.Ordinal).ToImmutableArray();
 
     private static ImmutableArray<ManifestEntry> BuildManifestArtifacts(
         int structural,

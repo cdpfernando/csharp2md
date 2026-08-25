@@ -33,6 +33,6 @@ public sealed class UnknownsCommitTests
         var sessionKey = Path.GetFullPath(solutionPath);
         Assert.True(inner.TryGetPublication(sessionKey, out var publication));
         Assert.Equal(sessionKey, publication.SolutionKey);
-        Assert.Equal(ArtifactRole.Manifest, Assert.Single(publication.ArtifactsInPublicationOrder).Role);
+        Assert.Equal(ArtifactRole.Manifest, publication.ArtifactsInPublicationOrder[^1].Role);
     }
 }

@@ -956,7 +956,7 @@ artifact view on `CommittedPublication`.
 
 ---
 
-#### T28: In-memory commit maps and validates
+#### T28: In-memory commit maps and validates ✅
 
 **What**: `InMemoryTransactionalStore.Commit` runs DomainMapper + PackageValidator, fills
 `ArtifactsInPublicationOrder` with canonical shard bytes then manifest (ordinal keys), omits empty family
@@ -976,10 +976,10 @@ onto snapshots
 
 **Done when**:
 
-- [ ] Empty commit: omitted shards, manifest last, registry copy present, family counts 0
-- [ ] Candidate-only commit succeeds; in-memory run creates no files or directories
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Empty commit: omitted shards, manifest last, registry copy present, family counts 0
+- [x] Candidate-only commit succeeds; in-memory run creates no files or directories
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 87 passed, 0 failed (was 84; +3 empty/candidate/no-files); Analysis.Tests 86 passed, 0 failed; Full 736 passed, 0 failed (Domain 544 + Analysis 86 + Storage 87 + Projection 3 + Cli 16)
 
 **Tests**: unit
 **Gate**: full

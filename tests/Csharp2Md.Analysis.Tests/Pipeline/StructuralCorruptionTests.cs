@@ -23,7 +23,7 @@ public sealed class StructuralCorruptionTests
         Assert.False(firstOutcome.StructuralCorruption);
         Assert.True(store.TryGetPublication(sessionKey, out var prior));
         Assert.Equal(sessionKey, prior.SolutionKey);
-        Assert.Equal(ArtifactRole.Manifest, Assert.Single(prior.ArtifactsInPublicationOrder).Role);
+        Assert.Equal(ArtifactRole.Manifest, prior.ArtifactsInPublicationOrder[^1].Role);
 
         var executed = new List<string>();
         var corruptedValidation = new ResultStage(
@@ -54,10 +54,15 @@ public sealed class StructuralCorruptionTests
         Assert.Equal(prior, kept);
         Assert.Equal(prior.SolutionKey, kept.SolutionKey);
         Assert.Equal(prior.ArtifactsInPublicationOrder.Length, kept.ArtifactsInPublicationOrder.Length);
-        Assert.Equal(prior.ArtifactsInPublicationOrder[0].Role, kept.ArtifactsInPublicationOrder[0].Role);
-        Assert.Equal(prior.ArtifactsInPublicationOrder[0].CanonicalKey, kept.ArtifactsInPublicationOrder[0].CanonicalKey);
-        Assert.True(
-            prior.ArtifactsInPublicationOrder[0].Payload.AsSpan()
-                .SequenceEqual(kept.ArtifactsInPublicationOrder[0].Payload.AsSpan()));
+        for (var index = 0; index < prior.ArtifactsInPublicationOrder.Length; index++)
+        {
+            Assert.Equal(prior.ArtifactsInPublicationOrder[index].Role, kept.ArtifactsInPublicationOrder[index].Role);
+            Assert.Equal(
+                prior.ArtifactsInPublicationOrder[index].CanonicalKey,
+                kept.ArtifactsInPublicationOrder[index].CanonicalKey);
+            Assert.True(
+                prior.ArtifactsInPublicationOrder[index].Payload.AsSpan()
+                    .SequenceEqual(kept.ArtifactsInPublicationOrder[index].Payload.AsSpan()));
+        }
     }
 }
