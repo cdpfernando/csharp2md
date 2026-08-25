@@ -742,13 +742,13 @@ initialization derives the frozen lookup and throws naming any triple declared t
 
 **Done when**:
 
-- [ ] Every relation declares at least one triple, and `contains` is restricted to structural owner and structural child
-- [ ] Every relation declares a minimum accepted evidence method
-- [ ] A duplicate triple declaration throws at initialization naming the relation and both fact types
-- [ ] Every triple's endpoints are names present in the fact-type table, asserted by set containment
-- [ ] The frozen lookup is derived from the ordered array and the ordered array is what any consumer enumerates
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every relation declares at least one triple, and `contains` is restricted to structural owner and structural child
+- [x] Every relation declares a minimum accepted evidence method
+- [x] A duplicate triple declaration throws at initialization naming the relation and both fact types
+- [x] Every triple's endpoints are names present in the fact-type table, asserted by set containment
+- [x] The frozen lookup is derived from the ordered array and the ordered array is what any consumer enumerates
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 161 passed (155 baseline + 6 new)
 
 **Tests**: unit
 **Gate**: quick
