@@ -782,7 +782,7 @@ with gate `unregistered-kind`, naming the unregistered value.
 
 ---
 
-#### T22: Abort on identity collision and hash mismatch
+#### T22: Abort on identity collision and hash mismatch ✅
 
 **What**: Validator aborts gate `identity-collision` when two facts in one document share one identity
 string, naming the identity. Aborts gate `content-hash` when `content_sha256` does not match, naming the
@@ -799,9 +799,9 @@ identity.
 
 **Done when**:
 
-- [ ] Collision fixture names the identity; bad-hash fixture names the identity
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Collision fixture names the identity; bad-hash fixture names the identity
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 75 passed, 0 failed (was 73; +2 collision/hash)
 
 **Tests**: unit
 **Gate**: quick

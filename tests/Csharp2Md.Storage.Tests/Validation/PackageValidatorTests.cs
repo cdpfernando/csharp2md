@@ -107,6 +107,37 @@ public sealed class PackageValidatorTests
         Assert.Contains(unregistered, exception.Detail, StringComparison.Ordinal);
     }
 
+    [Fact]
+    [Trait("Requirement", "STOR-27")]
+    public void Validate_TwoFactsSharingOneIdentity_AbortsNamingTheIdentity()
+    {
+        var document = DomainMapper.ToWire(SolutionSnapshot(), Context);
+        var fact = document.Solutions[0];
+        var identity = fact.Identity.Id;
+        var mutated = document with { Solutions = [fact, fact] };
+
+        var exception = Assert.Throws<PublicationRejectedException>(() => PackageValidator.Validate(mutated));
+
+        Assert.Equal("identity-collision", exception.Gate);
+        Assert.Contains(identity, exception.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-28")]
+    public void Validate_ContentHashMismatch_AbortsNamingTheIdentity()
+    {
+        var document = DomainMapper.ToWire(SolutionSnapshot(), Context);
+        var fact = document.Solutions[0] with { ContentSha256 = new string('0', 64) };
+        var mutated = document with { Solutions = [fact] };
+
+        Assert.NotEqual(CanonicalJson.PayloadContentSha256(fact), fact.ContentSha256);
+
+        var exception = Assert.Throws<PublicationRejectedException>(() => PackageValidator.Validate(mutated));
+
+        Assert.Equal("content-hash", exception.Gate);
+        Assert.Contains(fact.Identity.Id, exception.Detail, StringComparison.Ordinal);
+    }
+
     private static SolutionDto ValidSolutionDto() =>
         DomainMapper.ToWire(SolutionSnapshot(), Context).Solutions[0];
 
