@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "type": [
+    "object",
+    "null"
+  ],
+  "properties": {
+    "records": {
+      "type": "array",
+      "items": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration_milliseconds": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "timestamp",
+          "duration_milliseconds"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "records"
+  ],
+  "additionalProperties": false
+}

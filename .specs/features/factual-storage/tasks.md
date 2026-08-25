@@ -546,7 +546,7 @@ wire DTO. Point `CanonicalJson` at this context.
 
 ---
 
-#### T14: Emit committed JSON Schemas and a drift gate
+#### T14: Emit committed JSON Schemas and a drift gate ✅
 
 **What**: Add a Storage.Tests emitter (same home as `TaxonomyRegistryWriter`) that calls
 `JsonSchemaExporter.GetJsonSchemaAsNode` on each DTO's `JsonTypeInfo`, writes UTF-8 no BOM / `\n` / indent 2,
@@ -566,11 +566,11 @@ directory.
 
 **Done when**:
 
-- [ ] Committed schemas exist for all 17 fact types, 10 observation kinds, 4 relation records and 6 envelopes
-- [ ] Every schema file declares `schema_version` 1 and lives under `contracts/`
-- [ ] Drift gate fails by file name when an emitted schema differs
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Committed schemas exist for all 17 fact types, 10 observation kinds, 4 relation records and 6 envelopes
+- [x] Every schema file declares `schema_version` 1 and lives under `contracts/`
+- [x] Drift gate fails by file name when an emitted schema differs
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 29 passed, 0 failed (was 22; +7 schema/drift)
 
 **Tests**: unit
 **Gate**: quick

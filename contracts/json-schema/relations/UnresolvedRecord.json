@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "type": [
+    "object",
+    "null"
+  ],
+  "properties": {
+    "kind": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "fact_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "fact_type"
+      ],
+      "additionalProperties": false
+    },
+    "cause": {
+      "type": "string"
+    },
+    "available": {
+      "type": "array",
+      "items": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "owner": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "fact_type": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "fact_type"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "array",
+            "items": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "role"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "key",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "occurrence_ordinal": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "owner",
+          "kind",
+          "payload",
+          "occurrence_ordinal"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "content_sha256": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "source",
+    "cause",
+    "available",
+    "content_sha256"
+  ],
+  "additionalProperties": false
+}

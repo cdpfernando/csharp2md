@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "type": [
+    "object",
+    "null"
+  ],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "fact_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "fact_type"
+      ],
+      "additionalProperties": false
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "content_sha256": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "identity",
+    "project_id",
+    "content_sha256"
+  ],
+  "additionalProperties": false
+}

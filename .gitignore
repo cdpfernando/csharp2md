@@ -152,6 +152,7 @@ _TeamCity*
 
 # Coverlet is a free, cross platform Code Coverage Tool
 coverage*.json
+!contracts/json-schema/envelopes/coverage.json
 coverage*.xml
 coverage*.info
 
