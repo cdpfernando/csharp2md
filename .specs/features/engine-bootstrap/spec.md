@@ -259,7 +259,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ENG-11 | P1: One analysis facade over an eight-stage pipeline | Tasks | Verified |
 | ENG-12 | P1: One analysis facade over an eight-stage pipeline | Tasks | Verified |
 | ENG-13 | P1: One analysis facade over an eight-stage pipeline | Tasks | Verified |
-| ENG-14 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
+| ENG-14 | P1: One analysis facade over an eight-stage pipeline | Tasks | Verified |
 | ENG-15 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-16 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-17 | P1: One analysis facade over an eight-stage pipeline | Tasks | Verified |

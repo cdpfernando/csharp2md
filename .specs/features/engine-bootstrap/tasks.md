@@ -899,10 +899,10 @@ stage in one position is executed there with the same orchestrator type (ENG-14)
 
 **Done when**:
 
-- [ ] Replacing Persistence with a recording probe runs that probe in position 6
-- [ ] `PipelineOrchestrator`'s type is unchanged across substitution
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Replacing Persistence with a recording probe runs that probe in position 6
+- [x] `PipelineOrchestrator`'s type is unchanged across substitution
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
