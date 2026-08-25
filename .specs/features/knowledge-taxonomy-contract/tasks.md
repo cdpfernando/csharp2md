@@ -231,13 +231,13 @@ public-plus-internal surface expose no `Microsoft.CodeAnalysis`, `Microsoft.Buil
 
 **Done when**:
 
-- [ ] The test project references `Csharp2Md.Domain` only - not `Csharp2Md.Core`
-- [ ] Each forbidden namespace is asserted by name in its own case, and the failure message names the offending type
-- [ ] The reference direction is asserted in both directions (domain to core, core to domain)
-- [ ] `DomainTestPaths.RepoRoot` resolves by walking to `csharp2md.slnx`
-- [ ] The requirement-trait convention is documented in the test project and used by these tests
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] The test project references `Csharp2Md.Domain` only - not `Csharp2Md.Core`
+- [x] Each forbidden namespace is asserted by name in its own case, and the failure message names the offending type
+- [x] The reference direction is asserted in both directions (domain to core, core to domain)
+- [x] `DomainTestPaths.RepoRoot` resolves by walking to `csharp2md.slnx`
+- [x] The requirement-trait convention is documented in the test project and used by these tests
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: build
