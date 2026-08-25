@@ -46,6 +46,7 @@ public sealed class AnalyzeOptionSurfaceTests
 
     [Fact]
     [Trait("Requirement", "ENG-45")]
+    [Trait("Requirement", "STOR-47")]
     [Trait("Requirement", "STOR-52")]
     public void LaunchSettings_UsesAnalyzeSolutionAgainstTheFixture()
     {
@@ -66,6 +67,7 @@ public sealed class AnalyzeOptionSurfaceTests
             var args = profile.Value.GetProperty("commandLineArgs").GetString();
             Assert.False(string.IsNullOrWhiteSpace(args), $"Profile '{profile.Name}' has empty commandLineArgs.");
             Assert.StartsWith("analyze --solution ", args, StringComparison.Ordinal);
+            Assert.Contains("--output artifacts/analyze-out", args, StringComparison.Ordinal);
 
             foreach (var removed in RemovedOptionNames)
             {

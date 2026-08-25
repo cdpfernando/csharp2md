@@ -1574,7 +1574,7 @@ requested solution exits 2. Drive the structural path with an injected engine or
 
 ---
 
-#### T49: Point launchSettings at a gitignored output
+#### T49: Point launchSettings at a gitignored output ✅
 
 **What**: Add `--output artifacts/analyze-out` (already gitignored via `artifacts/`) to
 `launchSettings.json` commandLineArgs. Keep `--solution` against the synthetic fixture.
@@ -1590,10 +1590,10 @@ requested solution exits 2. Drive the structural path with an injected engine or
 
 **Done when**:
 
-- [ ] Profile args include `--output artifacts/analyze-out` and still start with `analyze --solution `
-- [ ] `AnalyzeOptionSurfaceTests.LaunchSettings_*` accepts `--output` and still forbids the leftover names
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Profile args include `--output artifacts/analyze-out` and still start with `analyze --solution `
+- [x] `AnalyzeOptionSurfaceTests.LaunchSettings_*` accepts `--output` and still forbids the leftover names
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Cli.Tests 23 passed, 0 failed (unchanged; launchSettings assertion strengthened)
 
 **Tests**: unit
 **Gate**: quick
