@@ -2,7 +2,9 @@
 
 ## Status
 
-The repository is preparing a full architectural replacement. Existing source code and wire schemas are legacy until the roadmap is executed. No feature spec for the replacement has been created yet.
+The repository is preparing a full architectural replacement. Existing source code and wire schemas are legacy until the roadmap is executed.
+
+Workstream 1, [`knowledge-taxonomy-contract`](features/knowledge-taxonomy-contract/spec.md), is the first replacement feature. Its spec, design and task breakdown are approved; execution has not started.
 
 Normative documentation:
 
@@ -84,6 +86,15 @@ Normative documentation:
 - **Reason**: retaining executable-looking legacy plans confuses agents and spends context on contracts that will be deleted.
 - **Status**: active.
 
+### AD-013 — Domain-declared taxonomy registry, enforced at construction
+
+- **Decision**: `Csharp2Md.Domain` declares the taxonomy as ordered descriptor tables that are the single authority for fact families, fact types, observation kinds, facet axes, relation triples, minimum evidence methods, mapping roles, proof-state axes and version axes. The same tables back construction-time rejection and are projected to a committed artifact, `contracts/taxonomy-registry.json`, guarded by a byte-comparison drift gate. Workstreams 2 through 8 validate against the registry instead of restating it.
+- **Reason**: enforcement and published contract read one source, so they cannot drift; a declarative table is reviewable as a whole, unlike a taxonomy scattered across attributes; and an ordered projection makes the drift gate a deterministic byte comparison.
+- **Trade-off**: the descriptor tables and the CLR record types are two representations that must agree, which costs one reflection-based bijection test and some up-front declaration code. A reflection-derived registry would have avoided that at the price of unstable emission order and a non-reviewable taxonomy.
+- **Scope**: `Csharp2Md.Domain` and every consumer of the taxonomy — workstreams 2 through 8, including storage validation and all classifier workstreams.
+- **Date**: 2026-08-24
+- **Status**: active.
+
 ## Standing engineering constraints
 
 - Retrieval-led reasoning is mandatory for .NET/Roslyn work; never invent a Roslyn API.
@@ -91,3 +102,16 @@ Normative documentation:
 - Structural corruption aborts atomic publication; legitimate unknowns and candidates do not.
 - Secrets are never duplicated into facts, observations, indexes or diagnostics.
 - The tlc-spec-driven discrimination sensor remains skipped; the user runs Stryker manually. All other verifier steps remain required when feature execution begins.
+
+## Handoff
+
+- **Feature**: `knowledge-taxonomy-contract` — `.specs/features/knowledge-taxonomy-contract/`
+- **Phase / Task**: Tasks complete and approved; Execute not started. No task is in progress and no implementation file exists yet.
+- **Completed**: Specify (spec.md, 91 requirements, closure gate clean), Discuss (context.md, 4 decisions), Design (design.md, approved), AD-013 recorded, Tasks (tasks.md, 54 tasks across 11 phases, all 91 requirements mapped, `validate_tasks.py` clean).
+- **In-progress** (file:line): none.
+- **Next step**: Run Execute starting at T1. The 54 tasks pack into nine task-budgeted batches on whole-phase boundaries — `P1+P2` (5), `P3` (4), `P4` (7), `P5` (6), `P6` (5), `P7` (6), `P8` (7), `P9` (7), `P10+P11` (7) — so present the sub-agent offer before dispatching.
+- **Blockers**: none. The four former spec assumptions are now fixed by the approved tasks: registry path `contracts/taxonomy-registry.json` (T49), test project `tests/Csharp2Md.Domain.Tests` (T2), all five version axes starting at 1 (T22), identity determinism proven by synthetic-input unit tests (T9).
+- **Task-phase refinements to design.md** (deliberate, not deviations): `FacetAxes` owns the CLR-to-wire pairing and axis value lists and the registry declares its axis descriptors from them, breaking the design's mutual Facets↔Registry dependency; `TaxonomyTables` is a copyable value so TAX-88/89 and TAX-90 can be proven against an injected table; requirement traceability is mechanical via a `[Trait("Requirement", "TAX-nn")]` convention gated by T54.
+- **Standing quality gate**: every phase-end task (T2, T5, T9, T16, T22, T27, T33, T40, T47, T51, T54) runs `dotnet-skills:slopwatch` over that phase's changes, by user request.
+- **Uncommitted files**: `.specs/STATE.md`, `architecture-knowledge-engine-roadmap.md`, `.specs/features/knowledge-taxonomy-contract/spec.md`, `.specs/features/knowledge-taxonomy-contract/context.md`, `.specs/features/knowledge-taxonomy-contract/design.md`, `.specs/features/knowledge-taxonomy-contract/tasks.md`
+- **Branch**: `codex/architecture-knowledge-engine-docs`
