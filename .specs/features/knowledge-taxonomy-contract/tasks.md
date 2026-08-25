@@ -1564,12 +1564,12 @@ carrying its cause and the evidence available when the identity failed to close.
 
 **Done when**:
 
-- [ ] A candidate's resolution reads `Candidate` and an unresolved record's reads `Unresolved`, neither settable
-- [ ] An unresolved record without a cause is rejected naming the parameter
-- [ ] An unresolved record carries its available evidence and does not require a target identity
-- [ ] A candidate carries a target it proposes; a candidate with no proposed target is rejected
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A candidate's resolution reads `Candidate` and an unresolved record's reads `Unresolved`, neither settable
+- [x] An unresolved record without a cause is rejected naming the parameter
+- [x] An unresolved record carries its available evidence and does not require a target identity
+- [x] A candidate carries a target it proposes; a candidate with no proposed target is rejected
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 446 passed (437 baseline + 9 new)
 
 **Tests**: unit
 **Gate**: quick
