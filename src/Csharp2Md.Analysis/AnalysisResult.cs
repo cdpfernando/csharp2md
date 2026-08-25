@@ -30,6 +30,8 @@ public sealed record SolutionOutcome
 
     public ImmutableArray<StageReport> Stages { get; }
 
+    public string? Detail { get; }
+
     public SolutionOutcome(
         string solutionPath,
         string logicalRelativePath,
@@ -37,7 +39,8 @@ public sealed record SolutionOutcome
         string? failingStage,
         bool structuralCorruption,
         bool hasUnknownsOrCandidatesOrFrontiers,
-        ImmutableArray<StageReport> stages)
+        ImmutableArray<StageReport> stages,
+        string? detail = null)
     {
         SolutionPath = solutionPath;
         LogicalRelativePath = logicalRelativePath;
@@ -46,6 +49,7 @@ public sealed record SolutionOutcome
         StructuralCorruption = structuralCorruption;
         HasUnknownsOrCandidatesOrFrontiers = hasUnknownsOrCandidatesOrFrontiers;
         Stages = stages;
+        Detail = detail;
     }
 }
 

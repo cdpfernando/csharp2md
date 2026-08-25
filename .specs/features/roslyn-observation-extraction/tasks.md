@@ -302,9 +302,9 @@ CLI tests that construct outcomes still pass.
 
 **Done when**:
 
-- [ ] `Detail` is readable; omitted argument is null
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `Detail` is readable; omitted argument is null
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
