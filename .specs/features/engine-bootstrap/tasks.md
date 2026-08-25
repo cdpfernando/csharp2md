@@ -1125,9 +1125,9 @@ exposes the flag (ENG-26).
 
 **Done when**:
 
-- [ ] Two substitute staging orders compare equal on `ArtifactsInPublicationOrder`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Two substitute staging orders compare equal on `ArtifactsInPublicationOrder`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
