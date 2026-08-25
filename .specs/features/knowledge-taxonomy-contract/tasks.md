@@ -900,12 +900,12 @@ built from, none of which may enter an identity.
 
 **Done when**:
 
-- [ ] A span whose end precedes its start is rejected naming the parameter
-- [ ] A negative line or column is rejected
-- [ ] A document hash must be a lowercase hex digest of fixed length; anything else is rejected
-- [ ] None of the three exposes an absolute path
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A span whose end precedes its start is rejected naming the parameter
+- [x] A negative line or column is rejected
+- [x] A document hash must be a lowercase hex digest of fixed length; anything else is rejected
+- [x] None of the three exposes an absolute path
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 22 new tests (DocumentPrimitivesTests), 221 total passing
 
 **Tests**: unit
 **Gate**: quick
