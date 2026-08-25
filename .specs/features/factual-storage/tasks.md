@@ -487,7 +487,7 @@ relation DTO includes evidence method and fields Domain `Create` needs (AD-015).
 
 ---
 
-#### T12: Envelope DTOs
+#### T12: Envelope DTOs ✅
 
 **What**: Add wire DTOs for manifest, coverage, run_certification, diagnostics, quarantine and measurements
 as design.md specifies. Manifest entries use relative forward-slash paths and roles `payload` | `manifest`.
@@ -503,10 +503,10 @@ as design.md specifies. Manifest entries use relative forward-slash paths and ro
 
 **Done when**:
 
-- [ ] All six envelope DTOs exist; coverage metrics are the four named zeros
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes`
-- [ ] Phase-end slopwatch is clean over Phase 2
-- [ ] Test count recorded (no silent deletions)
+- [x] All six envelope DTOs exist; coverage metrics are the four named zeros
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes`
+- [x] Phase-end slopwatch is clean over Phase 2
+- [x] Test count recorded (no silent deletions) — 668 passed, 0 failed (Storage.Tests 19; 4 new STOR-44 tests from T6)
 
 **Tests**: none
 **Gate**: build

@@ -6,7 +6,7 @@ public sealed record ConfirmedRelationDto(
     FactReferenceDto Target,
     ImmutableArray<FacetBindingEntryDto> Facets,
     ImmutableArray<ObservationIdentityDto> DerivedFrom,
-    ClassifierIdentityDto Classifier,
+    ProofAgentIdentityDto Classifier,
     ImmutableArray<string> AnalysisVariants,
     string EvidenceMethod,
     string ContentSha256);

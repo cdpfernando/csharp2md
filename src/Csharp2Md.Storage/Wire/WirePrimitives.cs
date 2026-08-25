@@ -20,4 +20,4 @@ public sealed record BindingDiagnosticDto(string Code, string Message);
 
 public sealed record FacetBindingEntryDto(string AxisName, string WireValue);
 
-public sealed record ClassifierIdentityDto(string Id, int Version);
+public sealed record ProofAgentIdentityDto(string Id, int Version);
