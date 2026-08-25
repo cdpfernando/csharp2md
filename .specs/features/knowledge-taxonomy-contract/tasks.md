@@ -805,12 +805,12 @@ must declare against.
 
 **Done when**:
 
-- [ ] Set equality against exactly the four mapping roles
-- [ ] An out-of-vocabulary mapping role is rejected naming the axis and the value
-- [ ] The payload-role vocabulary is closed and asserted by set equality
-- [ ] Both tables are ordered arrays, and both are reachable from `TaxonomyTables`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Set equality against exactly the four mapping roles
+- [x] An out-of-vocabulary mapping role is rejected naming the axis and the value
+- [x] The payload-role vocabulary is closed and asserted by set equality
+- [x] Both tables are ordered arrays, and both are reachable from `TaxonomyTables`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 175 passed (170 baseline + 5 new)
 
 **Tests**: unit
 **Gate**: quick
