@@ -1118,11 +1118,11 @@ empty chain.
 
 **Done when**:
 
-- [ ] An empty chain is rejected naming the parameter
-- [ ] Ordering is deterministic and duplicate identities collapse to one entry
-- [ ] Two chains built from shuffled inputs are equal
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] An empty chain is rejected naming the parameter
+- [x] Ordering is deterministic and duplicate identities collapse to one entry
+- [x] Two chains built from shuffled inputs are equal
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 290 passed, 0 failed (3 new tests)
 
 **Tests**: unit
 **Gate**: quick
