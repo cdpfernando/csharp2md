@@ -7,6 +7,7 @@ using Csharp2Md.Storage.Tests.Filesystem;
 
 namespace Csharp2Md.Storage.Tests.Reading;
 
+[Collection(FilesystemStoreCollection.Name)]
 public sealed class UnreadablePackageReadTests
 {
     private const string SolutionKey = @"C:\src\Acme Payments.sln";

@@ -12,6 +12,7 @@ public sealed class PublicationRejectedExceptionTests
 
         Assert.Equal("identity-collision", thrown.Gate);
         Assert.Equal("duplicate solution identity", thrown.Detail);
+        Assert.Equal("identity-collision: duplicate solution identity", thrown.Message);
     }
 
     private static void RejectIdentityCollision() =>

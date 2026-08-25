@@ -10,6 +10,7 @@ using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage.Tests.Reading;
 
+[Collection(FilesystemStoreCollection.Name)]
 public sealed class QuarantinedPackageReadTests
 {
     [Fact]

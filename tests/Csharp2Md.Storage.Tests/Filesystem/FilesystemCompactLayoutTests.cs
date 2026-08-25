@@ -12,6 +12,7 @@ using Csharp2Md.Storage.Tests.Mapping;
 
 namespace Csharp2Md.Storage.Tests.Filesystem;
 
+[Collection(FilesystemStoreCollection.Name)]
 public sealed class FilesystemCompactLayoutTests
 {
     private const string SolutionKey = @"C:\src\Acme Payments.sln";

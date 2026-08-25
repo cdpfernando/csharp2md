@@ -3,6 +3,7 @@ using Csharp2Md.Storage;
 
 namespace Csharp2Md.Storage.Tests.Filesystem;
 
+[Collection(FilesystemStoreCollection.Name)]
 public sealed class FilesystemIoFailureTests
 {
     private const string SolutionKey = @"C:\src\Acme Payments.sln";

@@ -72,7 +72,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            throw new PublicationRejectedException("io", exception.Message);
+            throw new PublicationRejectedException("io", exception.Message, exception);
         }
     }
 
@@ -150,7 +150,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
                 DeleteStagingDirectory();
-                throw new PublicationRejectedException("io", exception.Message);
+                throw new PublicationRejectedException("io", exception.Message, exception);
             }
             finally
             {
@@ -192,19 +192,19 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             var replaced = false;
             if (Directory.Exists(_childPath))
             {
-                Directory.Move(_childPath, bakPath);
+                MoveDirectory(_childPath, bakPath);
                 replaced = true;
             }
 
             try
             {
-                Directory.Move(_stagingPath, _childPath);
+                MoveDirectory(_stagingPath, _childPath);
             }
             catch
             {
                 if (replaced && Directory.Exists(bakPath) && !Directory.Exists(_childPath))
                 {
-                    Directory.Move(bakPath, _childPath);
+                    MoveDirectory(bakPath, _childPath);
                 }
 
                 throw;
@@ -213,6 +213,25 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             if (Directory.Exists(bakPath))
             {
                 Directory.Delete(bakPath, recursive: true);
+            }
+        }
+
+        private static void MoveDirectory(string source, string destination)
+        {
+            const int maxAttempts = 8;
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    Directory.Move(source, destination);
+                    return;
+                }
+                catch (Exception exception) when (
+                    attempt < maxAttempts
+                    && exception is IOException or UnauthorizedAccessException)
+                {
+                    Thread.Sleep(15 * attempt);
+                }
             }
         }
 
