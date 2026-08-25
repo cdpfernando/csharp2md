@@ -25,8 +25,6 @@ public sealed class DomainIsolationTests
 
     private static Assembly DomainAssembly => typeof(AssemblyMarker).Assembly;
 
-    private static Assembly CoreAssembly => Assembly.LoadFrom(CoreAssemblyPath());
-
     public static IEnumerable<object[]> ForbiddenSurfaceNamespaceCases() =>
         ForbiddenSurfaceNamespaces.Select(ns => new object[] { ns });
 
@@ -73,32 +71,18 @@ public sealed class DomainIsolationTests
     }
 
     [Fact]
-    [Trait("Requirement", "TAX-06")]
-    public void Core_DoesNotReferenceDomain()
+    [Trait("Requirement", "ENG-47")]
+    public void CoreTestsDirectory_DoesNotExist()
     {
-        var reference = CoreAssembly.GetReferencedAssemblies()
-            .FirstOrDefault(a => a.Name == "Csharp2Md.Domain");
-
-        Assert.True(reference?.Name is null, "Csharp2Md.Core must not reference Csharp2Md.Domain.");
+        var path = Path.Combine(DomainTestPaths.RepoRoot, "tests", "Csharp2Md.Core.Tests");
+        Assert.False(
+            Directory.Exists(path),
+            $"Repository must not contain '{path}'.");
     }
 
     [Fact]
     public void RepoRoot_ResolvesToTheDirectoryContainingTheSolutionFile() =>
         Assert.True(File.Exists(Path.Combine(DomainTestPaths.RepoRoot, "csharp2md.slnx")));
-
-    private static string CoreAssemblyPath()
-    {
-        var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent?.Name
-            ?? throw new InvalidOperationException("Could not determine the build configuration from " + AppContext.BaseDirectory);
-
-        var path = Path.Combine(DomainTestPaths.RepoRoot, "src", "Csharp2Md.Core", "bin", configuration, "net10.0", "Csharp2Md.Core.dll");
-        if (!File.Exists(path))
-        {
-            throw new InvalidOperationException($"Could not find Csharp2Md.Core.dll at '{path}'. Build the solution before running this test.");
-        }
-
-        return path;
-    }
 
     private static bool IsPublicOrInternal(Type type) =>
         !type.IsNested || type.IsNestedPublic || type.IsNestedAssembly || type.IsNestedFamORAssem;

@@ -1498,10 +1498,10 @@ security-boundary tests (ENG-52, ENG-53).
 
 **Done when**:
 
-- [ ] `tests/Csharp2Md.Core.Tests` does not exist
-- [ ] Domain isolation tests no longer load Core
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] `tests/Csharp2Md.Core.Tests` does not exist
+- [x] Domain isolation tests no longer load Core
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: solution

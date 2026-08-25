@@ -81,17 +81,13 @@ public sealed class RequirementCoverageTests
 
     [Fact]
     [Trait("Requirement", "TAX-04")]
-    public void SolutionBuild_KeepsTreatWarningsAsErrorsEnabledWhileLegacyCoreRemains()
+    public void SolutionBuild_KeepsTreatWarningsAsErrorsEnabled()
     {
         var buildPropsContent = File.ReadAllText(Path.Combine(DomainTestPaths.RepoRoot, "Directory.Build.props"));
         Assert.Contains("<TreatWarningsAsErrors>true</TreatWarningsAsErrors>", buildPropsContent, StringComparison.Ordinal);
 
         var domainCsprojContent = File.ReadAllText(Path.Combine(DomainTestPaths.RepoRoot, "src", "Csharp2Md.Domain", "Csharp2Md.Domain.csproj"));
         Assert.DoesNotContain("TreatWarningsAsErrors", domainCsprojContent, StringComparison.Ordinal);
-
-        Assert.True(
-            File.Exists(Path.Combine(DomainTestPaths.RepoRoot, "src", "Csharp2Md.Core", "Csharp2Md.Core.csproj")),
-            "Legacy Csharp2Md.Core must remain present in the solution.");
     }
 
     [Fact]
