@@ -752,10 +752,10 @@ specifies, with results ordered by logical relative path.
 
 **Done when**:
 
-- [ ] Reflection over Analysis public interfaces finds exactly `IAnalysisEngine`
-- [ ] The method accepts a `CancellationToken`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Reflection over Analysis public interfaces finds exactly `IAnalysisEngine`
+- [x] The method accepts a `CancellationToken`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

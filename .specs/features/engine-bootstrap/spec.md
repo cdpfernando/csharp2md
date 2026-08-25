@@ -255,14 +255,14 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ENG-07 | P1: Target assembly topology with enforced boundaries | Tasks | In Tasks |
 | ENG-08 | P1: Target assembly topology with enforced boundaries | Tasks | In Tasks |
 | ENG-09 | P1: Target assembly topology with enforced boundaries | Tasks | Verified |
-| ENG-10 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
+| ENG-10 | P1: One analysis facade over an eight-stage pipeline | Tasks | Verified |
 | ENG-11 | P1: One analysis facade over an eight-stage pipeline | Tasks | Implementing |
 | ENG-12 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-13 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-14 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-15 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-16 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
-| ENG-17 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
+| ENG-17 | P1: One analysis facade over an eight-stage pipeline | Tasks | Verified |
 | ENG-18 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-19 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-20 | P1: Transactional storage port with atomic publication | Tasks | Verified |
