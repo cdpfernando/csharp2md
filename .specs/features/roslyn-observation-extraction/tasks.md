@@ -214,10 +214,10 @@ filesystem path.
 
 **Done when**:
 
-- [ ] Type is public, allowlisted, and constructed with the three fields from design.md
-- [ ] A test rejects an `IdentityOrKey` that contains a drive prefix or `Path.IsPathRooted` value
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Type is public, allowlisted, and constructed with the three fields from design.md
+- [x] A test rejects an `IdentityOrKey` that contains a drive prefix or `Path.IsPathRooted` value
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
