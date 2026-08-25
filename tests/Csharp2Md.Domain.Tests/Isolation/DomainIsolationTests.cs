@@ -81,6 +81,36 @@ public sealed class DomainIsolationTests
     }
 
     [Fact]
+    [Trait("Requirement", "ENG-46")]
+    public void CoreDirectory_DoesNotExist()
+    {
+        var path = Path.Combine(DomainTestPaths.RepoRoot, "src", "Csharp2Md.Core");
+        Assert.False(
+            Directory.Exists(path),
+            $"Repository must not contain '{path}'.");
+    }
+
+    [Fact]
+    [Trait("Requirement", "ENG-48")]
+    public void RetrievalIndexBenchmarksDirectory_DoesNotExist()
+    {
+        var path = Path.Combine(DomainTestPaths.RepoRoot, "benchmarks", "Csharp2Md.RetrievalIndex.Benchmarks");
+        Assert.False(
+            Directory.Exists(path),
+            $"Repository must not contain '{path}'.");
+    }
+
+    [Fact]
+    [Trait("Requirement", "ENG-48")]
+    public void SchemasDirectory_DoesNotExist()
+    {
+        var path = Path.Combine(DomainTestPaths.RepoRoot, "schemas");
+        Assert.False(
+            Directory.Exists(path),
+            $"Repository must not contain '{path}'.");
+    }
+
+    [Fact]
     public void RepoRoot_ResolvesToTheDirectoryContainingTheSolutionFile() =>
         Assert.True(File.Exists(Path.Combine(DomainTestPaths.RepoRoot, "csharp2md.slnx")));
 
