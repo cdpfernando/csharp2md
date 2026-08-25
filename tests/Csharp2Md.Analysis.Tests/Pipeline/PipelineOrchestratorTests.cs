@@ -99,7 +99,7 @@ internal sealed class ResultStage : IPipelineStage
 
 internal sealed class SwallowingSession : IStoreSession
 {
-    public void Stage(StagedFragment fragment)
+    public void Stage(FactualSnapshot snapshot)
     {
     }
 

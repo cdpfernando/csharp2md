@@ -19,6 +19,8 @@ public sealed class AnalysisPublicSurfaceTests
         "StagedFragment",
         "ArtifactRole",
         "CommittedPublication",
+        "FactualSnapshot",
+        "PublicationRejectedException",
     ];
 
     private static readonly string[] ForbiddenSurfaceTokens =
@@ -32,6 +34,7 @@ public sealed class AnalysisPublicSurfaceTests
 
     [Fact]
     [Trait("Requirement", "ENG-11")]
+    [Trait("Requirement", "STOR-35")]
     public void PublicSurface_ContainsOnlyAllowlistedTypes()
     {
         var extras = PublicSurfaceTypes()
@@ -45,7 +48,28 @@ public sealed class AnalysisPublicSurfaceTests
     }
 
     [Fact]
+    [Trait("Requirement", "STOR-35")]
+    public void PublicSurface_IncludesFactualSnapshotAndPublicationRejectedException()
+    {
+        var names = PublicSurfaceTypes().Select(type => type.Name).ToHashSet(StringComparer.Ordinal);
+
+        Assert.Contains("FactualSnapshot", names);
+        Assert.Contains("PublicationRejectedException", names);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-35")]
+    public void PublicSurface_DoesNotIncludeFactualPackageReaderOrPackageReadResult()
+    {
+        var names = PublicSurfaceTypes().Select(type => type.Name).ToHashSet(StringComparer.Ordinal);
+
+        Assert.DoesNotContain("FactualPackageReader", names);
+        Assert.DoesNotContain("PackageReadResult", names);
+    }
+
+    [Fact]
     [Trait("Requirement", "ENG-12")]
+    [Trait("Requirement", "STOR-35")]
     public void PublicSurface_DoesNotExposePassClassifierAdapterOrStageTypes()
     {
         var offending = PublicSurfaceTypes()

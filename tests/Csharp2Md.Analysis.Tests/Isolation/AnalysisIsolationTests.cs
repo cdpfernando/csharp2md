@@ -11,7 +11,6 @@ public sealed class AnalysisIsolationTests
         "Csharp2Md.Storage",
         "Csharp2Md.Projection",
         "Csharp2Md.Cli",
-        "Csharp2Md.Domain",
     ];
 
     private static readonly string[] ForbiddenSurfaceNamespaces =
@@ -27,16 +26,28 @@ public sealed class AnalysisIsolationTests
     public static IEnumerable<object[]> ForbiddenSurfaceNamespaceCases() =>
         ForbiddenSurfaceNamespaces.Select(ns => new object[] { ns });
 
+    [Fact]
+    [Trait("Requirement", "STOR-11")]
+    public void AnalysisCsproj_DeclaresProjectReferenceToDomain()
+    {
+        var csprojPath = AnalysisCsprojPath();
+
+        Assert.True(File.Exists(csprojPath), $"Analysis project file was not found at '{csprojPath}'.");
+
+        var domainReference = ReadProjectReferenceIncludes(csprojPath)
+            .FirstOrDefault(include => ReferencesProject(include, "Csharp2Md.Domain"));
+
+        Assert.False(
+            string.IsNullOrWhiteSpace(domainReference),
+            "Csharp2Md.Analysis must declare a project reference to Csharp2Md.Domain.");
+    }
+
     [Theory]
     [Trait("Requirement", "ENG-03")]
     [MemberData(nameof(ForbiddenAnalysisProjectReferenceCases))]
     public void AnalysisCsproj_DeclaresNoProjectReferenceTo(string forbiddenProject)
     {
-        var csprojPath = Path.Combine(
-            AnalysisTestPaths.RepoRoot,
-            "src",
-            "Csharp2Md.Analysis",
-            "Csharp2Md.Analysis.csproj");
+        var csprojPath = AnalysisCsprojPath();
 
         Assert.True(File.Exists(csprojPath), $"Analysis project file was not found at '{csprojPath}'.");
 
@@ -73,6 +84,13 @@ public sealed class AnalysisIsolationTests
             offendingType is null,
             $"Type '{offendingType?.FullName}' from forbidden namespace '{forbiddenNamespace}' is exposed by a public member of Csharp2Md.Analysis.");
     }
+
+    private static string AnalysisCsprojPath() =>
+        Path.Combine(
+            AnalysisTestPaths.RepoRoot,
+            "src",
+            "Csharp2Md.Analysis",
+            "Csharp2Md.Analysis.csproj");
 
     private static IReadOnlyList<string> ReadProjectReferenceIncludes(string csprojPath)
     {

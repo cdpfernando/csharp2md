@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "type": [
+    "object",
+    "null"
+  ],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "fact_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "fact_type"
+      ],
+      "additionalProperties": false
+    },
+    "proof": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "role"
+      ],
+      "additionalProperties": false
+    },
+    "content_sha256": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "identity",
+    "proof",
+    "content_sha256"
+  ],
+  "additionalProperties": false
+}

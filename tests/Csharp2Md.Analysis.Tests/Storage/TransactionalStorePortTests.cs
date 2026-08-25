@@ -20,6 +20,7 @@ public sealed class TransactionalStorePortTests
 
     [Fact]
     [Trait("Requirement", "ENG-20")]
+    [Trait("Requirement", "STOR-15")]
     public void IStoreSession_ExposesStageCommitAndAbortAsDistinctOperations()
     {
         var stage = typeof(IStoreSession).GetMethod("Stage");
@@ -35,8 +36,8 @@ public sealed class TransactionalStorePortTests
 
         var stageParameter = Assert.Single(stage.GetParameters());
         Assert.Equal(typeof(void), stage.ReturnType);
-        Assert.Equal(typeof(StagedFragment), stageParameter.ParameterType);
-        Assert.Equal("fragment", stageParameter.Name);
+        Assert.Equal(typeof(FactualSnapshot), stageParameter.ParameterType);
+        Assert.Equal("snapshot", stageParameter.Name);
 
         Assert.Equal(typeof(CommittedPublication), commit.ReturnType);
         Assert.Empty(commit.GetParameters());

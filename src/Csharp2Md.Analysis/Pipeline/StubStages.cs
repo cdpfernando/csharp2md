@@ -78,7 +78,7 @@ internal sealed class PersistenceStub : IPipelineStage
 
     public ValueTask<StageResult> ExecuteAsync(PipelineContext context, CancellationToken cancellationToken)
     {
-        context.Session.Stage(new StagedFragment(ArtifactRole.Manifest, "manifest", []));
+        context.Session.Stage(FactualSnapshot.Empty);
         return StubStages.ZeroResult();
     }
 }

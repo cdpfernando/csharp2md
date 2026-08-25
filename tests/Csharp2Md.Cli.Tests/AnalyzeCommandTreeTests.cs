@@ -27,4 +27,16 @@ public sealed class AnalyzeCommandTreeTests
         Assert.Equal(ArgumentArity.OneOrMore, solution.Arity);
         Assert.Empty(analyze.Arguments);
     }
+
+    [Fact]
+    [Trait("Requirement", "STOR-47")]
+    public void Analyze_RequiresOutputOptionThatIsNotPositional()
+    {
+        var analyze = Assert.Single(CommandFactory.CreateRootCommand().Subcommands);
+        var output = Assert.Single(analyze.Options, option => option.Name == "--output");
+
+        Assert.True(output.Required);
+        Assert.Equal(ArgumentArity.ExactlyOne, output.Arity);
+        Assert.Empty(analyze.Arguments);
+    }
 }

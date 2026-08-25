@@ -40,7 +40,7 @@ public sealed class MultiSolutionIsolationTests
         Assert.False(result.Solutions[0].StructuralCorruption);
         Assert.Equal(Path.GetFullPath("a.sln"), result.Solutions[0].SolutionPath);
         Assert.True(store.TryGetPublication(result.Solutions[0].SolutionPath, out var publicationA));
-        Assert.Equal(ArtifactRole.Manifest, Assert.Single(publicationA.ArtifactsInPublicationOrder).Role);
+        Assert.Equal(ArtifactRole.Manifest, publicationA.ArtifactsInPublicationOrder[^1].Role);
 
         Assert.Equal(PublicationStatus.Unpublished, result.Solutions[1].Status);
         Assert.Equal("Classification and Promotion", result.Solutions[1].FailingStage);
@@ -53,7 +53,7 @@ public sealed class MultiSolutionIsolationTests
         Assert.False(result.Solutions[2].StructuralCorruption);
         Assert.Equal(Path.GetFullPath("c.sln"), result.Solutions[2].SolutionPath);
         Assert.True(store.TryGetPublication(result.Solutions[2].SolutionPath, out var publicationC));
-        Assert.Equal(ArtifactRole.Manifest, Assert.Single(publicationC.ArtifactsInPublicationOrder).Role);
+        Assert.Equal(ArtifactRole.Manifest, publicationC.ArtifactsInPublicationOrder[^1].Role);
         Assert.NotEqual(publicationA.SolutionKey, publicationC.SolutionKey);
 
         Assert.Equal(3, contexts.Count);

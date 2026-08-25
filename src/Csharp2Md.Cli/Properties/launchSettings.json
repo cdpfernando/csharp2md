@@ -4,7 +4,7 @@
     "csharp2md (synthetic fixture)": {
       "commandName": "Project",
       "workingDirectory": "../../",
-      "commandLineArgs": "analyze --solution fixtures/SyntheticSolution/Acme.Orders/Acme.Orders.slnx"
+      "commandLineArgs": "analyze --solution fixtures/SyntheticSolution/Acme.Orders/Acme.Orders.slnx --output artifacts/analyze-out"
     }
   }
 }

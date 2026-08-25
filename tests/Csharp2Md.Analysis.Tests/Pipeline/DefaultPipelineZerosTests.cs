@@ -8,6 +8,7 @@ public sealed class DefaultPipelineZerosTests
 {
     [Fact]
     [Trait("Requirement", "ENG-15")]
+    [Trait("Requirement", "STOR-50")]
     public async Task AnalyzeAsync_DefaultStubs_ReportZeroCountsAndCommittedStatus()
     {
         var solutionPath = Path.Combine(

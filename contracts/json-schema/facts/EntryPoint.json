@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "type": [
+    "object",
+    "null"
+  ],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "fact_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "fact_type"
+      ],
+      "additionalProperties": false
+    },
+    "symbol": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "fact_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "fact_type"
+      ],
+      "additionalProperties": false
+    },
+    "owning_component": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "fact_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "fact_type"
+      ],
+      "additionalProperties": false
+    },
+    "content_sha256": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "identity",
+    "symbol",
+    "owning_component",
+    "content_sha256"
+  ],
+  "additionalProperties": false
+}

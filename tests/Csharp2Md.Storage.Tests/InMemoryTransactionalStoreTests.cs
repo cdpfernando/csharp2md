@@ -1,5 +1,13 @@
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Identity;
+using Csharp2Md.Domain.Literals;
+using Csharp2Md.Domain.Observations;
+using Csharp2Md.Domain.Proof;
+using Csharp2Md.Domain.Relations;
 using Csharp2Md.Storage;
+using Csharp2Md.Storage.Mapping;
+using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage.Tests;
 
@@ -7,24 +15,30 @@ public sealed class InMemoryTransactionalStoreTests
 {
     [Fact]
     [Trait("Requirement", "ENG-21")]
-    public void Open_IsolatesFragmentListsBySolutionKey()
+    [Trait("Requirement", "STOR-15")]
+    public void Open_IsolatesSessionsBySolutionKey()
     {
         var store = new InMemoryTransactionalStore();
         var sessionA = store.Open("solution-a");
         var sessionB = store.Open("solution-b");
 
-        sessionA.Stage(Fragment(ArtifactRole.Payload, "a-only", [1]));
-        sessionB.Stage(Fragment(ArtifactRole.Payload, "b-only", [2]));
+        sessionA.Stage(SolutionSnapshot());
+        sessionB.Stage(CandidateSnapshot());
 
         var publicationA = sessionA.Commit();
         var publicationB = sessionB.Commit();
 
         Assert.Equal("solution-a", publicationA.SolutionKey);
         Assert.Equal("solution-b", publicationB.SolutionKey);
-        Assert.Equal(["a-only"], publicationA.ArtifactsInPublicationOrder.Select(fragment => fragment.CanonicalKey));
-        Assert.Equal(["b-only"], publicationB.ArtifactsInPublicationOrder.Select(fragment => fragment.CanonicalKey));
-        Assert.DoesNotContain(publicationA.ArtifactsInPublicationOrder, fragment => fragment.CanonicalKey == "b-only");
-        Assert.DoesNotContain(publicationB.ArtifactsInPublicationOrder, fragment => fragment.CanonicalKey == "a-only");
+        Assert.Contains(publicationA.ArtifactsInPublicationOrder, fragment => fragment.CanonicalKey == "facts/structural.json");
+        Assert.DoesNotContain(publicationA.ArtifactsInPublicationOrder, fragment => fragment.CanonicalKey == "relations/candidates.json");
+        Assert.Contains(publicationB.ArtifactsInPublicationOrder, fragment => fragment.CanonicalKey == "relations/candidates.json");
+        Assert.DoesNotContain(publicationB.ArtifactsInPublicationOrder, fragment => fragment.CanonicalKey == "facts/structural.json");
+        Assert.True(store.TryGetPublication("solution-a", out var storedA));
+        Assert.True(store.TryGetPublication("solution-b", out var storedB));
+        Assert.Equal(publicationA, storedA);
+        Assert.Equal(publicationB, storedB);
+        Assert.NotEqual(storedA.SolutionKey, storedB.SolutionKey);
     }
 
     [Fact]
@@ -33,19 +47,18 @@ public sealed class InMemoryTransactionalStoreTests
     {
         var store = new InMemoryTransactionalStore();
         var first = store.Open("solution-a");
-        first.Stage(Fragment(ArtifactRole.Payload, "aborted", [9]));
+        first.Stage(FactualSnapshot.Empty);
         first.Abort();
+        Assert.False(store.TryGetPublication("solution-a", out _));
 
         var second = store.Open("solution-a");
-        second.Stage(Fragment(ArtifactRole.Payload, "kept", [4]));
+        second.Stage(FactualSnapshot.Empty);
         var publication = second.Commit();
 
-        Assert.DoesNotContain(
-            publication.ArtifactsInPublicationOrder,
-            fragment => fragment.CanonicalKey == "aborted");
-        var kept = Assert.Single(publication.ArtifactsInPublicationOrder);
-        Assert.Equal("kept", kept.CanonicalKey);
-        Assert.True(kept.Payload.AsSpan().SequenceEqual((ReadOnlySpan<byte>)[4]));
+        Assert.True(store.TryGetPublication("solution-a", out var stored));
+        Assert.Equal(publication, stored);
+        Assert.Equal("solution-a", publication.SolutionKey);
+        Assert.Equal(ArtifactRole.Manifest, publication.ArtifactsInPublicationOrder[^1].Role);
     }
 
     [Fact]
@@ -55,8 +68,27 @@ public sealed class InMemoryTransactionalStoreTests
         var storageRoot = Path.Combine(StorageTestPaths.RepoRoot, "src", "Csharp2Md.Storage");
         Assert.True(Directory.Exists(storageRoot), $"Storage project was not found at '{storageRoot}'.");
 
-        var offending = Directory.EnumerateFiles(storageRoot, "*.cs", SearchOption.AllDirectories)
-            .Where(path => !IsGeneratedOutput(path))
+        var adapter = Path.Combine(storageRoot, "FilesystemTransactionalStore.cs");
+        Assert.True(File.Exists(adapter), $"Filesystem adapter was not found at '{adapter}'.");
+
+        var scanned = new[]
+            {
+                Path.Combine(storageRoot, "Wire"),
+                Path.Combine(storageRoot, "Mapping"),
+                Path.Combine(storageRoot, "Validation"),
+            }
+            .Where(Directory.Exists)
+            .SelectMany(root => Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+            .Append(Path.Combine(storageRoot, "InMemoryTransactionalStore.cs"))
+            .Where(path => File.Exists(path) && !IsGeneratedOutput(path))
+            .ToArray();
+
+        Assert.DoesNotContain(adapter, scanned);
+        Assert.DoesNotContain(
+            scanned,
+            path => Path.GetFileName(path) is "FilesystemTransactionalStore.cs" or "FactualPackageReader.cs");
+
+        var offending = scanned
             .Select(path => (path, text: File.ReadAllText(path)))
             .FirstOrDefault(file =>
                 file.text.Contains("using System.IO", StringComparison.Ordinal)
@@ -69,88 +101,108 @@ public sealed class InMemoryTransactionalStoreTests
 
     [Fact]
     [Trait("Requirement", "ENG-23")]
-    public void Commit_PublishesPayloadsBeforeManifestEvenWhenManifestWasStagedFirst()
+    [Trait("Requirement", "STOR-16")]
+    public void Commit_PublishesManifestLast()
     {
         var session = new InMemoryTransactionalStore().Open("solution-a");
-        session.Stage(Fragment(ArtifactRole.Manifest, "manifest", [0x4D]));
-        session.Stage(Fragment(ArtifactRole.Payload, "zeta", [0x5A]));
-        session.Stage(Fragment(ArtifactRole.Payload, "alpha", [0x41]));
+        session.Stage(FactualSnapshot.Empty);
 
         var artifacts = session.Commit().ArtifactsInPublicationOrder;
 
-        Assert.Equal(3, artifacts.Length);
-        AssertFragment(artifacts[0], ArtifactRole.Payload, "alpha", [0x41]);
-        AssertFragment(artifacts[1], ArtifactRole.Payload, "zeta", [0x5A]);
-        AssertFragment(artifacts[2], ArtifactRole.Manifest, "manifest", [0x4D]);
+        Assert.NotEmpty(artifacts);
+        Assert.Equal(ArtifactRole.Manifest, artifacts[^1].Role);
     }
 
     [Fact]
     [Trait("Requirement", "ENG-27")]
-    public void Commit_TwoStagingOrders_YieldByteIdenticalPublicationOrder()
+    [Trait("Requirement", "STOR-44")]
+    [Trait("Requirement", "STOR-45")]
+    public void Commit_TwoStagingOrders_YieldByteIdenticalCanonicalPayloads()
     {
-        var first = CommitInOrder(
-            Fragment(ArtifactRole.Payload, "b", [2]),
-            Fragment(ArtifactRole.Manifest, "m-z", [9]),
-            Fragment(ArtifactRole.Payload, "a", [1]),
-            Fragment(ArtifactRole.Manifest, "m-a", [8]));
-        var second = CommitInOrder(
-            Fragment(ArtifactRole.Manifest, "m-a", [8]),
-            Fragment(ArtifactRole.Payload, "a", [1]),
-            Fragment(ArtifactRole.Manifest, "m-z", [9]),
-            Fragment(ArtifactRole.Payload, "b", [2]));
+        var alpha = DocumentSnapshot("src/Acme.Payments/Alpha.cs");
+        var zeta = DocumentSnapshot("src/Acme.Payments/Zeta.cs");
+        var firstObservation = ObservationSnapshot(1);
+        var secondObservation = ObservationSnapshot(2);
 
-        Assert.Equal(first.Length, second.Length);
-        for (var i = 0; i < first.Length; i++)
-        {
-            Assert.Equal(first[i].Role, second[i].Role);
-            Assert.Equal(first[i].CanonicalKey, second[i].CanonicalKey);
-            Assert.True(
-                first[i].Payload.AsSpan().SequenceEqual(second[i].Payload.AsSpan()),
-                $"Payload bytes at index {i} differ.");
-        }
+        var first = CommitInOrder(zeta, alpha, secondObservation, firstObservation);
+        var second = CommitInOrder(alpha, zeta, firstObservation, secondObservation);
+        var sameGraphAgain = CommitInOrder(alpha.Merge(zeta).Merge(firstObservation).Merge(secondObservation));
 
-        AssertFragment(first[0], ArtifactRole.Payload, "a", [1]);
-        AssertFragment(first[1], ArtifactRole.Payload, "b", [2]);
-        AssertFragment(first[2], ArtifactRole.Manifest, "m-a", [8]);
-        AssertFragment(first[3], ArtifactRole.Manifest, "m-z", [9]);
+        AssertEqualCanonicalPayloads(first, second);
+        AssertEqualCanonicalPayloads(first, sameGraphAgain);
+        Assert.Contains(first, fragment => fragment.CanonicalKey == "facts/structural.json");
+        Assert.Contains(first, fragment => fragment.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal));
+        Assert.Equal(ArtifactRole.Manifest, first[^1].Role);
+        Assert.Equal(ArtifactRole.Manifest, second[^1].Role);
     }
 
     [Fact]
     [Trait("Requirement", "ENG-22")]
+    [Trait("Requirement", "STOR-60")]
     public void Commit_SecondCallOnTheSameSession_IsRejected()
     {
         var session = new InMemoryTransactionalStore().Open("solution-a");
-        session.Stage(Fragment(ArtifactRole.Payload, "once", [1]));
+        session.Stage(FactualSnapshot.Empty);
         var first = session.Commit();
 
-        Assert.Equal("once", Assert.Single(first.ArtifactsInPublicationOrder).CanonicalKey);
-        Assert.Throws<InvalidOperationException>(session.Commit);
+        Assert.Equal(ArtifactRole.Manifest, first.ArtifactsInPublicationOrder[^1].Role);
+        var exception = Assert.Throws<PublicationRejectedException>(session.Commit);
+        Assert.Equal("session-state", exception.Gate);
+        Assert.Contains("solution-a", exception.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-61")]
+    public void Stage_AfterCommit_IsRejected()
+    {
+        var session = new InMemoryTransactionalStore().Open("solution-a");
+        session.Stage(FactualSnapshot.Empty);
+        session.Commit();
+
+        var exception = Assert.Throws<PublicationRejectedException>(() => session.Stage(FactualSnapshot.Empty));
+        Assert.Equal("session-state", exception.Gate);
+        Assert.Contains("solution-a", exception.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-59")]
+    public void Open_OverlappingSameKey_IsRejectedUntilCommitOrAbort()
+    {
+        var store = new InMemoryTransactionalStore();
+        var first = store.Open("solution-a");
+
+        var locked = Assert.Throws<PublicationRejectedException>(() => store.Open("solution-a"));
+        Assert.Equal("lock", locked.Gate);
+        Assert.Contains("solution-a", locked.Detail, StringComparison.Ordinal);
+
+        first.Abort();
+        var afterAbort = store.Open("solution-a");
+        afterAbort.Stage(FactualSnapshot.Empty);
+        afterAbort.Commit();
+
+        var afterCommit = store.Open("solution-a");
+        afterCommit.Abort();
+        Assert.True(store.TryGetPublication("solution-a", out var stored));
+        Assert.Equal("solution-a", stored.SolutionKey);
     }
 
     [Fact]
     [Trait("Requirement", "ENG-25")]
-    public void AbortThenCommitOfNewSession_DoesNotContainAbortedFragments()
+    public void AbortThenCommitOfNewSession_DoesNotPublishTheAbortedSession()
     {
         var store = new InMemoryTransactionalStore();
         var first = store.Open("solution-a");
-        first.Stage(Fragment(ArtifactRole.Payload, "aborted", [9]));
+        first.Stage(FactualSnapshot.Empty);
         first.Abort();
 
         var second = store.Open("solution-a");
-        second.Stage(Fragment(ArtifactRole.Payload, "kept", [4]));
-        second.Stage(Fragment(ArtifactRole.Manifest, "manifest", [0x4D]));
+        second.Stage(FactualSnapshot.Empty);
         var publication = second.Commit();
 
-        Assert.DoesNotContain(
-            publication.ArtifactsInPublicationOrder,
-            fragment => fragment.CanonicalKey == "aborted");
-        Assert.Equal(2, publication.ArtifactsInPublicationOrder.Length);
-        AssertFragment(publication.ArtifactsInPublicationOrder[0], ArtifactRole.Payload, "kept", [4]);
-        AssertFragment(publication.ArtifactsInPublicationOrder[1], ArtifactRole.Manifest, "manifest", [0x4D]);
-
+        Assert.Equal("solution-a", publication.SolutionKey);
+        Assert.Equal(ArtifactRole.Manifest, publication.ArtifactsInPublicationOrder[^1].Role);
         Assert.True(store.TryGetPublication("solution-a", out var stored));
         Assert.Equal(publication, stored);
-        Assert.DoesNotContain(stored.ArtifactsInPublicationOrder, fragment => fragment.CanonicalKey == "aborted");
     }
 
     [Fact]
@@ -159,22 +211,22 @@ public sealed class InMemoryTransactionalStoreTests
     {
         var store = new InMemoryTransactionalStore();
         var first = store.Open("solution-a");
-        first.Stage(Fragment(ArtifactRole.Payload, "prior", [1]));
-        first.Stage(Fragment(ArtifactRole.Manifest, "manifest", [0x4D]));
+        first.Stage(FactualSnapshot.Empty);
         var prior = first.Commit();
 
         var second = store.Open("solution-a");
-        second.Stage(Fragment(ArtifactRole.Payload, "would-replace", [99]));
+        second.Stage(FactualSnapshot.Empty);
         second.Abort();
 
         Assert.True(store.TryGetPublication("solution-a", out var stored));
         Assert.Equal(prior, stored);
-        Assert.Equal("prior", stored.ArtifactsInPublicationOrder[0].CanonicalKey);
-        Assert.True(stored.ArtifactsInPublicationOrder[0].Payload.AsSpan().SequenceEqual((ReadOnlySpan<byte>)[1]));
-        Assert.Equal(ArtifactRole.Manifest, stored.ArtifactsInPublicationOrder[1].Role);
-        Assert.DoesNotContain(
-            stored.ArtifactsInPublicationOrder,
-            fragment => fragment.CanonicalKey == "would-replace");
+        Assert.Equal(prior.SolutionKey, stored.SolutionKey);
+        Assert.Equal(prior.ArtifactsInPublicationOrder.Length, stored.ArtifactsInPublicationOrder.Length);
+        Assert.Equal(prior.ArtifactsInPublicationOrder[^1].Role, stored.ArtifactsInPublicationOrder[^1].Role);
+        Assert.Equal(prior.ArtifactsInPublicationOrder[^1].CanonicalKey, stored.ArtifactsInPublicationOrder[^1].CanonicalKey);
+        Assert.True(
+            prior.ArtifactsInPublicationOrder[^1].Payload.AsSpan()
+                .SequenceEqual(stored.ArtifactsInPublicationOrder[^1].Payload.AsSpan()));
     }
 
     [Fact]
@@ -183,7 +235,7 @@ public sealed class InMemoryTransactionalStoreTests
     {
         var store = new InMemoryTransactionalStore();
         var session = store.Open("solution-a");
-        session.Stage(Fragment(ArtifactRole.Payload, "aborted", [9]));
+        session.Stage(FactualSnapshot.Empty);
         session.Abort();
 
         Assert.False(store.TryGetPublication("solution-a", out _));
@@ -195,45 +247,177 @@ public sealed class InMemoryTransactionalStoreTests
     {
         var store = new InMemoryTransactionalStore();
         var first = store.Open("solution-a");
-        first.Stage(Fragment(ArtifactRole.Payload, "old", [1]));
+        first.Stage(FactualSnapshot.Empty);
         first.Commit();
 
         var second = store.Open("solution-a");
-        second.Stage(Fragment(ArtifactRole.Payload, "new", [2]));
+        second.Stage(CandidateSnapshot());
         var replacement = second.Commit();
 
         Assert.True(store.TryGetPublication("solution-a", out var stored));
         Assert.Equal(replacement, stored);
-        AssertFragment(Assert.Single(stored.ArtifactsInPublicationOrder), ArtifactRole.Payload, "new", [2]);
-        Assert.DoesNotContain(stored.ArtifactsInPublicationOrder, fragment => fragment.CanonicalKey == "old");
+        Assert.Equal("solution-a", stored.SolutionKey);
+        Assert.Contains(stored.ArtifactsInPublicationOrder, fragment => fragment.CanonicalKey == "relations/candidates.json");
+        Assert.Equal(ArtifactRole.Manifest, stored.ArtifactsInPublicationOrder[^1].Role);
     }
 
-    private static ImmutableArray<StagedFragment> CommitInOrder(params StagedFragment[] fragments)
+    [Fact]
+    [Trait("Requirement", "STOR-06")]
+    [Trait("Requirement", "STOR-16")]
+    [Trait("Requirement", "STOR-50")]
+    public void Commit_EmptySnapshot_OmitsFamilyShardsIncludesRegistryAndManifestLast()
     {
         var session = new InMemoryTransactionalStore().Open("solution-a");
-        foreach (var fragment in fragments)
+        session.Stage(FactualSnapshot.Empty);
+        var artifacts = session.Commit().ArtifactsInPublicationOrder;
+
+        Assert.NotEmpty(artifacts);
+        Assert.Equal(ArtifactRole.Manifest, artifacts[^1].Role);
+        Assert.Equal("manifest.json", artifacts[^1].CanonicalKey);
+        Assert.All(artifacts[..^1], fragment => Assert.Equal(ArtifactRole.Payload, fragment.Role));
+
+        var payloadKeys = artifacts[..^1].Select(fragment => fragment.CanonicalKey).ToArray();
+        Assert.Equal(payloadKeys.Order(StringComparer.Ordinal), payloadKeys);
+        Assert.DoesNotContain(payloadKeys, key => key.StartsWith("facts/", StringComparison.Ordinal));
+        Assert.DoesNotContain(payloadKeys, key => key.StartsWith("observations/", StringComparison.Ordinal));
+        Assert.DoesNotContain(payloadKeys, key => key.StartsWith("relations/", StringComparison.Ordinal));
+
+        var registry = Assert.Single(artifacts, fragment => fragment.CanonicalKey == PackagePublisher.RegistryKey);
+        Assert.Equal(ArtifactRole.Payload, registry.Role);
+        var expectedRegistry = DomainMapper.ToWire(FactualSnapshot.Empty, new ManifestContext("solution-a", "solution-a"))
+            .TaxonomyRegistryCopy;
+        Assert.True(registry.Payload.AsSpan().SequenceEqual(expectedRegistry.AsSpan()));
+
+        var manifest = CanonicalJson.Read<ManifestEnvelope>(artifacts[^1].Payload.AsSpan());
+        Assert.Equal("solution-a", manifest.SolutionKey);
+        Assert.Equal("solution-a", manifest.SolutionFileName);
+        Assert.All(manifest.Artifacts, entry => Assert.Equal(0, entry.Count));
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-33")]
+    public void Commit_CandidateOnlySnapshot_SucceedsWithCandidatesShard()
+    {
+        var session = new InMemoryTransactionalStore().Open("solution-a");
+        session.Stage(CandidateSnapshot());
+        var publication = session.Commit();
+
+        Assert.Equal("solution-a", publication.SolutionKey);
+        Assert.Equal(ArtifactRole.Manifest, publication.ArtifactsInPublicationOrder[^1].Role);
+        Assert.Contains(
+            publication.ArtifactsInPublicationOrder,
+            fragment => fragment.CanonicalKey == "relations/candidates.json");
+        Assert.DoesNotContain(
+            publication.ArtifactsInPublicationOrder,
+            fragment => fragment.CanonicalKey.StartsWith("facts/", StringComparison.Ordinal));
+
+        var manifest = CanonicalJson.Read<ManifestEnvelope>(publication.ArtifactsInPublicationOrder[^1].Payload.AsSpan());
+        var candidates = Assert.Single(manifest.Artifacts, entry => entry.CanonicalKey == "relations/candidates");
+        Assert.Equal(1, candidates.Count);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-24")]
+    public void Commit_EmptySnapshot_CreatesNoFilesOrDirectories()
+    {
+        var probe = Path.Combine(Path.GetTempPath(), "csharp2md-stor24-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(probe);
+        try
         {
-            session.Stage(fragment);
+            Assert.Empty(Directory.GetFileSystemEntries(probe));
+
+            var session = new InMemoryTransactionalStore().Open("solution-a");
+            session.Stage(FactualSnapshot.Empty);
+            session.Commit();
+
+            Assert.Empty(Directory.GetFileSystemEntries(probe));
+        }
+        finally
+        {
+            Directory.Delete(probe, recursive: true);
+        }
+    }
+
+    private static ImmutableArray<StagedFragment> CommitInOrder(params FactualSnapshot[] snapshots)
+    {
+        var session = new InMemoryTransactionalStore().Open("solution-a");
+        foreach (var snapshot in snapshots)
+        {
+            session.Stage(snapshot);
         }
 
         return session.Commit().ArtifactsInPublicationOrder;
     }
 
-    private static void AssertFragment(
-        StagedFragment fragment,
-        ArtifactRole role,
-        string canonicalKey,
-        ReadOnlySpan<byte> payload)
+    private static void AssertEqualCanonicalPayloads(
+        ImmutableArray<StagedFragment> left,
+        ImmutableArray<StagedFragment> right)
     {
-        Assert.Equal(role, fragment.Role);
-        Assert.Equal(canonicalKey, fragment.CanonicalKey);
-        Assert.True(
-            fragment.Payload.AsSpan().SequenceEqual(payload),
-            $"Payload bytes for '{canonicalKey}' differ.");
+        var leftCanonical = WithoutMeasurements(left);
+        var rightCanonical = WithoutMeasurements(right);
+        Assert.Equal(leftCanonical.Length, rightCanonical.Length);
+        for (var index = 0; index < leftCanonical.Length; index++)
+        {
+            Assert.Equal(leftCanonical[index].Role, rightCanonical[index].Role);
+            Assert.Equal(leftCanonical[index].CanonicalKey, rightCanonical[index].CanonicalKey);
+            Assert.True(
+                leftCanonical[index].Payload.AsSpan().SequenceEqual(rightCanonical[index].Payload.AsSpan()),
+                $"Canonical payload bytes at '{leftCanonical[index].CanonicalKey}' differ.");
+        }
     }
 
-    private static StagedFragment Fragment(ArtifactRole role, string canonicalKey, ImmutableArray<byte> payload) =>
-        new(role, canonicalKey, payload);
+    private static ImmutableArray<StagedFragment> WithoutMeasurements(ImmutableArray<StagedFragment> artifacts) =>
+        [.. artifacts.Where(fragment => fragment.CanonicalKey != "measurements.json")];
+
+    private static FactualSnapshot DocumentSnapshot(string relativePath)
+    {
+        var workspace = WorkspaceIdentity.Create("acme");
+        var solution = SolutionId.Create(workspace, "src/Acme.sln");
+        var project = ProjectId.Create(solution, "src/Acme.Payments/Acme.Payments.csproj");
+        return new FactualSnapshot([Document.Create(project, relativePath)], [], [], [], [], []);
+    }
+
+    private static FactualSnapshot ObservationSnapshot(int ordinal)
+    {
+        var workspace = WorkspaceIdentity.Create("acme");
+        var solution = Solution.Create(SolutionId.Create(workspace, "src/Acme.sln"));
+        var observation = Observation.Create(
+            solution.Reference,
+            ObservationKind.Invocation,
+            NormalizedPayload.Create([]),
+            ordinal,
+            new EvidenceLocator(DocumentId.Create("doc"), "src/Acme.Payments/Invoice.cs", new SourceSpan(1, 1, 1, 8)),
+            EvidenceMethod.Semantic,
+            new BindingDiagnostic("BIND001", "Bound successfully."),
+            DocumentHash.Create(new string('a', 64)),
+            new ExtractorVersion(1));
+        return new FactualSnapshot([], [observation], [], [], [], []);
+    }
+
+    private static FactualSnapshot SolutionSnapshot()
+    {
+        var workspace = WorkspaceIdentity.Create("acme");
+        var solution = Solution.Create(SolutionId.Create(workspace, "src/Acme.sln"));
+        return new FactualSnapshot([solution], [], [], [], [], []);
+    }
+
+    private static FactualSnapshot CandidateSnapshot()
+    {
+        var workspace = WorkspaceIdentity.Create("acme");
+        var solutionId = SolutionId.Create(workspace, "src/Acme.sln");
+        var projectId = ProjectId.Create(solutionId, "src/Acme.Payments/Acme.Payments.csproj");
+        var link = CandidateLink.Create(
+            RelationKind.Contains,
+            Solution.Create(solutionId).Reference,
+            Project.Create(projectId).Reference,
+            EvidenceChain.Create([
+                new ObservationIdentity(
+                    Solution.Create(solutionId).Reference,
+                    ObservationKind.Invocation,
+                    NormalizedPayload.Create([]),
+                    1)]));
+        return new FactualSnapshot([], [], [], [link], [], []);
+    }
 
     private static bool IsGeneratedOutput(string path)
     {

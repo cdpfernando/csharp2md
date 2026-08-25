@@ -12,7 +12,6 @@ public sealed class AnalyzeOptionSurfaceTests
         "--topic",
         "--domain",
         "--manifest",
-        "--output",
         "--trust",
         "--include-source-generators",
         "--analysis-timeout",
@@ -20,6 +19,8 @@ public sealed class AnalyzeOptionSurfaceTests
 
     [Fact]
     [Trait("Requirement", "ENG-45")]
+    [Trait("Requirement", "STOR-47")]
+    [Trait("Requirement", "STOR-52")]
     public void AnalyzeAndRoot_DoNotExposeRemovedMarkdownEraOptions()
     {
         var root = CommandFactory.CreateRootCommand();
@@ -36,14 +37,17 @@ public sealed class AnalyzeOptionSurfaceTests
 
         var analyzeProductOptions = analyze.Options
             .Where(static option => option is not HelpOption and not VersionOption)
+            .Select(static option => option.Name)
+            .OrderBy(static name => name, StringComparer.Ordinal)
             .ToArray();
-        var solution = Assert.Single(analyzeProductOptions);
-        Assert.Equal("--solution", solution.Name);
+        Assert.Equal(["--output", "--solution"], analyzeProductOptions);
         Assert.Empty(analyze.Arguments);
     }
 
     [Fact]
     [Trait("Requirement", "ENG-45")]
+    [Trait("Requirement", "STOR-47")]
+    [Trait("Requirement", "STOR-52")]
     public void LaunchSettings_UsesAnalyzeSolutionAgainstTheFixture()
     {
         var path = Path.Combine(
@@ -63,6 +67,7 @@ public sealed class AnalyzeOptionSurfaceTests
             var args = profile.Value.GetProperty("commandLineArgs").GetString();
             Assert.False(string.IsNullOrWhiteSpace(args), $"Profile '{profile.Name}' has empty commandLineArgs.");
             Assert.StartsWith("analyze --solution ", args, StringComparison.Ordinal);
+            Assert.Contains("--output artifacts/analyze-out", args, StringComparison.Ordinal);
 
             foreach (var removed in RemovedOptionNames)
             {

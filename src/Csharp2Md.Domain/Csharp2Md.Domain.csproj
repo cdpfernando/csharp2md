@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Csharp2Md.Domain.Tests" />
+    <InternalsVisibleTo Include="Csharp2Md.Storage" />
   </ItemGroup>
 
 </Project>

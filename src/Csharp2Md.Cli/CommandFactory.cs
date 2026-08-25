@@ -8,8 +8,6 @@ internal static class CommandFactory
 {
     internal static RootCommand CreateRootCommand(IAnalysisEngine? engine = null)
     {
-        var analysisEngine = engine ?? new AnalysisEngine(new InMemoryTransactionalStore());
-
         var rootCommand = new RootCommand("Analyze .NET solutions into a knowledge graph.");
 
         var solutionOption = new Option<string[]>("--solution")
@@ -19,8 +17,15 @@ internal static class CommandFactory
             Arity = ArgumentArity.OneOrMore,
         };
 
+        var outputOption = new Option<string>("--output")
+        {
+            Description = "Directory that receives the factual package for each requested solution.",
+            Required = true,
+        };
+
         var analyze = new Command("analyze", "Analyze one or more solutions.");
         analyze.Options.Add(solutionOption);
+        analyze.Options.Add(outputOption);
         analyze.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
             var paths = parseResult.GetValue(solutionOption) ?? [];
@@ -42,12 +47,24 @@ internal static class CommandFactory
                 return Invalid(parseResult, exception.Message);
             }
 
+            var analysisEngine = engine;
+            if (analysisEngine is null)
+            {
+                var outputPath = parseResult.GetValue(outputOption);
+                if (string.IsNullOrWhiteSpace(outputPath))
+                {
+                    return Invalid(parseResult, "--output");
+                }
+
+                analysisEngine = new AnalysisEngine(new FilesystemTransactionalStore(outputPath));
+            }
+
             var result = await analysisEngine.AnalyzeAsync(request, cancellationToken).ConfigureAwait(false);
-            var output = parseResult.InvocationConfiguration.Output;
+            var stdout = parseResult.InvocationConfiguration.Output;
             var error = parseResult.InvocationConfiguration.Error;
 
             WriteDiagnostics(result, error);
-            output.WriteLine(FormatSummary(result));
+            stdout.WriteLine(FormatSummary(result));
             return result.HasUnpublishedSolution ? 2 : 0;
         });
 

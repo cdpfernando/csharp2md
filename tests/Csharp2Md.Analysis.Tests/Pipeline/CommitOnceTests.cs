@@ -26,7 +26,11 @@ public sealed class CommitOnceTests
         var sessionKey = Path.GetFullPath(solutionPath);
         Assert.True(inner.TryGetPublication(sessionKey, out var publication));
         Assert.Equal(sessionKey, publication.SolutionKey);
-        Assert.Equal(ArtifactRole.Manifest, Assert.Single(publication.ArtifactsInPublicationOrder).Role);
+        Assert.NotEmpty(publication.ArtifactsInPublicationOrder);
+        Assert.Equal(ArtifactRole.Manifest, publication.ArtifactsInPublicationOrder[^1].Role);
+        Assert.Contains(
+            publication.ArtifactsInPublicationOrder,
+            fragment => fragment.CanonicalKey == "contracts/taxonomy-registry.json");
     }
 }
 
@@ -53,7 +57,7 @@ internal sealed class CountingStore : ITransactionalStore
             _store = store;
         }
 
-        public void Stage(StagedFragment fragment) => _inner.Stage(fragment);
+        public void Stage(FactualSnapshot snapshot) => _inner.Stage(snapshot);
 
         public CommittedPublication Commit()
         {

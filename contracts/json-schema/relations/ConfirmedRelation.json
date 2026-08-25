@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "type": [
+    "object",
+    "null"
+  ],
+  "properties": {
+    "kind": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "fact_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "fact_type"
+      ],
+      "additionalProperties": false
+    },
+    "target": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "fact_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "fact_type"
+      ],
+      "additionalProperties": false
+    },
+    "facets": {
+      "type": "array",
+      "items": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "axis_name": {
+            "type": "string"
+          },
+          "wire_value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "axis_name",
+          "wire_value"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "derived_from": {
+      "type": "array",
+      "items": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "owner": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "fact_type": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "fact_type"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "array",
+            "items": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "role"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "key",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "occurrence_ordinal": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "owner",
+          "kind",
+          "payload",
+          "occurrence_ordinal"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "classifier": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "analysis_variants": {
+      "type": "array",
+      "items": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "evidence_method": {
+      "type": "string"
+    },
+    "content_sha256": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "source",
+    "target",
+    "facets",
+    "derived_from",
+    "classifier",
+    "analysis_variants",
+    "evidence_method",
+    "content_sha256"
+  ],
+  "additionalProperties": false
+}

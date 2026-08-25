@@ -4,9 +4,11 @@
 
 The repository is preparing a full architectural replacement. Existing source code and wire schemas are legacy until the roadmap is executed.
 
-Workstream 1, [`knowledge-taxonomy-contract`](features/knowledge-taxonomy-contract/spec.md), is complete and verified.
+Workstream 1, [`knowledge-taxonomy-contract`](features/knowledge-taxonomy-contract/spec.md), is complete, verified and on `master`.
 
-Workstream 2, [`engine-bootstrap`](features/engine-bootstrap/spec.md), is complete and verified. Spec, design (AD-014, AD-015), tasks, Execute (T1–T52 plus post-T52 absence-test fix) and independent verification are done.
+Workstream 2, [`engine-bootstrap`](features/engine-bootstrap/spec.md), is complete, verified and merged to `master` (`8a93121`, PR #7).
+
+Workstream 3, [`factual-storage`](features/factual-storage/spec.md), is complete, verified and on `feat/factual-storage` (`4c4948b`). Verifier report: `.specs/features/factual-storage/validation.md` (PASS, 801 tests).
 
 Normative documentation:
 
@@ -115,6 +117,15 @@ Normative documentation:
 - **Date**: 2026-08-25
 - **Status**: active.
 
+### AD-016 — Storage reconstructs through Domain
+
+- **Decision**: `Csharp2Md.Storage` and `Csharp2Md.Analysis` may reference `Csharp2Md.Domain`. Storage maps wire JSON through Domain `Create` at commit and read. Storage does not classify, promote or invent facts. CLI still has no Domain reference. The write port stays on Analysis (AD-014).
+- **Reason**: a last-gate opaque byte store cannot enforce TAX-80, the registry or relation shape. Dual mappers (Analysis JSON plus Storage JSON) would drift from AD-013.
+- **Trade-off**: Storage exposing Domain types on its reader is the seam workstream 6 consumes. Bootstrap tests that forbade a Storage→Domain reference are replaced.
+- **Scope**: Analysis, Storage, CLI isolation tests, and every later workstream that stages snapshots or reads packages.
+- **Date**: 2026-08-25
+- **Status**: active.
+
 ## Standing engineering constraints
 
 - Retrieval-led reasoning is mandatory for .NET/Roslyn work; never invent a Roslyn API.
@@ -125,11 +136,11 @@ Normative documentation:
 
 ## Handoff
 
-- **Feature**: `engine-bootstrap` — `.specs/features/engine-bootstrap/` — **DONE**. Workstream 2 of the roadmap is complete: target assemblies, eight-stage stub pipeline, in-memory storage port, provisional `analyze` CLI, and legacy Core/tests/benchmarks/schemas excised with a committed port ledger.
-- **Phase / Task**: All 52 tasks (T1–T52, 8 phases) implemented, gated, and committed, plus post-T52 `62789a0` adding directory-absence tests for ENG-46/48. Independent Verifier returned PASS with 2 spec-precision gaps (ENG-06, ENG-16) — see `.specs/features/engine-bootstrap/validation.md`. `validate_state.py engine-bootstrap` confirms 0 errors.
-- **Completed**: Specify → Discuss → Design (AD-014, AD-015) → Tasks → Execute (Batches 1–8, T1–T52) → Verify. Discrimination sensor skipped (standing). Last feature commit: `62789a0`.
-- **In-progress** (file:line): none. Feature is closed.
-- **Next step**: Start workstream 3 (`factual-storage`) when the user is ready. Do not push unless asked.
+- **Feature**: `factual-storage` — `.specs/features/factual-storage/`
+- **Phase / Task**: Execute complete. T1–T52 plus post-T52 `4c4948b`. Verifier PASS.
+- **Completed**: T1 `e614a6b` through T52 `341ba6e` (52 atomic commits) plus `4c4948b` (Windows staging-swap retry). Gate: 801 passed, 0 failed.
+- **In-progress** (file:line): none.
+- **Next step**: Feature is closed. Do not start workstream 4 until the user asks. Untracked `context.md` / `design.md` for this feature are still uncommitted if they should land with the branch.
 - **Blockers**: none.
-- **Uncommitted files**: `.specs/features/engine-bootstrap/context.md`; `.specs/features/engine-bootstrap/design.md`; `architecture-knowledge-engine-roadmap.md`. Unrelated noise: `.agents/`, `.claude/`, `.cursor/`, `.windsurf/` skill copies, `fixtures/launch-manifest.json`, `research/`. Do not commit the noise.
-- **Branch**: `codex/architecture-knowledge-engine-docs`
+- **Uncommitted files**: none of the feature artifacts. Noise (do not commit): `.agents/`, `.claude/`, `.cursor/`, `.windsurf/`, `fixtures/launch-manifest.json`, `research/`, `architecture-knowledge-engine-roadmap.md`, `docs/architecture/README.md`.
+- **Branch**: `feat/factual-storage`

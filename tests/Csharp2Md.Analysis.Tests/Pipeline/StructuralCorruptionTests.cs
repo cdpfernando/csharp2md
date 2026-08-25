@@ -23,7 +23,7 @@ public sealed class StructuralCorruptionTests
         Assert.False(firstOutcome.StructuralCorruption);
         Assert.True(store.TryGetPublication(sessionKey, out var prior));
         Assert.Equal(sessionKey, prior.SolutionKey);
-        Assert.Equal(ArtifactRole.Manifest, Assert.Single(prior.ArtifactsInPublicationOrder).Role);
+        Assert.Equal(ArtifactRole.Manifest, prior.ArtifactsInPublicationOrder[^1].Role);
 
         var executed = new List<string>();
         var corruptedValidation = new ResultStage(
@@ -54,10 +54,104 @@ public sealed class StructuralCorruptionTests
         Assert.Equal(prior, kept);
         Assert.Equal(prior.SolutionKey, kept.SolutionKey);
         Assert.Equal(prior.ArtifactsInPublicationOrder.Length, kept.ArtifactsInPublicationOrder.Length);
-        Assert.Equal(prior.ArtifactsInPublicationOrder[0].Role, kept.ArtifactsInPublicationOrder[0].Role);
-        Assert.Equal(prior.ArtifactsInPublicationOrder[0].CanonicalKey, kept.ArtifactsInPublicationOrder[0].CanonicalKey);
-        Assert.True(
-            prior.ArtifactsInPublicationOrder[0].Payload.AsSpan()
-                .SequenceEqual(kept.ArtifactsInPublicationOrder[0].Payload.AsSpan()));
+        for (var index = 0; index < prior.ArtifactsInPublicationOrder.Length; index++)
+        {
+            Assert.Equal(prior.ArtifactsInPublicationOrder[index].Role, kept.ArtifactsInPublicationOrder[index].Role);
+            Assert.Equal(
+                prior.ArtifactsInPublicationOrder[index].CanonicalKey,
+                kept.ArtifactsInPublicationOrder[index].CanonicalKey);
+            Assert.True(
+                prior.ArtifactsInPublicationOrder[index].Payload.AsSpan()
+                    .SequenceEqual(kept.ArtifactsInPublicationOrder[index].Payload.AsSpan()));
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-31")]
+    public async Task AnalyzeAsync_PublicationRejected_MarksUnpublishedKeepsPriorBytes()
+    {
+        var inner = new InMemoryTransactionalStore();
+        var solutionPath = "alpha.sln";
+        var sessionKey = Path.GetFullPath(solutionPath);
+        var request = AnalysisRequest.Create([solutionPath]);
+
+        var first = await new AnalysisEngine(new RejectingCommitStore(inner, rejectCommit: false))
+            .AnalyzeAsync(request, CancellationToken.None);
+        Assert.Equal(PublicationStatus.Committed, Assert.Single(first.Solutions).Status);
+        Assert.True(inner.TryGetPublication(sessionKey, out var prior));
+        var priorBytes = prior.ArtifactsInPublicationOrder
+            .Select(fragment => (fragment.Role, fragment.CanonicalKey, Payload: fragment.Payload.ToArray()))
+            .ToArray();
+
+        var rejecting = new RejectingCommitStore(inner, rejectCommit: true);
+        var second = await new AnalysisEngine(rejecting).AnalyzeAsync(request, CancellationToken.None);
+
+        var outcome = Assert.Single(second.Solutions);
+        Assert.Equal(PublicationStatus.Unpublished, outcome.Status);
+        Assert.True(outcome.StructuralCorruption);
+        Assert.Null(outcome.FailingStage);
+        Assert.True(second.HasUnpublishedSolution);
+        Assert.Equal(1, rejecting.AbortCount);
+
+        Assert.True(inner.TryGetPublication(sessionKey, out var kept));
+        Assert.Equal(prior.SolutionKey, kept.SolutionKey);
+        Assert.Equal(priorBytes.Length, kept.ArtifactsInPublicationOrder.Length);
+        for (var index = 0; index < priorBytes.Length; index++)
+        {
+            Assert.Equal(priorBytes[index].Role, kept.ArtifactsInPublicationOrder[index].Role);
+            Assert.Equal(priorBytes[index].CanonicalKey, kept.ArtifactsInPublicationOrder[index].CanonicalKey);
+            Assert.True(
+                priorBytes[index].Payload.AsSpan()
+                    .SequenceEqual(kept.ArtifactsInPublicationOrder[index].Payload.AsSpan()));
+        }
+
+        Assert.Equal(ArtifactRole.Manifest, kept.ArtifactsInPublicationOrder[^1].Role);
+        Assert.Equal(prior.ArtifactsInPublicationOrder[^1].CanonicalKey, kept.ArtifactsInPublicationOrder[^1].CanonicalKey);
+    }
+}
+
+internal sealed class RejectingCommitStore : ITransactionalStore
+{
+    private readonly InMemoryTransactionalStore _inner;
+    private readonly bool _rejectCommit;
+
+    public RejectingCommitStore(InMemoryTransactionalStore inner, bool rejectCommit)
+    {
+        _inner = inner;
+        _rejectCommit = rejectCommit;
+    }
+
+    public int AbortCount { get; private set; }
+
+    public IStoreSession Open(string solutionKey) => new Session(_inner.Open(solutionKey), this);
+
+    private sealed class Session : IStoreSession
+    {
+        private readonly IStoreSession _inner;
+        private readonly RejectingCommitStore _store;
+
+        public Session(IStoreSession inner, RejectingCommitStore store)
+        {
+            _inner = inner;
+            _store = store;
+        }
+
+        public void Stage(FactualSnapshot snapshot) => _inner.Stage(snapshot);
+
+        public CommittedPublication Commit()
+        {
+            if (_store._rejectCommit)
+            {
+                throw new PublicationRejectedException("schema", "facts/structural.json");
+            }
+
+            return _inner.Commit();
+        }
+
+        public void Abort()
+        {
+            _store.AbortCount++;
+            _inner.Abort();
+        }
     }
 }

@@ -37,8 +37,8 @@ public sealed class CanonicalResultOrderTests
         Assert.Null(shuffled.Solutions[0].FailingStage);
         Assert.True(store.TryGetPublication(shuffled.Solutions[0].SolutionPath, out var publicationA));
         Assert.True(store.TryGetPublication(shuffled.Solutions[1].SolutionPath, out var publicationB));
-        Assert.Equal(ArtifactRole.Manifest, Assert.Single(publicationA.ArtifactsInPublicationOrder).Role);
-        Assert.Equal(ArtifactRole.Manifest, Assert.Single(publicationB.ArtifactsInPublicationOrder).Role);
+        Assert.Equal(ArtifactRole.Manifest, publicationA.ArtifactsInPublicationOrder[^1].Role);
+        Assert.Equal(ArtifactRole.Manifest, publicationB.ArtifactsInPublicationOrder[^1].Role);
         Assert.NotEqual(publicationA.SolutionKey, publicationB.SolutionKey);
     }
 

@@ -54,7 +54,22 @@ public sealed class AnalysisEngine : IAnalysisEngine
                 run);
         }
 
-        session.Commit();
+        try
+        {
+            session.Commit();
+        }
+        catch (PublicationRejectedException)
+        {
+            session.Abort();
+            return CreateOutcome(
+                canonical,
+                path,
+                PublicationStatus.Unpublished,
+                failingStage: null,
+                context.Reports,
+                run with { StructuralCorruption = true });
+        }
+
         return CreateOutcome(
             canonical,
             path,

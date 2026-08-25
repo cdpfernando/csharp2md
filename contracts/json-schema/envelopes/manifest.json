@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "type": [
+    "object",
+    "null"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer"
+    },
+    "taxonomy_version": {
+      "type": "integer"
+    },
+    "observation_schema_version": {
+      "type": "integer"
+    },
+    "solution_key": {
+      "type": "string"
+    },
+    "solution_file_name": {
+      "type": "string"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "canonical_key": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "canonical_key",
+          "role",
+          "count",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "taxonomy_version",
+    "observation_schema_version",
+    "solution_key",
+    "solution_file_name",
+    "artifacts"
+  ],
+  "additionalProperties": false
+}

@@ -17,6 +17,7 @@ public sealed class NoFilesystemWriteTests
 
     [Fact]
     [Trait("Requirement", "ENG-16")]
+    [Trait("Requirement", "STOR-24")]
     public async Task AnalyzeAsync_CompletedStubRun_DoesNotChangeTheWorkingTree()
     {
         var solutionPath = Path.Combine(
@@ -40,7 +41,7 @@ public sealed class NoFilesystemWriteTests
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
         Assert.False(result.HasUnpublishedSolution);
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
-        Assert.Equal(ArtifactRole.Manifest, Assert.Single(publication.ArtifactsInPublicationOrder).Role);
+        Assert.Equal(ArtifactRole.Manifest, publication.ArtifactsInPublicationOrder[^1].Role);
     }
 
     private static string FileSetHash()

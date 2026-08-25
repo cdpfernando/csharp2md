@@ -1,156 +1,91 @@
 using System.Reflection;
-using Csharp2Md.Analysis.Storage;
+using System.Xml.Linq;
 using Csharp2Md.Storage;
 
 namespace Csharp2Md.Storage.Tests.Isolation;
 
 public sealed class StorageIsolationTests
 {
-    private const string DomainNamespace = "Csharp2Md.Domain";
+    private static readonly string[] ForbiddenTypeNameTokens =
+    [
+        "Classifier",
+        "Promoter",
+        "Extractor",
+    ];
 
     private static Assembly StorageAssembly => typeof(AssemblyMarker).Assembly;
 
     [Fact]
-    [Trait("Requirement", "ENG-28")]
-    public void PublicOrInternalSurface_DoesNotExposeDomainType()
+    [Trait("Requirement", "STOR-11")]
+    public void StorageCsproj_DeclaresProjectReferenceToDomain()
     {
-        var offendingType = StorageAssembly.GetTypes()
+        var csprojPath = StorageCsprojPath();
+
+        Assert.True(File.Exists(csprojPath), $"Storage project file was not found at '{csprojPath}'.");
+
+        var domainReference = ReadIncludes(csprojPath, "ProjectReference")
+            .FirstOrDefault(include => ReferencesProject(include, "Csharp2Md.Domain"));
+
+        Assert.False(
+            string.IsNullOrWhiteSpace(domainReference),
+            "Csharp2Md.Storage must declare a project reference to Csharp2Md.Domain.");
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-11")]
+    public void StorageCsproj_EmbedsTaxonomyRegistry()
+    {
+        var csprojPath = StorageCsprojPath();
+
+        Assert.True(File.Exists(csprojPath), $"Storage project file was not found at '{csprojPath}'.");
+
+        var embed = ReadIncludes(csprojPath, "EmbeddedResource")
+            .FirstOrDefault(include =>
+                include.Replace('\\', '/').EndsWith("taxonomy-registry.json", StringComparison.Ordinal));
+
+        Assert.False(
+            string.IsNullOrWhiteSpace(embed),
+            "Csharp2Md.Storage must embed contracts/taxonomy-registry.json as an EmbeddedResource.");
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-12")]
+    public void PublicOrInternalSurface_DoesNotDeclareClassifierPromoterOrExtractorType()
+    {
+        var offending = StorageAssembly.GetTypes()
             .Where(IsPublicOrInternal)
-            .SelectMany(ExposedMemberTypes)
-            .FirstOrDefault(exposed => BelongsToNamespace(exposed, DomainNamespace));
+            .FirstOrDefault(type => ForbiddenTypeNameTokens.Any(token =>
+                type.Name.Contains(token, StringComparison.Ordinal)));
 
         Assert.True(
-            offendingType is null,
-            $"Type '{offendingType?.FullName}' from Csharp2Md.Domain is exposed by a public or internal member of Csharp2Md.Storage.");
+            offending is null,
+            $"Storage type '{offending?.FullName}' classifies, promotes or extracts facts.");
     }
 
-    [Fact]
-    [Trait("Requirement", "ENG-28")]
-    public void ReferencedAssemblies_DoNotIncludeDomain()
-    {
-        var offendingAssembly = StorageAssembly.GetReferencedAssemblies()
-            .FirstOrDefault(reference => reference.Name == "Csharp2Md.Domain");
+    private static string StorageCsprojPath() =>
+        Path.Combine(
+            StorageTestPaths.RepoRoot,
+            "src",
+            "Csharp2Md.Storage",
+            "Csharp2Md.Storage.csproj");
 
-        Assert.True(
-            offendingAssembly?.Name is null,
-            $"Assembly '{offendingAssembly?.Name}' is referenced by Csharp2Md.Storage.");
+    private static IReadOnlyList<string> ReadIncludes(string csprojPath, string elementName)
+    {
+        var document = XDocument.Load(csprojPath);
+        return document.Descendants()
+            .Where(element => element.Name.LocalName == elementName)
+            .Select(element => element.Attribute("Include")?.Value)
+            .Where(include => !string.IsNullOrWhiteSpace(include))
+            .Cast<string>()
+            .ToArray();
     }
 
-    [Fact]
-    [Trait("Requirement", "ENG-28")]
-    public void Commit_RoundTripsArbitraryPayloadBytesUnchanged()
+    private static bool ReferencesProject(string include, string projectName)
     {
-        ImmutableArray<byte> taxonomyShapedJson =
-        [
-            .. "{\"kind\":\"ConfirmedRelation\",\"factType\":\"symbol\",\"taxonomy\":\"executes\"}"u8,
-            0x00,
-            0xFF,
-            0x7B,
-            0x7D,
-            0x0A,
-        ];
-        ImmutableArray<byte> manifestBytes = [.. "{\"role\":\"manifest\"}"u8];
-
-        var store = new InMemoryTransactionalStore();
-        var session = store.Open("solution-a");
-        session.Stage(new StagedFragment(ArtifactRole.Payload, "opaque.bin", taxonomyShapedJson));
-        session.Stage(new StagedFragment(ArtifactRole.Manifest, "manifest", manifestBytes));
-
-        var publication = session.Commit();
-
-        Assert.Equal(2, publication.ArtifactsInPublicationOrder.Length);
-        AssertUninterpreted(
-            publication.ArtifactsInPublicationOrder[0],
-            ArtifactRole.Payload,
-            "opaque.bin",
-            taxonomyShapedJson,
-            "Commit must store payload bytes unchanged, including bytes that look like JSON taxonomy.");
-        AssertUninterpreted(
-            publication.ArtifactsInPublicationOrder[1],
-            ArtifactRole.Manifest,
-            "manifest",
-            manifestBytes,
-            "Commit must store manifest bytes unchanged.");
-
-        Assert.True(store.TryGetPublication("solution-a", out var stored));
-        Assert.Equal(2, stored.ArtifactsInPublicationOrder.Length);
-        AssertUninterpreted(
-            stored.ArtifactsInPublicationOrder[0],
-            ArtifactRole.Payload,
-            "opaque.bin",
-            taxonomyShapedJson,
-            "Published payload bytes must round-trip unchanged.");
-        AssertUninterpreted(
-            stored.ArtifactsInPublicationOrder[1],
-            ArtifactRole.Manifest,
-            "manifest",
-            manifestBytes,
-            "Published manifest bytes must round-trip unchanged.");
-    }
-
-    private static void AssertUninterpreted(
-        StagedFragment fragment,
-        ArtifactRole role,
-        string canonicalKey,
-        ImmutableArray<byte> payload,
-        string payloadMessage)
-    {
-        Assert.Equal(role, fragment.Role);
-        Assert.Equal(canonicalKey, fragment.CanonicalKey);
-        Assert.True(fragment.Payload.AsSpan().SequenceEqual(payload.AsSpan()), payloadMessage);
+        var normalized = include.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
+        return string.Equals(Path.GetFileNameWithoutExtension(normalized), projectName, StringComparison.Ordinal);
     }
 
     private static bool IsPublicOrInternal(Type type) =>
         !type.IsNested || type.IsNestedPublic || type.IsNestedAssembly || type.IsNestedFamORAssem;
-
-    private static IEnumerable<Type> ExposedMemberTypes(Type type)
-    {
-        const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
-
-        var candidates = type.GetFields(flags).Where(IsExposedMember).Select(field => field.FieldType)
-            .Concat(type.GetProperties(flags).Where(IsExposedMember).Select(property => property.PropertyType))
-            .Concat(type.GetMethods(flags).Where(IsExposedMember).SelectMany(SignatureTypes))
-            .Concat(type.GetConstructors(flags).Where(IsExposedMember).SelectMany(ctor => ctor.GetParameters().Select(p => p.ParameterType)));
-
-        return candidates.SelectMany(Flatten);
-    }
-
-    private static IEnumerable<Type> SignatureTypes(MethodInfo method) =>
-        [method.ReturnType, .. method.GetParameters().Select(p => p.ParameterType)];
-
-    private static bool IsExposedMember(FieldInfo field) => field.IsPublic || field.IsAssembly || field.IsFamilyOrAssembly;
-
-    private static bool IsExposedMember(MethodBase method) => method.IsPublic || method.IsAssembly || method.IsFamilyOrAssembly;
-
-    private static bool IsExposedMember(PropertyInfo property)
-    {
-        var accessor = property.GetMethod ?? property.SetMethod;
-        return accessor is not null && IsExposedMember(accessor);
-    }
-
-    private static IEnumerable<Type> Flatten(Type type)
-    {
-        var unwrapped = type;
-        while (unwrapped.IsByRef || unwrapped.IsArray || unwrapped.IsPointer)
-        {
-            unwrapped = unwrapped.GetElementType()!;
-        }
-
-        yield return unwrapped;
-
-        if (unwrapped.IsGenericType)
-        {
-            foreach (var argument in unwrapped.GetGenericArguments())
-            {
-                foreach (var nested in Flatten(argument))
-                {
-                    yield return nested;
-                }
-            }
-        }
-    }
-
-    private static bool BelongsToNamespace(Type type, string forbiddenNamespace) =>
-        type.Namespace is not null
-        && (type.Namespace == forbiddenNamespace || type.Namespace.StartsWith(forbiddenNamespace + ".", StringComparison.Ordinal));
 }

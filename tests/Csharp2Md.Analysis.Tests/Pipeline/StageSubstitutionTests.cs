@@ -61,7 +61,7 @@ internal sealed class SessionStore : ITransactionalStore
 
         public Session(string solutionKey) => _solutionKey = solutionKey;
 
-        public void Stage(StagedFragment fragment)
+        public void Stage(FactualSnapshot snapshot)
         {
         }
 
