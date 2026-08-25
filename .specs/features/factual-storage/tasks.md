@@ -1016,7 +1016,7 @@ aborted throws gate `lock`.
 
 ---
 
-#### T30: Persistence stub stages Empty
+#### T30: Persistence stub stages Empty ✅
 
 **What**: `PersistenceStub` calls `context.Session.Stage(FactualSnapshot.Empty)` instead of staging a
 manifest fragment. Default pipeline zeros stay zeros.
@@ -1033,9 +1033,9 @@ manifest fragment. Default pipeline zeros stay zeros.
 
 **Done when**:
 
-- [ ] Stub commit of the default pipeline is a schema-valid empty publication (manifest last)
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Stub commit of the default pipeline is a schema-valid empty publication (manifest last)
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Analysis.Tests 87 passed, 0 failed (was 86; +1 schema-valid empty package)
 
 **Tests**: unit
 **Gate**: quick
