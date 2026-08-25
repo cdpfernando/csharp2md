@@ -710,13 +710,13 @@ copied and extended by a test.
 
 **Done when**:
 
-- [ ] Exactly five families, asserted by set equality
-- [ ] Each family's type set asserted by set equality: 4 structural, 5 architecture, 3 contract, 4 persistence, 1 configuration
-- [ ] No fact type named for a facet-only role (`Controller`, `Handler`, `Repository`, `Client`, `Service`, `Callable`)
-- [ ] No fact type whose payload is a functional explanation - no `BusinessRule` or equivalent, asserted by name
-- [ ] Declared order is stable and preserved by `ImmutableArray`, never by a frozen collection
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Exactly five families, asserted by set equality
+- [x] Each family's type set asserted by set equality: 4 structural, 5 architecture, 3 contract, 4 persistence, 1 configuration
+- [x] No fact type named for a facet-only role (`Controller`, `Handler`, `Repository`, `Client`, `Service`, `Callable`)
+- [x] No fact type whose payload is a functional explanation - no `BusinessRule` or equivalent, asserted by name
+- [x] Declared order is stable and preserved by `ImmutableArray`, never by a frozen collection
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 155 passed (146 baseline + 9 new)
 
 **Tests**: unit
 **Gate**: quick
