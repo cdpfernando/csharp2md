@@ -523,10 +523,10 @@ design.md specifies.
 
 **Done when**:
 
-- [ ] `ArtifactRole` has exactly `Payload` and `Manifest`
-- [ ] `CommittedPublication` exposes artifacts in publication order
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `ArtifactRole` has exactly `Payload` and `Manifest`
+- [x] `CommittedPublication` exposes artifacts in publication order
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
