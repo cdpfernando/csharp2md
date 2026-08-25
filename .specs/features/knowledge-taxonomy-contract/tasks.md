@@ -836,11 +836,11 @@ and emission tier.
 
 **Done when**:
 
-- [ ] `Invocation`, `ObjectCreation`, `TypeUsage`, `BaseType`, `AttributeUsage` are each `AlwaysWhenBindable`
-- [ ] `Assignment`, `Configuration`, `RouteDeclaration`, `MessageOperation`, `DataAccess` are each `RegisteredContextOnly`
-- [ ] The table covers every enum member exactly once, asserted by reflection over `ObservationKind`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `Invocation`, `ObjectCreation`, `TypeUsage`, `BaseType`, `AttributeUsage` are each `AlwaysWhenBindable`
+- [x] `Assignment`, `Configuration`, `RouteDeclaration`, `MessageOperation`, `DataAccess` are each `RegisteredContextOnly`
+- [x] The table covers every enum member exactly once, asserted by reflection over `ObservationKind`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 187 passed (175 baseline + 12 new)
 
 **Tests**: unit
 **Gate**: quick
