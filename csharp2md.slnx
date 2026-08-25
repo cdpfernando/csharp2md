@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Csharp2Md.Analysis/Csharp2Md.Analysis.csproj" />
     <Project Path="src/Csharp2Md.Cli/Csharp2Md.Cli.csproj" />
     <Project Path="src/Csharp2Md.Core/Csharp2Md.Core.csproj" />
     <Project Path="src/Csharp2Md.Domain/Csharp2Md.Domain.csproj" />

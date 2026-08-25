@@ -324,10 +324,10 @@ entry under `/src/`.
 
 **Done when**:
 
-- [ ] `TargetFramework` is `net10.0` and the project has no package or project reference
-- [ ] The project is listed under `/src/` in `csharp2md.slnx`
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `TargetFramework` is `net10.0` and the project has no package or project reference
+- [x] The project is listed under `/src/` in `csharp2md.slnx`
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: none
 **Gate**: build
