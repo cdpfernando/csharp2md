@@ -923,10 +923,10 @@ failures name the path on stderr.
 
 **Done when**:
 
-- [ ] Opening `Acme.Orders.slnx` with `Debug` and the fixture TFM returns a disposable lease
-- [ ] `Acme.DoesNotExist` does not throw from Open
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Opening `Acme.Orders.slnx` with `Debug` and the fixture TFM returns a disposable lease
+- [x] `Acme.DoesNotExist` does not throw from Open
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
