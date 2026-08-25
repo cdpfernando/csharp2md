@@ -241,7 +241,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| ROSE-01 | P1: Authorized inventory | Tasks (T14) | Pending |
+| ROSE-01 | P1: Authorized inventory | Tasks (T14) | Implemented |
 | ROSE-02 | P1: Authorized inventory | Tasks (T4, T16, T23, T24) | Implemented |
 | ROSE-03 | P1: Authorized inventory | Tasks (T15, T17) | Pending |
 | ROSE-04 | P1: Authorized inventory | Tasks (T19) | Pending |

@@ -597,11 +597,11 @@ expand the root.
 
 **Done when**:
 
-- [ ] For `Acme.Orders.slnx` plus existing sibling projects the root is `fixtures/SyntheticSolution`
-- [ ] A missing `Acme.DoesNotExist` path does not change that root
-- [ ] A solution whose projects all sit under its own directory keeps that directory as root
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] For `Acme.Orders.slnx` plus existing sibling projects the root is `fixtures/SyntheticSolution`
+- [x] A missing `Acme.DoesNotExist` path does not change that root
+- [x] A solution whose projects all sit under its own directory keeps that directory as root
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
