@@ -755,7 +755,7 @@ this validator directly"
 
 ---
 
-#### T21: Abort on unregistered kind
+#### T21: Abort on unregistered kind ✅
 
 **What**: Validator rejects a fact type, observation kind or relation kind absent from the taxonomy registry
 with gate `unregistered-kind`, naming the unregistered value.
@@ -771,9 +771,9 @@ with gate `unregistered-kind`, naming the unregistered value.
 
 **Done when**:
 
-- [ ] One fixture per of fact type, observation kind and relation kind names the unregistered value
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] One fixture per of fact type, observation kind and relation kind names the unregistered value
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 73 passed, 0 failed (was 70; +3 unregistered-kind)
 
 **Tests**: unit
 **Gate**: quick

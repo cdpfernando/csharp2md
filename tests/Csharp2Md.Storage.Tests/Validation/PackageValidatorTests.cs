@@ -2,6 +2,11 @@ using System.Text;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
+using Csharp2Md.Domain.Literals;
+using Csharp2Md.Domain.Observations;
+using Csharp2Md.Domain.Proof;
+using Csharp2Md.Domain.Registry;
+using Csharp2Md.Domain.Relations;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Validation;
 using Csharp2Md.Storage.Wire;
@@ -43,15 +48,110 @@ public sealed class PackageValidatorTests
         Assert.Contains(StructuralArtifactKey, exception.Detail, StringComparison.Ordinal);
     }
 
-    private static SolutionDto ValidSolutionDto()
+    [Fact]
+    [Trait("Requirement", "STOR-26")]
+    public void Validate_UnregisteredFactType_AbortsNamingTheValue()
     {
-        var snapshot = new FactualSnapshot(
-            [Solution.Create(SolutionId.Create(WorkspaceIdentity.Create("acme"), "src/Acme.sln"))],
+        const string unregistered = "NotARegisteredFact";
+        var document = DomainMapper.ToWire(SolutionSnapshot(), Context);
+        var mutated = document with
+        {
+            Solutions = [document.Solutions[0] with { Identity = document.Solutions[0].Identity with { FactType = unregistered } }],
+        };
+
+        var exception = Assert.Throws<PublicationRejectedException>(() => PackageValidator.Validate(mutated));
+
+        Assert.Equal("unregistered-kind", exception.Gate);
+        Assert.Contains(unregistered, exception.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-26")]
+    public void Validate_UnregisteredObservationKind_AbortsNamingTheValue()
+    {
+        const string unregistered = "not-a-registered-observation";
+        var document = DomainMapper.ToWire(ObservationSnapshot(), Context);
+        var wireName = document.Observations.Keys.Single();
+        var original = document.Observations[wireName][0];
+        var mutated = document with
+        {
+            Observations = document.Observations.SetItem(
+                wireName,
+                [original with { Identity = original.Identity with { Kind = unregistered } }]),
+        };
+
+        var exception = Assert.Throws<PublicationRejectedException>(() => PackageValidator.Validate(mutated));
+
+        Assert.Equal("unregistered-kind", exception.Gate);
+        Assert.Contains(unregistered, exception.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-26")]
+    public void Validate_UnregisteredRelationKind_AbortsNamingTheValue()
+    {
+        const string unregistered = "not-a-registered-relation";
+        var document = DomainMapper.ToWire(ConfirmedRelationSnapshot(), Context);
+        var wireName = document.ConfirmedRelations.Keys.Single();
+        var original = document.ConfirmedRelations[wireName][0];
+        var mutated = document with
+        {
+            ConfirmedRelations = document.ConfirmedRelations.SetItem(
+                wireName,
+                [original with { Kind = unregistered }]),
+        };
+
+        var exception = Assert.Throws<PublicationRejectedException>(() => PackageValidator.Validate(mutated));
+
+        Assert.Equal("unregistered-kind", exception.Gate);
+        Assert.Contains(unregistered, exception.Detail, StringComparison.Ordinal);
+    }
+
+    private static SolutionDto ValidSolutionDto() =>
+        DomainMapper.ToWire(SolutionSnapshot(), Context).Solutions[0];
+
+    private static FactualSnapshot SolutionSnapshot() =>
+        new([Solution.Create(AcmeSolution)], [], [], [], [], []);
+
+    private static FactualSnapshot ObservationSnapshot() =>
+        new(
             [],
+            [Observation.Create(
+                Solution.Create(AcmeSolution).Reference,
+                ObservationKind.Invocation,
+                NormalizedPayload.Create([]),
+                1,
+                new EvidenceLocator(DocumentId.Create("doc"), "src/Acme.Payments/Invoice.cs", new SourceSpan(1, 1, 1, 8)),
+                EvidenceMethod.Semantic,
+                new BindingDiagnostic("BIND001", "Bound successfully."),
+                DocumentHash.Create(new string('a', 64)),
+                new ExtractorVersion(1))],
             [],
             [],
             [],
             []);
-        return DomainMapper.ToWire(snapshot, Context).Solutions[0];
+
+    private static FactualSnapshot ConfirmedRelationSnapshot()
+    {
+        var relation = ConfirmedRelation.Create(
+            RelationKind.Contains,
+            Solution.Create(AcmeSolution).Reference,
+            Project.Create(AcmeProject).Reference,
+            FacetBinding.Create(TaxonomyTables.Default.FacetAxes, [], []),
+            EvidenceChain.Create([new ObservationIdentity(
+                Solution.Create(AcmeSolution).Reference,
+                ObservationKind.Invocation,
+                NormalizedPayload.Create([]),
+                1)]),
+            ClassifierIdentity.Create("csharp2md.structural.contains", 1),
+            [AnalysisVariantId.Create("net10.0", "Release", [], "ci")],
+            EvidenceMethod.Syntactic);
+        return new FactualSnapshot([], [], [relation], [], [], []);
     }
+
+    private static WorkspaceIdentity Workspace => WorkspaceIdentity.Create("acme");
+
+    private static SolutionId AcmeSolution => SolutionId.Create(Workspace, "src/Acme.sln");
+
+    private static ProjectId AcmeProject => ProjectId.Create(AcmeSolution, "src/Acme.Payments/Acme.Payments.csproj");
 }
