@@ -59,7 +59,16 @@ internal static class CommandFactory
                 analysisEngine = new AnalysisEngine(new FilesystemTransactionalStore(outputPath));
             }
 
-            var result = await analysisEngine.AnalyzeAsync(request, cancellationToken).ConfigureAwait(false);
+            AnalysisResult result;
+            try
+            {
+                result = await analysisEngine.AnalyzeAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+            catch (ArgumentException exception)
+            {
+                return Invalid(parseResult, exception.Message);
+            }
+
             var stdout = parseResult.InvocationConfiguration.Output;
             var error = parseResult.InvocationConfiguration.Error;
 

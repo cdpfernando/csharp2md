@@ -1,3 +1,6 @@
+using Csharp2Md.Analysis;
+using Csharp2Md.Analysis.Storage;
+
 namespace Csharp2Md.Cli.Tests;
 
 public sealed class AnalyzeInvocationErrorTests
@@ -62,5 +65,41 @@ public sealed class AnalyzeInvocationErrorTests
 
         Assert.Equal(1, exitCode);
         Assert.Contains(Path.GetFullPath(solutionPath), stderr, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-08")]
+    public async Task Analyze_TwoFoldersSharingTheSameSolutionFileName_Exits1NamingBothPaths()
+    {
+        var tree = Directory.CreateTempSubdirectory("csharp2md-cli-duplicate-id-");
+        var output = CliTestPaths.UniqueOutputPath();
+        try
+        {
+            var first = Path.Combine(tree.FullName, "left", "Acme.Orders.slnx");
+            var second = Path.Combine(tree.FullName, "right", "Acme.Orders.slnx");
+            Directory.CreateDirectory(Path.GetDirectoryName(first)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(second)!);
+            File.WriteAllText(first, "<Solution />");
+            File.WriteAllText(second, "<Solution />");
+
+            var (exitCode, _, stderr) = await CliInvoke.RunAsync(
+                ["analyze", "--solution", first, "--solution", second, "--output", output],
+                new AnalysisEngine(new OpenMustNotBeCalledStore()));
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains(first, stderr, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(second, stderr, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+            CliTestPaths.TryDeleteDirectory(output);
+        }
+    }
+
+    private sealed class OpenMustNotBeCalledStore : ITransactionalStore
+    {
+        public IStoreSession Open(string solutionKey) =>
+            throw new InvalidOperationException($"Open must not be called, but was called with '{solutionKey}'.");
     }
 }

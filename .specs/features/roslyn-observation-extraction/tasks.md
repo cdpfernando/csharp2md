@@ -713,12 +713,12 @@ filename (hence a `SolutionId`) throw `ArgumentException` naming both paths. CLI
 
 **Done when**:
 
-- [ ] Two folders each containing `Acme.Orders.slnx` are rejected before any session `Open`
-- [ ] The exception message names both input paths
-- [ ] Distinct filenames in one request still proceed
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean on this phase's changes
+- [x] Two folders each containing `Acme.Orders.slnx` are rejected before any session `Open`
+- [x] The exception message names both input paths
+- [x] Distinct filenames in one request still proceed
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean on this phase's changes
 
 **Tests**: unit
 **Gate**: build

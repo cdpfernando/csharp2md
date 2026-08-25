@@ -1,5 +1,6 @@
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Identity;
 
 namespace Csharp2Md.Analysis;
 
@@ -23,6 +24,7 @@ public sealed class AnalysisEngine : IAnalysisEngine
     public async Task<AnalysisResult> AnalyzeAsync(AnalysisRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        RejectDuplicateSolutionIdentities(request.SolutionPaths);
 
         var outcomes = ImmutableArray.CreateBuilder<SolutionOutcome>(request.SolutionPaths.Length);
         foreach (var path in request.SolutionPaths)
@@ -99,4 +101,20 @@ public sealed class AnalysisEngine : IAnalysisEngine
             run.HasUnknownsOrCandidatesOrFrontiers,
             stages,
             detail);
+
+    private static void RejectDuplicateSolutionIdentities(ImmutableArray<string> paths)
+    {
+        var firstPathByIdentity = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var path in paths)
+        {
+            var identity = SolutionId.Create(WorkspaceIdentity.Create("default"), Path.GetFileName(path)).Value;
+            if (firstPathByIdentity.TryGetValue(identity, out var firstPath))
+            {
+                throw new ArgumentException(
+                    $"The requested solutions '{firstPath}' and '{path}' produce the same solution identity.");
+            }
+
+            firstPathByIdentity.Add(identity, path);
+        }
+    }
 }

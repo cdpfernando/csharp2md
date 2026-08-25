@@ -248,7 +248,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-05 | P1: Authorized inventory | Tasks (T20, T43) | Pending |
 | ROSE-06 | P1: Authorized inventory | Tasks (T20) | Pending |
 | ROSE-07 | P1: Authorized inventory | Tasks (T16, T23) | Pending |
-| ROSE-08 | P1: Authorized inventory | Tasks (T18) | Pending |
+| ROSE-08 | P1: Authorized inventory | Tasks (T18) | Implemented |
 | ROSE-09 | P1: Authorized inventory | Tasks (T17) | Implemented |
 | ROSE-10 | P1: Authorized inventory | Tasks (T17) | Implemented |
 | ROSE-11 | P1: Authorized inventory | Tasks (T21) | Pending |
