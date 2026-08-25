@@ -38,29 +38,39 @@ public sealed class AnalysisEngine : IAnalysisEngine
         var canonical = Path.GetFullPath(path);
         var session = _store.Open(canonical);
         var context = new PipelineContext(session, path);
-        var completion = await _orchestrator.RunAsync(context, cancellationToken).ConfigureAwait(false);
-        if (completion == PipelineCompletion.Cancelled)
+        var run = await _orchestrator.RunAsync(context, cancellationToken).ConfigureAwait(false);
+        if (run.Status is not PipelineCompletion.Succeeded)
         {
             session.Abort();
-            return new SolutionOutcome(
-                solutionPath: canonical,
-                logicalRelativePath: path.Replace('\\', '/'),
-                status: PublicationStatus.Unpublished,
-                failingStage: null,
-                structuralCorruption: false,
-                hasUnknownsOrCandidatesOrFrontiers: false,
-                stages: context.Reports);
+            return CreateOutcome(
+                canonical,
+                path,
+                PublicationStatus.Unpublished,
+                run.FailedStageName,
+                context.Reports);
         }
 
         session.Commit();
+        return CreateOutcome(
+            canonical,
+            path,
+            PublicationStatus.Committed,
+            failingStage: null,
+            context.Reports);
+    }
 
-        return new SolutionOutcome(
+    private static SolutionOutcome CreateOutcome(
+        string canonical,
+        string path,
+        PublicationStatus status,
+        string? failingStage,
+        ImmutableArray<StageReport> stages) =>
+        new(
             solutionPath: canonical,
             logicalRelativePath: path.Replace('\\', '/'),
-            status: PublicationStatus.Committed,
-            failingStage: null,
+            status,
+            failingStage,
             structuralCorruption: false,
             hasUnknownsOrCandidatesOrFrontiers: false,
-            stages: context.Reports);
-    }
+            stages);
 }

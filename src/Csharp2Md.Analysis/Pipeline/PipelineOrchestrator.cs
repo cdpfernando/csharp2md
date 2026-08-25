@@ -28,25 +28,42 @@ internal sealed class PipelineOrchestrator
         _stages = stages;
     }
 
-    public async ValueTask<PipelineCompletion> RunAsync(PipelineContext context, CancellationToken cancellationToken)
+    public async ValueTask<PipelineRunResult> RunAsync(PipelineContext context, CancellationToken cancellationToken)
     {
         foreach (var stage in _stages)
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                return PipelineCompletion.Cancelled;
+                return PipelineRunResult.Cancelled;
             }
 
-            var result = await stage.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
-            context.Record(new StageReport(stage.Name, result.FactCount, result.ObservationCount, result.RelationCount));
+            try
+            {
+                var result = await stage.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
+                context.Record(new StageReport(stage.Name, result.FactCount, result.ObservationCount, result.RelationCount));
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                return PipelineRunResult.Failed(stage.Name);
+            }
         }
 
-        return PipelineCompletion.Succeeded;
+        return PipelineRunResult.Succeeded;
     }
+}
+
+internal readonly record struct PipelineRunResult(PipelineCompletion Status, string? FailedStageName)
+{
+    public static PipelineRunResult Succeeded { get; } = new(PipelineCompletion.Succeeded, null);
+
+    public static PipelineRunResult Cancelled { get; } = new(PipelineCompletion.Cancelled, null);
+
+    public static PipelineRunResult Failed(string stageName) => new(PipelineCompletion.Failed, stageName);
 }
 
 internal enum PipelineCompletion
 {
     Succeeded,
     Cancelled,
+    Failed,
 }

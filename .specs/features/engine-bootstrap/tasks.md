@@ -1010,12 +1010,12 @@ later stages, and leaves the solution `Unpublished` (ENG-19, ENG-25).
 
 **Done when**:
 
-- [ ] The failing stage name is the substitute's `Name`
-- [ ] Later stage probes do not run
-- [ ] Aborted fragments are absent from any publication
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then Full (Domain + Analysis + Storage + Projection tests)
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean over this phase's changes
+- [x] The failing stage name is the substitute's `Name`
+- [x] Later stage probes do not run
+- [x] Aborted fragments are absent from any publication
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then Full (Domain + Analysis + Storage + Projection tests)
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean over this phase's changes
 
 **Tests**: unit
 **Gate**: build
