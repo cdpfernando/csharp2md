@@ -4,9 +4,13 @@ namespace Csharp2Md.Analysis.Pipeline;
 
 internal sealed class PipelineContext
 {
+    private readonly List<StageReport> _reports = [];
+
     public IStoreSession Session { get; }
 
     public string SolutionPath { get; }
+
+    public ImmutableArray<StageReport> Reports => [.. _reports];
 
     public PipelineContext(IStoreSession session, string solutionPath)
     {
@@ -14,5 +18,11 @@ internal sealed class PipelineContext
         ArgumentNullException.ThrowIfNull(solutionPath);
         Session = session;
         SolutionPath = solutionPath;
+    }
+
+    public void Record(StageReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+        _reports.Add(report);
     }
 }

@@ -871,10 +871,10 @@ order. Persistence stubs a single Manifest fragment. No stage type is public (EN
 
 **Done when**:
 
-- [ ] A recording probe list of the eight names is observed in that order
-- [ ] A shuffled name list is rejected at orchestrator construction
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A recording probe list of the eight names is observed in that order
+- [x] A shuffled name list is rejected at orchestrator construction
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

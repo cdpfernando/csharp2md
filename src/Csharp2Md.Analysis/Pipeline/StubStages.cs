@@ -4,6 +4,18 @@ namespace Csharp2Md.Analysis.Pipeline;
 
 internal static class StubStages
 {
+    internal static readonly ImmutableArray<string> DeclaredNames =
+    [
+        "Inventory",
+        "Semantic Analysis",
+        "Observation Extraction",
+        "Classification and Promotion",
+        "Validation and Coverage",
+        "Persistence",
+        "Retrieval Projection",
+        "Batch Composition",
+    ];
+
     internal static ImmutableArray<IPipelineStage> CreateDefault() =>
     [
         new InventoryStub(),
