@@ -584,13 +584,13 @@ resolution, evidence method and a confidence gradient in one enum
 
 **Done when**:
 
-- [ ] Set equality against `semantic`, `syntactic`, `configured`
-- [ ] Set equality against `confirmed`, `candidate`, `unresolved`
-- [ ] Set equality against `closed`, `open`
-- [ ] No member of any of the three names a value from another axis, and no combined enum exists
-- [ ] No `Stronger` or `Rank` precedence helper is ported
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Set equality against `semantic`, `syntactic`, `configured`
+- [x] Set equality against `confirmed`, `candidate`, `unresolved`
+- [x] Set equality against `closed`, `open`
+- [x] No member of any of the three names a value from another axis, and no combined enum exists
+- [x] No `Stronger` or `Rank` precedence helper is ported
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 98 passed (93 baseline + 5 new)
 
 **Tests**: unit
 **Gate**: quick
