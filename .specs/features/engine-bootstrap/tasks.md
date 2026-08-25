@@ -955,9 +955,9 @@ artifact. Tests assert the committed publication's last artifact is Manifest.
 
 **Done when**:
 
-- [ ] A production run's `CommittedPublication` ends with a Manifest fragment
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A production run's `CommittedPublication` ends with a Manifest fragment
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
