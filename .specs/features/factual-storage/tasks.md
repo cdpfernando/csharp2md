@@ -348,7 +348,7 @@ locks the byte rules.
 
 ---
 
-#### T7: Structural fact DTOs
+#### T7: Structural fact DTOs ✅
 
 **What**: Add wire DTOs for Solution, Project, Document and Symbol, including `content_sha256` and identity
 fields. Private Domain constructors stay unsourced; these records are the JSON shape.
@@ -364,9 +364,9 @@ fields. Private Domain constructors stay unsourced; these records are the JSON s
 
 **Done when**:
 
-- [ ] One DTO per structural fact type with snake_case-ready property names
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`
-- [ ] Test count recorded (no silent deletions)
+- [x] One DTO per structural fact type with snake_case-ready property names
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`
+- [x] Test count recorded (no silent deletions) — no tests in this task; Release build 0 warnings, 0 errors
 
 **Tests**: none
 **Gate**: build
