@@ -15,7 +15,8 @@ public sealed class AnalyzeSuccessTests
             "Acme.Orders.slnx");
         Assert.True(Path.Exists(solutionPath), $"Fixture solution was not found at '{solutionPath}'.");
 
-        var (exitCode, stdout, stderr) = await CliInvoke.RunAsync(["analyze", "--solution", solutionPath]);
+        var (exitCode, stdout, stderr) = await CliInvoke.RunAsync(
+            ["analyze", "--solution", solutionPath, "--output", CliTestPaths.UniqueOutputPath()]);
 
         Assert.Equal(0, exitCode);
         Assert.False(string.IsNullOrWhiteSpace(stdout));

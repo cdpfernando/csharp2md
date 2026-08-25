@@ -1424,7 +1424,7 @@ project reference (re-asserted in T47).
 
 ### Phase 8: CLI `--output`
 
-#### T44: Require --output
+#### T44: Require --output ✅
 
 **What**: `analyze` requires `--output <dir>` in addition to `--solution`. Missing `--output` exits 1 and
 names `--output` on stderr. Update every existing analyze invocation (except this missing-option test) to
@@ -1443,11 +1443,11 @@ stay forbidden (full STOR-52 in T47).
 
 **Done when**:
 
-- [ ] `--output` is required; omitting it exits 1 naming `--output`
-- [ ] Product options are `--solution` and `--output`
-- [ ] Existing CLI tests pass with a temp `--output`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `--output` is required; omitting it exits 1 naming `--output`
+- [x] Product options are `--solution` and `--output`
+- [x] Existing CLI tests pass with a temp `--output`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Cli.Tests 18 passed, 0 failed (was 16; +2 required `--output` surface and missing-option)
 
 **Tests**: unit
 **Gate**: quick

@@ -21,7 +21,9 @@ public sealed class AnalyzeExitCodeTests
                 stages: []),
         ]));
 
-        var (exitCode, _, _) = await CliInvoke.RunAsync(["analyze", "--solution", solutionPath], engine);
+        var (exitCode, _, _) = await CliInvoke.RunAsync(
+            ["analyze", "--solution", solutionPath, "--output", CliTestPaths.UniqueOutputPath()],
+            engine);
 
         Assert.Equal(2, exitCode);
     }
@@ -43,7 +45,9 @@ public sealed class AnalyzeExitCodeTests
                 stages: []),
         ]));
 
-        var (exitCode, _, _) = await CliInvoke.RunAsync(["analyze", "--solution", solutionPath], engine);
+        var (exitCode, _, _) = await CliInvoke.RunAsync(
+            ["analyze", "--solution", solutionPath, "--output", CliTestPaths.UniqueOutputPath()],
+            engine);
 
         Assert.Equal(0, exitCode);
     }

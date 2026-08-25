@@ -6,10 +6,29 @@ public sealed class AnalyzeInvocationErrorTests
     [Trait("Requirement", "ENG-39")]
     public async Task Analyze_WithoutSolutionOption_Exits1NamingTheOption()
     {
-        var (exitCode, _, stderr) = await CliInvoke.RunAsync(["analyze"]);
+        var (exitCode, _, stderr) = await CliInvoke.RunAsync(
+            ["analyze", "--output", CliTestPaths.UniqueOutputPath()]);
 
         Assert.Equal(1, exitCode);
         Assert.Contains("--solution", stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-48")]
+    public async Task Analyze_WithoutOutputOption_Exits1NamingTheOption()
+    {
+        var solutionPath = Path.Combine(
+            CliTestPaths.RepoRoot,
+            "fixtures",
+            "SyntheticSolution",
+            "Acme.Orders",
+            "Acme.Orders.slnx");
+        Assert.True(Path.Exists(solutionPath), $"Fixture solution was not found at '{solutionPath}'.");
+
+        var (exitCode, _, stderr) = await CliInvoke.RunAsync(["analyze", "--solution", solutionPath]);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("--output", stderr, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -19,7 +38,8 @@ public sealed class AnalyzeInvocationErrorTests
         var missingPath = Path.Combine(CliTestPaths.RepoRoot, "definitely-missing-solution.slnx");
         Assert.False(Path.Exists(missingPath), $"Precondition failed: '{missingPath}' unexpectedly exists.");
 
-        var (exitCode, _, stderr) = await CliInvoke.RunAsync(["analyze", "--solution", missingPath]);
+        var (exitCode, _, stderr) = await CliInvoke.RunAsync(
+            ["analyze", "--solution", missingPath, "--output", CliTestPaths.UniqueOutputPath()]);
 
         Assert.Equal(1, exitCode);
         Assert.Contains(missingPath, stderr, StringComparison.Ordinal);
@@ -38,7 +58,7 @@ public sealed class AnalyzeInvocationErrorTests
         Assert.True(Path.Exists(solutionPath), $"Fixture solution was not found at '{solutionPath}'.");
 
         var (exitCode, _, stderr) = await CliInvoke.RunAsync(
-            ["analyze", "--solution", solutionPath, "--solution", solutionPath]);
+            ["analyze", "--solution", solutionPath, "--solution", solutionPath, "--output", CliTestPaths.UniqueOutputPath()]);
 
         Assert.Equal(1, exitCode);
         Assert.Contains(Path.GetFullPath(solutionPath), stderr, StringComparison.OrdinalIgnoreCase);
