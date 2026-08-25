@@ -38,7 +38,20 @@ public sealed class AnalysisEngine : IAnalysisEngine
         var canonical = Path.GetFullPath(path);
         var session = _store.Open(canonical);
         var context = new PipelineContext(session, path);
-        await _orchestrator.RunAsync(context, cancellationToken).ConfigureAwait(false);
+        var completion = await _orchestrator.RunAsync(context, cancellationToken).ConfigureAwait(false);
+        if (completion == PipelineCompletion.Cancelled)
+        {
+            session.Abort();
+            return new SolutionOutcome(
+                solutionPath: canonical,
+                logicalRelativePath: path.Replace('\\', '/'),
+                status: PublicationStatus.Unpublished,
+                failingStage: null,
+                structuralCorruption: false,
+                hasUnknownsOrCandidatesOrFrontiers: false,
+                stages: context.Reports);
+        }
+
         session.Commit();
 
         return new SolutionOutcome(

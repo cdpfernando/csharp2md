@@ -982,10 +982,10 @@ does not commit (ENG-17, ENG-18).
 
 **Done when**:
 
-- [ ] Cancelling after stage 3 records stages 1-3 only and `Unpublished`
-- [ ] The store session is aborted
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Cancelling after stage 3 records stages 1-3 only and `Unpublished`
+- [x] The store session is aborted
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

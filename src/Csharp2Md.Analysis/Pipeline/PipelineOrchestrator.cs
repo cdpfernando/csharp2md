@@ -28,12 +28,25 @@ internal sealed class PipelineOrchestrator
         _stages = stages;
     }
 
-    public async ValueTask RunAsync(PipelineContext context, CancellationToken cancellationToken)
+    public async ValueTask<PipelineCompletion> RunAsync(PipelineContext context, CancellationToken cancellationToken)
     {
         foreach (var stage in _stages)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return PipelineCompletion.Cancelled;
+            }
+
             var result = await stage.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
             context.Record(new StageReport(stage.Name, result.FactCount, result.ObservationCount, result.RelationCount));
         }
+
+        return PipelineCompletion.Succeeded;
     }
+}
+
+internal enum PipelineCompletion
+{
+    Succeeded,
+    Cancelled,
 }

@@ -55,9 +55,9 @@ public sealed class PipelineOrchestratorTests
 internal sealed class RecordingStage : IPipelineStage
 {
     private readonly List<string> _executed;
-    private readonly Action? _onExecute;
+    private readonly Action<PipelineContext>? _onExecute;
 
-    public RecordingStage(string name, List<string> executed, Action? onExecute = null)
+    public RecordingStage(string name, List<string> executed, Action<PipelineContext>? onExecute = null)
     {
         Name = name;
         _executed = executed;
@@ -69,7 +69,7 @@ internal sealed class RecordingStage : IPipelineStage
     public ValueTask<StageResult> ExecuteAsync(PipelineContext context, CancellationToken cancellationToken)
     {
         _executed.Add(Name);
-        _onExecute?.Invoke();
+        _onExecute?.Invoke(context);
         return StubStages.ZeroResult();
     }
 }
