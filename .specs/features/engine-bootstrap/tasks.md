@@ -780,10 +780,10 @@ is a pass, classifier, adapter or stage type (ENG-11, ENG-12).
 
 **Done when**:
 
-- [ ] An extra public type fails naming it
-- [ ] The allowlist matches design.md
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] An extra public type fails naming it
+- [x] The allowlist matches design.md
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
