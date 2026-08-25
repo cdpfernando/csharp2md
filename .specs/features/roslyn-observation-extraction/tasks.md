@@ -568,10 +568,10 @@ the secret value.
 
 **Done when**:
 
-- [ ] `Password=secret` is flagged; the returned excerpt contains a mask and not `secret`
-- [ ] A non-secret literal such as `OrderStatus.Placed` is not flagged
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `Password=secret` is flagged; the returned excerpt contains a mask and not `secret`
+- [x] A non-secret literal such as `OrderStatus.Placed` is not flagged
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
