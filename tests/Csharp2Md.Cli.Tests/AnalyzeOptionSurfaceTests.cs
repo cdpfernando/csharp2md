@@ -1,0 +1,78 @@
+using System.CommandLine;
+using System.CommandLine.Help;
+using Csharp2Md.Cli;
+using System.Text.Json;
+
+namespace Csharp2Md.Cli.Tests;
+
+public sealed class AnalyzeOptionSurfaceTests
+{
+    private static readonly string[] RemovedOptionNames =
+    [
+        "--topic",
+        "--domain",
+        "--manifest",
+        "--output",
+        "--trust",
+        "--include-source-generators",
+        "--analysis-timeout",
+    ];
+
+    [Fact]
+    [Trait("Requirement", "ENG-45")]
+    public void AnalyzeAndRoot_DoNotExposeRemovedMarkdownEraOptions()
+    {
+        var root = CommandFactory.CreateRootCommand();
+        var analyze = Assert.Single(root.Subcommands);
+
+        var rootNames = OptionNames(root.Options);
+        var analyzeNames = OptionNames(analyze.Options);
+
+        foreach (var removed in RemovedOptionNames)
+        {
+            Assert.DoesNotContain(removed, rootNames);
+            Assert.DoesNotContain(removed, analyzeNames);
+        }
+
+        var analyzeProductOptions = analyze.Options
+            .Where(static option => option is not HelpOption and not VersionOption)
+            .ToArray();
+        var solution = Assert.Single(analyzeProductOptions);
+        Assert.Equal("--solution", solution.Name);
+        Assert.Empty(analyze.Arguments);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ENG-45")]
+    public void LaunchSettings_UsesAnalyzeSolutionAgainstTheFixture()
+    {
+        var path = Path.Combine(
+            CliTestPaths.RepoRoot,
+            "src",
+            "Csharp2Md.Cli",
+            "Properties",
+            "launchSettings.json");
+        Assert.True(File.Exists(path), $"launchSettings.json was not found at '{path}'.");
+
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var profiles = document.RootElement.GetProperty("profiles");
+        Assert.True(profiles.EnumerateObject().Any(), "launchSettings.json must declare at least one profile.");
+
+        foreach (var profile in profiles.EnumerateObject())
+        {
+            var args = profile.Value.GetProperty("commandLineArgs").GetString();
+            Assert.False(string.IsNullOrWhiteSpace(args), $"Profile '{profile.Name}' has empty commandLineArgs.");
+            Assert.StartsWith("analyze --solution ", args, StringComparison.Ordinal);
+
+            foreach (var removed in RemovedOptionNames)
+            {
+                Assert.DoesNotContain(removed, args, StringComparison.Ordinal);
+            }
+        }
+    }
+
+    private static IReadOnlyList<string> OptionNames(IEnumerable<Option> options) =>
+        options
+            .SelectMany(static option => option.Aliases.Append(option.Name))
+            .ToArray();
+}

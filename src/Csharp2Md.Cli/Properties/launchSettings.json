@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "csharp2md (synthetic fixture)": {
+      "commandName": "Project",
+      "workingDirectory": "../../",
+      "commandLineArgs": "analyze --solution fixtures/SyntheticSolution/Acme.Orders/Acme.Orders.slnx"
+    }
+  }
+}
