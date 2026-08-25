@@ -626,10 +626,10 @@ paths without MSBuild. Paths are returned as listed, not yet rooted.
 
 **Done when**:
 
-- [ ] `Acme.Orders.slnx` yields `Acme.Orders`, `Acme.Shared.Contracts`, `Acme.Broken`, `Acme.DoesNotExist`
-- [ ] A `.sln` fixture string with a `Project(...)` path yields that path
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `Acme.Orders.slnx` yields `Acme.Orders`, `Acme.Shared.Contracts`, `Acme.Broken`, `Acme.DoesNotExist`
+- [x] A `.sln` fixture string with a `Project(...)` path yields that path
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
