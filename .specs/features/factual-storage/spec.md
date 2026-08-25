@@ -305,14 +305,14 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-36 | P1: Factual package reader | Tasks | In Tasks |
 | STOR-37 | P1: Factual package reader | Tasks | In Tasks |
 | STOR-38 | P1: Factual package reader | Tasks | In Tasks |
-| STOR-39 | P1: Compact payload layout | Tasks | In Tasks |
-| STOR-40 | P1: Compact payload layout | Tasks | In Tasks |
-| STOR-41 | P1: Compact payload layout | Tasks | In Tasks |
-| STOR-42 | P1: Compact payload layout | Execute (T19) | Implementing |
-| STOR-43 | P1: Compact payload layout | Tasks | In Tasks |
+| STOR-39 | P1: Compact payload layout | Execute (T38) | Implementing |
+| STOR-40 | P1: Compact payload layout | Execute (T38) | Implementing |
+| STOR-41 | P1: Compact payload layout | Execute (T38) | Implementing |
+| STOR-42 | P1: Compact payload layout | Execute (T38) | Implementing |
+| STOR-43 | P1: Compact payload layout | Execute (T38) | Implementing |
 | STOR-44 | P1: Compact payload layout | Execute (T32) | Implementing |
 | STOR-45 | P1: Compact payload layout | Execute (T32) | Implementing |
-| STOR-46 | P1: Compact payload layout | Tasks | In Tasks |
+| STOR-46 | P1: Compact payload layout | Execute (T38) | Implementing |
 | STOR-47 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
 | STOR-48 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
 | STOR-49 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |

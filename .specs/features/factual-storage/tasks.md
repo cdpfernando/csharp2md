@@ -1248,7 +1248,7 @@ gate `lock`, naming the root. Release on Commit and Abort.
 
 ---
 
-#### T38: Compact layout invariants
+#### T38: Compact layout invariants ✅
 
 **What**: Assert the published tree: partition by fact family, observation `WireName`, confirmed relation
 `WireName`; no directory named for a fact or observation identity; no catalogs, postings, Markdown, source
@@ -1267,11 +1267,11 @@ in InMemory/Wire/Mapping.
 
 **Done when**:
 
-- [ ] A multi-family commit matches the partition layout in design.md
-- [ ] Tests fail if an identity-named directory or a posting/Markdown/source file appears
-- [ ] Canonical payload files contain no timestamp fields
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A multi-family commit matches the partition layout in design.md
+- [x] Tests fail if an identity-named directory or a posting/Markdown/source file appears
+- [x] Canonical payload files contain no timestamp fields
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 100 passed, 0 failed (was 99; +1 compact layout)
 
 **Tests**: unit
 **Gate**: quick

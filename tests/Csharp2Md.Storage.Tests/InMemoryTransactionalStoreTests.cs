@@ -68,6 +68,9 @@ public sealed class InMemoryTransactionalStoreTests
         var storageRoot = Path.Combine(StorageTestPaths.RepoRoot, "src", "Csharp2Md.Storage");
         Assert.True(Directory.Exists(storageRoot), $"Storage project was not found at '{storageRoot}'.");
 
+        var adapter = Path.Combine(storageRoot, "FilesystemTransactionalStore.cs");
+        Assert.True(File.Exists(adapter), $"Filesystem adapter was not found at '{adapter}'.");
+
         var scanned = new[]
             {
                 Path.Combine(storageRoot, "Wire"),
@@ -77,7 +80,13 @@ public sealed class InMemoryTransactionalStoreTests
             .Where(Directory.Exists)
             .SelectMany(root => Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             .Append(Path.Combine(storageRoot, "InMemoryTransactionalStore.cs"))
-            .Where(path => File.Exists(path) && !IsGeneratedOutput(path));
+            .Where(path => File.Exists(path) && !IsGeneratedOutput(path))
+            .ToArray();
+
+        Assert.DoesNotContain(adapter, scanned);
+        Assert.DoesNotContain(
+            scanned,
+            path => Path.GetFileName(path) is "FilesystemTransactionalStore.cs" or "FactualPackageReader.cs");
 
         var offending = scanned
             .Select(path => (path, text: File.ReadAllText(path)))
