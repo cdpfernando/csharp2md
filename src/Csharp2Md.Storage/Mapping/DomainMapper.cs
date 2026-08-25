@@ -92,13 +92,34 @@ public static class DomainMapper
             }
         }
 
+        var observationDtos = snapshot.Observations
+            .GroupBy(observation => WireObservationMapping.WireName(observation.Identity.Kind))
+            .ToImmutableDictionary(
+                group => group.Key,
+                group => group.Select(WireObservationMapping.ToDto).ToImmutableArray());
+
+        var confirmedDtos = snapshot.ConfirmedRelations
+            .GroupBy(relation => WireRelationMapping.WireName(relation.Kind))
+            .ToImmutableDictionary(
+                group => group.Key,
+                group => group.Select(WireRelationMapping.ToDto).ToImmutableArray());
+
+        var candidateDtos = snapshot.Candidates.Select(WireRelationMapping.ToDto).ToImmutableArray();
+        var unresolvedDtos = snapshot.Unresolved.Select(WireRelationMapping.ToDto).ToImmutableArray();
+        var frontierDtos = snapshot.Frontiers.Select(WireRelationMapping.ToDto).ToImmutableArray();
+
         var versions = TaxonomyVersions.Initial;
         var artifacts = BuildManifestArtifacts(
             structural: solutions.Count + projects.Count + documents.Count + symbols.Count,
             architecture: components.Count + deploymentUnits.Count + entryPoints.Count + boundaryOperations.Count + externalSystems.Count,
             contract: contracts.Count + contractBindings.Count + contractRevisions.Count,
             persistence: dataStores.Count + dataObjects.Count + dataFields.Count + dataOperations.Count,
-            configuration: configurationBindings.Count);
+            configuration: configurationBindings.Count,
+            observationCounts: observationDtos.ToDictionary(pair => pair.Key, pair => pair.Value.Length),
+            confirmedCounts: confirmedDtos.ToDictionary(pair => pair.Key, pair => pair.Value.Length),
+            candidateCount: candidateDtos.Length,
+            unresolvedCount: unresolvedDtos.Length,
+            frontierCount: frontierDtos.Length);
 
         return new WireDocument(
             new ManifestEnvelope(
@@ -126,11 +147,11 @@ public static class DomainMapper
             dataFields.ToImmutable(),
             dataOperations.ToImmutable(),
             configurationBindings.ToImmutable(),
-            ImmutableDictionary<string, ImmutableArray<ObservationDto>>.Empty,
-            ImmutableDictionary<string, ImmutableArray<ConfirmedRelationDto>>.Empty,
-            [],
-            [],
-            [],
+            observationDtos,
+            confirmedDtos,
+            candidateDtos,
+            unresolvedDtos,
+            frontierDtos,
             [],
             new CoverageEnvelope(ZeroCoverage, ZeroCoverage, ZeroCoverage, ZeroCoverage),
             new RunCertificationEnvelope("not_evaluated"),
@@ -161,13 +182,34 @@ public static class DomainMapper
         facts.AddRange(document.DataOperations.Select(WireFactMapping.FromDto));
         facts.AddRange(document.ConfigurationBindings.Select(WireFactMapping.FromDto));
 
+        var factsArr = facts.ToImmutable();
+        var observationsArr = document.Observations.Values
+            .SelectMany(records => records.Select(WireObservationMapping.FromDto))
+            .ToImmutableArray();
+        var confirmedArr = document.ConfirmedRelations.Values
+            .SelectMany(records => records.Select(WireRelationMapping.FromDto))
+            .ToImmutableArray();
+        var candidatesArr = document.Candidates.Select(WireRelationMapping.FromDto).ToImmutableArray();
+        var unresolvedArr = document.Unresolved.Select(WireRelationMapping.FromDto).ToImmutableArray();
+        var frontiersArr = document.Frontiers.Select(WireRelationMapping.FromDto).ToImmutableArray();
+
+        if (factsArr.IsEmpty
+            && observationsArr.IsEmpty
+            && confirmedArr.IsEmpty
+            && candidatesArr.IsEmpty
+            && unresolvedArr.IsEmpty
+            && frontiersArr.IsEmpty)
+        {
+            return FactualSnapshot.Empty;
+        }
+
         return new FactualSnapshot(
-            facts.ToImmutable(),
-            [],
-            [],
-            [],
-            [],
-            []);
+            factsArr,
+            observationsArr,
+            confirmedArr,
+            candidatesArr,
+            unresolvedArr,
+            frontiersArr);
     }
 
     private static ImmutableArray<ManifestEntry> BuildManifestArtifacts(
@@ -175,7 +217,12 @@ public static class DomainMapper
         int architecture,
         int contract,
         int persistence,
-        int configuration)
+        int configuration,
+        IReadOnlyDictionary<string, int> observationCounts,
+        IReadOnlyDictionary<string, int> confirmedCounts,
+        int candidateCount,
+        int unresolvedCount,
+        int frontierCount)
     {
         var artifacts = ImmutableArray.CreateBuilder<ManifestEntry>();
         AddFamily(artifacts, FactFamily.Structural, structural);
@@ -186,25 +233,27 @@ public static class DomainMapper
 
         foreach (var kind in TaxonomyTables.Default.ObservationKinds)
         {
+            observationCounts.TryGetValue(kind.WireName, out var count);
             artifacts.Add(new ManifestEntry(
                 "observations/" + kind.WireName,
                 "payload",
-                0,
+                count,
                 "observations/" + kind.WireName + ".json"));
         }
 
         foreach (var relation in TaxonomyTables.Default.Relations)
         {
+            confirmedCounts.TryGetValue(relation.WireName, out var count);
             artifacts.Add(new ManifestEntry(
                 "relations/confirmed/" + relation.WireName,
                 "payload",
-                0,
+                count,
                 "relations/confirmed/" + relation.WireName + ".json"));
         }
 
-        artifacts.Add(new ManifestEntry("relations/candidates", "payload", 0, "relations/candidates.json"));
-        artifacts.Add(new ManifestEntry("relations/unresolved", "payload", 0, "relations/unresolved.json"));
-        artifacts.Add(new ManifestEntry("relations/frontiers", "payload", 0, "relations/frontiers.json"));
+        artifacts.Add(new ManifestEntry("relations/candidates", "payload", candidateCount, "relations/candidates.json"));
+        artifacts.Add(new ManifestEntry("relations/unresolved", "payload", unresolvedCount, "relations/unresolved.json"));
+        artifacts.Add(new ManifestEntry("relations/frontiers", "payload", frontierCount, "relations/frontiers.json"));
 
         return artifacts.ToImmutable();
     }

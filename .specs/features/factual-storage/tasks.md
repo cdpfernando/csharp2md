@@ -665,7 +665,7 @@ needed for fixtures.
 
 ---
 
-#### T18: Round-trip observations and relations
+#### T18: Round-trip observations and relations ✅
 
 **What**: Extend `DomainMapper` for all 10 observation kinds and ConfirmedRelation, CandidateLink,
 UnresolvedRecord, OpenFrontier. Confirmed relations reconstruct through `ConfirmedRelation.Create` with
@@ -683,9 +683,9 @@ evidence method and materialized facts when the shape requires them (AD-015).
 
 **Done when**:
 
-- [ ] One fixture per observation kind and each relation record round-trips under Domain equality
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] One fixture per observation kind and each relation record round-trips under Domain equality
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 66 passed, 0 failed (was 52; +10 observation kinds, +4 relation records)
 
 **Tests**: unit
 **Gate**: quick
