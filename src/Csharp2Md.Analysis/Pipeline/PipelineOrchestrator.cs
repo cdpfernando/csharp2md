@@ -30,6 +30,7 @@ internal sealed class PipelineOrchestrator
 
     public async ValueTask<PipelineRunResult> RunAsync(PipelineContext context, CancellationToken cancellationToken)
     {
+        var hasUnknownsOrCandidatesOrFrontiers = false;
         foreach (var stage in _stages)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -41,6 +42,11 @@ internal sealed class PipelineOrchestrator
             {
                 var result = await stage.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
                 context.Record(new StageReport(stage.Name, result.FactCount, result.ObservationCount, result.RelationCount));
+                hasUnknownsOrCandidatesOrFrontiers |= result.HasUnknownsOrCandidatesOrFrontiers;
+                if (result.StructuralCorruption)
+                {
+                    return PipelineRunResult.Corrupted(hasUnknownsOrCandidatesOrFrontiers);
+                }
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -48,17 +54,27 @@ internal sealed class PipelineOrchestrator
             }
         }
 
-        return PipelineRunResult.Succeeded;
+        return PipelineRunResult.Completed(hasUnknownsOrCandidatesOrFrontiers);
     }
 }
 
-internal readonly record struct PipelineRunResult(PipelineCompletion Status, string? FailedStageName)
+internal readonly record struct PipelineRunResult(
+    PipelineCompletion Status,
+    string? FailedStageName,
+    bool StructuralCorruption = false,
+    bool HasUnknownsOrCandidatesOrFrontiers = false)
 {
     public static PipelineRunResult Succeeded { get; } = new(PipelineCompletion.Succeeded, null);
 
     public static PipelineRunResult Cancelled { get; } = new(PipelineCompletion.Cancelled, null);
 
     public static PipelineRunResult Failed(string stageName) => new(PipelineCompletion.Failed, stageName);
+
+    public static PipelineRunResult Completed(bool hasUnknownsOrCandidatesOrFrontiers) =>
+        new(PipelineCompletion.Succeeded, null, false, hasUnknownsOrCandidatesOrFrontiers);
+
+    public static PipelineRunResult Corrupted(bool hasUnknownsOrCandidatesOrFrontiers) =>
+        new(PipelineCompletion.StructuralCorruption, null, true, hasUnknownsOrCandidatesOrFrontiers);
 }
 
 internal enum PipelineCompletion
@@ -66,4 +82,5 @@ internal enum PipelineCompletion
     Succeeded,
     Cancelled,
     Failed,
+    StructuralCorruption,
 }

@@ -47,7 +47,8 @@ public sealed class AnalysisEngine : IAnalysisEngine
                 path,
                 PublicationStatus.Unpublished,
                 run.FailedStageName,
-                context.Reports);
+                context.Reports,
+                run);
         }
 
         session.Commit();
@@ -56,7 +57,8 @@ public sealed class AnalysisEngine : IAnalysisEngine
             path,
             PublicationStatus.Committed,
             failingStage: null,
-            context.Reports);
+            context.Reports,
+            run);
     }
 
     private static SolutionOutcome CreateOutcome(
@@ -64,13 +66,14 @@ public sealed class AnalysisEngine : IAnalysisEngine
         string path,
         PublicationStatus status,
         string? failingStage,
-        ImmutableArray<StageReport> stages) =>
+        ImmutableArray<StageReport> stages,
+        PipelineRunResult run) =>
         new(
             solutionPath: canonical,
             logicalRelativePath: path.Replace('\\', '/'),
             status,
             failingStage,
-            structuralCorruption: false,
-            hasUnknownsOrCandidatesOrFrontiers: false,
+            run.StructuralCorruption,
+            run.HasUnknownsOrCandidatesOrFrontiers,
             stages);
 }

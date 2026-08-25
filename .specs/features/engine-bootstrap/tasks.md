@@ -1070,10 +1070,10 @@ and leaves a previously committed publication for that key unchanged (ENG-24).
 
 **Done when**:
 
-- [ ] First run commits; second run with corruption leaves the first `CommittedPublication` equal
-- [ ] `SolutionOutcome.StructuralCorruption` is true and status is `Unpublished`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] First run commits; second run with corruption leaves the first `CommittedPublication` equal
+- [x] `SolutionOutcome.StructuralCorruption` is true and status is `Unpublished`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

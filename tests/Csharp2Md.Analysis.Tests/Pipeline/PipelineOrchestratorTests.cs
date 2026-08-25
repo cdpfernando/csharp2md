@@ -74,6 +74,29 @@ internal sealed class RecordingStage : IPipelineStage
     }
 }
 
+internal sealed class ResultStage : IPipelineStage
+{
+    private readonly StageResult _result;
+    private readonly List<string>? _executed;
+
+    public ResultStage(string name, StageResult result, List<string>? executed = null)
+    {
+        Name = name;
+        _result = result;
+        _executed = executed;
+    }
+
+    public string Name { get; }
+
+    public ValueTask<StageResult> ExecuteAsync(PipelineContext context, CancellationToken cancellationToken)
+    {
+        _ = context;
+        _ = cancellationToken;
+        _executed?.Add(Name);
+        return ValueTask.FromResult(_result);
+    }
+}
+
 internal sealed class SwallowingSession : IStoreSession
 {
     public void Stage(StagedFragment fragment)
