@@ -1656,11 +1656,11 @@ shape
 
 **Done when**:
 
-- [ ] Twelve accepted cases and twelve rejected cases, driven from the enum so a new relation without a case fails the suite
-- [ ] Each rejection message contains all three names, asserted on the message, not just the exception type
-- [ ] `contains` is proven restricted to structural owner and structural child, and rejected for a non-structural pair
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Twelve accepted cases and twelve rejected cases, driven from the enum so a new relation without a case fails the suite
+- [x] Each rejection message contains all three names, asserted on the message, not just the exception type
+- [x] `contains` is proven restricted to structural owner and structural child, and rejected for a non-structural pair
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions) — Domain.Tests: 480 passed (455 baseline + 25 new); full solution: 2058 passed / 1 pre-existing unrelated failure (`MigrationLedgerTests.BaselineCategory_StillHasARepresentativeV3Test`) / 0 caused by this task
 
 **Tests**: unit
 **Gate**: build
