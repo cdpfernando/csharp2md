@@ -353,10 +353,10 @@ convention.
 
 **Done when**:
 
-- [ ] The test project references `Csharp2Md.Analysis` only
-- [ ] A smoke test loads `AssemblyMarker` so the project is not empty
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] The test project references `Csharp2Md.Analysis` only
+- [x] A smoke test loads `AssemblyMarker` so the project is not empty
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
