@@ -1268,11 +1268,11 @@ csproj, registered under `/tests/`.
 
 **Done when**:
 
-- [ ] The command tree exposes exactly one verb, `analyze`
-- [ ] `--solution` is required and repeatable
-- [ ] CLI project references Analysis, Storage and Projection, not Core or Domain
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] The command tree exposes exactly one verb, `analyze`
+- [x] `--solution` is required and repeatable
+- [x] CLI project references Analysis, Storage and Projection, not Core or Domain
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
