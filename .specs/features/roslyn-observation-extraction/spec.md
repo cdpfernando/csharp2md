@@ -299,7 +299,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-56 | P1: Source fidelity, secrets, and determinism | Tasks (T1, T60) | Implemented |
 | ROSE-57 | P1: Source fidelity, secrets, and determinism | Tasks (T54) | Pending |
 | ROSE-58 | P1: Commit the extracted graph | Tasks (T2, T3, T52) | Implemented |
-| ROSE-59 | P1: Commit the extracted graph | Tasks (T11, T12, T22, T37, T43, T53) | Pending |
+| ROSE-59 | P1: Commit the extracted graph | Tasks (T11, T12, T22, T37, T43, T53) | Implemented |
 | ROSE-60 | P1: Commit the extracted graph | Tasks (T53) | Pending |
 | ROSE-61 | P1: Commit the extracted graph | Tasks (T56) | Pending |
 | ROSE-62 | P1: Commit the extracted graph | Tasks (T56) | Pending |

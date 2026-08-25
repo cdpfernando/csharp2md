@@ -9,7 +9,7 @@ public sealed class AnalysisEngine : IAnalysisEngine
     private readonly PipelineOrchestrator _orchestrator;
 
     public AnalysisEngine(ITransactionalStore store)
-        : this(store, StubStages.CreateDefault())
+        : this(store, PipelineStages.CreateDefault())
     {
     }
 
