@@ -30,7 +30,8 @@ public sealed class OpenFrontierTests
             facets,
             evidence,
             classifier,
-            [AnalysisVariantId.Create("net10.0", "Release", [], "ci")]);
+            [AnalysisVariantId.Create("net10.0", "Release", [], "ci")],
+            EvidenceMethod.Syntactic);
     }
 
     [Fact]

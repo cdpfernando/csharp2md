@@ -45,7 +45,8 @@ public sealed class ConfirmedRelationTests
             facets ?? EmptyFacets(),
             derivedFrom ?? ValidEvidence(),
             classifier ?? ValidClassifier(),
-            variants ?? ValidVariants());
+            variants ?? ValidVariants(),
+            EvidenceMethod.Syntactic);
 
     [Fact]
     [Trait("Requirement", "TAX-44")]
@@ -154,5 +155,38 @@ public sealed class ConfirmedRelationTests
         Assert.Null(property.GetSetMethod(nonPublic: true));
         Assert.DoesNotContain(factory.GetParameters(), p => p.ParameterType == typeof(Resolution));
         Assert.All(constructors, ctor => Assert.DoesNotContain(ctor.GetParameters(), p => p.ParameterType == typeof(Resolution)));
+    }
+
+    [Fact]
+    [Trait("Requirement", "ENG-58")]
+    public void Create_TakesEvidenceMethodImmediatelyAfterAnalysisVariants()
+    {
+        var factory = typeof(ConfirmedRelation).GetMethod(nameof(ConfirmedRelation.Create), BindingFlags.Public | BindingFlags.Static)!;
+        var parameters = factory.GetParameters();
+        var variantsIndex = Array.FindIndex(parameters, parameter => parameter.Name == "analysisVariants");
+        var evidenceIndex = Array.FindIndex(parameters, parameter => parameter.Name == "evidenceMethod");
+
+        Assert.True(variantsIndex >= 0, "Create is missing the analysisVariants parameter.");
+        Assert.Equal(typeof(EvidenceMethod), parameters[evidenceIndex].ParameterType);
+        Assert.Equal(variantsIndex + 1, evidenceIndex);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ENG-58")]
+    public void Create_InvokesWithSyntacticEvidence_IsRejectedNamingTheRelation()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => ConfirmedRelation.Create(
+            RelationKind.Invokes,
+            SymbolReference("Caller"),
+            SymbolReference("Callee"),
+            EmptyFacets(),
+            ValidEvidence(),
+            ValidClassifier(),
+            ValidVariants(),
+            EvidenceMethod.Syntactic));
+
+        Assert.Contains(nameof(RelationKind.Invokes), exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(EvidenceMethod.Semantic), exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(EvidenceMethod.Syntactic), exception.Message, StringComparison.Ordinal);
     }
 }

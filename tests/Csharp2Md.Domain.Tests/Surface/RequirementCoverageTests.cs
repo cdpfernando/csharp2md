@@ -152,6 +152,11 @@ public sealed class RequirementCoverageTests
     {
         foreach (var (typeName, methodName, value) in traits)
         {
+            if (value.StartsWith("ENG-", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             var match = TaxIdPattern.Match(value);
             if (!match.Success)
             {

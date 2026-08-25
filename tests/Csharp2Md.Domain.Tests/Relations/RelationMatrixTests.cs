@@ -35,6 +35,9 @@ public sealed class RelationMatrixTests
     private static RelationTriple RegisteredTripleFor(RelationKind kind) =>
         TaxonomyTables.Default.Relations.Single(descriptor => descriptor.Kind == kind).Triples[0];
 
+    private static EvidenceMethod MinimumEvidenceFor(RelationKind kind) =>
+        TaxonomyTables.Default.Relations.Single(descriptor => descriptor.Kind == kind).MinimumEvidenceMethod;
+
     [Theory]
     [MemberData(nameof(AllRelationKinds))]
     [Trait("Requirement", "TAX-42")]
@@ -46,7 +49,7 @@ public sealed class RelationMatrixTests
         var target = Reference(triple.TargetFactType);
 
         var relation = ConfirmedRelation.Create(
-            kind, source, target, FacetsFor(kind), Evidence(source), Classifier(), Variants());
+            kind, source, target, FacetsFor(kind), Evidence(source), Classifier(), Variants(), MinimumEvidenceFor(kind));
 
         Assert.Equal(kind, relation.Kind);
         Assert.Equal(source, relation.Source);
@@ -64,7 +67,7 @@ public sealed class RelationMatrixTests
         var target = Reference("Solution");
 
         var exception = Assert.Throws<ArgumentException>(() => ConfirmedRelation.Create(
-            kind, source, target, FacetsFor(kind), Evidence(source), Classifier(), Variants()));
+            kind, source, target, FacetsFor(kind), Evidence(source), Classifier(), Variants(), MinimumEvidenceFor(kind)));
 
         Assert.Contains(triple.SourceFactType, exception.Message, StringComparison.Ordinal);
         Assert.Contains(kind.ToString(), exception.Message, StringComparison.Ordinal);
@@ -79,7 +82,7 @@ public sealed class RelationMatrixTests
         var target = Reference("Component");
 
         var exception = Assert.Throws<ArgumentException>(() => ConfirmedRelation.Create(
-            RelationKind.Contains, source, target, FacetsFor(RelationKind.Contains), Evidence(source), Classifier(), Variants()));
+            RelationKind.Contains, source, target, FacetsFor(RelationKind.Contains), Evidence(source), Classifier(), Variants(), EvidenceMethod.Syntactic));
 
         Assert.Contains("Solution", exception.Message, StringComparison.Ordinal);
         Assert.Contains(nameof(RelationKind.Contains), exception.Message, StringComparison.Ordinal);

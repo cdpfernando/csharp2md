@@ -50,9 +50,11 @@ public sealed record ConfirmedRelation
         FacetBinding facets,
         EvidenceChain derivedFrom,
         ClassifierIdentity classifier,
-        ImmutableArray<AnalysisVariantId> analysisVariants)
+        ImmutableArray<AnalysisVariantId> analysisVariants,
+        EvidenceMethod evidenceMethod)
     {
         FactGuards.RequireDefined(kind, nameof(kind));
+        FactGuards.RequireDefined(evidenceMethod, nameof(evidenceMethod));
         FactGuards.RequireInitialized(source, nameof(source));
         FactGuards.RequireInitialized(target, nameof(target));
 
@@ -77,6 +79,7 @@ public sealed record ConfirmedRelation
         }
 
         Registry.RequireRegisteredTriple(kind, source.FactType, target.FactType);
+        RelationShapeGuards.RequireSufficientEvidence(Registry, kind, evidenceMethod);
         RelationShapeGuards.RequirePayloadRoleForUsesContract(kind, facets);
 
         return new ConfirmedRelation(kind, source, target, facets, derivedFrom, classifier, analysisVariants);

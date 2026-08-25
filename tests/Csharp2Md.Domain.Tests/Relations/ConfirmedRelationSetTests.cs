@@ -29,7 +29,8 @@ public sealed class ConfirmedRelationSetTests
             FacetBinding.Create(TaxonomyTables.Default.FacetAxes, [], []),
             ValidEvidence(SolutionReference("acme")),
             ClassifierIdentity.Create("csharp2md.structural.contains", 1),
-            [AnalysisVariantId.Create("net10.0", "Release", [], "ci")]);
+            [AnalysisVariantId.Create("net10.0", "Release", [], "ci")],
+            EvidenceMethod.Syntactic);
 
     [Fact]
     [Trait("Requirement", "TAX-62")]
