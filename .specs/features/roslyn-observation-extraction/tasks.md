@@ -1006,11 +1006,11 @@ port-ledger probes under Analysis.Tests; do not edit the ledger's former-path ro
 
 **Done when**:
 
-- [ ] A test double whose Open throws unpublished that solution only; a second fixture solution still
+- [x] A test double whose Open throws unpublished that solution only; a second fixture solution still
       commits
-- [ ] `WorkspaceDiagnosticKind.Failure` alone does not abort
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `WorkspaceDiagnosticKind.Failure` alone does not abort
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
