@@ -52,6 +52,43 @@ public sealed class AnalyzeExitCodeTests
         Assert.Equal(0, exitCode);
     }
 
+    [Fact]
+    [Trait("Requirement", "STOR-47")]
+    public async Task Analyze_WithInjectedEngine_StillRequiresOutputAndDoesNotWrite()
+    {
+        var solutionPath = ExistingFixturePath();
+        var outputPath = CliTestPaths.UniqueOutputPath();
+        IAnalysisEngine engine = new FakeAnalysisEngine(new AnalysisResult(
+        [
+            new SolutionOutcome(
+                solutionPath,
+                solutionPath.Replace('\\', '/'),
+                PublicationStatus.Committed,
+                failingStage: null,
+                structuralCorruption: false,
+                hasUnknownsOrCandidatesOrFrontiers: false,
+                stages: []),
+        ]));
+
+        var missing = await CliInvoke.RunAsync(["analyze", "--solution", solutionPath], engine);
+        Assert.Equal(1, missing.ExitCode);
+        Assert.Contains("--output", missing.Stderr, StringComparison.Ordinal);
+
+        try
+        {
+            var (exitCode, _, _) = await CliInvoke.RunAsync(
+                ["analyze", "--solution", solutionPath, "--output", outputPath],
+                engine);
+
+            Assert.Equal(0, exitCode);
+            Assert.False(Directory.Exists(outputPath));
+        }
+        finally
+        {
+            CliTestPaths.TryDeleteDirectory(outputPath);
+        }
+    }
+
     private static string ExistingFixturePath()
     {
         var solutionPath = Path.Combine(

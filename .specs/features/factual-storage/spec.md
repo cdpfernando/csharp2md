@@ -280,7 +280,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-11 | P1: Canonical round-trip through Domain construction | Execute (T4) | Implementing |
 | STOR-12 | P1: Canonical round-trip through Domain construction | Execute (T4) | Implementing |
 | STOR-13 | P1: Canonical round-trip through Domain construction | Execute (T16) | Implementing |
-| STOR-14 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
+| STOR-14 | P1: Filesystem transactional publication | Execute (T33, T45) | Implementing |
 | STOR-15 | P1: Filesystem transactional publication | Execute (T27) | Implementing |
 | STOR-16 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
 | STOR-17 | P1: Filesystem transactional publication | Execute (T35) | Implementing |
@@ -313,7 +313,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-44 | P1: Compact payload layout | Execute (T32) | Implementing |
 | STOR-45 | P1: Compact payload layout | Execute (T32) | Implementing |
 | STOR-46 | P1: Compact payload layout | Execute (T38) | Implementing |
-| STOR-47 | P1: CLI `--output` and a valid empty package | Execute (T44) | Implementing |
+| STOR-47 | P1: CLI `--output` and a valid empty package | Execute (T44, T45) | Implementing |
 | STOR-48 | P1: CLI `--output` and a valid empty package | Execute (T44) | Implementing |
 | STOR-49 | P1: CLI `--output` and a valid empty package | Tasks | In Tasks |
 | STOR-50 | P1: CLI `--output` and a valid empty package | Execute (T33) | Implementing |

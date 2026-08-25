@@ -1456,7 +1456,7 @@ stay forbidden (full STOR-52 in T47).
 
 ---
 
-#### T45: Default engine uses the filesystem adapter
+#### T45: Default engine uses the filesystem adapter ✅
 
 **What**: When no engine is injected, construct `new AnalysisEngine(new FilesystemTransactionalStore(output))`.
 Injected-engine tests still require `--output` so the surface does not lie; they ignore the path for
@@ -1473,10 +1473,10 @@ publication.
 
 **Done when**:
 
-- [ ] Production `CreateRootCommand()` without an engine writes through the filesystem adapter
-- [ ] Injected engine still requires `--output` and does not construct a Domain snapshot in CLI
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Production `CreateRootCommand()` without an engine writes through the filesystem adapter
+- [x] Injected engine still requires `--output` and does not construct a Domain snapshot in CLI
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Cli.Tests 20 passed, 0 failed (was 18; +2 production write and injected-engine ignore)
 
 **Tests**: unit
 **Gate**: quick
