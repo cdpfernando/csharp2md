@@ -268,7 +268,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | STOR-01 | P1: Versioned wire contracts for every Domain family | Execute (T7) | Implementing |
-| STOR-02 | P1: Versioned wire contracts for every Domain family | Tasks | In Tasks |
+| STOR-02 | P1: Versioned wire contracts for every Domain family | Execute (T10) | Implementing |
 | STOR-03 | P1: Versioned wire contracts for every Domain family | Tasks | In Tasks |
 | STOR-04 | P1: Versioned wire contracts for every Domain family | Tasks | In Tasks |
 | STOR-05 | P1: Versioned wire contracts for every Domain family | Tasks | In Tasks |

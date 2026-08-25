@@ -431,7 +431,7 @@ DataOperation and ConfigurationBinding.
 
 ---
 
-#### T10: Observation DTO
+#### T10: Observation DTO ✅
 
 **What**: Add the observation wire DTO covering identity, kind (`WireName`), payload, locator, evidence
 method, diagnostic, document hash and extractor version.
@@ -448,9 +448,9 @@ method, diagnostic, document hash and extractor version.
 
 **Done when**:
 
-- [ ] Kind is stored as the registry `WireName`, not the enum's ToString
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release`
-- [ ] Test count recorded (no silent deletions)
+- [x] Kind is stored as the registry `WireName`, not the enum's ToString
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release`
+- [x] Test count recorded (no silent deletions) — no tests in this task; Release build 0 warnings, 0 errors
 
 **Tests**: none
 **Gate**: build
