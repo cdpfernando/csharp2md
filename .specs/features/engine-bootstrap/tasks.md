@@ -492,11 +492,11 @@ Analysis, Storage or CLI.
 
 **Done when**:
 
-- [ ] The three project paths and `net10.0` are asserted from disk, not from memory
-- [ ] A forbidden Roslyn/MSBuild package reference fails naming the project and the package
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then Full (Domain + Analysis + Storage + Projection tests)
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean over this phase's changes
+- [x] The three project paths and `net10.0` are asserted from disk, not from memory
+- [x] A forbidden Roslyn/MSBuild package reference fails naming the project and the package
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then Full (Domain + Analysis + Storage + Projection tests)
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean over this phase's changes
 
 **Tests**: unit
 **Gate**: build

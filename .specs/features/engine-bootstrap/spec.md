@@ -246,15 +246,15 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| ENG-01 | P1: Target assembly topology with enforced boundaries | Tasks | Implementing |
+| ENG-01 | P1: Target assembly topology with enforced boundaries | Tasks | Verified |
 | ENG-02 | P1: Target assembly topology with enforced boundaries | Tasks | In Tasks |
 | ENG-03 | P1: Target assembly topology with enforced boundaries | Tasks | In Tasks |
 | ENG-04 | P1: Target assembly topology with enforced boundaries | Tasks | Verified |
 | ENG-05 | P1: Target assembly topology with enforced boundaries | Tasks | In Tasks |
-| ENG-06 | P1: Target assembly topology with enforced boundaries | Tasks | In Tasks |
+| ENG-06 | P1: Target assembly topology with enforced boundaries | Tasks | Implementing |
 | ENG-07 | P1: Target assembly topology with enforced boundaries | Tasks | In Tasks |
 | ENG-08 | P1: Target assembly topology with enforced boundaries | Tasks | In Tasks |
-| ENG-09 | P1: Target assembly topology with enforced boundaries | Tasks | Implementing |
+| ENG-09 | P1: Target assembly topology with enforced boundaries | Tasks | Verified |
 | ENG-10 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-11 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-12 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
