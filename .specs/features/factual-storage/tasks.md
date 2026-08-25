@@ -726,7 +726,7 @@ the validator will use in T22.
 
 ### Phase 4: Commit-time validator
 
-#### T20: Abort on schema failure
+#### T20: Abort on schema failure ✅
 
 **What**: Add `PackageValidator.Validate` that deserializes with `UnmappedMemberHandling.Disallow` and throws
 `PublicationRejectedException` with gate `schema`, naming the artifact key. Tests drive fixture JSON, not a
@@ -744,9 +744,9 @@ this validator directly"
 
 **Done when**:
 
-- [ ] Unknown property or type-mismatch fixture aborts with gate `schema` and the artifact key in `Detail`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Unknown property or type-mismatch fixture aborts with gate `schema` and the artifact key in `Detail`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 70 passed, 0 failed (was 68; +2 schema abort)
 
 **Tests**: unit
 **Gate**: quick

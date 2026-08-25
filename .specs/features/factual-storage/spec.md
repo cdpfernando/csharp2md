@@ -291,7 +291,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-22 | P1: Filesystem transactional publication | Tasks | In Tasks |
 | STOR-23 | P1: Filesystem transactional publication | Tasks | In Tasks |
 | STOR-24 | P1: Filesystem transactional publication | Tasks | In Tasks |
-| STOR-25 | P1: Commit-time structural gates | Tasks | In Tasks |
+| STOR-25 | P1: Commit-time structural gates | Execute (T20) | Implementing |
 | STOR-26 | P1: Commit-time structural gates | Tasks | In Tasks |
 | STOR-27 | P1: Commit-time structural gates | Tasks | In Tasks |
 | STOR-28 | P1: Commit-time structural gates | Execute (T19) | Implementing |
