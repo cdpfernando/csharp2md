@@ -257,7 +257,7 @@ Analysis storage surface. Gates are the names in design.md (`schema`, `unregiste
 
 ---
 
-#### T4: Storage references Domain and embeds the registry
+#### T4: Storage references Domain and embeds the registry ✅
 
 **What**: Add a `ProjectReference` from `Csharp2Md.Storage` to `Csharp2Md.Domain`. Embed
 `contracts/taxonomy-registry.json` as an `EmbeddedResource`. Invert `StorageIsolationTests`: Storage must
@@ -276,11 +276,11 @@ opaque-byte round-trip and the "does not expose Domain" assertions (superseded b
 
 **Done when**:
 
-- [ ] Storage.csproj references Domain and embeds `contracts/taxonomy-registry.json`
-- [ ] Isolation tests assert the Domain reference and name any classifier/promoter/extractor type they find
-- [ ] Opaque-byte and Domain-ban tests are gone, not skipped
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Storage.csproj references Domain and embeds `contracts/taxonomy-registry.json`
+- [x] Isolation tests assert the Domain reference and name any classifier/promoter/extractor type they find
+- [x] Opaque-byte and Domain-ban tests are gone, not skipped
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
