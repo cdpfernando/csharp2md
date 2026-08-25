@@ -988,7 +988,7 @@ onto snapshots
 
 ---
 
-#### T29: Session-state and overlapping Open
+#### T29: Session-state and overlapping Open ✅
 
 **What**: Second `Commit` or `Stage` after `Commit` throws `PublicationRejectedException` gate
 `session-state`. Overlapping `Open` of the same solution key while a session has neither committed nor
@@ -1005,9 +1005,9 @@ aborted throws gate `lock`.
 
 **Done when**:
 
-- [ ] Double Commit, Stage-after-Commit, and overlapping Open are named rejections
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Double Commit, Stage-after-Commit, and overlapping Open are named rejections
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 89 passed, 0 failed (was 87; +2 stage-after-commit and overlapping Open)
 
 **Tests**: unit
 **Gate**: quick

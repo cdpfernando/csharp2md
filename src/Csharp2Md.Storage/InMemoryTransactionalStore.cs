@@ -7,11 +7,23 @@ namespace Csharp2Md.Storage;
 public sealed class InMemoryTransactionalStore : ITransactionalStore
 {
     private readonly Dictionary<string, CommittedPublication> _publications = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _activeKeys = new(StringComparer.Ordinal);
 
-    public IStoreSession Open(string solutionKey) => new Session(this, solutionKey);
+    public IStoreSession Open(string solutionKey)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(solutionKey);
+        if (!_activeKeys.Add(solutionKey))
+        {
+            throw new PublicationRejectedException("lock", solutionKey);
+        }
+
+        return new Session(this, solutionKey);
+    }
 
     public bool TryGetPublication(string solutionKey, out CommittedPublication publication) =>
         _publications.TryGetValue(solutionKey, out publication!);
+
+    private void Release(string solutionKey) => _activeKeys.Remove(solutionKey);
 
     private void Publish(CommittedPublication publication) =>
         _publications[publication.SolutionKey] = publication;
@@ -32,27 +44,38 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
         public void Stage(FactualSnapshot snapshot)
         {
             ArgumentNullException.ThrowIfNull(snapshot);
+            EnsureActive();
             _staged = _staged.Merge(snapshot);
         }
 
         public CommittedPublication Commit()
         {
-            if (_committed)
-            {
-                throw new InvalidOperationException("A store session commits exactly once.");
-            }
+            EnsureActive();
 
             var document = DomainMapper.ToWire(_staged, new ManifestContext(_solutionKey, SolutionFileName(_solutionKey)));
             var report = PackageValidator.Validate(document);
             var artifacts = PackagePublisher.ToPublicationOrder(report.Document);
 
             _committed = true;
+            _store.Release(_solutionKey);
             var publication = new CommittedPublication(_solutionKey, artifacts);
             _store.Publish(publication);
             return publication;
         }
 
-        public void Abort() => _staged = FactualSnapshot.Empty;
+        public void Abort()
+        {
+            _staged = FactualSnapshot.Empty;
+            _store.Release(_solutionKey);
+        }
+
+        private void EnsureActive()
+        {
+            if (_committed)
+            {
+                throw new PublicationRejectedException("session-state", _solutionKey);
+            }
+        }
     }
 
     private static string SolutionFileName(string solutionKey)

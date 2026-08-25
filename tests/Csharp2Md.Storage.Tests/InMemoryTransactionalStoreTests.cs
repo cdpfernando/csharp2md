@@ -127,6 +127,7 @@ public sealed class InMemoryTransactionalStoreTests
 
     [Fact]
     [Trait("Requirement", "ENG-22")]
+    [Trait("Requirement", "STOR-60")]
     public void Commit_SecondCallOnTheSameSession_IsRejected()
     {
         var session = new InMemoryTransactionalStore().Open("solution-a");
@@ -134,7 +135,44 @@ public sealed class InMemoryTransactionalStoreTests
         var first = session.Commit();
 
         Assert.Equal(ArtifactRole.Manifest, first.ArtifactsInPublicationOrder[^1].Role);
-        Assert.Throws<InvalidOperationException>(session.Commit);
+        var exception = Assert.Throws<PublicationRejectedException>(session.Commit);
+        Assert.Equal("session-state", exception.Gate);
+        Assert.Contains("solution-a", exception.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-61")]
+    public void Stage_AfterCommit_IsRejected()
+    {
+        var session = new InMemoryTransactionalStore().Open("solution-a");
+        session.Stage(FactualSnapshot.Empty);
+        session.Commit();
+
+        var exception = Assert.Throws<PublicationRejectedException>(() => session.Stage(FactualSnapshot.Empty));
+        Assert.Equal("session-state", exception.Gate);
+        Assert.Contains("solution-a", exception.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-59")]
+    public void Open_OverlappingSameKey_IsRejectedUntilCommitOrAbort()
+    {
+        var store = new InMemoryTransactionalStore();
+        var first = store.Open("solution-a");
+
+        var locked = Assert.Throws<PublicationRejectedException>(() => store.Open("solution-a"));
+        Assert.Equal("lock", locked.Gate);
+        Assert.Contains("solution-a", locked.Detail, StringComparison.Ordinal);
+
+        first.Abort();
+        var afterAbort = store.Open("solution-a");
+        afterAbort.Stage(FactualSnapshot.Empty);
+        afterAbort.Commit();
+
+        var afterCommit = store.Open("solution-a");
+        afterCommit.Abort();
+        Assert.True(store.TryGetPublication("solution-a", out var stored));
+        Assert.Equal("solution-a", stored.SolutionKey);
     }
 
     [Fact]
