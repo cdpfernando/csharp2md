@@ -774,12 +774,12 @@ the required method and the supplied one).
 
 **Done when**:
 
-- [ ] A registered triple is accepted and an unregistered one throws with all three names in the message
-- [ ] Syntactic evidence supplied where the registry requires semantic evidence is rejected naming both methods
-- [ ] Configured evidence is accepted or rejected per the declared minimum, not by an assumed ordering
-- [ ] No name-similarity, prefix-similarity or path-similarity evidence method exists, asserted by name over `EvidenceMethod`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A registered triple is accepted and an unregistered one throws with all three names in the message
+- [x] Syntactic evidence supplied where the registry requires semantic evidence is rejected naming both methods
+- [x] Configured evidence is accepted or rejected per the declared minimum, not by an assumed ordering
+- [x] No name-similarity, prefix-similarity or path-similarity evidence method exists, asserted by name over `EvidenceMethod`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 170 passed (161 baseline + 9 new)
 
 **Tests**: unit
 **Gate**: quick
