@@ -299,13 +299,13 @@ keeping the `sig1` prefix rewrite and the `-` sentinel for absent parameter and 
 
 **Done when**:
 
-- [ ] Kind, container, metadata name, arity, type, parameters and type arguments all participate; parameter names do not
-- [ ] Absent parameter and type-argument lists render as `-`
-- [ ] A negative arity is rejected with `ArgumentOutOfRangeException`
-- [ ] Two signatures differing only in a preceding unrelated edit are equal, and no `line` or `span` component appears
-- [ ] Reading an uninitialized signature throws `InvalidOperationException`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Kind, container, metadata name, arity, type, parameters and type arguments all participate; parameter names do not
+- [x] Absent parameter and type-argument lists render as `-`
+- [x] A negative arity is rejected with `ArgumentOutOfRangeException`
+- [x] Two signatures differing only in a preceding unrelated edit are equal, and no `line` or `span` component appears
+- [x] Reading an uninitialized signature throws `InvalidOperationException`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
