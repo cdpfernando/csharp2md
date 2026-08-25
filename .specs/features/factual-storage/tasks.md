@@ -228,7 +228,7 @@ design.md, and `Merge` that concatenates arrays. Collision is not a merge error.
 
 ---
 
-#### T3: Add PublicationRejectedException
+#### T3: Add PublicationRejectedException ✅
 
 **What**: Add `PublicationRejectedException(string gate, string detail)` with `Gate` and `Detail` on the
 Analysis storage surface. Gates are the names in design.md (`schema`, `unregistered-kind`,
@@ -246,9 +246,9 @@ Analysis storage surface. Gates are the names in design.md (`schema`, `unregiste
 
 **Done when**:
 
-- [ ] Constructor stores `Gate` and `Detail`; they are readable after throw/catch
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Constructor stores `Gate` and `Detail`; they are readable after throw/catch
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
