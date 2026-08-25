@@ -283,8 +283,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-14 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
 | STOR-15 | P1: Filesystem transactional publication | Execute (T27) | Implementing |
 | STOR-16 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
-| STOR-17 | P1: Filesystem transactional publication | Tasks | In Tasks |
-| STOR-18 | P1: Filesystem transactional publication | Tasks | In Tasks |
+| STOR-17 | P1: Filesystem transactional publication | Execute (T35) | Implementing |
+| STOR-18 | P1: Filesystem transactional publication | Execute (T35) | Implementing |
 | STOR-19 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
 | STOR-20 | P1: Filesystem transactional publication | Execute (T34) | Implementing |
 | STOR-21 | P1: Filesystem transactional publication | Execute (T34) | Implementing |
@@ -297,7 +297,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-28 | P1: Commit-time structural gates | Execute (T22) | Implementing |
 | STOR-29 | P1: Commit-time structural gates | Execute (T23) | Implementing |
 | STOR-30 | P1: Commit-time structural gates | Execute (T24) | Implementing |
-| STOR-31 | P1: Commit-time structural gates | Execute (T31) | Implementing |
+| STOR-31 | P1: Commit-time structural gates | Execute (T35) | Implementing |
 | STOR-32 | P1: Commit-time structural gates | Execute (T25) | Implementing |
 | STOR-33 | P1: Commit-time structural gates | Execute (T26) | Implementing |
 | STOR-34 | P1: Factual package reader | Tasks | In Tasks |

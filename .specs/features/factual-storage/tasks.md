@@ -1164,7 +1164,7 @@ If the solution child exists without `manifest.json`, refuse and leave the path 
 
 ---
 
-#### T35: Atomic replace and abort preserve the last package
+#### T35: Atomic replace and abort preserve the last package ✅
 
 **What**: Implement staging directory + `.bak` swap from design.md. A second successful commit replaces the
 child so no mix of old and new artifacts is readable. Abort or failed validate deletes staging, releases the
@@ -1181,10 +1181,10 @@ lock, and leaves the last successful package byte-identical; no new manifest is 
 
 **Done when**:
 
-- [ ] Commit twice: second tree fully replaces the first; no mixed shards
-- [ ] Forced validation failure after a successful commit: prior files unchanged
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Commit twice: second tree fully replaces the first; no mixed shards
+- [x] Forced validation failure after a successful commit: prior files unchanged
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 96 passed, 0 failed (was 93; +3 atomic replace, failed validate, abort preserve)
 
 **Tests**: unit
 **Gate**: quick
