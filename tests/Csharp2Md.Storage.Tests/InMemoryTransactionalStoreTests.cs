@@ -106,21 +106,23 @@ public sealed class InMemoryTransactionalStoreTests
 
     [Fact]
     [Trait("Requirement", "ENG-27")]
-    public void Commit_TwoStagingOrders_YieldByteIdenticalPublicationOrder()
+    [Trait("Requirement", "STOR-44")]
+    [Trait("Requirement", "STOR-45")]
+    public void Commit_TwoStagingOrders_YieldByteIdenticalCanonicalPayloads()
     {
-        var first = CommitInOrder(FactualSnapshot.Empty, FactualSnapshot.Empty);
-        var second = CommitInOrder(FactualSnapshot.Empty, FactualSnapshot.Empty);
+        var alpha = DocumentSnapshot("src/Acme.Payments/Alpha.cs");
+        var zeta = DocumentSnapshot("src/Acme.Payments/Zeta.cs");
+        var firstObservation = ObservationSnapshot(1);
+        var secondObservation = ObservationSnapshot(2);
 
-        Assert.Equal(first.Length, second.Length);
-        for (var i = 0; i < first.Length; i++)
-        {
-            Assert.Equal(first[i].Role, second[i].Role);
-            Assert.Equal(first[i].CanonicalKey, second[i].CanonicalKey);
-            Assert.True(
-                first[i].Payload.AsSpan().SequenceEqual(second[i].Payload.AsSpan()),
-                $"Payload bytes at index {i} differ.");
-        }
+        var first = CommitInOrder(zeta, alpha, secondObservation, firstObservation);
+        var second = CommitInOrder(alpha, zeta, firstObservation, secondObservation);
+        var sameGraphAgain = CommitInOrder(alpha.Merge(zeta).Merge(firstObservation).Merge(secondObservation));
 
+        AssertEqualCanonicalPayloads(first, second);
+        AssertEqualCanonicalPayloads(first, sameGraphAgain);
+        Assert.Contains(first, fragment => fragment.CanonicalKey == "facts/structural.json");
+        Assert.Contains(first, fragment => fragment.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal));
         Assert.Equal(ArtifactRole.Manifest, first[^1].Role);
         Assert.Equal(ArtifactRole.Manifest, second[^1].Role);
     }
@@ -336,6 +338,51 @@ public sealed class InMemoryTransactionalStoreTests
         }
 
         return session.Commit().ArtifactsInPublicationOrder;
+    }
+
+    private static void AssertEqualCanonicalPayloads(
+        ImmutableArray<StagedFragment> left,
+        ImmutableArray<StagedFragment> right)
+    {
+        var leftCanonical = WithoutMeasurements(left);
+        var rightCanonical = WithoutMeasurements(right);
+        Assert.Equal(leftCanonical.Length, rightCanonical.Length);
+        for (var index = 0; index < leftCanonical.Length; index++)
+        {
+            Assert.Equal(leftCanonical[index].Role, rightCanonical[index].Role);
+            Assert.Equal(leftCanonical[index].CanonicalKey, rightCanonical[index].CanonicalKey);
+            Assert.True(
+                leftCanonical[index].Payload.AsSpan().SequenceEqual(rightCanonical[index].Payload.AsSpan()),
+                $"Canonical payload bytes at '{leftCanonical[index].CanonicalKey}' differ.");
+        }
+    }
+
+    private static ImmutableArray<StagedFragment> WithoutMeasurements(ImmutableArray<StagedFragment> artifacts) =>
+        [.. artifacts.Where(fragment => fragment.CanonicalKey != "measurements.json")];
+
+    private static FactualSnapshot DocumentSnapshot(string relativePath)
+    {
+        var workspace = WorkspaceIdentity.Create("acme");
+        var solution = SolutionId.Create(workspace, "src/Acme.sln");
+        var project = ProjectId.Create(solution, "src/Acme.Payments/Acme.Payments.csproj");
+        return new FactualSnapshot([Document.Create(project, relativePath)], [], [], [], [], []);
+    }
+
+    private static FactualSnapshot ObservationSnapshot(int ordinal)
+    {
+        var workspace = WorkspaceIdentity.Create("acme");
+        var solution = Solution.Create(SolutionId.Create(workspace, "src/Acme.sln"));
+        var observation = Observation.Create(
+            solution.Reference,
+            ObservationKind.Invocation,
+            NormalizedPayload.Create([]),
+            ordinal,
+            new EvidenceLocator(DocumentId.Create("doc"), "src/Acme.Payments/Invoice.cs", new SourceSpan(1, 1, 1, 8)),
+            EvidenceMethod.Semantic,
+            new BindingDiagnostic("BIND001", "Bound successfully."),
+            DocumentHash.Create(new string('a', 64)),
+            new ExtractorVersion(1));
+        return new FactualSnapshot([], [observation], [], [], [], []);
     }
 
     private static FactualSnapshot SolutionSnapshot()

@@ -1073,7 +1073,7 @@ the prior publication byte-identical and publishes no new manifest.
 
 ---
 
-#### T32: Staging order does not change canonical bytes
+#### T32: Staging order does not change canonical bytes ✅
 
 **What**: Rewrite `StagingOrderTests` and the in-memory order test so two `Merge` orders of the same Domain
 graph produce byte-identical canonical payload files (exclude measurements). Manifest still last.
@@ -1089,11 +1089,11 @@ graph produce byte-identical canonical payload files (exclude measurements). Man
 
 **Done when**:
 
-- [ ] Two staging orders of the same facts and observations yield identical payload bytes
-- [ ] Measurements may differ; every other shard matches
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Phase-end slopwatch is clean over Phase 5
-- [ ] Test count recorded (no silent deletions)
+- [x] Two staging orders of the same facts and observations yield identical payload bytes
+- [x] Measurements may differ; every other shard matches
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Phase-end slopwatch is clean over Phase 5
+- [x] Test count recorded (no silent deletions) — Analysis.Tests 88 passed, 0 failed; Storage.Tests 89 passed, 0 failed; BUILD Release 0 warnings; `dotnet format --verify-no-changes`; solution 740 passed, 0 failed (was 733; +7 across Phase 5); slopwatch 0 issues
 
 **Tests**: unit
 **Gate**: build
