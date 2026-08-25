@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Csharp2Md.Storage.Tests.Filesystem;
 
 internal sealed class TempOutputRoot : IDisposable
@@ -30,8 +32,9 @@ internal sealed class TempOutputRoot : IDisposable
                 File.Delete(DirectoryPath);
             }
         }
-        catch (IOException)
+        catch (IOException exception)
         {
+            Debug.WriteLine($"Failed to delete '{DirectoryPath}': {exception.Message}");
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using Csharp2Md.Analysis.Storage;
@@ -84,8 +85,9 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
                 File.Delete(path);
             }
         }
-        catch (IOException)
+        catch (IOException exception)
         {
+            Debug.WriteLine($"Failed to delete '{path}': {exception.Message}");
         }
     }
 

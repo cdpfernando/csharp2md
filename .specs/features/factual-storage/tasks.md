@@ -1280,7 +1280,7 @@ in InMemory/Wire/Mapping.
 
 ---
 
-#### T39: Abort and cancel delete staging residue
+#### T39: Abort and cancel delete staging residue ✅
 
 **What**: Abort or cancellation deletes `<child>.staging` and the lock, and does not leave partial artifacts
 for that solution. The committed child is untouched.
@@ -1296,11 +1296,11 @@ for that solution. The committed child is untouched.
 
 **Done when**:
 
-- [ ] Abort mid-stage: no `.staging` directory remains; last package unchanged
-- [ ] Cancelled engine run using this adapter leaves no staging residue
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Phase-end slopwatch is clean over Phase 6
-- [ ] Test count recorded (no silent deletions)
+- [x] Abort mid-stage: no `.staging` directory remains; last package unchanged
+- [x] Cancelled engine run using this adapter leaves no staging residue
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Phase-end slopwatch is clean over Phase 6
+- [x] Test count recorded (no silent deletions) — Storage.Tests 101 passed, 0 failed (was 100; +1 abort staging); Analysis.Tests 89 passed, 0 failed (was 88; +1 filesystem cancel); BUILD Release 0 warnings; `dotnet format --verify-no-changes`; solution 753 passed, 0 failed (was 740; +13 across Phase 6); slopwatch 0 issues
 
 **Tests**: unit
 **Gate**: build
