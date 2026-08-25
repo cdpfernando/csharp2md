@@ -1607,11 +1607,11 @@ hygiene test if a version has no consumer in the solution or `fixtures/` (ENG-51
 
 **Done when**:
 
-- [ ] Roslyn and YamlDotNet versions are absent
-- [ ] Fixture packages remain
-- [ ] A leftover unused `PackageVersion` fails naming the package
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Roslyn and YamlDotNet versions are absent
+- [x] Fixture packages remain
+- [x] A leftover unused `PackageVersion` fails naming the package
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: solution
