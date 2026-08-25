@@ -268,7 +268,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-25 | P1: Semantic Roslyn binding | Tasks (T31) | Pending |
 | ROSE-26 | P1: Semantic Roslyn binding | Tasks (T7, T8, T25) | Implemented |
 | ROSE-27 | P1: Semantic Roslyn binding | Tasks (T8, T9) | Implemented |
-| ROSE-28 | P1: Semantic Roslyn binding | Tasks (T10) | Pending |
+| ROSE-28 | P1: Semantic Roslyn binding | Tasks (T10) | Implemented |
 | ROSE-29 | P1: Semantic Roslyn binding | Tasks (T26, T27) | Pending |
 | ROSE-30 | P1: Semantic Roslyn binding | Tasks (T26, T27) | Pending |
 | ROSE-31 | P1: Semantic Roslyn binding | Tasks (T32, T36, T43) | Pending |
