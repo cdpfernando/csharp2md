@@ -1812,11 +1812,11 @@ ranking.
 
 **Done when**:
 
-- [ ] Every type in the assembly is scanned, not a hand-listed subset, and the assertion fails naming the offending member
-- [ ] Forbidden names include confidence, score, weight, probability, rank and certainty; the version axes and the occurrence ordinal are explicitly allowed
-- [ ] A numeric member added to any taxonomy type is caught, verified by a negative control asserted against a local decoy type
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Every type in the assembly is scanned, not a hand-listed subset, and the assertion fails naming the offending member
+- [x] Forbidden names include confidence, score, weight, probability, rank and certainty; the version axes and the occurrence ordinal are explicitly allowed
+- [x] A numeric member added to any taxonomy type is caught, verified by a negative control asserted against a local decoy type
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
