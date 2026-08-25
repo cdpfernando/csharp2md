@@ -746,10 +746,10 @@ Relative paths use forward slashes and contain no drive prefix.
 
 **Done when**:
 
-- [ ] `OrdersController.cs` is a Document with a `/`-separated relative path and no drive prefix
-- [ ] A planted `bin/Generated.cs` under the project directory is not inventoried
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `OrdersController.cs` is a Document with a `/`-separated relative path and no drive prefix
+- [x] A planted `bin/Generated.cs` under the project directory is not inventoried
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
