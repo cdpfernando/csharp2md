@@ -366,12 +366,12 @@ throws naming both fact types when two distinct facts collide.
 
 **Done when**:
 
-- [ ] A solution identity built under two different absolute roots from the same logical relative path is byte-identical
-- [ ] The workspace component appears in the solution identity, and two workspaces produce distinct solution identities
-- [ ] An absolute or non-normalized solution path is rejected naming the parameter
-- [ ] A missing workspace name is rejected naming the parameter, with no partial identity produced
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A solution identity built under two different absolute roots from the same logical relative path is byte-identical
+- [x] The workspace component appears in the solution identity, and two workspaces produce distinct solution identities
+- [x] An absolute or non-normalized solution path is rejected naming the parameter
+- [x] A missing workspace name is rejected naming the parameter, with no partial identity produced
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 52 total, 0 failed
 
 **Tests**: unit
 **Gate**: quick
