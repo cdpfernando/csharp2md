@@ -1382,10 +1382,10 @@ verb.
 
 **Done when**:
 
-- [ ] Each removed name is absent from `analyze.Options` and `RootCommand.Options`
-- [ ] `Properties/launchSettings.json` uses `analyze --solution`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Each removed name is absent from `analyze.Options` and `RootCommand.Options`
+- [x] `Properties/launchSettings.json` uses `analyze --solution`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
