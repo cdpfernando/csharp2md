@@ -664,11 +664,11 @@ payload bytes beyond storing them (ENG-28).
 
 **Done when**:
 
-- [ ] No public Storage member exposes a `Csharp2Md.Domain` type
-- [ ] Arbitrary payload bytes round-trip unchanged
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then Full (Domain + Analysis + Storage + Projection tests)
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean over this phase's changes
+- [x] No public Storage member exposes a `Csharp2Md.Domain` type
+- [x] Arbitrary payload bytes round-trip unchanged
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then Full (Domain + Analysis + Storage + Projection tests)
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean over this phase's changes
 
 **Tests**: unit
 **Gate**: build
