@@ -1136,7 +1136,7 @@ last inside the staging tree then swap. Writes only under `outputRoot`.
 
 ---
 
-#### T34: Refuse a file root and a non-package child
+#### T34: Refuse a file root and a non-package child ✅
 
 **What**: If `outputRoot` is an existing file, refuse naming that path (`io` / `not-a-package` as specified).
 If the solution child exists without `manifest.json`, refuse and leave the path byte-identical.
@@ -1152,10 +1152,10 @@ If the solution child exists without `manifest.json`, refuse and leave the path 
 
 **Done when**:
 
-- [ ] File-as-root is named in the exception detail; no write occurs
-- [ ] Non-package child is unchanged after refusal
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] File-as-root is named in the exception detail; no write occurs
+- [x] Non-package child is unchanged after refusal
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — Storage.Tests 93 passed, 0 failed (was 91; +2 file-root and non-package refusal)
 
 **Tests**: unit
 **Gate**: quick

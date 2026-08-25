@@ -286,8 +286,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | STOR-17 | P1: Filesystem transactional publication | Tasks | In Tasks |
 | STOR-18 | P1: Filesystem transactional publication | Tasks | In Tasks |
 | STOR-19 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
-| STOR-20 | P1: Filesystem transactional publication | Tasks | In Tasks |
-| STOR-21 | P1: Filesystem transactional publication | Tasks | In Tasks |
+| STOR-20 | P1: Filesystem transactional publication | Execute (T34) | Implementing |
+| STOR-21 | P1: Filesystem transactional publication | Execute (T34) | Implementing |
 | STOR-22 | P1: Filesystem transactional publication | Execute (T33) | Implementing |
 | STOR-23 | P1: Filesystem transactional publication | Tasks | In Tasks |
 | STOR-24 | P1: Filesystem transactional publication | Execute (T28) | Implementing |
