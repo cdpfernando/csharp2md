@@ -381,10 +381,10 @@ convention.
 
 **Done when**:
 
-- [ ] The only project reference is `Csharp2Md.Analysis`
-- [ ] There is no package reference
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] The only project reference is `Csharp2Md.Analysis`
+- [x] There is no package reference
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: none
 **Gate**: build

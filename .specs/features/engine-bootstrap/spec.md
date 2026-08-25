@@ -266,7 +266,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ENG-18 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-19 | P1: One analysis facade over an eight-stage pipeline | Tasks | In Tasks |
 | ENG-20 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
-| ENG-21 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
+| ENG-21 | P1: Transactional storage port with atomic publication | Tasks | Implementing |
 | ENG-22 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
 | ENG-23 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
 | ENG-24 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
