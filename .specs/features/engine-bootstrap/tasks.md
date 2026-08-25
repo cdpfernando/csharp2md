@@ -1525,10 +1525,10 @@ security-boundary tests (ENG-52, ENG-53).
 
 **Done when**:
 
-- [ ] Both directories are absent
-- [ ] slnx has no benchmarks folder
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] Both directories are absent
+- [x] slnx has no benchmarks folder
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: none
 **Gate**: solution
