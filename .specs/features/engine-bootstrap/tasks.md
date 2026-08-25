@@ -1410,11 +1410,11 @@ still packs as the `csharp2md` tool (ENG-02, ENG-08).
 
 **Done when**:
 
-- [ ] The project-reference set equals Analysis, Storage, Projection
-- [ ] `PackAsTool` is true and `ToolCommandName` is `csharp2md`
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then Full including Cli.Tests
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean over this phase's changes
+- [x] The project-reference set equals Analysis, Storage, Projection
+- [x] `PackAsTool` is true and `ToolCommandName` is `csharp2md`
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then Full including Cli.Tests
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean over this phase's changes
 
 **Tests**: unit
 **Gate**: build
