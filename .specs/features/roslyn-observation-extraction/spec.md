@@ -270,7 +270,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-27 | P1: Semantic Roslyn binding | Tasks (T8, T9) | Implemented |
 | ROSE-28 | P1: Semantic Roslyn binding | Tasks (T10) | Implemented |
 | ROSE-29 | P1: Semantic Roslyn binding | Tasks (T26, T27) | Implemented |
-| ROSE-30 | P1: Semantic Roslyn binding | Tasks (T26, T27) | Pending |
+| ROSE-30 | P1: Semantic Roslyn binding | Tasks (T26, T27) | Implemented |
 | ROSE-31 | P1: Semantic Roslyn binding | Tasks (T32, T36, T43) | Pending |
 | ROSE-32 | P1: Observation ledger | Tasks (T39) | Pending |
 | ROSE-33 | P1: Observation ledger | Tasks (T39) | Pending |

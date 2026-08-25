@@ -979,9 +979,9 @@ port-ledger probes under Analysis.Tests; do not edit the ledger's former-path ro
 
 **Done when**:
 
-- [ ] Probes fail by naming a remaining analyzer or generator if Strip is skipped
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Probes fail by naming a remaining analyzer or generator if Strip is skipped
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
