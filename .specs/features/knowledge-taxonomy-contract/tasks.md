@@ -644,11 +644,11 @@ no generic or inverse edge.
 
 **Done when**:
 
-- [ ] Set equality against `contains`, `belongs-to`, `included-in`, `executes`, `invokes`, `implements-operation`, `targets`, `uses-contract`, `accesses-data`, `operates-on`, `maps-to`, `configured-by`
-- [ ] No `references` and no `dependsOn` member exists, asserted by name
-- [ ] No member is the inverse of another, asserted against an explicit list of forbidden inverse names
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Set equality against `contains`, `belongs-to`, `included-in`, `executes`, `invokes`, `implements-operation`, `targets`, `uses-contract`, `accesses-data`, `operates-on`, `maps-to`, `configured-by`
+- [x] No `references` and no `dependsOn` member exists, asserted by name
+- [x] No member is the inverse of another, asserted against an explicit list of forbidden inverse names
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 104 passed (101 baseline + 3 new)
 
 **Tests**: unit
 **Gate**: quick
