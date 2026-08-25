@@ -1400,12 +1400,12 @@ without carrying a sensitive value.
 
 **Done when**:
 
-- [ ] Exactly one type in the family
-- [ ] The configuration key enters only as a structural literal
-- [ ] No member carries a configuration value, a connection string or a token, asserted by reflection
-- [ ] The bound fact reference is required and validated
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Exactly one type in the family
+- [x] The configuration key enters only as a structural literal
+- [x] No member carries a configuration value, a connection string or a token, asserted by reflection
+- [x] The bound fact reference is required and validated
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 394 passed, 0 failed
 
 **Tests**: unit
 **Gate**: quick
