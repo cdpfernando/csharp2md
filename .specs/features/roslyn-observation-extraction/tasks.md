@@ -1035,10 +1035,10 @@ port-ledger probes under Analysis.Tests; do not edit the ledger's former-path ro
 
 **Done when**:
 
-- [ ] An SDK-shaped workspace diagnostic records `unresolvable-sdk` naming the project
-- [ ] The solution still proceeds to compilation of loadable projects
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] An SDK-shaped workspace diagnostic records `unresolvable-sdk` naming the project
+- [x] The solution still proceeds to compilation of loadable projects
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

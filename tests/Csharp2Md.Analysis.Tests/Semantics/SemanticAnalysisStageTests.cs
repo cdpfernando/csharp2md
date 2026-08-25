@@ -2,6 +2,7 @@ using Csharp2Md.Analysis;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Semantics;
+using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Analysis.Tests.Pipeline;
 using Csharp2Md.Storage;
 using Microsoft.CodeAnalysis;
@@ -64,6 +65,33 @@ public sealed class SemanticAnalysisStageTests
         Assert.False(result.AbortPublication);
         Assert.False(result.StructuralCorruption);
         Assert.Null(context.Detail);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-12")]
+    public async Task ExecuteAsync_UnresolvableSdk_RecordsDiagnosticNamesProjectAndCompilesLoadableProjects()
+    {
+        var solutionPath = AcmeOrdersSolutionPath();
+        var context = new PipelineContext(new SwallowingSession(), solutionPath);
+        await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+
+        var result = await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+
+        Assert.False(result.AbortPublication);
+        Assert.False(result.StructuralCorruption);
+        Assert.True(result.HasUnknownsOrCandidatesOrFrontiers);
+
+        var sdk = Assert.Single(
+            context.Accumulator.ToSnapshot().Diagnostics,
+            record => string.Equals(record.Code, "unresolvable-sdk", StringComparison.Ordinal));
+        Assert.Equal("Acme.Broken/Acme.Broken.csproj", sdk.IdentityOrKey);
+        Assert.False(Path.IsPathRooted(sdk.IdentityOrKey));
+        Assert.Contains("Acme.Broken", sdk.Message, StringComparison.Ordinal);
+
+        Assert.Contains(
+            context.Compilations,
+            compilation => compilation.SyntaxTrees.Any(tree =>
+                tree.FilePath.Contains("OrdersController.cs", StringComparison.OrdinalIgnoreCase)));
     }
 
     private static bool PathsEqual(string left, string right) =>
