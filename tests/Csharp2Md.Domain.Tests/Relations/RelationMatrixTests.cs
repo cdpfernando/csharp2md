@@ -1,3 +1,5 @@
+using Csharp2Md.Domain.Facets;
+using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
@@ -38,18 +40,54 @@ public sealed class RelationMatrixTests
     private static EvidenceMethod MinimumEvidenceFor(RelationKind kind) =>
         TaxonomyTables.Default.Relations.Single(descriptor => descriptor.Kind == kind).MinimumEvidenceMethod;
 
+    private static ProjectId AcmeProject =>
+        ProjectId.Create(SolutionId.Create(WorkspaceIdentity.Create("acme"), "src/Acme.sln"), "src/Acme.Payments/Acme.Payments.csproj");
+
+    private static Symbol CallableSymbol(string metadataName)
+    {
+        var signature = CanonicalSymbolSignature.Create("method", "global::Acme.Payment", metadataName, 0, "global::System.Void");
+        return Symbol.Create(signature, AcmeProject, SymbolFacetSet.Create([SymbolFacet.Callable]));
+    }
+
+    private static (FactReference Source, FactReference Target, IFact? SourceFact, IFact? TargetFact) EndpointsFor(RelationKind kind)
+    {
+        var triple = RegisteredTripleFor(kind);
+        return kind switch
+        {
+            RelationKind.Executes => TargetCallable(triple.SourceFactType, "Main"),
+            RelationKind.Invokes => SourceCallable("Caller", triple.TargetFactType),
+            RelationKind.ImplementsOperation => SourceCallable("Handle", triple.TargetFactType),
+            RelationKind.AccessesData => SourceCallable("Load", triple.TargetFactType),
+            _ => (Reference(triple.SourceFactType), Reference(triple.TargetFactType), null, null),
+        };
+    }
+
+    private static (FactReference Source, FactReference Target, IFact? SourceFact, IFact? TargetFact) SourceCallable(
+        string metadataName,
+        string targetFactType)
+    {
+        var sourceFact = CallableSymbol(metadataName);
+        return (sourceFact.Reference, Reference(targetFactType), sourceFact, null);
+    }
+
+    private static (FactReference Source, FactReference Target, IFact? SourceFact, IFact? TargetFact) TargetCallable(
+        string sourceFactType,
+        string metadataName)
+    {
+        var targetFact = CallableSymbol(metadataName);
+        return (Reference(sourceFactType), targetFact.Reference, null, targetFact);
+    }
+
     [Theory]
     [MemberData(nameof(AllRelationKinds))]
     [Trait("Requirement", "TAX-42")]
     [Trait("Requirement", "TAX-44")]
     public void ConfirmedRelation_Create_OneRegisteredTriplePerRelation_IsAccepted(RelationKind kind)
     {
-        var triple = RegisteredTripleFor(kind);
-        var source = Reference(triple.SourceFactType);
-        var target = Reference(triple.TargetFactType);
+        var (source, target, sourceFact, targetFact) = EndpointsFor(kind);
 
         var relation = ConfirmedRelation.Create(
-            kind, source, target, FacetsFor(kind), Evidence(source), Classifier(), Variants(), MinimumEvidenceFor(kind));
+            kind, source, target, FacetsFor(kind), Evidence(source), Classifier(), Variants(), MinimumEvidenceFor(kind), sourceFact, targetFact);
 
         Assert.Equal(kind, relation.Kind);
         Assert.Equal(source, relation.Source);

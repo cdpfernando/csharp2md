@@ -51,7 +51,9 @@ public sealed record ConfirmedRelation
         EvidenceChain derivedFrom,
         ClassifierIdentity classifier,
         ImmutableArray<AnalysisVariantId> analysisVariants,
-        EvidenceMethod evidenceMethod)
+        EvidenceMethod evidenceMethod,
+        IFact? sourceFact = null,
+        IFact? targetFact = null)
     {
         FactGuards.RequireDefined(kind, nameof(kind));
         FactGuards.RequireDefined(evidenceMethod, nameof(evidenceMethod));
@@ -80,6 +82,43 @@ public sealed record ConfirmedRelation
 
         Registry.RequireRegisteredTriple(kind, source.FactType, target.FactType);
         RelationShapeGuards.RequireSufficientEvidence(Registry, kind, evidenceMethod);
+
+        if (sourceFact is not null && !sourceFact.Reference.Equals(source))
+        {
+            throw new ArgumentException("The source fact's reference must equal the source.", nameof(sourceFact));
+        }
+
+        if (targetFact is not null && !targetFact.Reference.Equals(target))
+        {
+            throw new ArgumentException("The target fact's reference must equal the target.", nameof(targetFact));
+        }
+
+        switch (kind)
+        {
+            case RelationKind.Executes:
+                if (targetFact is not Symbol executesTarget)
+                {
+                    throw new ArgumentException(
+                        $"Relation '{kind}' requires a callable symbol as {nameof(targetFact)}.",
+                        nameof(targetFact));
+                }
+
+                RelationShapeGuards.RequireCallableIfNeeded(kind, executesTarget, nameof(targetFact));
+                break;
+            case RelationKind.Invokes:
+            case RelationKind.ImplementsOperation:
+            case RelationKind.AccessesData:
+                if (sourceFact is not Symbol callableSource)
+                {
+                    throw new ArgumentException(
+                        $"Relation '{kind}' requires a callable symbol as {nameof(sourceFact)}.",
+                        nameof(sourceFact));
+                }
+
+                RelationShapeGuards.RequireCallableIfNeeded(kind, callableSource, nameof(sourceFact));
+                break;
+        }
+
         RelationShapeGuards.RequirePayloadRoleForUsesContract(kind, facets);
 
         return new ConfirmedRelation(kind, source, target, facets, derivedFrom, classifier, analysisVariants);

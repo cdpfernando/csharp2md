@@ -203,11 +203,11 @@ symbol; the other three on the source symbol). Test ENG-55 only through `Create`
 
 **Done when**:
 
-- [ ] A callable kind constructed through `Create` with a non-callable `Symbol` is rejected
-- [ ] `Executes` uses `targetFact`; `Invokes`, `ImplementsOperation` and `AccessesData` use `sourceFact`
-- [ ] A supplied fact whose `Reference` does not equal the corresponding `FactReference` is rejected naming the fact parameter
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A callable kind constructed through `Create` with a non-callable `Symbol` is rejected
+- [x] `Executes` uses `targetFact`; `Invokes`, `ImplementsOperation` and `AccessesData` use `sourceFact`
+- [x] A supplied fact whose `Reference` does not equal the corresponding `FactReference` is rejected naming the fact parameter
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
