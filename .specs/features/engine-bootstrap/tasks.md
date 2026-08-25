@@ -1098,9 +1098,9 @@ exposes the flag (ENG-26).
 
 **Done when**:
 
-- [ ] Status is `Committed` and the unknowns flag is true
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Status is `Committed` and the unknowns flag is true
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

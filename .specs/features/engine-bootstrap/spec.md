@@ -271,7 +271,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ENG-23 | P1: Transactional storage port with atomic publication | Tasks | Verified |
 | ENG-24 | P1: Transactional storage port with atomic publication | Tasks | Verified |
 | ENG-25 | P1: Transactional storage port with atomic publication | Tasks | Verified |
-| ENG-26 | P1: Transactional storage port with atomic publication | Tasks | In Tasks |
+| ENG-26 | P1: Transactional storage port with atomic publication | Tasks | Verified |
 | ENG-27 | P1: Transactional storage port with atomic publication | Tasks | Verified |
 | ENG-28 | P1: Transactional storage port with atomic publication | Tasks | Verified |
 | ENG-29 | P1: Multi-solution isolation and determinism | Tasks | Verified |
