@@ -991,12 +991,12 @@ member that carries an individual secret value or a hash of one.
 
 **Done when**:
 
-- [ ] The evidence carries exactly document identity, span, document hash and redacted excerpt
-- [ ] A reflection assertion proves no member is an original literal or a per-secret hash, checked by member name and by type
-- [ ] The document hash is the whole-document hash, not a hash of the span content
-- [ ] An unredacted excerpt - one containing the candidate secret verbatim - is rejected
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] The evidence carries exactly document identity, span, document hash and redacted excerpt
+- [x] A reflection assertion proves no member is an original literal or a per-secret hash, checked by member name and by type
+- [x] The document hash is the whole-document hash, not a hash of the span content
+- [x] An unredacted excerpt - one containing the candidate secret verbatim - is rejected
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count recorded (no silent deletions) — 8 new tests (SuspectedSecretEvidenceTests), 253 total passing
 
 **Tests**: unit
 **Gate**: quick
