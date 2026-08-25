@@ -451,9 +451,9 @@ Keep the existing `Microsoft.Build` forbidden case on Storage and Projection.
 
 **Done when**:
 
-- [ ] A test names any `Microsoft.Build*` PackageReference on Analysis if one appears
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A test names any `Microsoft.Build*` PackageReference on Analysis if one appears
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

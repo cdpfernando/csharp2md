@@ -60,6 +60,22 @@ public sealed class AnalysisIsolationTests
     }
 
     [Fact]
+    [Trait("Requirement", "ROSE-27")]
+    public void AnalysisCsproj_DeclaresNoMicrosoftBuildPackageReference()
+    {
+        var csprojPath = AnalysisCsprojPath();
+
+        Assert.True(File.Exists(csprojPath), $"Analysis project file was not found at '{csprojPath}'.");
+
+        var offending = ReadPackageReferenceIncludes(csprojPath)
+            .FirstOrDefault(packageId => packageId.StartsWith("Microsoft.Build", StringComparison.Ordinal));
+
+        Assert.True(
+            offending is null,
+            $"Csharp2Md.Analysis must not declare a PackageReference to '{offending}' (forbidden prefix 'Microsoft.Build').");
+    }
+
+    [Fact]
     [Trait("Requirement", "ENG-05")]
     public void DomainProject_DeclaresNoPackageReferenceAndNoProjectReference()
     {
@@ -100,6 +116,16 @@ public sealed class AnalysisIsolationTests
             .Select(element => element.Attribute("Include")?.Value)
             .Where(include => !string.IsNullOrWhiteSpace(include))
             .Cast<string>()
+            .ToArray();
+    }
+
+    private static IReadOnlyList<string> ReadPackageReferenceIncludes(string csprojPath)
+    {
+        var document = XDocument.Load(csprojPath);
+        return document.Descendants()
+            .Where(element => element.Name.LocalName == "PackageReference")
+            .Select(element => element.Attribute("Include")?.Value)
+            .OfType<string>()
             .ToArray();
     }
 
