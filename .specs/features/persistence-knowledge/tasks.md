@@ -792,18 +792,20 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] Exactly one `DataStore`, named `OrdersDb`, technology `relational`
-- [ ] `order_headers` and `order_status` are `ExplicitConfirmation` with confirmed `maps-to`; `OrderLines`, `Id` and `Amount` are `ConventionalCandidate` with `CandidateLink` records
-- [ ] The SQL-derived `Orders` object coexists with `order_headers`, unmerged (PK-20)
-- [ ] `PayOrder` and `Reprice` share one `update` `DataOperation` reached by two `accesses-data` relations (PK-38)
-- [ ] `SelectAllFrom` yields an `UnresolvedRecord` and no `DataObject`
-- [ ] `OrderRepository` yields no persistence record of any kind (PK-42)
-- [ ] `diagnostics.json` carries the coverage counts with no percentage (PK-51)
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + tests added so far pass (no silent deletions)
+- [x] Exactly one `DataStore`, named `OrdersDb`, technology `relational`
+- [x] `order_headers` and `order_status` are `ExplicitConfirmation` with confirmed `maps-to`; `OrderLines`, `Id` and `Amount` are `ConventionalCandidate` with `CandidateLink` records
+- [x] The SQL-derived `Orders` object coexists with `order_headers`, unmerged (PK-20)
+- [x] `PayOrder` and `Reprice` share one `update` `DataOperation` reached by two `accesses-data` relations (PK-38)
+- [x] `SelectAllFrom` yields an `UnresolvedRecord` and no `DataObject`
+- [x] `OrderRepository` yields no persistence record of any kind (PK-42)
+- [x] `diagnostics.json` carries the coverage counts with no percentage (PK-51)
+- [x] Gate check passes: full gate command
+- [x] Test count: 1144 pass — Domain 545, Analysis 408, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: integration
 **Gate**: full
+
+> Execution note: PK-11's fixture path needed `OrderDbContext` in `ConfigureHost`'s signature. The invocation payload still does not name the generic type argument; the optional parameter is the T13-documented fixture callable, not an extraction change.
 
 **Commit**: `test(analysis): assert end-to-end persistence package content`
 

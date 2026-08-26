@@ -284,7 +284,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | PK-17 | P1: Data object classification | - | Pending |
 | PK-18 | P1: Data object classification | Phase 5 (T19) | Implementing |
 | PK-19 | P1: Data object classification | - | Pending |
-| PK-20 | P1: Data object classification | - | Pending |
+| PK-20 | P1: Data object classification | Phase 6 (T23) | Implementing |
 | PK-21 | P1: Data object classification | - | Pending |
 | PK-22 | P1: Data field classification and mapping | Phase 5 (T19) | Implementing |
 | PK-23 | P1: Data field classification and mapping | - | Pending |
@@ -302,11 +302,11 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | PK-35 | P1: Data operations and access relations | - | Pending |
 | PK-36 | P1: Data operations and access relations | - | Pending |
 | PK-37 | P1: Data operations and access relations | - | Pending |
-| PK-38 | P1: Data operations and access relations | - | Pending |
+| PK-38 | P1: Data operations and access relations | Phase 6 (T23) | Implementing |
 | PK-39 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
 | PK-40 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
 | PK-41 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
-| PK-42 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
+| PK-42 | P1: Unresolved evidence and negative cases | Phase 4 (T18), Phase 6 (T23) | Implementing |
 | PK-43 | P1: Unresolved evidence and negative cases | Phase 5 (T22) | Implementing |
 | PK-44 | P1: Unresolved evidence and negative cases | Phase 5 (T22) | Implementing |
 | PK-45 | P1: Determinism, security and invariants | - | Pending |
@@ -315,7 +315,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | PK-48 | P1: Determinism, security and invariants | - | Pending |
 | PK-49 | P1: Determinism, security and invariants | - | Pending |
 | PK-50 | P1: Determinism, security and invariants | - | Pending |
-| PK-51 | P2: Persistence run coverage | Phase 4 (T18) | Implementing |
+| PK-51 | P2: Persistence run coverage | Phase 4 (T18), Phase 6 (T23) | Implementing |
 | PK-52 | P2: Persistence run coverage | Phase 4 (T18) | Implementing |
 | PK-53 | P2: Persistence run coverage | Phase 4 (T18) | Implementing |
 
