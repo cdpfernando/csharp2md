@@ -1774,9 +1774,9 @@ Assert against artifact canonical keys after a fixture commit.
 
 **Done when**:
 
-- [ ] No artifact key ends with `.md` or sits under a catalogs/postings/source-projection prefix
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] No artifact key ends with `.md` or sits under a catalogs/postings/source-projection prefix
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
