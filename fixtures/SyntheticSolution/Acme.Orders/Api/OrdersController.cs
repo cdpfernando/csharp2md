@@ -10,20 +10,47 @@ namespace Microsoft.AspNetCore.Mvc
 {
     /// <summary>Stand-in for the base type every API controller derives from.</summary>
     public abstract class ControllerBase;
+
+    /// <summary>Stand-in for HTTP GET route attributes.</summary>
+    [AttributeUsage(AttributeTargets.Method)]
+    public sealed class HttpGetAttribute(string template) : Attribute
+    {
+        public string Template { get; } = template;
+    }
+}
+
+namespace Microsoft.Extensions.Configuration
+{
+    /// <summary>Stand-in for application configuration key lookup.</summary>
+    public interface IConfiguration
+    {
+        string? this[string key] { get; }
+    }
 }
 
 namespace Acme.Orders.Api
 {
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Configuration;
 
     /// <summary>Read endpoints for orders. State-changing work lives in <see cref="OrderService"/>.</summary>
     public sealed class OrdersController : ControllerBase
     {
         private readonly Data.OrderDbContext _orders;
+        private readonly IConfiguration _configuration;
 
-        public OrdersController(Data.OrderDbContext orders) => _orders = orders;
+        public OrdersController(Data.OrderDbContext orders, IConfiguration configuration)
+        {
+            _orders = orders;
+            _configuration = configuration;
+        }
 
-        public string GetOrderStatus(Guid orderId) =>
-            _orders.Orders.Find(record => record.Id == orderId)?.Status.ToString() ?? "Unknown";
+        [HttpGet("orders/{id}")]
+        public string GetOrderStatus(Guid orderId)
+        {
+            _ = _configuration["Logging:Level"];
+
+            return _orders.Orders.Find(record => record.Id == orderId)?.Status.ToString() ?? "Unknown";
+        }
     }
 }

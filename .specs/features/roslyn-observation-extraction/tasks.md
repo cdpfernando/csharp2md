@@ -1504,10 +1504,10 @@ negative for DataAccess.
 
 **Done when**:
 
-- [ ] `GetOrderStatus` has `[HttpGet("orders/{id}")]`
-- [ ] A C# file in the fixture reads `configuration["Logging:Level"]` through an `IConfiguration` stand-in
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes`
-- [ ] Test count recorded (no silent deletions)
+- [x] `GetOrderStatus` has `[HttpGet("orders/{id}")]`
+- [x] A C# file in the fixture reads `configuration["Logging:Level"]` through an `IConfiguration` stand-in
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: none
 **Gate**: build
