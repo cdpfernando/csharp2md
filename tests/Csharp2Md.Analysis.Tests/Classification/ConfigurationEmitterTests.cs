@@ -311,6 +311,63 @@ public sealed class ConfigurationEmitterTests
         Assert.DoesNotContain(snapshot.ConfirmedRelations, relation => relation.Kind is RelationKind.Targets);
     }
 
+    [Fact]
+    [Trait("Requirement", "CDC-57")]
+    [Trait("Requirement", "CDC-58")]
+    public void Emit_HandBuiltModel_PublishesConfigurationCoverageCountsWithoutPercent()
+    {
+        var pipeline = Arrange();
+        var component = AddComponent(pipeline);
+        var evidence = ConfigurationEvidence(component.Reference, 1, "Services:PaymentService");
+        var model = new ConfigurationModel(
+            [new DeclaredKey("Services:PaymentService", KeyResolution.Literal, "https://payments.internal.acme.local:8443", component.Reference, evidence)],
+            [new ConfiguredEdge(component.Reference, "Services:PaymentService", EvidenceChain.Create([evidence]))],
+            [],
+            [],
+            new ConfigurationCoverage(1, 1, 0));
+
+        ConfigurationEmitter.Emit(model, new ClassifierContext(pipeline));
+
+        var snapshot = pipeline.Accumulator.ToSnapshot();
+        var diagnostic = Assert.Single(snapshot.Diagnostics, record => record.Code == "configuration-coverage");
+        var binding = Assert.Single(snapshot.Facts.OfType<ConfigurationBinding>());
+        Assert.Equal(binding.Reference.Id.Value, diagnostic.IdentityOrKey);
+        Assert.Contains("Keys declared: 1", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("keys bound: 1", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("keys read but not declared: 0", diagnostic.Message, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"\b\d+(\.\d+)?\s*%", diagnostic.Message);
+        Assert.DoesNotContain("percent", diagnostic.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotMatch(@"(?i)\b(pass|fail|passed|failed|verdict|recall)\b", diagnostic.Message);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-57")]
+    [Trait("Requirement", "CDC-58")]
+    public void Emit_UnboundRead_CoverageNamesTheOwnerId()
+    {
+        var pipeline = Arrange();
+        var component = AddComponent(pipeline);
+        var reader = OwnersOf(pipeline, Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<Project>()))[0];
+        var evidence = ConfigurationEvidence(reader, 1, "FeatureManagement:Missing");
+        var model = new ConfigurationModel(
+            [],
+            [],
+            [],
+            [new UnboundKeyRead(reader, evidence)],
+            new ConfigurationCoverage(0, 0, 1));
+
+        ConfigurationEmitter.Emit(model, new ClassifierContext(pipeline));
+
+        var diagnostic = Assert.Single(
+            pipeline.Accumulator.ToSnapshot().Diagnostics,
+            record => record.Code == "configuration-coverage");
+        Assert.Contains("Keys declared: 0", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("keys bound: 0", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("keys read but not declared: 1", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains(reader.Id.Value, diagnostic.Message, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"\b\d+(\.\d+)?\s*%", diagnostic.Message);
+    }
+
     private static EvidenceMethod MinimumConfiguredBy =>
         Csharp2Md.Domain.Registry.TaxonomyTables.Default.Relations
             .Single(relation => relation.Kind == RelationKind.ConfiguredBy)

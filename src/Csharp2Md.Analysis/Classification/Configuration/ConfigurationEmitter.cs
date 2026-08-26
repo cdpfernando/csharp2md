@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
@@ -39,6 +40,7 @@ internal static class ConfigurationEmitter
         var relationCount = EmitConfiguredBy(model, context, bindings);
         relationCount += EmitTargets(model, context);
         var unresolvedCount = EmitUnbound(model, context);
+        EmitCoverageDiagnostic(model, context, bindings);
         return new ClassifierPassResult(factCount, relationCount, 0, unresolvedCount);
     }
 
@@ -158,6 +160,28 @@ internal static class ConfigurationEmitter
         }
 
         return count;
+    }
+
+    private static void EmitCoverageDiagnostic(
+        ConfigurationModel model,
+        ClassifierContext context,
+        Dictionary<string, ConfigurationBinding> bindings)
+    {
+        var identityOrKey = bindings.Count > 0
+            ? bindings.Values.OrderBy(static binding => binding.Reference.Id.Value, StringComparer.Ordinal).First().Reference.Id.Value
+            : context.FactsByType<Solution>().SingleOrDefault()?.Reference.Id.Value;
+        var unboundOwners = string.Join(
+            ", ",
+            model.UnboundReads
+                .Select(static read => read.Symbol.Id.Value)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(static id => id, StringComparer.Ordinal));
+        var message =
+            $"Keys declared: {model.Coverage.KeysDeclared}; " +
+            $"keys bound: {model.Coverage.KeysBound}; " +
+            $"keys read but not declared: {model.Coverage.KeysReadButNotDeclared}; " +
+            $"unbound read owner ids: {unboundOwners}";
+        context.Accumulator.AddDiagnostic(new DiagnosticRecord("configuration-coverage", message, identityOrKey));
     }
 
     private static FactReference BoundComponent(ConfiguredEdge edge, ImmutableArray<DeclaredKey> keys)
