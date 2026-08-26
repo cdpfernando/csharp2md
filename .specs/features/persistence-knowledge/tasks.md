@@ -325,15 +325,15 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] Recognizes `Entity<T>()`, `ToTable(string)`, `Property(...)` and `HasColumnName(string)`
-- [ ] `ToTable` emits `table-name` + `entity-type`; `HasColumnName` emits `field-name` + `entity-type` + `property-name` (PK-07)
-- [ ] The enclosing `Entity<T>()` call is recovered by walking the receiver chain, so the cross-document mapping in `OrderConfiguration.cs` resolves
-- [ ] A non-constant argument yields no literal entry
-- [ ] `AlwaysWhenBindableWalker.InvocationPayload` becomes an instance method to pass the semantic model through; its `CreateClient` and HTTP-route branches are behaviourally unchanged
-- [ ] Existing `AlwaysWhenBindableWalkerTests` and all 5A boundary tests still pass
-- [ ] Tests assert `table-name=order_headers` and `field-name=order_status` reach the ledger
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + new tests pass (no silent deletions)
+- [x] Recognizes `Entity<T>()`, `ToTable(string)`, `Property(...)` and `HasColumnName(string)`
+- [x] `ToTable` emits `table-name` + `entity-type`; `HasColumnName` emits `field-name` + `entity-type` + `property-name` (PK-07)
+- [x] The enclosing `Entity<T>()` call is recovered by walking the receiver chain, so the cross-document mapping in `OrderConfiguration.cs` resolves
+- [x] A non-constant argument yields no literal entry
+- [x] `AlwaysWhenBindableWalker.InvocationPayload` becomes an instance method to pass the semantic model through; its `CreateClient` and HTTP-route branches are behaviourally unchanged
+- [x] Existing `AlwaysWhenBindableWalkerTests` and all 5A boundary tests still pass
+- [x] Tests assert `table-name=order_headers` and `field-name=order_status` reach the ledger
+- [x] Gate check passes: full gate command
+- [x] Test count: 545 + 316 = 861 pass (no silent deletions)
 
 **Tests**: unit + integration
 **Gate**: full
