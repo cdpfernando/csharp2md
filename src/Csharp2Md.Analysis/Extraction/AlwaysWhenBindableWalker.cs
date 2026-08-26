@@ -277,16 +277,16 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
     {
         var info = _model.GetSymbolInfo(node, _cancellationToken);
         var boundSymbol = info.Symbol;
-        EvidenceMethod method;
+        EvidenceMethod evidenceMethod;
         BindingDiagnostic diagnostic;
         if (boundSymbol is not null && (!requireType || boundSymbol is ITypeSymbol))
         {
-            method = EvidenceMethod.Semantic;
+            evidenceMethod = EvidenceMethod.Semantic;
             diagnostic = Bound;
         }
         else if (boundSymbol is null && kind is not ObservationKind.TypeUsage)
         {
-            method = EvidenceMethod.Syntactic;
+            evidenceMethod = EvidenceMethod.Syntactic;
             diagnostic = new BindingDiagnostic("unbound", "The occurrence did not bind.");
         }
         else
@@ -300,15 +300,128 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
             return;
         }
 
+        var payload = kind is ObservationKind.Invocation && node is InvocationExpressionSyntax invocation
+            ? boundSymbol is IMethodSymbol invoked
+                ? InvocationPayload(invoked, invocation)
+                : InvocationPayloadFromSyntax(invocation)
+            : EmptyPayload;
+
         _drafts.Add(
             new ObservationDraft(
                 owner.Value,
                 kind,
-                EmptyPayload,
+                payload,
                 ObservationMaterializer.CreateLocator(_document, node),
-                method,
+                evidenceMethod,
                 diagnostic,
                 _documentHash));
+    }
+
+    private static readonly HashSet<string> HttpInvocationNames =
+    [
+        "PostAsJsonAsync",
+        "GetAsync",
+        "PutAsJsonAsync",
+        "DeleteAsync",
+        "SendAsync",
+    ];
+
+    private static readonly SymbolDisplayFormat Qualified = SymbolDisplayFormat.FullyQualifiedFormat;
+
+    private static NormalizedPayload InvocationPayload(IMethodSymbol method, InvocationExpressionSyntax invocation)
+    {
+        var entries = new List<PayloadEntry>
+        {
+            new("method-name", StructuralLiteral.Create(LiteralRole.ProtocolName, method.Name, "method-name")),
+        };
+        var receiver = method.ReceiverType ?? method.ContainingType;
+        if (receiver is not null)
+        {
+            entries.Add(
+                new PayloadEntry(
+                    "target-type",
+                    StructuralLiteral.Create(LiteralRole.ProtocolName, receiver.ToDisplayString(Qualified), "target-type")));
+        }
+
+        var literal = TryFirstStringLiteral(invocation);
+        if (literal is not null)
+        {
+            if (string.Equals(method.Name, "CreateClient", StringComparison.Ordinal))
+            {
+                entries.Add(
+                    new PayloadEntry(
+                        "client-name",
+                        StructuralLiteral.Create(LiteralRole.ClientName, literal, "client-name")));
+            }
+            else if (HttpInvocationNames.Contains(method.Name))
+            {
+                entries.Add(
+                    new PayloadEntry(
+                        "route",
+                        StructuralLiteral.Create(LiteralRole.Route, literal, "route")));
+            }
+        }
+
+        return NormalizedPayload.Create(entries);
+    }
+
+    private static NormalizedPayload InvocationPayloadFromSyntax(InvocationExpressionSyntax invocation)
+    {
+        var methodName = TryInvocationMethodName(invocation);
+        if (methodName is null)
+        {
+            return EmptyPayload;
+        }
+
+        var entries = new List<PayloadEntry>
+        {
+            new("method-name", StructuralLiteral.Create(LiteralRole.ProtocolName, methodName, "method-name")),
+        };
+        var literal = TryFirstStringLiteral(invocation);
+        if (literal is not null)
+        {
+            if (string.Equals(methodName, "CreateClient", StringComparison.Ordinal))
+            {
+                entries.Add(
+                    new PayloadEntry(
+                        "client-name",
+                        StructuralLiteral.Create(LiteralRole.ClientName, literal, "client-name")));
+            }
+            else if (HttpInvocationNames.Contains(methodName))
+            {
+                entries.Add(
+                    new PayloadEntry(
+                        "route",
+                        StructuralLiteral.Create(LiteralRole.Route, literal, "route")));
+            }
+        }
+
+        return NormalizedPayload.Create(entries);
+    }
+
+    private static string? TryInvocationMethodName(InvocationExpressionSyntax invocation) =>
+        invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText,
+            MemberBindingExpressionSyntax binding => binding.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            GenericNameSyntax generic => generic.Identifier.ValueText,
+            _ => null,
+        };
+
+    private static string? TryFirstStringLiteral(InvocationExpressionSyntax invocation)
+    {
+        foreach (var argument in invocation.ArgumentList.Arguments)
+        {
+            if (argument.Expression is LiteralExpressionSyntax literal
+                && literal.Token.IsKind(SyntaxKind.StringLiteralToken)
+                && !string.IsNullOrWhiteSpace(literal.Token.ValueText))
+            {
+                return literal.Token.ValueText;
+            }
+        }
+
+        return null;
     }
 
     private FactReference? ResolveOwner(SyntaxNode node)

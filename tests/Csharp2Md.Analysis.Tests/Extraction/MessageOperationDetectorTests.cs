@@ -11,7 +11,8 @@ public sealed class MessageOperationDetectorTests
 {
     [Fact]
     [Trait("Requirement", "ROSE-40")]
-    public async Task ExtractInto_PublishAsync_EmitsMessageOperationWithEmptyPayload()
+    [Trait("Requirement", "EBC-17")]
+    public async Task ExtractInto_PublishAsync_EmitsMessageOperationWithEventTypePayload()
     {
         var observations = await ExtractAcmeOrdersAsync();
         var servicePath = Path.Combine(
@@ -29,7 +30,12 @@ public sealed class MessageOperationDetectorTests
                 && SpannedLines(servicePath, observation).Contains("PublishAsync", StringComparison.Ordinal));
 
         Assert.Equal(ObservationKind.MessageOperation, publish.Identity.Kind);
-        Assert.Empty(publish.Identity.Payload.Entries);
+        Assert.Contains(
+            publish.Identity.Payload.Entries,
+            entry => entry.Key == "method-name" && entry.Value.Value == "PublishAsync");
+        Assert.Contains(
+            publish.Identity.Payload.Entries,
+            entry => entry.Key == "type-argument" && entry.Value.Value.Contains("OrderPlaced", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Classification;
 using Csharp2Md.Analysis.Extraction;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
@@ -47,4 +48,39 @@ public sealed class PipelineStagesTests
         Assert.IsType<ObservationExtractionStage>(PipelineStages.CreateDefault()[2]);
         Assert.IsNotType<ObservationExtractionStub>(PipelineStages.CreateDefault()[2]);
     }
+
+    [Fact]
+    [Trait("Requirement", "EBC-27")]
+    public void CreateDefault_UsesClassificationAndPromotionStageNotStub()
+    {
+        var classification = PipelineStages.CreateDefault()[3];
+
+        Assert.IsType<ClassificationAndPromotionStage>(classification);
+        Assert.IsNotType<ClassificationAndPromotionStub>(classification);
+        Assert.Equal("Classification and Promotion", classification.Name);
+        Assert.Contains("new ComponentPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
+        Assert.Contains("new EntryPointPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
+        Assert.Contains("new BoundaryPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
+        Assert.Contains("new ContractPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
+        Assert.Contains("new RelationPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
+        var source = File.ReadAllText(PipelineStagesPath());
+        Assert.True(
+            source.IndexOf("new ComponentPass()", StringComparison.Ordinal)
+                < source.IndexOf("new EntryPointPass()", StringComparison.Ordinal)
+                && source.IndexOf("new EntryPointPass()", StringComparison.Ordinal)
+                    < source.IndexOf("new BoundaryPass()", StringComparison.Ordinal)
+                && source.IndexOf("new BoundaryPass()", StringComparison.Ordinal)
+                    < source.IndexOf("new ContractPass()", StringComparison.Ordinal)
+                && source.IndexOf("new ContractPass()", StringComparison.Ordinal)
+                    < source.IndexOf("new RelationPass()", StringComparison.Ordinal),
+            "CreateDefault pass order must be ComponentPass → EntryPointPass → BoundaryPass → ContractPass → RelationPass.");
+    }
+
+    private static string PipelineStagesPath() =>
+        Path.Combine(
+            AnalysisTestPaths.RepoRoot,
+            "src",
+            "Csharp2Md.Analysis",
+            "Pipeline",
+            "PipelineStages.cs");
 }

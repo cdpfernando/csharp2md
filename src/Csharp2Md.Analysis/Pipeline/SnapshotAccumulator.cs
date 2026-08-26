@@ -11,6 +11,8 @@ internal sealed class SnapshotAccumulator
     private readonly Dictionary<string, IFact> _facts = new(StringComparer.Ordinal);
     private readonly Dictionary<ObservationIdentity, Observation> _observations = [];
     private readonly List<ConfirmedRelation> _relations = [];
+    private readonly List<CandidateLink> _candidates = [];
+    private readonly List<UnresolvedRecord> _unresolved = [];
     private readonly List<DiagnosticRecord> _diagnostics = [];
     private readonly List<SuspectedSecretEvidence> _secrets = [];
 
@@ -58,6 +60,18 @@ internal sealed class SnapshotAccumulator
         _relations.Add(relation);
     }
 
+    public void AddCandidate(CandidateLink candidate)
+    {
+        ArgumentNullException.ThrowIfNull(candidate);
+        _candidates.Add(candidate);
+    }
+
+    public void AddUnresolved(UnresolvedRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        _unresolved.Add(record);
+    }
+
     public void AddDiagnostic(DiagnosticRecord record)
     {
         ArgumentNullException.ThrowIfNull(record);
@@ -71,8 +85,8 @@ internal sealed class SnapshotAccumulator
             [.. _facts.Values],
             [.. _observations.Values],
             [.. _relations],
-            ImmutableArray<CandidateLink>.Empty,
-            ImmutableArray<UnresolvedRecord>.Empty,
+            [.. _candidates],
+            [.. _unresolved],
             ImmutableArray<OpenFrontier>.Empty,
             [.. _diagnostics],
             [.. _secrets]);

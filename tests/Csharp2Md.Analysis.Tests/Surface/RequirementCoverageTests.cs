@@ -144,7 +144,8 @@ public sealed class RequirementCoverageTests
         foreach (var (typeName, methodName, value) in traits)
         {
             if (value.StartsWith("ENG-", StringComparison.Ordinal)
-                || value.StartsWith("STOR-", StringComparison.Ordinal))
+                || value.StartsWith("STOR-", StringComparison.Ordinal)
+                || value.StartsWith("EBC-", StringComparison.Ordinal))
             {
                 continue;
             }

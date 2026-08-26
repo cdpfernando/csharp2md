@@ -33,24 +33,22 @@ internal sealed class RouteDeclarationDetector : IRegisteredContextDetector
         ArgumentNullException.ThrowIfNull(occurrence);
 
         string? route;
+        string? httpMethod;
         switch (occurrence.Node)
         {
             case AttributeSyntax attribute when IsRouteAttribute(occurrence, attribute):
                 route = TryFirstStringLiteral(EnumerateAttributeArguments(attribute));
+                httpMethod = TryHttpMethod(AttributeTypeName(occurrence, attribute));
                 break;
             case InvocationExpressionSyntax invocation when IsMapInvocation(occurrence, invocation):
                 route = TryFirstStringLiteral(EnumerateInvocationArguments(invocation));
+                httpMethod = TryHttpMethod(MapMethodName(occurrence, invocation));
                 break;
             default:
                 return null;
         }
 
-        var payload = route is null
-            ? EmptyPayload
-            : NormalizedPayload.Create(
-            [
-                new PayloadEntry("route", StructuralLiteral.Create(LiteralRole.Route, route, "route")),
-            ]);
+        var payload = CreatePayload(route, httpMethod);
         return new ObservationDraft(
             occurrence.Owner,
             ObservationKind.RouteDeclaration,
@@ -73,8 +71,63 @@ internal sealed class RouteDeclarationDetector : IRegisteredContextDetector
     }
 
     private static bool IsMapInvocation(BoundOccurrence occurrence, InvocationExpressionSyntax invocation) =>
+        MapMethodName(occurrence, invocation) is not null;
+
+    private static string? MapMethodName(BoundOccurrence occurrence, InvocationExpressionSyntax invocation) =>
         occurrence.Model.GetSymbolInfo(invocation, occurrence.CancellationToken).Symbol is IMethodSymbol method
-        && MapMethodNames.Contains(method.Name);
+        && MapMethodNames.Contains(method.Name)
+            ? method.Name
+            : null;
+
+    private static string AttributeTypeName(BoundOccurrence occurrence, AttributeSyntax attribute)
+    {
+        if (occurrence.Model.GetSymbolInfo(attribute, occurrence.CancellationToken).Symbol is IMethodSymbol constructor)
+        {
+            return constructor.ContainingType.Name;
+        }
+
+        return attribute.Name.ToString();
+    }
+
+    private static NormalizedPayload CreatePayload(string? route, string? httpMethod)
+    {
+        var entries = new List<PayloadEntry>();
+        if (httpMethod is not null)
+        {
+            entries.Add(
+                new PayloadEntry(
+                    "method-name",
+                    StructuralLiteral.Create(LiteralRole.ProtocolName, httpMethod, "method-name")));
+        }
+
+        if (route is not null)
+        {
+            entries.Add(
+                new PayloadEntry("route", StructuralLiteral.Create(LiteralRole.Route, route, "route")));
+        }
+
+        return entries.Count == 0 ? EmptyPayload : NormalizedPayload.Create(entries);
+    }
+
+    private static string? TryHttpMethod(string? rawName)
+    {
+        if (rawName is null)
+        {
+            return null;
+        }
+
+        var name = TrimAttributeSuffix(rawName);
+        var simple = name.Contains('.', StringComparison.Ordinal) ? name[(name.LastIndexOf('.') + 1)..] : name;
+        return simple switch
+        {
+            "HttpGet" or "MapGet" => "GET",
+            "HttpPost" or "MapPost" => "POST",
+            "HttpPut" or "MapPut" => "PUT",
+            "HttpDelete" or "MapDelete" => "DELETE",
+            "HttpPatch" => "PATCH",
+            _ => null,
+        };
+    }
 
     private static IEnumerable<ExpressionSyntax> EnumerateAttributeArguments(AttributeSyntax attribute)
     {

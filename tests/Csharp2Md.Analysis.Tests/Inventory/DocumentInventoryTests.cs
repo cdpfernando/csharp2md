@@ -183,6 +183,72 @@ public sealed class DocumentInventoryTests
         }
     }
 
+    [Fact]
+    [Trait("Requirement", "ROSE-04")]
+    public void Collect_ParentProjectAtSolutionRoot_DoesNotInventoryNestedProjectDocuments()
+    {
+        var tree = Directory.CreateTempSubdirectory("csharp2md-doc-inv-nested-");
+        try
+        {
+            var rootDir = tree.FullName;
+            var nestedDir = Path.Combine(rootDir, "Nested", "App");
+            Directory.CreateDirectory(nestedDir);
+            var composePath = Path.Combine(rootDir, "docker-compose.dcproj");
+            var nestedProjectPath = Path.Combine(nestedDir, "App.csproj");
+            File.WriteAllText(
+                composePath,
+                """
+                <Project Sdk="Microsoft.Docker.Sdk">
+                  <ItemGroup>
+                    <None Include="docker-compose.yml" />
+                  </ItemGroup>
+                </Project>
+                """);
+            File.WriteAllText(Path.Combine(rootDir, "docker-compose.yml"), "services: {}");
+            File.WriteAllText(
+                nestedProjectPath,
+                """
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net10.0</TargetFramework>
+                  </PropertyGroup>
+                </Project>
+                """);
+            File.WriteAllText(Path.Combine(nestedDir, "Program.cs"), "class Program;");
+            var solutionPath = Path.Combine(rootDir, "App.slnx");
+            File.WriteAllText(solutionPath, """<Solution><Project Path="docker-compose.dcproj" /><Project Path="Nested/App/App.csproj" /></Solution>""");
+
+            var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
+            var existing = ExistingAbsolutePaths(solutionPath, listed);
+            var root = AuthorizedRoot.Compute(solutionPath, existing);
+            var facts = InventoryFacts.Create(solutionPath, listed, root);
+            var compose = Assert.Single(
+                facts.Projects,
+                project => project.Id.Value.Contains("docker-compose.dcproj", StringComparison.Ordinal));
+            var nested = Assert.Single(
+                facts.Projects,
+                project => project.Id.Value.Contains("App.csproj", StringComparison.Ordinal));
+
+            var composeDocuments = DocumentInventory.Collect(root, compose, composePath, existing).Documents;
+            var nestedDocuments = DocumentInventory.Collect(root, nested, nestedProjectPath, existing).Documents;
+
+            Assert.DoesNotContain(
+                composeDocuments,
+                document => document.RelativePath.EndsWith("Program.cs", StringComparison.Ordinal));
+            Assert.Contains(
+                composeDocuments,
+                document => string.Equals(document.RelativePath, "docker-compose.yml", StringComparison.Ordinal));
+            var program = Assert.Single(
+                nestedDocuments,
+                document => document.RelativePath.EndsWith("Program.cs", StringComparison.Ordinal));
+            Assert.Equal(nested.Id, program.OwningProject);
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+        }
+    }
+
     private static string AcmeOrdersSolutionPath()
     {
         var path = Path.Combine(

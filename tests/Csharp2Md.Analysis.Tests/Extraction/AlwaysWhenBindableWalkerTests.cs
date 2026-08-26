@@ -29,8 +29,7 @@ public sealed class AlwaysWhenBindableWalkerTests
         Assert.Contains(observations, observation => observation.Identity.Kind is ObservationKind.BaseType);
         Assert.Contains(observations, observation => observation.Identity.Kind is ObservationKind.AttributeUsage);
         Assert.All(
-            observations.Where(observation => observation.Identity.Kind is ObservationKind.Invocation
-                or ObservationKind.ObjectCreation
+            observations.Where(observation => observation.Identity.Kind is ObservationKind.ObjectCreation
                 or ObservationKind.TypeUsage
                 or ObservationKind.BaseType
                 or ObservationKind.AttributeUsage),
@@ -119,7 +118,9 @@ public sealed class AlwaysWhenBindableWalkerTests
                 Assert.Equal(EvidenceMethod.Syntactic, unbound.ExtractionMethod);
                 Assert.Equal("unbound", unbound.Diagnostic.Code);
                 Assert.NotEqual("bound", unbound.Diagnostic.Code);
-                Assert.Empty(unbound.Identity.Payload.Entries);
+                Assert.Contains(
+                    unbound.Identity.Payload.Entries,
+                    entry => entry.Key == "method-name" && entry.Value.Value == "MissingTarget");
                 Assert.DoesNotContain(
                     unbound.Identity.Payload.Entries,
                     entry => entry.Value.Value.Contains("id1:", StringComparison.Ordinal));

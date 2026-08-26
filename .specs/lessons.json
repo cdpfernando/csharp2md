@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 6,
+  "next_id": 8,
   "lessons": [
     {
       "id": "L-001",
@@ -94,6 +94,42 @@
       ],
       "created": "2026-08-26T03:26:08Z",
       "last_seen": "2026-08-26T03:26:08Z"
+    },
+    {
+      "id": "L-006",
+      "key": "spec_precision_gap::do not specify empty string structuralliteral outcomes domain tax 80 rejects empty canonical text",
+      "text": "Do not specify empty-string StructuralLiteral outcomes; Domain TAX-80 rejects empty canonical text",
+      "signal": "spec_precision_gap",
+      "scope": "domain-literals",
+      "status": "candidate",
+      "features": [
+        "entrypoints-boundaries-contracts"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md EBC-06 empty-template edge; BoundaryPassTests.cs:106; StructuralLiteralTests.cs:66 (domain-literals)"
+      ],
+      "created": "2026-08-26T06:33:57Z",
+      "last_seen": "2026-08-26T06:33:57Z"
+    },
+    {
+      "id": "L-007",
+      "key": "spec_deviation::when a spec outcome is unrepresentable in domain record spec deviation and assert the domain feasible diagnostic instead of inventing an empty literal",
+      "text": "When a spec outcome is unrepresentable in Domain, record SPEC_DEVIATION and assert the Domain-feasible diagnostic instead of inventing an empty literal",
+      "signal": "spec_deviation",
+      "scope": "analysis-classification",
+      "status": "candidate",
+      "features": [
+        "entrypoints-boundaries-contracts"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "BoundaryPass.cs:85 SPEC_DEVIATION EBC-06 (analysis-classification)"
+      ],
+      "created": "2026-08-26T06:33:57Z",
+      "last_seen": "2026-08-26T06:33:57Z"
     }
   ]
 }

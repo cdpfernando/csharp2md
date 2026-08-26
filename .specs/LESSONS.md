@@ -44,6 +44,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: ROSE-21 (pipeline)
 - last seen: 2026-08-26T03:26:08Z
 
+### L-006 - Do not specify empty-string StructuralLiteral outcomes; Domain TAX-80 rejects empty canonical text
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `domain-literals` · harmful: 0
+- features: entrypoints-boundaries-contracts
+- evidence: spec.md EBC-06 empty-template edge; BoundaryPassTests.cs:106; StructuralLiteralTests.cs:66 (domain-literals)
+- last seen: 2026-08-26T06:33:57Z
+
+### L-007 - When a spec outcome is unrepresentable in Domain, record SPEC_DEVIATION and assert the Domain-feasible diagnostic instead of inventing an empty literal
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `analysis-classification` · harmful: 0
+- features: entrypoints-boundaries-contracts
+- evidence: BoundaryPass.cs:85 SPEC_DEVIATION EBC-06 (analysis-classification)
+- last seen: 2026-08-26T06:33:57Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

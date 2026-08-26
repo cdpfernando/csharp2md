@@ -194,11 +194,14 @@ public static class DomainMapper
         facts.AddRange(document.ConfigurationBindings.Select(WireFactMapping.FromDto));
 
         var factsArr = facts.ToImmutable();
+        var factsById = factsArr
+            .GroupBy(static fact => fact.Reference.Id.Value, StringComparer.Ordinal)
+            .ToDictionary(static group => group.Key, static group => group.First(), StringComparer.Ordinal);
         var observationsArr = document.Observations.Values
             .SelectMany(records => records.Select(WireObservationMapping.FromDto))
             .ToImmutableArray();
         var confirmedArr = document.ConfirmedRelations.Values
-            .SelectMany(records => records.Select(WireRelationMapping.FromDto))
+            .SelectMany(records => records.Select(dto => WireRelationMapping.FromDto(dto, factsById)))
             .ToImmutableArray();
         var candidatesArr = document.Candidates.Select(WireRelationMapping.FromDto).ToImmutableArray();
         var unresolvedArr = document.Unresolved.Select(WireRelationMapping.FromDto).ToImmutableArray();

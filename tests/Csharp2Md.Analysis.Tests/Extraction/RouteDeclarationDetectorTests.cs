@@ -30,9 +30,14 @@ public sealed class RouteDeclarationDetectorTests
                     .EndsWith("Acme.Orders/Api/OrdersController.cs", StringComparison.Ordinal)
                 && SpannedLines(controllerPath, observation).Contains("HttpGet(\"orders/{id}\")", StringComparison.Ordinal));
 
-        var entry = Assert.Single(route.Identity.Payload.Entries);
+        var entry = Assert.Single(
+            route.Identity.Payload.Entries,
+            payload => payload.Key == "route");
         Assert.Equal(LiteralRole.Route, entry.Value.Role);
         Assert.Equal("orders/{id}", entry.Value.Value);
+        Assert.Contains(
+            route.Identity.Payload.Entries,
+            payload => payload.Key == "method-name" && payload.Value.Value == "GET");
         Assert.Contains(
             observations,
             observation => observation.Identity.Kind is ObservationKind.AttributeUsage
