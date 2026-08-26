@@ -474,18 +474,20 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] Contexts are discovered as the union of `DbSet<T>` property containers and `context-type` payload entries (PK-10)
-- [ ] The name is the `Configuration` key when a key's owning callable mentions that context type (PK-11)
-- [ ] The name falls back to the context's fully-qualified type name otherwise (PK-12)
-- [ ] A project with no context contributes no store (PK-13)
-- [ ] Technology is always `relational`
-- [ ] Stores are emitted ordinal-sorted by context type name
-- [ ] Unit tests drive a hand-built context: both naming paths, no-context, and two contexts in one solution
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + tests added so far pass (no silent deletions)
+- [x] Contexts are discovered as the union of `DbSet<T>` property containers and `context-type` payload entries (PK-10)
+- [x] The name is the `Configuration` key when a key's owning callable mentions that context type (PK-11) — "mentions" is read from the ledger as the callable's decoded signature components or any payload literal of an observation it owns
+- [x] The name falls back to the context's fully-qualified type name otherwise (PK-12), without the `global::` alias qualifier, matching the spec's stated `Acme.Orders.Data.OrderDbContext`
+- [x] A project with no context contributes no store (PK-13)
+- [x] Technology is always `relational`
+- [x] Stores are emitted ordinal-sorted by context type name
+- [x] Unit tests drive a hand-built context: both naming paths, no-context, and two contexts in one solution
+- [x] Gate check passes: full gate command
+- [x] Test count: 1080 pass — Domain 545, Analysis 344, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
+
+> Execution note (open for T23): PK-11's *fixture* path does not fire yet. `Program.ConfigureHost` names `OrderDbContext` only through `AddSingleton<Data.OrderDbContext>()`, and the ledger keeps no record of that type — the invocation payload carries `method-name` and `target-type` only, and `TypeUsage` payloads are empty. Both naming paths are implemented and unit-proven; the fixture store therefore still resolves to `Acme.Orders.Data.OrderDbContext`. T23's `name = OrdersDb` assertion needs the type argument in the invocation payload (an extraction change) or a fixture callable that names the context.
 
 **Commit**: `feat(analysis): resolve data stores from the ledger`
 
