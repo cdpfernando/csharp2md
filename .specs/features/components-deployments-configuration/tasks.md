@@ -1057,14 +1057,14 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] A promoted candidate produces a confirmed `targets` relation with `EvidenceMethod.Configured` and is removed in the same walk
-- [ ] A frontier decision keeps the candidate and adds an `OpenFrontier` on the originating occurrence
-- [ ] A leave decision changes nothing
-- [ ] No `ExternalSystem` fact is created by this walk
-- [ ] `AnalyzePackageWriteTests`' `targets` assertions are revised to the new ground truth — a confirmed relation now exists — rather than loosened
-- [ ] Unit tests assert all three outcomes and the candidate-removal side effect
-- [ ] Gate check passes: build gate command
-- [ ] Test count reported; no silent deletions
+- [x] A promoted candidate produces a confirmed `targets` relation with `EvidenceMethod.Configured` and is removed in the same walk
+- [x] A frontier decision keeps the candidate and adds an `OpenFrontier` on the originating occurrence
+- [x] A leave decision changes nothing
+- [x] No `ExternalSystem` fact is created by this walk
+- [x] `AnalyzePackageWriteTests`' `targets` assertions are revised to the new ground truth — a confirmed relation now exists — rather than loosened
+- [x] Unit tests assert all three outcomes and the candidate-removal side effect
+- [x] Gate check passes: build gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: build

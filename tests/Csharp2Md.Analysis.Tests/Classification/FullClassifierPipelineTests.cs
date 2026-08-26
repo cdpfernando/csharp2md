@@ -89,9 +89,6 @@ public sealed class FullClassifierPipelineTests
         Assert.Contains(
             usesContract,
             relation => relation.Kind == "uses-contract" && relation.Target.Id == orderPlaced.Identity.Id);
-        Assert.DoesNotContain(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == "relations/confirmed/targets.json");
 
         var candidatesFragment = Assert.Single(
             publication.ArtifactsInPublicationOrder,
@@ -106,10 +103,11 @@ public sealed class FullClassifierPipelineTests
                 && operation.Protocol == "http"
                 && operation.DestinationScope == "PaymentService");
         Assert.Contains(
+            ReadRelations(publication, "relations/confirmed/targets.json"),
+            relation => relation.Kind == "targets" && relation.Source.Id == outboundHttp.Identity.Id);
+        Assert.DoesNotContain(
             candidates,
-            link => link.Kind == "targets"
-                && link.Source.Id == outboundHttp.Identity.Id
-                && link.ProposedTarget.FactType == "ExternalSystem");
+            link => link.Kind == "targets" && link.Source.Id == outboundHttp.Identity.Id);
 
         var manifest = CanonicalJson.Read<ManifestEnvelope>(
             Assert.Single(

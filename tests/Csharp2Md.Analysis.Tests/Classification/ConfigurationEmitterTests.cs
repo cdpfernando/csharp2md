@@ -220,6 +220,97 @@ public sealed class ConfigurationEmitterTests
         Assert.Empty(snapshot.Facts.OfType<ConfigurationBinding>());
     }
 
+    [Fact]
+    [Trait("Requirement", "CDC-43")]
+    [Trait("Requirement", "CDC-46")]
+    [Trait("Requirement", "CDC-47")]
+    public void Emit_PromoteDecision_ConfirmsTargetsRemovesCandidateAndDoesNotCreateExternalSystem()
+    {
+        var pipeline = Arrange();
+        var component = AddComponent(pipeline);
+        var project = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<Project>());
+        var (operation, external, csharp) = AddTargetsCandidate(pipeline, project, component, "PaymentService");
+        var declaring = ConfigurationEvidence(component.Reference, 1, "Services:PaymentService");
+        var evidence = EvidenceChain.Create([csharp.Identity, declaring]);
+        var candidate = Assert.Single(pipeline.Accumulator.ToSnapshot().Candidates);
+        var externalsBefore = pipeline.Accumulator.ToSnapshot().Facts.OfType<ExternalSystem>().Count();
+        var model = new ConfigurationModel(
+            [new DeclaredKey("Services:PaymentService", KeyResolution.Literal, "https://payments.internal.acme.local:8443", component.Reference, declaring)],
+            [],
+            [new TargetDecision(candidate, TargetOutcome.Promote, evidence)],
+            [],
+            new ConfigurationCoverage(1, 0, 0));
+
+        var result = ConfigurationEmitter.Emit(model, new ClassifierContext(pipeline));
+
+        var snapshot = pipeline.Accumulator.ToSnapshot();
+        var confirmed = Assert.Single(snapshot.ConfirmedRelations, relation => relation.Kind is RelationKind.Targets);
+        Assert.Equal(operation.Reference, confirmed.Source);
+        Assert.Equal(external.Reference, confirmed.Target);
+        Assert.Equal(evidence, confirmed.DerivedFrom);
+        Assert.Contains(csharp.Identity, confirmed.DerivedFrom.DerivedFrom.ToArray());
+        Assert.Contains(declaring, confirmed.DerivedFrom.DerivedFrom.ToArray());
+        Assert.Equal(EvidenceMethod.Configured, MinimumTargets);
+        Assert.DoesNotContain(snapshot.Candidates, link => link.Equals(candidate));
+        Assert.Equal(externalsBefore, snapshot.Facts.OfType<ExternalSystem>().Count());
+        Assert.Equal(1, result.RelationCount);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-44")]
+    public void Emit_FrontierDecision_KeepsCandidateAndOpensFrontierOnOriginatingOccurrence()
+    {
+        var pipeline = Arrange();
+        var component = AddComponent(pipeline);
+        var project = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<Project>());
+        var (operation, _, csharp) = AddTargetsCandidate(pipeline, project, component, "NotificationService");
+        var declaring = ConfigurationEvidence(component.Reference, 1, "Services:NotificationService");
+        var candidate = Assert.Single(pipeline.Accumulator.ToSnapshot().Candidates);
+        var model = new ConfigurationModel(
+            [new DeclaredKey("Services:NotificationService", KeyResolution.Dynamic, Address: null, component.Reference, declaring)],
+            [],
+            [new TargetDecision(candidate, TargetOutcome.Frontier, EvidenceChain.Create([csharp.Identity, declaring]))],
+            [],
+            new ConfigurationCoverage(1, 0, 0));
+
+        ConfigurationEmitter.Emit(model, new ClassifierContext(pipeline));
+
+        var snapshot = pipeline.Accumulator.ToSnapshot();
+        Assert.Equal(candidate, Assert.Single(snapshot.Candidates));
+        Assert.DoesNotContain(snapshot.ConfirmedRelations, relation => relation.Kind is RelationKind.Targets);
+        var frontier = Assert.Single(snapshot.Frontiers);
+        Assert.Equal(csharp.Identity, frontier.Occurrence);
+        Assert.Equal(FrontierCause.FurtherContinuationObserved, frontier.Cause);
+        Assert.Equal(operation.Reference, candidate.Source);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-45")]
+    public void Emit_LeaveDecision_ChangesNothing()
+    {
+        var pipeline = Arrange();
+        var component = AddComponent(pipeline);
+        var project = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<Project>());
+        AddTargetsCandidate(pipeline, project, component, "ShippingService");
+        var candidate = Assert.Single(pipeline.Accumulator.ToSnapshot().Candidates);
+        var frontiersBefore = pipeline.Accumulator.ToSnapshot().Frontiers.Length;
+        var relationsBefore = pipeline.Accumulator.ToSnapshot().ConfirmedRelations.Length;
+        var model = new ConfigurationModel(
+            [],
+            [],
+            [new TargetDecision(candidate, TargetOutcome.Leave, candidate.DerivedFrom)],
+            [],
+            new ConfigurationCoverage(0, 0, 0));
+
+        ConfigurationEmitter.Emit(model, new ClassifierContext(pipeline));
+
+        var snapshot = pipeline.Accumulator.ToSnapshot();
+        Assert.Equal(candidate, Assert.Single(snapshot.Candidates));
+        Assert.Equal(relationsBefore, snapshot.ConfirmedRelations.Length);
+        Assert.Equal(frontiersBefore, snapshot.Frontiers.Length);
+        Assert.DoesNotContain(snapshot.ConfirmedRelations, relation => relation.Kind is RelationKind.Targets);
+    }
+
     private static EvidenceMethod MinimumConfiguredBy =>
         Csharp2Md.Domain.Registry.TaxonomyTables.Default.Relations
             .Single(relation => relation.Kind == RelationKind.ConfiguredBy)
@@ -267,6 +358,56 @@ public sealed class ConfigurationEmitterTests
             .Where(symbol => symbol.OwningProject.Equals(project.Id))
             .Select(symbol => symbol.Reference)
             .ToArray();
+
+    private static EvidenceMethod MinimumTargets =>
+        Csharp2Md.Domain.Registry.TaxonomyTables.Default.Relations
+            .Single(relation => relation.Kind == RelationKind.Targets)
+            .MinimumEvidenceMethod;
+
+    private static (BoundaryOperation Operation, ExternalSystem External, Observation Csharp) AddTargetsCandidate(
+        PipelineContext pipeline,
+        Project project,
+        Component component,
+        string clientName)
+    {
+        var callable = AddCallable(pipeline, project);
+        var operation = BoundaryOperation.Create(
+            callable.Reference,
+            component.Reference,
+            BoundaryDirection.Outbound,
+            BoundaryProtocol.Http,
+            clientName,
+            "POST",
+            StructuralLiteral.Create(LiteralRole.Route, "payments/authorize", "route"));
+        pipeline.Accumulator.AddFact(operation);
+        var external = ExternalSystem.Create(
+            SolutionId,
+            StructuralLiteral.Create(LiteralRole.ClientName, clientName, "client-name"));
+        pipeline.Accumulator.AddFact(external);
+        var csharp = Observation.Create(
+            callable.Reference,
+            ObservationKind.Invocation,
+            NormalizedPayload.Create(
+            [
+                new PayloadEntry(
+                    "client-name",
+                    StructuralLiteral.Create(LiteralRole.ClientName, clientName, "client-name")),
+            ]),
+            1,
+            new EvidenceLocator(DocumentId.Create("doc"), "Acme.Orders/OrderService.cs", new SourceSpan(1, 1, 1, 8)),
+            EvidenceMethod.Semantic,
+            new BindingDiagnostic("bound", "bound"),
+            DocumentHash.Create(new string('a', 64)),
+            new ExtractorVersion(1));
+        pipeline.Accumulator.AddObservation(csharp);
+        pipeline.Accumulator.AddCandidate(
+            CandidateLink.Create(
+                RelationKind.Targets,
+                operation.Reference,
+                external.Reference,
+                EvidenceChain.Create([csharp.Identity])));
+        return (operation, external, csharp);
+    }
 
     private static ObservationIdentity ConfigurationEvidence(FactReference owner, int ordinal, string key) =>
         new(

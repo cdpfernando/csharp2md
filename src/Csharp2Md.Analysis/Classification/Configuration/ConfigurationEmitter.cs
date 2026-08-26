@@ -2,6 +2,7 @@ using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Literals;
+using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Domain.Relations;
@@ -36,6 +37,7 @@ internal static class ConfigurationEmitter
         }
 
         var relationCount = EmitConfiguredBy(model, context, bindings);
+        relationCount += EmitTargets(model, context);
         var unresolvedCount = EmitUnbound(model, context);
         return new ClassifierPassResult(factCount, relationCount, 0, unresolvedCount);
     }
@@ -83,6 +85,59 @@ internal static class ConfigurationEmitter
                     sourceFact: sourceFact,
                     targetFact: target));
             count++;
+        }
+
+        return count;
+    }
+
+    private static int EmitTargets(ConfigurationModel model, ClassifierContext context)
+    {
+        if (context.AnalysisVariants.IsDefaultOrEmpty)
+        {
+            return 0;
+        }
+
+        var factsById = context.Facts
+            .GroupBy(static fact => fact.Reference.Id.Value, StringComparer.Ordinal)
+            .ToDictionary(static group => group.Key, static group => group.First(), StringComparer.Ordinal);
+        var count = 0;
+        foreach (var decision in model.Targets)
+        {
+            switch (decision.Outcome)
+            {
+                case TargetOutcome.Promote:
+                    if (!factsById.TryGetValue(decision.Candidate.ProposedTarget.Id.Value, out var targetFact))
+                    {
+                        break;
+                    }
+
+                    factsById.TryGetValue(decision.Candidate.Source.Id.Value, out var sourceFact);
+                    context.Accumulator.AddRelation(
+                        ConfirmedRelation.Create(
+                            RelationKind.Targets,
+                            decision.Candidate.Source,
+                            decision.Candidate.ProposedTarget,
+                            EmptyFacets,
+                            decision.Evidence,
+                            Identity,
+                            context.AnalysisVariants,
+                            EvidenceMethod.Configured,
+                            sourceFact: sourceFact,
+                            targetFact: targetFact));
+                    context.Accumulator.RemoveCandidate(decision.Candidate);
+                    count++;
+                    break;
+                case TargetOutcome.Frontier:
+                    if (!decision.Candidate.DerivedFrom.DerivedFrom.IsDefaultOrEmpty)
+                    {
+                        context.Accumulator.AddOpenFrontier(
+                            OpenFrontier.Create(
+                                decision.Candidate.DerivedFrom.DerivedFrom[0],
+                                FrontierCause.FurtherContinuationObserved));
+                    }
+
+                    break;
+            }
         }
 
         return count;

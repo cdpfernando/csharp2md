@@ -63,7 +63,7 @@ public sealed class AnalyzePackageWriteTests
             Assert.Contains(
                 result.Snapshot.Candidates,
                 static link => link.Kind is RelationKind.Targets);
-            Assert.DoesNotContain(
+            Assert.Contains(
                 result.Snapshot.ConfirmedRelations,
                 static relation => relation.Kind is RelationKind.Targets);
             Assert.Contains(

@@ -480,12 +480,15 @@ public static class PackageValidator
 
         var factsById = IndexDerivedFacts(
             document.Symbols,
+            components,
             boundaryOperations,
+            externalSystems,
             contracts,
             dataStores,
             dataObjects,
             dataFields,
-            dataOperations);
+            dataOperations,
+            configurationBindings);
         var confirmed = ImmutableDictionary.CreateBuilder<string, ImmutableArray<ConfirmedRelationDto>>(StringComparer.Ordinal);
         foreach (var (key, records) in document.ConfirmedRelations)
         {
@@ -529,21 +532,27 @@ public static class PackageValidator
 
     private static IReadOnlyDictionary<string, IFact> IndexDerivedFacts(
         ImmutableArray<SymbolDto> symbols,
+        ImmutableArray<ComponentDto> components,
         ImmutableArray<BoundaryOperationDto> boundaryOperations,
+        ImmutableArray<ExternalSystemDto> externalSystems,
         ImmutableArray<ContractDto> contracts,
         ImmutableArray<DataStoreDto> dataStores,
         ImmutableArray<DataObjectDto> dataObjects,
         ImmutableArray<DataFieldDto> dataFields,
-        ImmutableArray<DataOperationDto> dataOperations)
+        ImmutableArray<DataOperationDto> dataOperations,
+        ImmutableArray<ConfigurationBindingDto> configurationBindings)
     {
         var facts = new Dictionary<string, IFact>(StringComparer.Ordinal);
         Index(symbols, WireFactMapping.FromDto, facts);
+        Index(components, WireFactMapping.FromDto, facts);
         Index(boundaryOperations, WireFactMapping.FromDto, facts);
+        Index(externalSystems, WireFactMapping.FromDto, facts);
         Index(contracts, WireFactMapping.FromDto, facts);
         Index(dataStores, WireFactMapping.FromDto, facts);
         Index(dataObjects, WireFactMapping.FromDto, facts);
         Index(dataFields, WireFactMapping.FromDto, facts);
         Index(dataOperations, WireFactMapping.FromDto, facts);
+        Index(configurationBindings, WireFactMapping.FromDto, facts);
         return facts;
     }
 

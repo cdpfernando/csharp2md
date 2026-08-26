@@ -93,9 +93,11 @@ public sealed class BoundaryIntegrationTests
         Assert.Contains(architecture.ExternalSystems, system => system.Name.Value == "ShippingService" && system.Name.Role == "ClientName");
 
         Assert.Contains(candidates, link => link.Kind == "targets");
-        Assert.Equal(3, candidates.Count(link => link.Kind == "targets"));
-        Assert.DoesNotContain(
+        Assert.Equal(1, candidates.Count(link => link.Kind == "targets"));
+        var confirmedTargetsFragment = Assert.Single(
             publication.ArtifactsInPublicationOrder,
             artifact => artifact.CanonicalKey == "relations/confirmed/targets.json");
+        var confirmedTargets = CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(confirmedTargetsFragment.Payload.AsSpan());
+        Assert.Contains(confirmedTargets, relation => relation.Kind == "targets");
     }
 }
