@@ -229,12 +229,12 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Pre-scans `BaseType`, `AttributeUsage`, `RouteDeclaration`, `MessageOperation` observations to identify boundary-candidate symbols
-- [ ] Creates `Component` for each project with candidates; skips projects without
-- [ ] `Component.Name` is the project's logical relative path
-- [ ] `Component.Owners` contains references to candidate symbols
-- [ ] Unit tests with synthetic observations assert component creation/skip
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Pre-scans `BaseType`, `AttributeUsage`, `RouteDeclaration`, `MessageOperation` observations to identify boundary-candidate symbols
+- [x] Creates `Component` for each project with candidates; skips projects without
+- [x] `Component.Name` is the project's logical relative path
+- [x] `Component.Owners` contains references to candidate symbols
+- [x] Unit tests with synthetic observations assert component creation/skip
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: unit
 **Gate**: full
