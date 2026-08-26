@@ -135,6 +135,55 @@ public sealed class SnapshotAccumulatorTests
     }
 
     [Fact]
+    [Trait("Requirement", "EBC-38")]
+    public void AddCandidate_PopulatesSnapshotCandidates()
+    {
+        var candidate = CreateCandidateLink();
+        var accumulator = new SnapshotAccumulator();
+
+        accumulator.AddCandidate(candidate);
+
+        var snapshot = accumulator.ToSnapshot();
+        Assert.Equal(candidate, Assert.Single(snapshot.Candidates.ToArray()));
+        Assert.Empty(snapshot.Unresolved);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-38")]
+    public void AddUnresolved_PopulatesSnapshotUnresolved()
+    {
+        var unresolved = CreateUnresolvedRecord();
+        var accumulator = new SnapshotAccumulator();
+
+        accumulator.AddUnresolved(unresolved);
+
+        var snapshot = accumulator.ToSnapshot();
+        Assert.Equal(unresolved, Assert.Single(snapshot.Unresolved.ToArray()));
+        Assert.Empty(snapshot.Candidates);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-38")]
+    public void ToSnapshot_IncludesAddedCandidatesAndUnresolved()
+    {
+        var firstCandidate = CreateCandidateLink();
+        var secondCandidate = CreateCandidateLink(kind: RelationKind.MapsTo);
+        var unresolved = CreateUnresolvedRecord();
+        var accumulator = new SnapshotAccumulator();
+
+        accumulator.AddCandidate(firstCandidate);
+        accumulator.AddUnresolved(unresolved);
+        accumulator.AddCandidate(secondCandidate);
+
+        var snapshot = accumulator.ToSnapshot();
+        Assert.Equal([firstCandidate, secondCandidate], snapshot.Candidates.ToArray());
+        Assert.Equal(unresolved, Assert.Single(snapshot.Unresolved.ToArray()));
+        Assert.Equal(RelationKind.Targets, snapshot.Candidates[0].Kind);
+        Assert.Equal(RelationKind.MapsTo, snapshot.Candidates[1].Kind);
+        Assert.Equal(UnresolvedCause.InsufficientEvidence, snapshot.Unresolved[0].Cause);
+    }
+
+    [Fact]
     [Trait("Requirement", "ROSE-21")]
     public void PipelineContext_ExposesAnEmptyAccumulator()
     {
@@ -179,6 +228,27 @@ public sealed class SnapshotAccumulatorTests
             diagnostic,
             DocumentHash.Create(new string('a', 64)),
             new ExtractorVersion(1));
+
+    private static CandidateLink CreateCandidateLink(RelationKind kind = RelationKind.Targets)
+    {
+        var solution = Solution.Create(AcmeSolution);
+        var project = Project.Create(ProjectId.Create(AcmeSolution, "Acme.Orders/Acme.Orders.csproj"));
+        return CandidateLink.Create(
+            kind,
+            solution.Reference,
+            project.Reference,
+            EvidenceChain.Create([CreateObservation(new SourceSpan(1, 1, 1, 8), new BindingDiagnostic("bound", "bound")).Identity]));
+    }
+
+    private static UnresolvedRecord CreateUnresolvedRecord()
+    {
+        var solution = Solution.Create(AcmeSolution);
+        return UnresolvedRecord.Create(
+            RelationKind.Targets,
+            solution.Reference,
+            UnresolvedCause.InsufficientEvidence,
+            EvidenceChain.Create([CreateObservation(new SourceSpan(1, 1, 1, 8), new BindingDiagnostic("bound", "bound")).Identity]));
+    }
 
     private static ConfirmedRelation CreateContainsRelation()
     {
