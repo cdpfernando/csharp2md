@@ -1861,10 +1861,10 @@ and every observation identity is equal.
 
 **Done when**:
 
-- [ ] Sorted fact ids and observation ids from clone A equal clone B
-- [ ] Absolute clone paths do not appear in those ids
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Sorted fact ids and observation ids from clone A equal clone B
+- [x] Absolute clone paths do not appear in those ids
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
