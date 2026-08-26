@@ -271,12 +271,12 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | EBC-18 | P1: Messaging boundary classification | Phase 3 (T12) | Implementing |
 | EBC-19 | P1: Messaging boundary classification | Phase 2 (T7) | Implementing |
 | EBC-20 | P1: Messaging boundary classification | Phase 3 (T12), Phase 4 (T14) | Implementing |
-| EBC-21 | P1: Messaging contract classification | Phase 4 (T13, T15) | In Tasks |
-| EBC-22 | P1: Messaging contract classification | Phase 4 (T13) | In Tasks |
+| EBC-21 | P1: Messaging contract classification | Phase 4 (T13, T15) | Implementing |
+| EBC-22 | P1: Messaging contract classification | Phase 4 (T13) | Implementing |
 | EBC-23 | P1: Messaging contract classification | Phase 4 (T14, T15) | In Tasks |
-| EBC-24 | P1: Messaging contract classification | Phase 4 (T13, T15) | In Tasks |
-| EBC-25 | P1: Messaging contract classification | Phase 4 (T13) | In Tasks |
-| EBC-26 | P1: Messaging contract classification | Phase 4 (T13) | In Tasks |
+| EBC-24 | P1: Messaging contract classification | Phase 4 (T13, T15) | Implementing |
+| EBC-25 | P1: Messaging contract classification | Phase 4 (T13) | Implementing |
+| EBC-26 | P1: Messaging contract classification | Phase 4 (T13) | Implementing |
 | EBC-27 | P1: Composable classification stage | Phase 1 (T2, T4, T5), Phase 5 (T20) | Implementing |
 | EBC-28 | P1: Composable classification stage | Phase 1 (T3), Phase 5 (T20) | Implementing |
 | EBC-29 | P1: Composable classification stage | Phase 1 (T4), Phase 5 (T20) | Implementing |

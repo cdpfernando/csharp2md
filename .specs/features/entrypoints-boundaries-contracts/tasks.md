@@ -418,15 +418,15 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Groups messaging boundaries by `TEvent` FQN
-- [ ] Creates `Contract` only when both outbound and inbound exist AND `TEvent` is in a shared project
-- [ ] Creates `ContractBinding` for each boundary operation with `PayloadRole = "request"`
-- [ ] Creates `ContractRevision` with structural fingerprint from event type's public properties
-- [ ] Skips unpaired publish-only events (e.g., `PaymentProcessed`)
-- [ ] Skips intra-project events (publisher and handler in same project)
-- [ ] Classifier identity: `csharp2md.classifier.contract-messaging` version 1
-- [ ] Unit tests with synthetic boundary operations
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Groups messaging boundaries by `TEvent` FQN
+- [x] Creates `Contract` only when both outbound and inbound exist AND `TEvent` is in a shared project
+- [x] Creates `ContractBinding` for each boundary operation with `PayloadRole = "request"`
+- [x] Creates `ContractRevision` with structural fingerprint from event type's public properties
+- [x] Skips unpaired publish-only events (e.g., `PaymentProcessed`)
+- [x] Skips intra-project events (publisher and handler in same project)
+- [x] Classifier identity: `csharp2md.classifier.contract-messaging` version 1
+- [x] Unit tests with synthetic boundary operations
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: unit
 **Gate**: full
