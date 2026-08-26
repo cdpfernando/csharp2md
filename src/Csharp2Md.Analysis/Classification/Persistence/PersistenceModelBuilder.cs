@@ -33,6 +33,13 @@ internal static class PersistenceModelBuilder
 
     private const string GlobalPrefix = "global::";
 
+    /// <summary>PK-32: the two rule sets version independently, so they carry separate identities.</summary>
+    internal static readonly ClassifierIdentity EntityClassifier =
+        ClassifierIdentity.Create("csharp2md.classifier.persistence-ef", 1);
+
+    internal static readonly ClassifierIdentity StatementClassifier =
+        ClassifierIdentity.Create("csharp2md.classifier.persistence-sql", 1);
+
     /// <summary>The signature components that can name another type, decoded before matching.</summary>
     private static readonly string[] SignatureComponents = ["container", "metadata", "type", "parameters", "type-arguments"];
 
@@ -135,6 +142,7 @@ internal static class PersistenceModelBuilder
 
         drafts.AddRange(ResolveSqlObjects(context, contextTypeFqn, symbols));
         ResolveFields(context, contextTypeFqn, drafts, symbols);
+        ResolveOperations(context, contextTypeFqn, drafts, symbols);
 
         return
         [
@@ -218,6 +226,137 @@ internal static class PersistenceModelBuilder
             }
         }
     }
+
+    /// <summary>
+    /// One <see cref="OperationNode"/> per resolved <c>(object, kind)</c> pair, accumulating every
+    /// callable that performs it - <c>DataOperation</c> identity carries no symbol, so two callables
+    /// share one node and get one <c>accesses-data</c> relation each (PK-31, PK-38). Kinds come from
+    /// the closed table in PK-35 and nothing else. An occurrence whose kind stays <c>unknown</c>
+    /// asserts no operation, which is what keeps a bare <c>SaveChanges</c> silent (PK-37) and an
+    /// unreadable statement out of the confirmed graph. A tracked assignment flushed in the same
+    /// callable is the one promotion path to <c>update</c> (PK-36).
+    /// </summary>
+    private static void ResolveOperations(
+        ClassifierContext context,
+        string contextTypeFqn,
+        List<ObjectDraft> drafts,
+        ImmutableArray<Symbol> symbols)
+    {
+        var contextByEntity = ContextTypeByEntityType(symbols);
+        var entityObjects = drafts
+            .Where(static draft => draft.EntityTypeFqn is not null)
+            .ToLookup(static draft => draft.EntityTypeFqn!, StringComparer.Ordinal);
+        var sqlObjects = drafts
+            .Where(static draft => draft.EntityTypeFqn is null)
+            .ToDictionary(static draft => draft.TableName, StringComparer.Ordinal);
+
+        var flushes = new Dictionary<string, ObservationIdentity>(StringComparer.Ordinal);
+        foreach (var access in context.ObservationsByKind(ObservationKind.DataAccess))
+        {
+            if (!string.Equals(ExecutingContext(access, contextByEntity), contextTypeFqn, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (IsFlush(access))
+            {
+                flushes.TryAdd(access.Identity.Owner.Id.Value, access.Identity);
+                continue;
+            }
+
+            if (PayloadReader.Value(access, SqlTargetKey) is { } target)
+            {
+                var statementKind = OperationKind(PayloadReader.Value(access, SqlOperationKey));
+                if (statementKind is not DataOperationKind.Unknown && sqlObjects.TryGetValue(target, out var sqlDraft))
+                {
+                    AddOperation(
+                        sqlDraft,
+                        statementKind,
+                        StatementClassifier,
+                        access.Identity,
+                        PayloadReader.Multi(access, SqlColumnsKey));
+                }
+
+                continue;
+            }
+
+            var entityKind = OperationKind(PayloadReader.Value(access, OperationKey));
+            if (entityKind is DataOperationKind.Unknown || PayloadReader.Value(access, EntityTypeKey) is not { } entityTypeFqn)
+            {
+                continue;
+            }
+
+            foreach (var draft in entityObjects[entityTypeFqn])
+            {
+                AddOperation(draft, entityKind, EntityClassifier, access.Identity, ResolvedFieldNames(draft, PayloadReader.Multi(access, FieldNamesKey)));
+            }
+        }
+
+        foreach (var assignment in context.ObservationsByKind(ObservationKind.Assignment))
+        {
+            if (!flushes.TryGetValue(assignment.Identity.Owner.Id.Value, out var flush)
+                || PayloadReader.Value(assignment, EntityTypeKey) is not { } entityTypeFqn
+                || PayloadReader.Value(assignment, FieldNameKey) is not { } propertyName)
+            {
+                continue;
+            }
+
+            foreach (var draft in entityObjects[entityTypeFqn])
+            {
+                AddOperation(
+                    draft,
+                    DataOperationKind.Update,
+                    EntityClassifier,
+                    assignment.Identity,
+                    ResolvedFieldNames(draft, [propertyName]),
+                    flush);
+            }
+        }
+    }
+
+    private static void AddOperation(
+        ObjectDraft draft,
+        DataOperationKind kind,
+        ClassifierIdentity classifier,
+        ObservationIdentity evidence,
+        IEnumerable<string> fieldNames,
+        ObservationIdentity? additionalEvidence = null)
+    {
+        if (!draft.Operations.TryGetValue(kind, out var operation))
+        {
+            operation = new OperationDraft { Kind = kind, Classifier = classifier };
+            draft.Operations[kind] = operation;
+        }
+
+        operation.Callables[evidence.Owner.Id.Value] = evidence.Owner;
+        operation.Evidence.Add(evidence);
+        if (additionalEvidence is { } extra)
+        {
+            operation.Evidence.Add(extra);
+        }
+
+        foreach (var name in fieldNames)
+        {
+            operation.FieldNames.Add(name);
+        }
+    }
+
+    /// <summary>The physical names of the fields an occurrence touched, so <c>operates-on</c> can reach them (PK-34).</summary>
+    private static IEnumerable<string> ResolvedFieldNames(ObjectDraft draft, IEnumerable<string> propertyNames) =>
+        propertyNames
+            .Select(name => draft.Fields.TryGetValue(name, out var field) ? field.FieldName : null)
+            .OfType<string>();
+
+    /// <summary>PK-35's closed table, and no other signal. Anything outside it is <c>unknown</c>.</summary>
+    internal static DataOperationKind OperationKind(string? literal) => literal switch
+    {
+        "read" => DataOperationKind.Read,
+        "insert" => DataOperationKind.Insert,
+        "update" => DataOperationKind.Update,
+        "delete" => DataOperationKind.Delete,
+        ExecuteOperation => DataOperationKind.Execute,
+        _ => DataOperationKind.Unknown,
+    };
 
     /// <summary>
     /// A flush - <c>SaveChanges</c> or <c>SaveChangesAsync</c> - reaches the ledger as a data access
@@ -341,6 +480,8 @@ internal static class PersistenceModelBuilder
 
         public Dictionary<string, FieldDraft> Fields { get; } = new(StringComparer.Ordinal);
 
+        public Dictionary<DataOperationKind, OperationDraft> Operations { get; } = [];
+
         public ObjectNode ToNode() =>
             new(EntityTypeFqn,
                 Form,
@@ -354,8 +495,29 @@ internal static class PersistenceModelBuilder
                         .ThenBy(static field => field.PropertyName ?? string.Empty, StringComparer.Ordinal)
                         .Select(static field => field.ToNode()),
                 ],
-                [],
+                [
+                    .. Operations.Values
+                        .OrderBy(static operation => operation.Kind)
+                        .Select(static operation => operation.ToNode()),
+                ],
                 Chain(Evidence));
+    }
+
+    /// <summary>One <c>(object, kind)</c> pair as it accumulates callables, fields and evidence.</summary>
+    private sealed class OperationDraft
+    {
+        public DataOperationKind Kind { get; init; }
+
+        public ClassifierIdentity Classifier { get; init; }
+
+        public SortedDictionary<string, FactReference> Callables { get; } = new(StringComparer.Ordinal);
+
+        public SortedSet<string> FieldNames { get; } = new(StringComparer.Ordinal);
+
+        public List<ObservationIdentity> Evidence { get; } = [];
+
+        public OperationNode ToNode() =>
+            new(Kind, Classifier, [.. Callables.Values], [.. FieldNames], Chain(Evidence));
     }
 
     /// <summary>One column as it accumulates evidence across the occurrences that reach it.</summary>

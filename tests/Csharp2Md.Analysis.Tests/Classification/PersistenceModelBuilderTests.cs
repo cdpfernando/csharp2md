@@ -560,6 +560,140 @@ public sealed class PersistenceModelBuilderTests
         Assert.Equal(MappingStateKind.ConventionalCandidate, field.MappingState);
     }
 
+    [Theory]
+    [Trait("Requirement", "PK-35")]
+    [InlineData("read", DataOperationKind.Read)]
+    [InlineData("insert", DataOperationKind.Insert)]
+    [InlineData("update", DataOperationKind.Update)]
+    [InlineData("delete", DataOperationKind.Delete)]
+    [InlineData("execute", DataOperationKind.Execute)]
+    public void Build_StatementOperation_TakesTheKindTheClosedTableAssigns(string sqlOperation, DataOperationKind expected)
+    {
+        var pipeline = Arrange();
+        var caller = AddMethod(pipeline, "Run", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(
+            pipeline,
+            caller,
+            ordinal: 1,
+            ("operation", sqlOperation),
+            ("context-type", OrderDbContextFqn),
+            ("sql-operation", sqlOperation),
+            ("sql-target", "Orders"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var operation = Assert.Single(Assert.Single(Assert.Single(model.Stores).Objects).Operations);
+        Assert.Equal(expected, operation.Kind);
+        Assert.Equal("csharp2md.classifier.persistence-sql", operation.Classifier.Id);
+        Assert.Equal(1, operation.Classifier.Version);
+    }
+
+    [Theory]
+    [Trait("Requirement", "PK-35")]
+    [InlineData("insert", DataOperationKind.Insert)]
+    [InlineData("read", DataOperationKind.Read)]
+    public void Build_EntitySetOperation_TakesTheKindTheClosedTableAssigns(string operation, DataOperationKind expected)
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var caller = AddMethod(pipeline, "Run", "global::Acme.Orders.Data.OrderWrites");
+        AddDataAccess(pipeline, caller, ordinal: 1, ("operation", operation), ("entity-type", OrderFqn));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var resolved = Assert.Single(Assert.Single(Assert.Single(model.Stores).Objects).Operations);
+        Assert.Equal(expected, resolved.Kind);
+        Assert.Equal("csharp2md.classifier.persistence-ef", resolved.Classifier.Id);
+        Assert.Equal(1, resolved.Classifier.Version);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-35")]
+    public void OperationKind_ALiteralOutsideTheClosedTable_IsUnknown()
+    {
+        Assert.Equal(DataOperationKind.Unknown, PersistenceModelBuilder.OperationKind("save"));
+        Assert.Equal(DataOperationKind.Unknown, PersistenceModelBuilder.OperationKind("unknown"));
+        Assert.Equal(DataOperationKind.Unknown, PersistenceModelBuilder.OperationKind(null));
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-31")]
+    [Trait("Requirement", "PK-34")]
+    public void Build_ResolvedAccess_CreatesOneOperationPerObjectAndKindCarryingTheFieldsItTouched()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var reader = AddMethod(pipeline, "GetOrder", "global::Acme.Orders.Data.OrderQueries");
+        AddDataAccess(pipeline, reader, ordinal: 1, ("operation", "read"), ("entity-type", OrderFqn), ("field-names", "Id|Status"));
+        AddDataAccess(pipeline, reader, ordinal: 2, ("operation", "read"), ("entity-type", OrderFqn), ("field-names", "Amount"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var operation = Assert.Single(Assert.Single(Assert.Single(model.Stores).Objects).Operations);
+        Assert.Equal(DataOperationKind.Read, operation.Kind);
+        Assert.Equal<string>(["Amount", "Id", "Status"], operation.FieldNames);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-36")]
+    public void Build_AssignmentPairedWithASaveChanges_YieldsAnUpdateOperation()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var writer = AddMethod(pipeline, "PayOrder", "global::Acme.Orders.Data.OrderWrites");
+        AddAssignment(pipeline, writer, ordinal: 1, ("entity-type", OrderFqn), ("field-name", "Status"));
+        AddDataAccess(pipeline, writer, ordinal: 2, ("operation", "unknown"), ("context-type", OrderDbContextFqn));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var operation = Assert.Single(Assert.Single(Assert.Single(model.Stores).Objects).Operations);
+        Assert.Equal(DataOperationKind.Update, operation.Kind);
+        Assert.Equal<string>(["Status"], operation.FieldNames);
+        Assert.Equal(writer.Reference, Assert.Single(operation.Callables));
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-37")]
+    public void Build_BareSaveChangesWithNoTrackedAssignmentOrSetOperation_YieldsNoOperation()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var writer = AddMethod(pipeline, "Flush", "global::Acme.Orders.Data.OrderWrites");
+        AddDataAccess(pipeline, writer, ordinal: 1, ("operation", "unknown"), ("context-type", OrderDbContextFqn));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        Assert.All(Assert.Single(model.Stores).Objects, dataObject => Assert.Empty(dataObject.Operations));
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-38")]
+    public void Build_TwoCallablesUpdatingOneObject_ShareOneOperationWithTwoCallables()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var payOrder = AddMethod(pipeline, "PayOrder", "global::Acme.Orders.Data.OrderWrites");
+        AddAssignment(pipeline, payOrder, ordinal: 1, ("entity-type", OrderFqn), ("field-name", "Status"));
+        AddDataAccess(pipeline, payOrder, ordinal: 2, ("operation", "unknown"), ("context-type", OrderDbContextFqn));
+        var reprice = AddMethod(pipeline, "Reprice", "global::Acme.Orders.Data.OrderWrites");
+        AddAssignment(pipeline, reprice, ordinal: 1, ("entity-type", OrderFqn), ("field-name", "Amount"));
+        AddDataAccess(pipeline, reprice, ordinal: 2, ("operation", "unknown"), ("context-type", OrderDbContextFqn));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var operation = Assert.Single(Assert.Single(Assert.Single(model.Stores).Objects).Operations);
+        Assert.Equal(DataOperationKind.Update, operation.Kind);
+        Assert.Equal(2, operation.Callables.Length);
+        Assert.Contains(payOrder.Reference, operation.Callables);
+        Assert.Contains(reprice.Reference, operation.Callables);
+        Assert.Equal<string>(["Amount", "Status"], operation.FieldNames);
+    }
+
     private static PipelineContext Arrange()
     {
         var pipeline = new PipelineContext(new SwallowingSession(), "alpha.sln");

@@ -603,15 +603,15 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] One `OperationNode` per resolved `(object, kind)` pair (PK-31)
-- [ ] Operation kinds follow exactly the closed table in PK-35, with a test per row
-- [ ] An `Assignment` plus a `SaveChanges` in one callable yields an `update` (PK-36)
-- [ ] A bare `SaveChanges` with no tracked assignment and no set operation yields nothing (PK-37)
-- [ ] Two callables performing the same operation on the same object produce one node with two callables (PK-38)
-- [ ] The classifier identity is `persistence-ef` for entity-derived and `persistence-sql` for statement-derived operations
-- [ ] Unit tests cover each rule against a hand-built context
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + tests added so far pass (no silent deletions)
+- [x] One `OperationNode` per resolved `(object, kind)` pair (PK-31) — an occurrence resolves only when its kind is determinate; an `unknown` kind asserts no operation, which is what makes PK-39/PK-40/PK-51's unresolved accounting possible
+- [x] Operation kinds follow exactly the closed table in PK-35, with a test per row
+- [x] An `Assignment` plus a `SaveChanges` in one callable yields an `update` (PK-36)
+- [x] A bare `SaveChanges` with no tracked assignment and no set operation yields nothing (PK-37)
+- [x] Two callables performing the same operation on the same object produce one node with two callables (PK-38)
+- [x] The classifier identity is `persistence-ef` for entity-derived and `persistence-sql` for statement-derived operations
+- [x] Unit tests cover each rule against a hand-built context
+- [x] Gate check passes: full gate command
+- [x] Test count: 1112 pass — Domain 545, Analysis 376, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
