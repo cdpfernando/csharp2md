@@ -880,11 +880,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `ConfigurationModel`, `DeclaredKey`, `KeyResolution`, `ConfiguredEdge`, `TargetDecision`, `TargetOutcome`, `UnboundKeyRead` and `ConfigurationCoverage` match the design's data model
-- [ ] No record references Roslyn, constructs a Domain fact or touches the filesystem
-- [ ] Unit tests assert record equality and default-construction guards
-- [ ] Gate check passes: quick gate command
-- [ ] Test count reported; no silent deletions
+- [x] `ConfigurationModel`, `DeclaredKey`, `KeyResolution`, `ConfiguredEdge`, `TargetDecision`, `TargetOutcome`, `UnboundKeyRead` and `ConfigurationCoverage` match the design's data model
+- [x] No record references Roslyn, constructs a Domain fact or touches the filesystem
+- [x] Unit tests assert record equality and default-construction guards
+- [x] Gate check passes: quick gate command
+- [x] Test count reported; no silent deletions (Analysis 544 pass)
 
 **Tests**: unit
 **Gate**: quick
