@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Csharp2Md.Analysis;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Facts;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Wire;
 
@@ -53,7 +54,8 @@ public sealed class AnalyzeMultiSolutionTests
                 : [];
             var child = Assert.Single(children);
             var result = FactualPackageReader.Read(child);
-            Assert.Equal(FactualSnapshot.Empty, result.Snapshot);
+            Assert.NotEmpty(result.Snapshot.Facts);
+            Assert.Contains(result.Snapshot.Facts, static fact => fact is Solution);
 
             var manifest = CanonicalJson.Read<ManifestEnvelope>(
                 File.ReadAllBytes(Path.Combine(child, "manifest.json")));

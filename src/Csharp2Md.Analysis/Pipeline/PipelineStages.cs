@@ -10,5 +10,6 @@ internal static class PipelineStages
         StubStages.CreateDefault()
             .SetItem(0, new InventoryStage())
             .SetItem(1, new SemanticAnalysisStage())
-            .SetItem(2, new ObservationExtractionStage());
+            .SetItem(2, new ObservationExtractionStage())
+            .SetItem(5, new PersistenceStage());
 }

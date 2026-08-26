@@ -1716,11 +1716,11 @@ observations.
 
 **Done when**:
 
-- [ ] In-memory commit of `Acme.Orders.slnx` contains Solution, Project, Document, Symbol, observations and
+- [x] In-memory commit of `Acme.Orders.slnx` contains Solution, Project, Document, Symbol, observations and
       `contains`
-- [ ] `PersistenceManifestTests` no longer requires zero fact/observation artifact counts
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
+- [x] `PersistenceManifestTests` no longer requires zero fact/observation artifact counts
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: solution

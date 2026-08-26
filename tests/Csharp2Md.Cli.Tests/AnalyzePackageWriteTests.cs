@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Relations;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Wire;
 
@@ -19,7 +21,7 @@ public sealed class AnalyzePackageWriteTests
     [Trait("Requirement", "STOR-49")]
     [Trait("Requirement", "STOR-50")]
     [Trait("Requirement", "STOR-51")]
-    public async Task Analyze_WritesSchemaValidEmptyPackageOnlyUnderOutput()
+    public async Task Analyze_WritesSchemaValidPackageOnlyUnderOutput()
     {
         var solutionPath = Path.Combine(
             CliTestPaths.RepoRoot,
@@ -48,10 +50,15 @@ public sealed class AnalyzePackageWriteTests
             Assert.Matches("^s-[0-9a-f]{32}$", Path.GetFileName(child));
 
             var result = FactualPackageReader.Read(child);
-            Assert.Equal(FactualSnapshot.Empty, result.Snapshot);
-            Assert.True(result.Snapshot.Facts.IsEmpty);
-            Assert.True(result.Snapshot.Observations.IsEmpty);
-            Assert.True(result.Snapshot.ConfirmedRelations.IsEmpty);
+            Assert.NotEqual(FactualSnapshot.Empty, result.Snapshot);
+            Assert.Contains(result.Snapshot.Facts, static fact => fact is Solution);
+            Assert.Contains(result.Snapshot.Facts, static fact => fact is Project);
+            Assert.Contains(result.Snapshot.Facts, static fact => fact is Document);
+            Assert.Contains(result.Snapshot.Facts, static fact => fact is Symbol);
+            Assert.NotEmpty(result.Snapshot.Observations);
+            Assert.Contains(
+                result.Snapshot.ConfirmedRelations,
+                static relation => relation.Kind is RelationKind.Contains);
             Assert.True(result.Snapshot.Candidates.IsEmpty);
             Assert.True(result.Snapshot.Unresolved.IsEmpty);
             Assert.True(result.Snapshot.Frontiers.IsEmpty);
@@ -65,7 +72,13 @@ public sealed class AnalyzePackageWriteTests
             var manifestPath = Path.Combine(child, "manifest.json");
             Assert.True(File.Exists(manifestPath), $"manifest was not found at '{manifestPath}'.");
             var manifest = CanonicalJson.Read<ManifestEnvelope>(File.ReadAllBytes(manifestPath));
-            Assert.All(manifest.Artifacts, static entry => Assert.Equal(0, entry.Count));
+            Assert.Contains(manifest.Artifacts, static entry => entry.CanonicalKey == "facts/structural" && entry.Count > 0);
+            Assert.Contains(
+                manifest.Artifacts,
+                static entry => entry.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal) && entry.Count > 0);
+            Assert.Contains(
+                manifest.Artifacts,
+                static entry => entry.CanonicalKey == "relations/confirmed/contains" && entry.Count > 0);
         }
         finally
         {
