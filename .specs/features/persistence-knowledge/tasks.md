@@ -416,13 +416,13 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] `Field(signature, key)` matches the existing private `ReadField` behaviour including the `-` sentinel and URI unescaping
-- [ ] `Kind`, `Container`, `Metadata` and `Type` convenience readers are provided for `Symbol`
-- [ ] A `DbSet<T>` property's entity type argument is extractable from its `type` field
-- [ ] No file under `Classification/Passes/` is modified
-- [ ] Unit tests cover each field, the sentinel, escaped values and a malformed signature
-- [ ] Gate check passes: quick gate command
-- [ ] Test count: 283 + new Analysis tests pass (no silent deletions)
+- [x] `Field(signature, key)` matches the existing private `ReadField` behaviour including the `-` sentinel and URI unescaping
+- [x] `Kind`, `Container`, `Metadata` and `Type` convenience readers are provided for `Symbol`
+- [x] A `DbSet<T>` property's entity type argument is extractable from its `type` field
+- [x] No file under `Classification/Passes/` is modified
+- [x] Unit tests cover each field, the sentinel, escaped values and a malformed signature
+- [x] Gate check passes: quick gate command
+- [x] Test count: 328 + 8 new Analysis tests = 336 pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
