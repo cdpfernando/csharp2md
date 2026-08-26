@@ -1971,11 +1971,11 @@ excerpt is present. Do not edit the versioned fixture for this case.
 
 **Done when**:
 
-- [ ] Canonical JSON from the temp copy does not contain `secret`
-- [ ] A `suspected-secret` diagnostic includes a masked excerpt and the document hash of the whole file,
+- [x] Canonical JSON from the temp copy does not contain `secret`
+- [x] A `suspected-secret` diagnostic includes a masked excerpt and the document hash of the whole file,
       not a hash of the secret
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
