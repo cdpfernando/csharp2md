@@ -114,8 +114,9 @@ internal sealed class SemanticAnalysisStage : IPipelineStage
             attached = true;
             context.AnalysisVariants = variants.ToImmutable();
             SymbolFactEmitter.Emit(context.BoundSolution, context.Accumulator, context.SolutionPath, cancellationToken);
+            var factCount = context.Accumulator.ToSnapshot().Facts.OfType<Csharp2Md.Domain.Facts.Symbol>().Count();
             return new StageResult(
-                0,
+                factCount,
                 0,
                 0,
                 StructuralCorruption: false,

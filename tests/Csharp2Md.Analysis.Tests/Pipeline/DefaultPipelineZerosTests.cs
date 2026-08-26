@@ -8,8 +8,9 @@ public sealed class DefaultPipelineZerosTests
 {
     [Fact]
     [Trait("Requirement", "ROSE-13")]
+    [Trait("Requirement", "ROSE-59")]
     [Trait("Requirement", "ENG-15")]
-    public async Task AnalyzeAsync_DefaultPipeline_InventoryFactsAreNonZeroAndLaterStagesStayZero()
+    public async Task AnalyzeAsync_DefaultPipeline_InventoryAndSemanticAnalysisAreNonZeroAndLaterStagesStayZero()
     {
         var solutionPath = Path.Combine(
             AnalysisTestPaths.RepoRoot,
@@ -36,7 +37,13 @@ public sealed class DefaultPipelineZerosTests
         Assert.Equal(0, inventory.ObservationCount);
         Assert.Equal(0, inventory.RelationCount);
 
-        for (var index = 1; index < StubStages.DeclaredNames.Length; index++)
+        var semantic = outcome.Stages[1];
+        Assert.Equal("Semantic Analysis", semantic.Name);
+        Assert.True(semantic.FactCount > 0, $"Semantic Analysis fact count was {semantic.FactCount}.");
+        Assert.Equal(0, semantic.ObservationCount);
+        Assert.Equal(0, semantic.RelationCount);
+
+        for (var index = 2; index < StubStages.DeclaredNames.Length; index++)
         {
             var report = outcome.Stages[index];
             Assert.Equal(StubStages.DeclaredNames[index], report.Name);

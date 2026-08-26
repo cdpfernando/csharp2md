@@ -67,32 +67,32 @@ internal static class SymbolFactEmitter
             case BasePropertyDeclarationSyntax:
             case EnumMemberDeclarationSyntax:
             case VariableDeclaratorSyntax when node.Parent?.Parent is FieldDeclarationSyntax or EventFieldDeclarationSyntax:
-            {
-                var declared = model.GetDeclaredSymbol(node, cancellationToken);
-                if (declared is not null)
                 {
-                    yield return (declared, declared.MetadataName);
-                }
-
-                if (node is TypeDeclarationSyntax { ParameterList: not null }
-                    && declared is INamedTypeSymbol named)
-                {
-                    foreach (var constructor in named.InstanceConstructors)
+                    var declared = model.GetDeclaredSymbol(node, cancellationToken);
+                    if (declared is not null)
                     {
-                        if (!constructor.IsImplicitlyDeclared)
+                        yield return (declared, declared.MetadataName);
+                    }
+
+                    if (node is TypeDeclarationSyntax { ParameterList: not null }
+                        && declared is INamedTypeSymbol named)
+                    {
+                        foreach (var constructor in named.InstanceConstructors)
                         {
-                            yield return (constructor, constructor.MetadataName);
+                            if (!constructor.IsImplicitlyDeclared)
+                            {
+                                yield return (constructor, constructor.MetadataName);
+                            }
                         }
                     }
-                }
 
-                foreach (var lambda in AssignedLambdas(model, node, cancellationToken))
-                {
-                    yield return lambda;
-                }
+                    foreach (var lambda in AssignedLambdas(model, node, cancellationToken))
+                    {
+                        yield return lambda;
+                    }
 
-                yield break;
-            }
+                    yield break;
+                }
         }
     }
 

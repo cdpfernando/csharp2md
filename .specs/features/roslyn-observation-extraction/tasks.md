@@ -1265,11 +1265,11 @@ a `Microsoft.CodeAnalysis` type. Extractor/Stage type names stay off the exporte
 
 **Done when**:
 
-- [ ] Inventory and Semantic Analysis counts are each > 0 on the fixture
-- [ ] Observation Extraction and later stubs remain 0/0/0
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean on this phase's changes
+- [x] Inventory and Semantic Analysis counts are each > 0 on the fixture
+- [x] Observation Extraction and later stubs remain 0/0/0
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean on this phase's changes
 
 **Tests**: unit
 **Gate**: build
