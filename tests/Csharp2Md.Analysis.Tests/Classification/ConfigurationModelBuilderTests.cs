@@ -34,7 +34,8 @@ public sealed class ConfigurationModelBuilderTests
             key.OwningComponent);
         Assert.Equal(document.Reference, key.Evidence.Owner);
         Assert.Equal(1, model.Coverage.KeysDeclared);
-        Assert.Empty(model.Edges);
+        var componentEdge = Assert.Single(model.Edges, edge => edge.Source.Equals(key.OwningComponent));
+        Assert.Equal("Services:PaymentService", componentEdge.KeyPath);
         Assert.Empty(pipeline.Accumulator.ToSnapshot().Diagnostics);
     }
 
@@ -99,6 +100,144 @@ public sealed class ConfigurationModelBuilderTests
         Assert.Empty(pipeline.Accumulator.ToSnapshot().Diagnostics);
     }
 
+    [Fact]
+    [Trait("Requirement", "CDC-36")]
+    [Trait("Requirement", "CDC-37")]
+    [Trait("Requirement", "CDC-38")]
+    [Trait("Requirement", "CDC-39")]
+    [Trait("Requirement", "CDC-40")]
+    public void Build_RegisteredTriples_ProduceComponentSymbolStoreAndBoundaryEdges()
+    {
+        var pipeline = Arrange();
+        var project = AddProject(pipeline, "Acme.Orders/Acme.Orders.csproj");
+        var document = AddDocument(pipeline, project, "Acme.Orders/appsettings.json");
+        var component = Group(pipeline, project, "Acme.Orders/Acme.Orders.csproj");
+        AddDeclaredKey(pipeline, document, "Services:PaymentService", "literal", "https://payments.internal.acme.local:8443", ordinal: 1);
+        AddDeclaredKey(pipeline, document, "ConnectionStrings:OrdersDb", "literal", address: null, ordinal: 2);
+        var reader = OwnersOf(pipeline, project)[0];
+        pipeline.Accumulator.AddObservation(Observe(reader, 1, ("key", "Services:PaymentService")));
+        var store = DataStore.Create(
+            DataStoreTechnology.Relational,
+            StructuralLiteral.Create(LiteralRole.ClientName, "OrdersDb", "name"));
+        pipeline.Accumulator.AddFact(store);
+        var callable = AddCallable(pipeline, project, "PlaceOrderAsync", "global::Acme.Orders.OrderService");
+        var operation = BoundaryOperation.Create(
+            callable.Reference,
+            component.Reference,
+            BoundaryDirection.Outbound,
+            BoundaryProtocol.Http,
+            "PaymentService",
+            "POST",
+            StructuralLiteral.Create(LiteralRole.Route, "payments/authorize", "route"));
+        pipeline.Accumulator.AddFact(operation);
+
+        var model = ConfigurationModelBuilder.Build(new ClassifierContext(pipeline));
+
+        Assert.Contains(model.Edges, edge => edge.Source.Equals(component.Reference) && edge.KeyPath == "Services:PaymentService");
+        Assert.Contains(model.Edges, edge => edge.Source.Equals(component.Reference) && edge.KeyPath == "ConnectionStrings:OrdersDb");
+        var symbolEdge = Assert.Single(model.Edges, edge => edge.Source.Equals(reader) && edge.KeyPath == "Services:PaymentService");
+        Assert.Contains(symbolEdge.Evidence.DerivedFrom, identity => identity.Owner.Equals(reader));
+        Assert.Contains(symbolEdge.Evidence.DerivedFrom, identity => identity.Owner.Equals(document.Reference));
+        Assert.Contains(model.Edges, edge => edge.Source.Equals(store.Reference) && edge.KeyPath == "ConnectionStrings:OrdersDb");
+        var boundaryEdge = Assert.Single(model.Edges, edge => edge.Source.Equals(operation.Reference) && edge.KeyPath == "Services:PaymentService");
+        Assert.Contains(boundaryEdge.Evidence.DerivedFrom, identity => identity.Owner.Equals(document.Reference));
+        Assert.Empty(model.UnboundReads);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-41")]
+    public void Build_PrefixSuffixAndCaseVariants_ProduceNoConsumerEdge()
+    {
+        var pipeline = Arrange();
+        var project = AddProject(pipeline, "Acme.Orders/Acme.Orders.csproj");
+        var document = AddDocument(pipeline, project, "Acme.Orders/appsettings.json");
+        var component = Group(pipeline, project, "Acme.Orders/Acme.Orders.csproj");
+        AddDeclaredKey(pipeline, document, "Services:PaymentService", "literal", "https://payments.internal.acme.local:8443", ordinal: 1);
+        AddDeclaredKey(pipeline, document, "ConnectionStrings:OrdersDb", "literal", address: null, ordinal: 2);
+        var prefix = AddCallable(pipeline, project, "PrefixClient", "global::Acme.Orders.Clients");
+        var suffix = AddCallable(pipeline, project, "SuffixClient", "global::Acme.Orders.Clients");
+        var folded = AddCallable(pipeline, project, "FoldedClient", "global::Acme.Orders.Clients");
+        pipeline.Accumulator.AddFact(
+            BoundaryOperation.Create(
+                prefix.Reference,
+                component.Reference,
+                BoundaryDirection.Outbound,
+                BoundaryProtocol.Http,
+                "Payment",
+                "POST",
+                StructuralLiteral.Create(LiteralRole.Route, "payments/authorize", "route")));
+        pipeline.Accumulator.AddFact(
+            BoundaryOperation.Create(
+                suffix.Reference,
+                component.Reference,
+                BoundaryDirection.Outbound,
+                BoundaryProtocol.Http,
+                "PaymentServiceClient",
+                "POST",
+                StructuralLiteral.Create(LiteralRole.Route, "payments/authorize", "route")));
+        pipeline.Accumulator.AddFact(
+            BoundaryOperation.Create(
+                folded.Reference,
+                component.Reference,
+                BoundaryDirection.Outbound,
+                BoundaryProtocol.Http,
+                "paymentservice",
+                "POST",
+                StructuralLiteral.Create(LiteralRole.Route, "payments/authorize", "route")));
+        pipeline.Accumulator.AddFact(
+            DataStore.Create(
+                DataStoreTechnology.Relational,
+                StructuralLiteral.Create(LiteralRole.ClientName, "ordersdb", "name")));
+        pipeline.Accumulator.AddObservation(Observe(OwnersOf(pipeline, project)[0], 1, ("key", "Services:Payment")));
+
+        var model = ConfigurationModelBuilder.Build(new ClassifierContext(pipeline));
+
+        Assert.DoesNotContain(
+            model.Edges,
+            edge => edge.Source.FactType is nameof(BoundaryOperation) or nameof(DataStore) or nameof(Symbol));
+        Assert.Single(model.UnboundReads);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-42")]
+    public void Build_SymbolReadKeyDeclaredNowhere_ProducesUnboundReadNotAnEdge()
+    {
+        var pipeline = Arrange();
+        var project = AddProject(pipeline, "Acme.Orders/Acme.Orders.csproj");
+        AddDocument(pipeline, project, "Acme.Orders/appsettings.json");
+        Group(pipeline, project, "Acme.Orders/Acme.Orders.csproj");
+        var reader = OwnersOf(pipeline, project)[0];
+        pipeline.Accumulator.AddObservation(Observe(reader, 1, ("key", "FeatureManagement:Missing")));
+
+        var model = ConfigurationModelBuilder.Build(new ClassifierContext(pipeline));
+
+        var unbound = Assert.Single(model.UnboundReads);
+        Assert.Equal(reader, unbound.Symbol);
+        Assert.DoesNotContain(model.Edges, edge => edge.Source.Equals(reader));
+        Assert.Empty(model.Keys);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-38")]
+    public void Build_DataStoreNameMatchingNoConnectionString_ProducesNoEdgeAndNoUnresolved()
+    {
+        var pipeline = Arrange();
+        var project = AddProject(pipeline, "Acme.Orders/Acme.Orders.csproj");
+        var document = AddDocument(pipeline, project, "Acme.Orders/appsettings.json");
+        Group(pipeline, project, "Acme.Orders/Acme.Orders.csproj");
+        AddDeclaredKey(pipeline, document, "ConnectionStrings:OrdersDb", "literal", address: null, ordinal: 1);
+        var store = DataStore.Create(
+            DataStoreTechnology.Relational,
+            StructuralLiteral.Create(LiteralRole.ClientName, "BillingDb", "name"));
+        pipeline.Accumulator.AddFact(store);
+
+        var model = ConfigurationModelBuilder.Build(new ClassifierContext(pipeline));
+
+        Assert.DoesNotContain(model.Edges, edge => edge.Source.Equals(store.Reference));
+        Assert.Empty(model.UnboundReads);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Unresolved);
+    }
+
     private static PipelineContext Arrange()
     {
         var pipeline = new PipelineContext(new SwallowingSession(), "alpha.sln");
@@ -123,14 +262,26 @@ public sealed class ConfigurationModelBuilderTests
         return document;
     }
 
-    private static void Group(PipelineContext pipeline, Project project, string componentName)
+    private static Component Group(PipelineContext pipeline, Project project, string componentName)
     {
         var symbol = Symbol.Create(
             CanonicalSymbolSignature.Create("method", "global::Acme.Orders.Program", "Main", 0, "global::System.Void"),
             project.Id,
             SymbolFacetSet.Create([SymbolFacet.Callable]));
         pipeline.Accumulator.AddFact(symbol);
-        pipeline.Accumulator.AddFact(Component.Create(SolutionId, componentName, [symbol.Reference]));
+        var component = Component.Create(SolutionId, componentName, [symbol.Reference]);
+        pipeline.Accumulator.AddFact(component);
+        return component;
+    }
+
+    private static Symbol AddCallable(PipelineContext pipeline, Project project, string metadata, string container)
+    {
+        var symbol = Symbol.Create(
+            CanonicalSymbolSignature.Create("method", container, metadata, 0, "global::System.Threading.Tasks.Task"),
+            project.Id,
+            SymbolFacetSet.Create([SymbolFacet.Callable]));
+        pipeline.Accumulator.AddFact(symbol);
+        return symbol;
     }
 
     private static FactReference[] OwnersOf(PipelineContext pipeline, Project project) =>

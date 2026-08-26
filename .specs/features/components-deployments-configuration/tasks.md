@@ -937,13 +937,13 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Component, symbol, data-store and boundary-operation edges are produced for the four registered triples
-- [ ] Matching is exact ordinal; a prefix, suffix or case-differing name produces no edge
-- [ ] A symbol-read key declared nowhere produces an unbound read, not an edge
-- [ ] A data store whose name matches no `ConnectionStrings` key produces no edge and no unresolved record
-- [ ] Unit tests cover each triple, each refusal shape and the unbound read against a hand-built ledger
-- [ ] Gate check passes: quick gate command
-- [ ] Test count reported; no silent deletions
+- [x] Component, symbol, data-store and boundary-operation edges are produced for the four registered triples
+- [x] Matching is exact ordinal; a prefix, suffix or case-differing name produces no edge
+- [x] A symbol-read key declared nowhere produces an unbound read, not an edge
+- [x] A data store whose name matches no `ConnectionStrings` key produces no edge and no unresolved record
+- [x] Unit tests cover each triple, each refusal shape and the unbound read against a hand-built ledger
+- [x] Gate check passes: quick gate command
+- [x] Test count reported; no silent deletions (Analysis 552 pass)
 
 **Tests**: unit
 **Gate**: quick
