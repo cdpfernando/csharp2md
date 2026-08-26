@@ -377,6 +377,189 @@ public sealed class PersistenceModelBuilderTests
         Assert.Null(objects[1].EntityTypeFqn);
     }
 
+    [Fact]
+    [Trait("Requirement", "PK-22")]
+    [Trait("Requirement", "PK-26")]
+    public void Build_FieldNamesOnALinqRead_CreatesAConventionalFieldCarryingThePropertySymbol()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        var status = AddPropertySymbol(pipeline, OrderFqn, "Status");
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var reader = AddMethod(pipeline, "GetOrder", "global::Acme.Orders.Data.OrderQueries");
+        AddDataAccess(pipeline, reader, ordinal: 1, ("operation", "read"), ("entity-type", OrderFqn), ("field-names", "Status"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var field = Assert.Single(Assert.Single(Assert.Single(model.Stores).Objects).Fields);
+        Assert.Equal("Status", field.PropertyName);
+        Assert.Equal("Status", field.FieldName);
+        Assert.Equal(MappingStateKind.ConventionalCandidate, field.MappingState);
+        Assert.Equal(status.Reference, field.ClrSymbol);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-22")]
+    public void Build_PropertiesReachedInsideAnAnonymousProjection_EachProduceAField()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var reader = AddMethod(pipeline, "GetOrder", "global::Acme.Orders.Data.OrderQueries");
+        AddDataAccess(
+            pipeline,
+            reader,
+            ordinal: 1,
+            ("operation", "read"),
+            ("entity-type", OrderFqn),
+            ("field-names", "Amount|Id|Status"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var fields = Assert.Single(Assert.Single(model.Stores).Objects).Fields;
+        Assert.Equal<string>(["Amount", "Id", "Status"], fields.Select(field => field.FieldName));
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-23")]
+    public void Build_AssignmentPairedWithASaveChangesInTheSameCallable_CreatesAField()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var writer = AddMethod(pipeline, "PayOrder", "global::Acme.Orders.Data.OrderWrites");
+        AddAssignment(pipeline, writer, ordinal: 1, ("entity-type", OrderFqn), ("field-name", "Status"));
+        AddDataAccess(pipeline, writer, ordinal: 2, ("operation", "unknown"), ("context-type", OrderDbContextFqn));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var field = Assert.Single(Assert.Single(Assert.Single(model.Stores).Objects).Fields);
+        Assert.Equal("Status", field.FieldName);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-23")]
+    public void Build_AssignmentWithoutASaveChangesInTheSameCallable_CreatesNoField()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var writer = AddMethod(pipeline, "Mutate", "global::Acme.Orders.Data.OrderWrites");
+        AddAssignment(pipeline, writer, ordinal: 1, ("entity-type", OrderFqn), ("field-name", "Status"));
+        var other = AddMethod(pipeline, "Flush", "global::Acme.Orders.Data.OrderWrites");
+        AddDataAccess(pipeline, other, ordinal: 1, ("operation", "unknown"), ("context-type", OrderDbContextFqn));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        Assert.Empty(Assert.Single(Assert.Single(model.Stores).Objects).Fields);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-23")]
+    [Trait("Requirement", "PK-42")]
+    public void Build_AssignmentToATypeNoEntitySetExposes_CreatesNoField()
+    {
+        var pipeline = Arrange();
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var writer = AddMethod(pipeline, "PayOrder", "global::Acme.Orders.Data.OrderWrites");
+        AddAssignment(pipeline, writer, ordinal: 1, ("entity-type", "global::Acme.Orders.Data.AuditEntry"), ("field-name", "Note"));
+        AddDataAccess(pipeline, writer, ordinal: 2, ("operation", "unknown"), ("context-type", OrderDbContextFqn));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        Assert.All(Assert.Single(model.Stores).Objects, dataObject => Assert.Empty(dataObject.Fields));
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-24")]
+    public void Build_SqlColumnList_CreatesOneFieldPerColumnUnderTheStatementTarget()
+    {
+        var pipeline = Arrange();
+        var writer = AddMethod(pipeline, "InsertOrder", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(
+            pipeline,
+            writer,
+            ordinal: 1,
+            ("operation", "insert"),
+            ("context-type", OrderDbContextFqn),
+            ("sql-operation", "insert"),
+            ("sql-target", "Orders"),
+            ("sql-columns", "Amount|Id|Status"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var fields = Assert.Single(Assert.Single(model.Stores).Objects).Fields;
+        Assert.Equal<string>(["Amount", "Id", "Status"], fields.Select(field => field.FieldName));
+        Assert.All(fields, field => Assert.Null(field.PropertyName));
+        Assert.All(fields, field => Assert.Equal(MappingStateKind.ConventionalCandidate, field.MappingState));
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-27")]
+    public void Build_SelectStarStatement_ContributesNoField()
+    {
+        var pipeline = Arrange();
+        var reader = AddMethod(pipeline, "SelectAll", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(
+            pipeline,
+            reader,
+            ordinal: 1,
+            ("operation", "read"),
+            ("context-type", OrderDbContextFqn),
+            ("sql-operation", "read"),
+            ("sql-target", "Orders"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        Assert.Empty(Assert.Single(Assert.Single(model.Stores).Objects).Fields);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-25")]
+    public void Build_ProvenHasColumnName_SetsThePhysicalNameAndExplicitConfirmation()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddPropertySymbol(pipeline, OrderFqn, "Status");
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var configure = AddMethod(pipeline, "Configure", "global::Acme.Orders.Data.OrderConfiguration");
+        AddInvocation(
+            pipeline,
+            configure,
+            ordinal: 1,
+            ("entity-type", OrderFqn),
+            ("property-name", "Status"),
+            ("field-name", "order_status"));
+        var reader = AddMethod(pipeline, "GetOrder", "global::Acme.Orders.Data.OrderQueries");
+        AddDataAccess(pipeline, reader, ordinal: 1, ("operation", "read"), ("entity-type", OrderFqn), ("field-names", "Status"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var field = Assert.Single(Assert.Single(Assert.Single(model.Stores).Objects).Fields);
+        Assert.Equal("Status", field.PropertyName);
+        Assert.Equal("order_status", field.FieldName);
+        Assert.Equal(MappingStateKind.ExplicitConfirmation, field.MappingState);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-26")]
+    public void Build_NonConstantHasColumnNameArgument_FallsBackToTheClrPropertyName()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var configure = AddMethod(pipeline, "Configure", "global::Acme.Orders.Data.OrderConfiguration");
+        AddInvocation(pipeline, configure, ordinal: 1, ("entity-type", OrderFqn), ("property-name", "Status"));
+        var reader = AddMethod(pipeline, "GetOrder", "global::Acme.Orders.Data.OrderQueries");
+        AddDataAccess(pipeline, reader, ordinal: 1, ("operation", "read"), ("entity-type", OrderFqn), ("field-names", "Status"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var field = Assert.Single(Assert.Single(Assert.Single(model.Stores).Objects).Fields);
+        Assert.Equal("Status", field.FieldName);
+        Assert.Equal(MappingStateKind.ConventionalCandidate, field.MappingState);
+    }
+
     private static PipelineContext Arrange()
     {
         var pipeline = new PipelineContext(new SwallowingSession(), "alpha.sln");
@@ -438,6 +621,23 @@ public sealed class PersistenceModelBuilderTests
         pipeline.Accumulator.AddFact(symbol);
         return symbol;
     }
+
+    private static Symbol AddPropertySymbol(PipelineContext pipeline, string containerFqn, string metadata)
+    {
+        var symbol = Symbol.Create(
+            CanonicalSymbolSignature.Create("property", containerFqn, metadata, 0, "global::System.String"),
+            OrdersProject,
+            SymbolFacetSet.Create([]));
+        pipeline.Accumulator.AddFact(symbol);
+        return symbol;
+    }
+
+    private static void AddAssignment(
+        PipelineContext pipeline,
+        Symbol owner,
+        int ordinal,
+        params (string Key, string Value)[] entries) =>
+        pipeline.Accumulator.AddObservation(Observe(owner, ObservationKind.Assignment, ordinal, entries));
 
     private static void AddInvocation(
         PipelineContext pipeline,

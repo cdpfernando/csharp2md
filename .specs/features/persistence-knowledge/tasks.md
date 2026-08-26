@@ -570,16 +570,16 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] Fields come from `field-names` (PK-22), from `Assignment` observations paired with a `SaveChanges` access in the same callable (PK-23), and from `sql-columns` (PK-24)
-- [ ] A proven `HasColumnName` sets the physical name and `ExplicitConfirmation` (PK-25)
-- [ ] Everything else uses the CLR property name with `ConventionalCandidate` (PK-26)
-- [ ] A `SELECT *` statement contributes no field (PK-27)
-- [ ] Each `FieldNode` carries the property's `Symbol` reference when one exists, so T20 can emit `maps-to`
-- [ ] An assignment to a non-entity type contributes no field (spec edge case)
-- [ ] A property reached inside an anonymous-type projection still produces a field (spec edge case)
-- [ ] Unit tests cover every source and both mapping states
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + tests added so far pass (no silent deletions)
+- [x] Fields come from `field-names` (PK-22), from `Assignment` observations paired with a `SaveChanges` access in the same callable (PK-23), and from `sql-columns` (PK-24)
+- [x] A proven `HasColumnName` sets the physical name and `ExplicitConfirmation` (PK-25)
+- [x] Everything else uses the CLR property name with `ConventionalCandidate` (PK-26)
+- [x] A `SELECT *` statement contributes no field (PK-27)
+- [x] Each `FieldNode` carries the property's `Symbol` reference when one exists, so T20 can emit `maps-to`
+- [x] An assignment to a non-entity type contributes no field (spec edge case)
+- [x] A property reached inside an anonymous-type projection still produces a field (spec edge case)
+- [x] Unit tests cover every source and both mapping states
+- [x] Gate check passes: full gate command
+- [x] Test count: 1100 pass — Domain 545, Analysis 364, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
