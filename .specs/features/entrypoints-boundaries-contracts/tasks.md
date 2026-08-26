@@ -151,14 +151,14 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] `ClassifierContext` constructed from `PipelineContext`
-- [ ] `FactsByType<T>()` returns facts of that type from the current snapshot
-- [ ] `ObservationsByKind(ObservationKind)` returns observations filtered by kind
-- [ ] `ObservationsByOwner(FactReference)` returns observations for a given owner
-- [ ] `SymbolsBySignatureKey()` returns symbols indexed by `projectId + signature`
-- [ ] `Refresh()` method rebuilds indexes from current accumulator state
-- [ ] Unit tests assert index correctness
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] `ClassifierContext` constructed from `PipelineContext`
+- [x] `FactsByType<T>()` returns facts of that type from the current snapshot
+- [x] `ObservationsByKind(ObservationKind)` returns observations filtered by kind
+- [x] `ObservationsByOwner(FactReference)` returns observations for a given owner
+- [x] `SymbolsBySignatureKey()` returns symbols indexed by `projectId + signature`
+- [x] `Refresh()` method rebuilds indexes from current accumulator state
+- [x] Unit tests assert index correctness
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: unit
 **Gate**: full
