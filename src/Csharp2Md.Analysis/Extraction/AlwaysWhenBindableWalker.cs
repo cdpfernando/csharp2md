@@ -44,7 +44,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
         _cancellationToken = cancellationToken;
     }
 
-    internal static ImmutableArray<ObservationDraft> Collect(
+    internal static ImmutableArray<ImmutableArray<ObservationDraft>> CollectByCompilation(
         PipelineContext context,
         CancellationToken cancellationToken)
     {
@@ -76,10 +76,12 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                 StringComparer.Ordinal);
 
         var root = ComputeAuthorizedRoot(context.SolutionPath);
-        var drafts = ImmutableArray.CreateBuilder<ObservationDraft>();
+        var batches = ImmutableArray.CreateBuilder<ImmutableArray<ObservationDraft>>();
         foreach (var compilation in bound.Compilations)
         {
-            foreach (var tree in compilation.SyntaxTrees)
+            var trees = compilation.SyntaxTrees.ToArray();
+            var batch = ImmutableArray.CreateBuilder<ObservationDraft>();
+            foreach (var tree in trees)
             {
                 if (string.IsNullOrEmpty(tree.FilePath))
                 {
@@ -106,20 +108,29 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                     fallbackOwner,
                     cancellationToken);
                 walker.Visit(tree.GetRoot(cancellationToken));
-                drafts.AddRange(walker._drafts);
+                batch.AddRange(walker._drafts);
             }
+
+            batches.Add(batch.ToImmutable());
         }
 
-        return drafts.ToImmutable();
+        return batches.ToImmutable();
     }
+
+    internal static ImmutableArray<ObservationDraft> Collect(
+        PipelineContext context,
+        CancellationToken cancellationToken) =>
+        [.. CollectByCompilation(context, cancellationToken).SelectMany(static batch => batch)];
 
     internal static void ExtractInto(PipelineContext context, CancellationToken cancellationToken)
     {
-        var drafts = Collect(context, cancellationToken)
-            .Select(draft => ObservationMaterializer.Redact(draft, context.Accumulator));
-        foreach (var observation in OccurrenceOrdinalAssigner.Assign(drafts))
+        foreach (var batch in CollectByCompilation(context, cancellationToken))
         {
-            context.Accumulator.AddObservation(observation);
+            var redacted = batch.Select(draft => ObservationMaterializer.Redact(draft, context.Accumulator));
+            foreach (var observation in OccurrenceOrdinalAssigner.Assign(redacted))
+            {
+                context.Accumulator.AddObservation(observation);
+            }
         }
     }
 

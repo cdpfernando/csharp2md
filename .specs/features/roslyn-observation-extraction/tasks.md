@@ -1472,11 +1472,11 @@ to one identity. Shuffling document enumeration does not change identities. Mult
 
 **Done when**:
 
-- [ ] Span-only pairs produce one observation identity
-- [ ] Two document visitation orders produce the same identity set
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean on this phase's changes
+- [x] Span-only pairs produce one observation identity
+- [x] Two document visitation orders produce the same identity set
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean on this phase's changes
 
 **Tests**: unit
 **Gate**: build
