@@ -23,7 +23,7 @@ Verify before starting Execute.
 
 **Spec**: `.specs/features/call-linking-flow-frontiers/spec.md`
 **Design**: `.specs/features/call-linking-flow-frontiers/design.md`
-**Status**: Execute complete (T1–T10) — Verifier pending
+**Status**: Execute complete (T1–T10) — Verifier FAIL (CLLF-19 uncovered)
 
 ---
 

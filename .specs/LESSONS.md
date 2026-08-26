@@ -56,6 +56,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: BoundaryPass.cs:85 SPEC_DEVIATION EBC-06 (analysis-classification)
 - last seen: 2026-08-26T06:33:57Z
 
+### L-008 - Assert that a skip path which already records UnresolvedRecord does not also emit a diagnostic, not merely that an unresolved record exists
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `analysis-classification` · harmful: 0
+- features: call-linking-flow-frontiers
+- evidence: CLLF-19 (analysis-classification)
+- last seen: 2026-08-26T12:11:48Z
+
+### L-009 - When an Independent Test names a confirmed relation to an interface member, reconcile it with the polymorphism ACs before Execute so both cannot stand as written
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `analysis-classification` · harmful: 0
+- features: call-linking-flow-frontiers
+- evidence: spec.md Independent Test vs CLLF-07/09 (analysis-classification)
+- last seen: 2026-08-26T12:11:48Z
+
+### L-010 - If a collision edge is unreachable because identity uniqueness already aborted as StructuralCorruption, say that out of band rather than requiring UnresolvedRecord from classification
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `analysis-classification` · harmful: 0
+- features: call-linking-flow-frontiers
+- evidence: spec.md Edge Cases multi-match UnresolvedRecord (analysis-classification)
+- last seen: 2026-08-26T12:11:48Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

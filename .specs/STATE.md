@@ -160,10 +160,10 @@ Normative documentation:
 ## Handoff
 
 - **Feature**: `call-linking-flow-frontiers` — `.specs/features/call-linking-flow-frontiers/`
-- **Phase / Task**: Execute complete (T1–T10). Verifier not yet run. `validation.md` does not exist.
-- **Completed**: T1 `b05dd17`, T2 `bb15dd6`, T3 `e80c432`, T4 `8edc6e5`, T5 `95b1d01`, T6 `fd122ec`, T7 `976827a`, T8 `cb6b03d`, T9 `85731a1`, T10 this commit (AD-018 + Handoff + Build gate). Gate: Domain 549, Analysis 330, Storage 166, Cli 27, Projection 3 (1075, `Category!=LocalCorpus`).
+- **Phase / Task**: Execute complete (T1–T10). Verifier FAIL. Report: `.specs/features/call-linking-flow-frontiers/validation.md`.
+- **Completed**: T1 `b05dd17`, T2 `bb15dd6`, T3 `e80c432`, T4 `8edc6e5`, T5 `95b1d01`, T6 `fd122ec`, T7 `976827a`, T8 `cb6b03d`, T9 `85731a1`, T10 `80efa26` (AD-018 + Handoff). Gate (Verifier re-run): Domain 549, Analysis 330, Storage 166, Cli 27, Projection 3 (1075, `Category!=LocalCorpus`).
 - **In-progress** (file:line): none.
-- **Next step**: Orchestrator dispatches the Verifier. Do not claim Verifier PASS. Discrimination sensor skipped (standing). Run LocalCorpus only if `fixtures/eShop` or `fixtures/eShopOnContainers` are present.
-- **Blockers**: none. `validate_state.py` deferred to Verifier (no `validation.md` yet). `fixtures/eShop` and `fixtures/eShopOnContainers` are absent; LocalCorpus skipped. Discrimination sensor remains skipped. Carry-forward: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run the five test projects separately. CLI filter uses VSTest `--filter "Category!=LocalCorpus"`.
+- **Next step**: Route CLLF-19 fix to an implementer (assert no redundant diagnostic on fallback/skip paths), then re-dispatch the Verifier. Discrimination sensor skipped (standing).
+- **Blockers**: CLLF-19 uncovered (no `file:line` evidence). LocalCorpus: `fixtures/eShop` absent (expected skip); `fixtures/eShopOnContainers` directory present but `eShopOnContainers-ServicesAndWebApps.sln` missing, so analyze did not run. `validate_state.py` exits non-zero on FAIL (expected). Discrimination sensor remains skipped. Carry-forward: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run the five test projects separately. CLI filter uses VSTest `--filter "Category!=LocalCorpus"`.
 - **Uncommitted files**: unrelated `AGENTS.md` / `CLAUDE.md` / `architecture-knowledge-engine-roadmap.md` / `docs/architecture/README.md`; untracked `.specs/features/entrypoints-boundaries-contracts/design.md`.
 - **Branch**: `feature/call-linking-flow-frontiers`

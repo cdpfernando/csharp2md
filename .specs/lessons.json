@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 8,
+  "next_id": 11,
   "lessons": [
     {
       "id": "L-001",
@@ -130,6 +130,60 @@
       ],
       "created": "2026-08-26T06:33:57Z",
       "last_seen": "2026-08-26T06:33:57Z"
+    },
+    {
+      "id": "L-008",
+      "key": "ac_gap::assert that a skip path which already records unresolvedrecord does not also emit a diagnostic not merely that an unresolved record exists",
+      "text": "Assert that a skip path which already records UnresolvedRecord does not also emit a diagnostic, not merely that an unresolved record exists",
+      "signal": "ac_gap",
+      "scope": "analysis-classification",
+      "status": "candidate",
+      "features": [
+        "call-linking-flow-frontiers"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "CLLF-19 (analysis-classification)"
+      ],
+      "created": "2026-08-26T12:11:48Z",
+      "last_seen": "2026-08-26T12:11:48Z"
+    },
+    {
+      "id": "L-009",
+      "key": "spec_precision_gap::when an independent test names a confirmed relation to an interface member reconcile it with the polymorphism acs before execute so both cannot stand as written",
+      "text": "When an Independent Test names a confirmed relation to an interface member, reconcile it with the polymorphism ACs before Execute so both cannot stand as written",
+      "signal": "spec_precision_gap",
+      "scope": "analysis-classification",
+      "status": "candidate",
+      "features": [
+        "call-linking-flow-frontiers"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md Independent Test vs CLLF-07/09 (analysis-classification)"
+      ],
+      "created": "2026-08-26T12:11:48Z",
+      "last_seen": "2026-08-26T12:11:48Z"
+    },
+    {
+      "id": "L-010",
+      "key": "spec_precision_gap::if a collision edge is unreachable because identity uniqueness already aborted as structuralcorruption say that out of band rather than requiring unresolvedrecord from classification",
+      "text": "If a collision edge is unreachable because identity uniqueness already aborted as StructuralCorruption, say that out of band rather than requiring UnresolvedRecord from classification",
+      "signal": "spec_precision_gap",
+      "scope": "analysis-classification",
+      "status": "candidate",
+      "features": [
+        "call-linking-flow-frontiers"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md Edge Cases multi-match UnresolvedRecord (analysis-classification)"
+      ],
+      "created": "2026-08-26T12:11:48Z",
+      "last_seen": "2026-08-26T12:11:48Z"
     }
   ]
 }
