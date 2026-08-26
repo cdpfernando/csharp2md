@@ -2,7 +2,7 @@
 
 ## Status
 
-The repository is preparing a full architectural replacement. Existing source code and wire schemas are legacy until the roadmap is executed.
+The architectural replacement is underway. Workstreams 1 through 5D are on `master`; the retrieval layer, multi-solution composition and certification remain.
 
 Workstream 1, [`knowledge-taxonomy-contract`](features/knowledge-taxonomy-contract/spec.md), is complete, verified and on `master`.
 
@@ -16,7 +16,11 @@ Workstream 5A, [`entrypoints-boundaries-contracts`](features/entrypoints-boundar
 
 Workstream 5B, [`call-linking-flow-frontiers`](features/call-linking-flow-frontiers/spec.md), is complete, verified and on `master` via PR #11 (`99cd283`). Verifier report: `.specs/features/call-linking-flow-frontiers/validation.md` (PASS, 1076 tests).
 
-Workstream 5C, [`persistence-knowledge`](features/persistence-knowledge/spec.md), is complete, verified and on `master` via PR #12 (`ef4473b`). Verifier report: `.specs/features/persistence-knowledge/validation.md` (PASS, 1158 tests). Next: classifier workstream 5D, created only when explicitly started.
+Workstream 5C, [`persistence-knowledge`](features/persistence-knowledge/spec.md), is complete, verified and on `master` via PR #12 (`ef4473b`). Verifier report: `.specs/features/persistence-knowledge/validation.md` (PASS, 1158 tests).
+
+Workstream 5D, [`components-deployments-configuration`](features/components-deployments-configuration/spec.md), is complete, verified and on `master` via PR #14 (`792d9cb`). Verifier report: `.specs/features/components-deployments-configuration/validation.md` (PASS, 1342 tests, 58/58 ACs).
+
+Workstream 6, [`retrieval-projections`](features/retrieval-projections/spec.md), is in Specify. The spec is confirmed; Design has not run.
 
 Normative documentation:
 
@@ -152,6 +156,42 @@ Normative documentation:
 - **Date**: 2026-08-26
 - **Status**: active.
 
+### AD-019 — Projection runs inside the commit, over the wire document
+
+- **Decision**: `Csharp2Md.Storage` declares the projector port and invokes it inside `Commit()`, after `PackageValidator.Validate` and before `PackagePublisher.ToPublicationOrder`. `Csharp2Md.Projection` implements it and references Storage and Domain. Projections are fragments of the same atomic publication; a projection-validation failure raises `PublicationRejectedException` and preserves the prior package byte-identical.
+- **Reason**: the projector must see the mapped wire document to cite real canonical keys and shard ordinals, which is what makes a posting resolve in one hop instead of a linear scan. AD-007 requires every artifact reachable from the manifest, so a second post-commit write would leave a window with an incomplete manifest.
+- **Trade-off**: changing a projection requires re-running the analysis; there is no `project-only` path. Closes the seam AD-014 deferred to this workstream, at the cost of Analysis staying unable to influence projection.
+- **Scope**: `Csharp2Md.Storage`, `Csharp2Md.Projection`, and workstreams 7 and 8.
+- **Date**: 2026-08-26
+- **Status**: active.
+
+### AD-020 — Symbol carries a declaration locator
+
+- **Decision**: `Symbol` gains a declaration locator (document reference, source span, source hash), filled by `SymbolFactEmitter` from the declaration's own syntax span. When a symbol has several declaring syntax references, the ordinally first one wins.
+- **Reason**: catalogs, postings and Markdown all link into source through this locator, and "once selected, a method body is retrieved completely" cannot be honoured without an exact declaration span.
+- **Trade-off**: a Domain extension mid-programme, in the AD-018 mould. It is not an identity component, so `contracts/taxonomy-registry.json` stays byte-identical and the AD-013 drift gate is unaffected.
+- **Scope**: `Csharp2Md.Domain`, `SymbolFactEmitter`, and every projection that links into source.
+- **Date**: 2026-08-26
+- **Status**: active.
+
+### AD-021 — Byte-faithful means faithful outside declared redactions
+
+- **Decision**: the `source/` projection reproduces the original bytes exactly, except inside suspected-secret spans, which are replaced by the fixed 17-byte marker `[REDACTED-SECRET]` regardless of the span's length. A redacted artifact declares `redacted`, the ordinal-sorted redacted spans, the sha256 of the original bytes and the sha256 of the published bytes.
+- **Reason**: `quality-and-security.md` calls the source projection sensitive and also says redaction occurs only in projections. Redacting silently would break the hash contract; not redacting would publish secrets inside the package.
+- **Trade-off**: fidelity is broken by design, but explicitly and auditably. Individual secret values are still never hashed, and the fixed-length marker does not leak the secret's length.
+- **Scope**: `Csharp2Md.Projection`, package consumers, and workstream 8's certification.
+- **Date**: 2026-08-26
+- **Status**: active.
+
+### AD-022 — Source bytes reach the store through a reader, not the snapshot
+
+- **Decision**: `ITransactionalStore.Open` takes an `ISourceDocumentReader` alongside the solution key, and `StagedFragment` gains a lazy form so staging materializes one document at a time. `FactualSnapshot` stays pure data and carries no source bytes. The store requests each document at most once and does not retain it.
+- **Reason**: `BoundSolution` is disposed only after `Commit()` returns, so putting the bytes in the snapshot would hold a second full copy of the source alongside Roslyn's. Re-reading from disk inside the store would make `InMemoryTransactionalStore` depend on the filesystem to produce the same artifacts.
+- **Trade-off**: the write port grows a non-projection member, so the "the port does not change" invariant becomes "the port gains no projection member". In exchange the peak stays at one document and the snapshot stays inspectable in isolation.
+- **Scope**: `Csharp2Md.Analysis` write port, `Csharp2Md.Storage`, and workstreams 7 and 8.
+- **Date**: 2026-08-26
+- **Status**: active.
+
 ## Standing engineering constraints
 
 - Retrieval-led reasoning is mandatory for .NET/Roslyn work; never invent a Roslyn API.
@@ -163,11 +203,13 @@ Normative documentation:
 
 ## Handoff
 
-- **Feature**: 5B `call-linking-flow-frontiers` and 5C `persistence-knowledge` are both on `master` (PR #11, PR #12).
-- **Phase / Task**: Merge follow-up. CreateDefault pass order is Component → EntryPoint → Boundary → Contract → Persistence → Relation → Invokes → Executes. Tests that still asserted the pre-merge 7-pass list are fixed on `fix/merge-5b-5c-classifier-passes`.
-- **Completed**: 5B T1–T10 (`92a2480`, 1076 tests). 5C T1–T26 (`7b064e2`, 1158 tests).
+- **Feature**: 6 `retrieval-projections` — Specify complete. Spec confirmed, `validate_spec.py` clean (0 errors, 0 warnings).
+- **Phase / Task**: Design has not run. `spec.md` and `context.md` exist; no `design.md`, no `tasks.md`.
+- **Completed**: 57 ACs across 9 P1 stories and 1 P2 story. Four gray areas discussed and resolved; decisions recorded as AD-019 through AD-022.
 - **In-progress** (file:line): none.
-- **Next step**: Do not start classifier workstream 5D unprompted. Create a feature only when the user explicitly starts one.
-- **Blockers**: none. LocalCorpus: `fixtures/eShop` absent; `fixtures/eShopOnContainers` directory present but `eShopOnContainers-ServicesAndWebApps.sln` missing. Discrimination sensor remains skipped. Carry-forward: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008. CLI filter uses VSTest `--filter "Category!=LocalCorpus"`. PK-39/PK-40 payload derivation as in 5C validation. 5B Independent Test vs CLLF-07/09 spec-precision remains.
-- **Uncommitted files**: unrelated stale `AGENTS.md` / `CLAUDE.md` / roadmap / `docs/architecture/README.md` (still say next feature is `factual-storage`). Untracked `entrypoints-boundaries-contracts/design.md`.
-- **Branch**: `fix/merge-5b-5c-classifier-passes`
+- **Next step**: Design. Expected scale is comparable to 5D (58 ACs became 42 tasks), so a formal `tasks.md` and the sub-agent offer are both expected at Execute.
+- **Blockers**: none. Five assumptions remain unconfirmed and are design-phase calls: the redaction marker, multi-declaration tie-break, the 1 MiB default ceiling, unknown prioritization by relation degree, and the Markdown link form.
+- **Carry-forward**: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run each test project separately. Discrimination sensor remains skipped.
+- **Known latent issue** (out of scope): `DomainMapper.cs:102` orders observations by `owner:kind:ordinal`, omitting payload.
+- **Uncommitted files**: none after this commit.
+- **Branch**: `feat/retrieval-projections`, fast-forwarded to `master` (`792d9cb`) at the start of Specify.
