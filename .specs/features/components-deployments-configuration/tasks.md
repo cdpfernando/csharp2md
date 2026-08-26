@@ -643,12 +643,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `TopologyModel`, `ComponentGroup`, `GroupingEvidence`, `DeploymentNode`, `InclusionEdge`, `UnreachedComponent` and `TopologyCoverage` match the design's data model
-- [ ] No record references Roslyn, constructs a Domain fact or touches the filesystem
-- [ ] XML doc comments state what each record means and which requirement it serves
-- [ ] Unit tests assert record equality and default-construction guards
-- [ ] Gate check passes: quick gate command
-- [ ] Test count reported; no silent deletions
+- [x] `TopologyModel`, `ComponentGroup`, `GroupingEvidence`, `DeploymentNode`, `InclusionEdge`, `UnreachedComponent` and `TopologyCoverage` match the design's data model
+- [x] No record references Roslyn, constructs a Domain fact or touches the filesystem
+- [x] XML doc comments state what each record means and which requirement it serves
+- [x] Unit tests assert record equality and default-construction guards
+- [x] Gate check passes: quick gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: quick
