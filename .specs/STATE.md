@@ -20,7 +20,7 @@ Workstream 5C, [`persistence-knowledge`](features/persistence-knowledge/spec.md)
 
 Workstream 5D, [`components-deployments-configuration`](features/components-deployments-configuration/spec.md), is complete, verified and on `master` via PR #14 (`792d9cb`). Verifier report: `.specs/features/components-deployments-configuration/validation.md` (PASS, 1342 tests, 58/58 ACs).
 
-Workstream 6, [`retrieval-projections`](features/retrieval-projections/spec.md), is in Specify. The spec is confirmed; Design has not run.
+Workstream 6, [`retrieval-projections`](features/retrieval-projections/spec.md), is planned. Spec, design and tasks are approved on `feat/retrieval-projections`; Execute has not started.
 
 Normative documentation:
 
@@ -203,13 +203,14 @@ Normative documentation:
 
 ## Handoff
 
-- **Feature**: 6 `retrieval-projections` — Specify complete. Spec confirmed, `validate_spec.py` clean (0 errors, 0 warnings).
-- **Phase / Task**: Design has not run. `spec.md` and `context.md` exist; no `design.md`, no `tasks.md`.
-- **Completed**: 57 ACs across 9 P1 stories and 1 P2 story. Four gray areas discussed and resolved; decisions recorded as AD-019 through AD-022.
-- **In-progress** (file:line): none.
-- **Next step**: Design. Expected scale is comparable to 5D (58 ACs became 42 tasks), so a formal `tasks.md` and the sub-agent offer are both expected at Execute.
-- **Blockers**: none. Five assumptions remain unconfirmed and are design-phase calls: the redaction marker, multi-declaration tie-break, the 1 MiB default ceiling, unknown prioritization by relation degree, and the Markdown link form.
-- **Carry-forward**: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run each test project separately. Discrimination sensor remains skipped.
-- **Known latent issue** (out of scope): `DomainMapper.cs:102` orders observations by `owner:kind:ordinal`, omitting payload.
+- **Feature**: 6 `retrieval-projections` — Specify, Design and Tasks complete and approved. Execute deliberately not started.
+- **Phase / Task**: T1 of 49 is the next action. `spec.md`, `context.md`, `design.md`, `tasks.md` all present; `validate_spec.py` and `validate_tasks.py` both clean.
+- **Completed**: 57 ACs, 49 tasks across 9 phases, all 57 requirements mapped to tasks. Decisions AD-019 through AD-022 recorded. Tooling confirmed as the `CLAUDE.md` routing, as written.
+- **In-progress** (file:line): none. No source file has been touched by this feature.
+- **Next step**: Execute from T1. Packing gives roughly 6 to 8 batches of ~7 tasks; the sub-agent offer belongs at the start of Execute. Resume by reading `tasks.md` and activating `tlc-spec-driven`.
+- **Measured baseline** (`792d9cb`, 2026-08-26): `dotnet build` clean, 0 warnings. 1342 tests, 1342 passing, 0 failing — Domain 549, Analysis 590, Storage 173, Cli 27, Projection 3. Target at T49 is roughly 1610.
+- **Blockers**: none.
+- **Critical finding to act on first**: `DomainMapper.cs:104-109` orders confirmed relations by `{Kind}:{Source.Id}:{Target.Id}`, which is not a unique key. Ties resolve by snapshot insertion order, so published ordinals depend on document order — and every posting cites an ordinal. T1 makes the key total by appending `ContentSha256`. T2 does the same for observations at `DomainMapper.cs:97-102`, closing the latent issue the 5D handoff recorded. Nothing downstream is trustworthy until both land.
+- **Carry-forward**: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run each test project separately. Discrimination sensor remains skipped. `TreatWarningsAsErrors` is on, so a new warning fails the build gate.
 - **Uncommitted files**: none after this commit.
 - **Branch**: `feat/retrieval-projections`, fast-forwarded to `master` (`792d9cb`) at the start of Specify.
