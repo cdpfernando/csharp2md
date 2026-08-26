@@ -141,6 +141,15 @@ Normative documentation:
 - **Date**: 2026-08-25
 - **Status**: active.
 
+### AD-018 — SymbolFacet.Abstract
+
+- **Decision**: Domain extends `SymbolFacetSet` with `Abstract`; `SymbolFactEmitter` emits it for abstract methods and interface members so 5B+ classifiers can distinguish abstract/interface targets without re-entering Roslyn.
+- **Reason**: `InvokesPass` must stay Roslyn-free. A Domain facet gives classifiers a precise, testable flag instead of a fragile signature heuristic.
+- **Trade-off**: a small Domain enum/table extension versus keeping Roslyn in the classifier.
+- **Scope**: Csharp2Md.Domain, SymbolFactEmitter, InvokesPass and later classifiers
+- **Date**: 2026-08-26
+- **Status**: active.
+
 ## Standing engineering constraints
 
 - Retrieval-led reasoning is mandatory for .NET/Roslyn work; never invent a Roslyn API.

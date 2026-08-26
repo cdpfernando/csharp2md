@@ -13,6 +13,7 @@ internal sealed class SnapshotAccumulator
     private readonly List<ConfirmedRelation> _relations = [];
     private readonly List<CandidateLink> _candidates = [];
     private readonly List<UnresolvedRecord> _unresolved = [];
+    private readonly List<OpenFrontier> _frontiers = [];
     private readonly List<DiagnosticRecord> _diagnostics = [];
     private readonly List<SuspectedSecretEvidence> _secrets = [];
 
@@ -72,6 +73,12 @@ internal sealed class SnapshotAccumulator
         _unresolved.Add(record);
     }
 
+    public void AddOpenFrontier(OpenFrontier frontier)
+    {
+        ArgumentNullException.ThrowIfNull(frontier);
+        _frontiers.Add(frontier);
+    }
+
     public void AddDiagnostic(DiagnosticRecord record)
     {
         ArgumentNullException.ThrowIfNull(record);
@@ -87,7 +94,7 @@ internal sealed class SnapshotAccumulator
             [.. _relations],
             [.. _candidates],
             [.. _unresolved],
-            ImmutableArray<OpenFrontier>.Empty,
+            [.. _frontiers],
             [.. _diagnostics],
             [.. _secrets]);
 

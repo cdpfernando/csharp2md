@@ -41,6 +41,8 @@ public sealed class ComposabilityTests
                 new RecordingPass(new ContractPass(), order),
                 new RecordingPass(new PersistencePass(), order),
                 new RecordingPass(new RelationPass(), order),
+                new RecordingPass(new InvokesPass(), order),
+                new RecordingPass(new ExecutesPass(), order),
                 counting,
             ]));
         var composed = await AnalyzeAsync(solutionPath, stages);

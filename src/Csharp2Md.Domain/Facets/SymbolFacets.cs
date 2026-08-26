@@ -8,6 +8,7 @@ public enum SymbolFacet
     Repository,
     Client,
     Service,
+    Abstract,
 }
 
 public readonly struct SymbolFacetSet : IEquatable<SymbolFacetSet>

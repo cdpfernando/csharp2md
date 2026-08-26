@@ -21,6 +21,8 @@ internal static class PipelineStages
                 new ContractPass(),
                 new PersistencePass(),
                 new RelationPass(),
+                new InvokesPass(),
+                new ExecutesPass(),
             ]))
             .SetItem(5, new PersistenceStage());
 }
