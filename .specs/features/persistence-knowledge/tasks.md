@@ -203,15 +203,15 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] `TryRead(string, out SqlStatementFacts)` implements exactly the closed grammar table in the design: `SELECT`/`INSERT`/`UPDATE`/`DELETE`/`EXEC`
-- [ ] `[Orders]` and `"Orders"` unquote to `Orders` (PK-19)
-- [ ] A `SELECT *` column list yields zero columns (PK-27)
-- [ ] A target containing an interpolation hole, a parameter marker or whitespace is rejected (PK-39)
-- [ ] A statement whose leading keyword is outside the set is rejected (PK-40)
-- [ ] Keyword matching is `OrdinalIgnoreCase`; emitted identifiers keep their source casing
-- [ ] Unit tests cover every grammar row and every rejection path
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count: 283 + new Analysis tests pass (no silent deletions)
+- [x] `TryRead(string, out SqlStatementFacts)` implements exactly the closed grammar table in the design: `SELECT`/`INSERT`/`UPDATE`/`DELETE`/`EXEC`
+- [x] `[Orders]` and `"Orders"` unquote to `Orders` (PK-19)
+- [x] A `SELECT *` column list yields zero columns (PK-27)
+- [x] A target containing an interpolation hole, a parameter marker or whitespace is rejected (PK-39)
+- [x] A statement whose leading keyword is outside the set is rejected (PK-40)
+- [x] Keyword matching is `OrdinalIgnoreCase`; emitted identifiers keep their source casing
+- [x] Unit tests cover every grammar row and every rejection path
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count: 287 + 16 new Analysis tests = 303 pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
