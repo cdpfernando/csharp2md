@@ -266,13 +266,13 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] A raw-SQL call with a constant statement `SqlStatementReader` accepts carries all three entries (PK-04)
-- [ ] `sql-columns` is one ordinal-sorted `|`-joined entry
-- [ ] The statement text is never a payload entry, in any code path (PK-04)
-- [ ] A raw-SQL call with a non-constant statement emits the observation with `operation=unknown` and no `sql-*` entries
-- [ ] A test asserts neither fixture password reaches any payload entry (PK-09)
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + new tests pass (no silent deletions)
+- [x] A raw-SQL call with a constant statement `SqlStatementReader` accepts carries all three entries (PK-04)
+- [x] `sql-columns` is one ordinal-sorted `|`-joined entry
+- [x] The statement text is never a payload entry, in any code path (PK-04)
+- [x] A raw-SQL call with a non-constant statement emits the observation with `operation=unknown` and no `sql-*` entries
+- [x] A test asserts neither fixture password reaches any payload entry (PK-09)
+- [x] Gate check passes: full gate command
+- [x] Test count: 545 + 312 = 857 pass (no silent deletions)
 
 **Tests**: unit + integration
 **Gate**: full

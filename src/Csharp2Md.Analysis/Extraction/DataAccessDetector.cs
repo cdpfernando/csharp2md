@@ -3,6 +3,7 @@ using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Csharp2Md.Analysis.Extraction;
@@ -23,12 +24,21 @@ internal sealed class DataAccessDetector : IRegisteredContextDetector
         "ExecuteSqlInterpolated",
     ];
 
+    private static readonly HashSet<string> RawSqlMethodNames =
+    [
+        "FromSqlRaw",
+        "FromSqlInterpolated",
+        "ExecuteSqlRaw",
+        "ExecuteSqlInterpolated",
+    ];
+
     /// <summary>What one recognized data-access occurrence contributes to the payload.</summary>
     private readonly record struct DataAccessMatch(
         DataOperationKind Operation,
         string? EntityTypeFqn,
         string? ContextTypeFqn,
-        ImmutableArray<string> FieldNames);
+        ImmutableArray<string> FieldNames,
+        SqlStatementFacts? SqlFacts = null);
 
     public ObservationDraft? TryObserve(BoundOccurrence occurrence)
     {
@@ -76,16 +86,65 @@ internal sealed class DataAccessDetector : IRegisteredContextDetector
             return null;
         }
 
+        var sqlFacts = RawSqlMethodNames.Contains(method.Name) ? TryReadSqlFacts(invocation) : null;
         var receiver = ResolveReceiverType(occurrence, invocation, method);
         if (TryDbSetEntityType(receiver, occurrence.Compilation, out var entityType))
         {
-            var operation = method.Name is "Add" or "AddAsync" ? DataOperationKind.Insert : DataOperationKind.Unknown;
-            return new DataAccessMatch(operation, Qualify(entityType), null, ImmutableArray<string>.Empty);
+            var operation = ResolveOperation(method.Name, sqlFacts);
+            return new DataAccessMatch(operation, Qualify(entityType), null, ImmutableArray<string>.Empty, sqlFacts);
         }
 
         if (IsDbContext(receiver, occurrence.Compilation))
         {
-            return new DataAccessMatch(DataOperationKind.Unknown, null, Qualify(receiver), ImmutableArray<string>.Empty);
+            var operation = ResolveOperation(method.Name, sqlFacts);
+            return new DataAccessMatch(operation, null, Qualify(receiver), ImmutableArray<string>.Empty, sqlFacts);
+        }
+
+        return null;
+    }
+
+    private static DataOperationKind ResolveOperation(string methodName, SqlStatementFacts? sqlFacts)
+    {
+        if (sqlFacts is { } facts)
+        {
+            return facts.Operation;
+        }
+
+        return methodName is "Add" or "AddAsync" ? DataOperationKind.Insert : DataOperationKind.Unknown;
+    }
+
+    /// <summary>
+    /// Reads the invocation's raw-SQL statement into <see cref="SqlStatementFacts"/> when the
+    /// argument is a constant string literal or a fully-literal interpolated string (no holes). A
+    /// non-constant statement - including any statement with an actual interpolation hole - yields
+    /// <see langword="null"/>, so the statement text never becomes payload evidence (PK-04).
+    /// </summary>
+    private static SqlStatementFacts? TryReadSqlFacts(InvocationExpressionSyntax invocation)
+    {
+        var statementText = TryConstantStatementText(invocation);
+        if (statementText is null)
+        {
+            return null;
+        }
+
+        return SqlStatementReader.TryRead(statementText, out var facts) ? facts : null;
+    }
+
+    private static string? TryConstantStatementText(InvocationExpressionSyntax invocation)
+    {
+        foreach (var argument in invocation.ArgumentList.Arguments)
+        {
+            switch (argument.Expression)
+            {
+                case LiteralExpressionSyntax literal when literal.Token.IsKind(SyntaxKind.StringLiteralToken):
+                    return literal.Token.ValueText;
+                case InterpolatedStringExpressionSyntax interpolated
+                    when interpolated.Contents.All(static content => content is InterpolatedStringTextSyntax):
+                    return string.Concat(
+                        interpolated.Contents
+                            .OfType<InterpolatedStringTextSyntax>()
+                            .Select(static text => text.TextToken.ValueText));
+            }
         }
 
         return null;
@@ -221,6 +280,21 @@ internal sealed class DataAccessDetector : IRegisteredContextDetector
                 new PayloadEntry(
                     "field-names",
                     StructuralLiteral.Create(LiteralRole.FieldName, string.Join('|', match.FieldNames), "field-names")));
+        }
+
+        if (match.SqlFacts is { } sql)
+        {
+            entries.Add(
+                new PayloadEntry(
+                    "sql-operation",
+                    StructuralLiteral.Create(LiteralRole.ProtocolName, OperationLiteral(sql.Operation), "sql-operation")));
+            entries.Add(new PayloadEntry("sql-target", StructuralLiteral.Create(LiteralRole.TableName, sql.Target, "sql-target")));
+
+            if (!sql.Columns.IsDefaultOrEmpty)
+            {
+                var sortedColumns = string.Join('|', sql.Columns.OrderBy(static column => column, StringComparer.Ordinal));
+                entries.Add(new PayloadEntry("sql-columns", StructuralLiteral.Create(LiteralRole.FieldName, sortedColumns, "sql-columns")));
+            }
         }
 
         return NormalizedPayload.Create(entries);

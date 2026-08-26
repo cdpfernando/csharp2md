@@ -125,6 +125,114 @@ public sealed class DataAccessDetectorTests
     }
 
     [Fact]
+    [Trait("Requirement", "PK-04")]
+    public async Task ExtractInto_ConstantSelectStatement_CarriesParsedSqlEvidenceAndNoStatementText()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+
+        var sqlAccess = Assert.Single(
+            observations,
+            observation => observation.Identity.Kind is ObservationKind.DataAccess
+                && observation.Locator.RelativePath.Replace('\\', '/')
+                    .EndsWith("Acme.Orders/Data/OrderSqlQueries.cs", StringComparison.Ordinal)
+                && observation.Identity.Payload.Entries.Any(entry => entry.Key == "sql-target" && entry.Value.Value == "Orders")
+                && observation.Identity.Payload.Entries.Any(entry => entry.Key == "operation" && entry.Value.Value == "read"));
+
+        var entries = sqlAccess.Identity.Payload.Entries;
+        Assert.Contains(entries, entry => entry.Key == "sql-operation" && entry.Value.Value == "read");
+        Assert.Contains(
+            entries,
+            entry => entry.Key == "sql-columns" && entry.Value.Value == "Id|Status");
+        Assert.DoesNotContain(
+            entries,
+            entry => entry.Value.Value.Contains("SELECT", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-04")]
+    public async Task ExtractInto_ConstantDeleteWithBracketedTarget_CarriesUnquotedSqlTarget()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+
+        var deleteAccess = Assert.Single(
+            observations,
+            observation => observation.Identity.Kind is ObservationKind.DataAccess
+                && observation.Locator.RelativePath.Replace('\\', '/')
+                    .EndsWith("Acme.Orders/Data/OrderSqlQueries.cs", StringComparison.Ordinal)
+                && observation.Identity.Payload.Entries.Any(entry => entry.Key == "operation" && entry.Value.Value == "delete"));
+
+        var entries = deleteAccess.Identity.Payload.Entries;
+        Assert.Contains(entries, entry => entry.Key == "sql-operation" && entry.Value.Value == "delete");
+        Assert.Contains(entries, entry => entry.Key == "sql-target" && entry.Value.Value == "Orders");
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-04")]
+    public async Task ExtractInto_ConstantExecStatement_CarriesExecuteOperationAndProcedureTarget()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+
+        var execAccess = Assert.Single(
+            observations,
+            observation => observation.Identity.Kind is ObservationKind.DataAccess
+                && observation.Locator.RelativePath.Replace('\\', '/')
+                    .EndsWith("Acme.Orders/Data/OrderSqlQueries.cs", StringComparison.Ordinal)
+                && observation.Identity.Payload.Entries.Any(entry => entry.Key == "sql-target" && entry.Value.Value == "usp_RebuildOrderTotals"));
+
+        Assert.Contains(
+            execAccess.Identity.Payload.Entries,
+            entry => entry.Key == "operation" && entry.Value.Value == "execute");
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-04")]
+    public async Task ExtractInto_NonConstantInterpolatedStatement_EmitsUnknownOperationAndNoSqlEntries()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+
+        // SelectAllFrom(tableName) is the file's only entity-type=Order access whose statement is
+        // genuinely non-constant (an actual interpolation hole); the SELECT/DELETE/EXEC accesses on
+        // the same DbSet all carry a constant statement and therefore sql-* entries, so this check
+        // holds for every remaining entity-type=Order occurrence in the file, including the raw
+        // member access to `_context.Orders` that never carries sql-* evidence either way.
+        var entityAccesses = observations
+            .Where(observation => observation.Identity.Kind is ObservationKind.DataAccess
+                && observation.Locator.RelativePath.Replace('\\', '/')
+                    .EndsWith("Acme.Orders/Data/OrderSqlQueries.cs", StringComparison.Ordinal)
+                && observation.Identity.Payload.Entries.Any(
+                    entry => entry.Key == "entity-type" && entry.Value.Value == "global::Acme.Orders.Data.Order")
+                && !observation.Identity.Payload.Entries.Any(entry => entry.Key == "sql-operation"))
+            .ToArray();
+
+        Assert.NotEmpty(entityAccesses);
+        Assert.All(
+            entityAccesses,
+            observation =>
+            {
+                var entries = observation.Identity.Payload.Entries;
+                Assert.Contains(entries, entry => entry.Key == "operation" && entry.Value.Value == "unknown");
+                Assert.DoesNotContain(entries, entry => entry.Key is "sql-operation" or "sql-target" or "sql-columns");
+            });
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-09")]
+    public async Task ExtractInto_Fixture_NoPayloadEntryContainsEitherFixturePassword()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+
+        Assert.All(
+            observations,
+            observation => Assert.All(
+                observation.Identity.Payload.Entries,
+                entry =>
+                {
+                    Assert.DoesNotContain("inline-fixture-secret", entry.Value.Value, StringComparison.Ordinal);
+                    Assert.DoesNotContain("appsettings-fixture-secret", entry.Value.Value, StringComparison.Ordinal);
+                }));
+    }
+
+    [Fact]
     [Trait("Requirement", "ROSE-41")]
     [Trait("Requirement", "ROSE-42")]
     public async Task ExtractInto_OrderRepository_ProducesNoDataAccess()
