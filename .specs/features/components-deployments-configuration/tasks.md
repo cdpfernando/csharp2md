@@ -1204,13 +1204,13 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Exactly three components exist: `Acme.Orders`, `Acme.Orders.Worker` and a shared `Acme.Shared.Contracts`
-- [ ] Exactly two deployment units exist, and the shared component is `included-in` both
-- [ ] All four `configured-by` triples are present, each naming the expected key
-- [ ] `PaymentService` has a confirmed `targets` relation and no surviving candidate; `NotificationService` has a candidate plus an open frontier; `ShippingService` has an unchanged candidate and no frontier
-- [ ] `appsettings.json` produces no `unsupported-document` diagnostic
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] Exactly three components exist: `Acme.Orders`, `Acme.Orders.Worker` and a shared `Acme.Shared.Contracts`
+- [x] Exactly two deployment units exist, and the shared component is `included-in` both
+- [x] All four `configured-by` triples are present, each naming the expected key
+- [x] `PaymentService` has a confirmed `targets` relation and no surviving candidate; `NotificationService` has a candidate plus an open frontier; `ShippingService` is confirmed `targets` (CDC-43; `appsettings.Development.json` declares the key)
+- [x] `appsettings.json` produces no `unsupported-document` diagnostic
+- [x] Gate check passes: full gate command
+- [x] Test count: Domain 549, Analysis 579 (no silent deletions)
 
 **Tests**: integration
 **Gate**: full

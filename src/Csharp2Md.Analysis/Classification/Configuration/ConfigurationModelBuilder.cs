@@ -124,7 +124,8 @@ internal static class ConfigurationModelBuilder
                 continue;
             }
 
-            var match = MatchKeyPath(keys, keyPath);
+            var match = MatchKeyPath(keys, keyPath)
+                ?? MatchLastSegment(keys, ConnectionStringsPrefix, keyPath);
             if (match is null)
             {
                 unbound.Add(new UnboundKeyRead(observation.Identity.Owner, observation.Identity));
