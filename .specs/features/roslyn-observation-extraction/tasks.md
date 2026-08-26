@@ -2000,10 +2000,10 @@ solution key. The stored publication bytes are unchanged. `StructuralCorruption`
 
 **Done when**:
 
-- [ ] Payload bytes after abort equal the first commit
-- [ ] Outcome is Unpublished, Detail is set, `StructuralCorruption` is false
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Payload bytes after abort equal the first commit
+- [x] Outcome is Unpublished, Detail is set, `StructuralCorruption` is false
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
