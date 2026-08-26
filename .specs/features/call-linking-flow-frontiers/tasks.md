@@ -23,7 +23,7 @@ Verify before starting Execute.
 
 **Spec**: `.specs/features/call-linking-flow-frontiers/spec.md`
 **Design**: `.specs/features/call-linking-flow-frontiers/design.md`
-**Status**: Execute complete (T1–T10) — Verifier FAIL (CLLF-19 uncovered)
+**Status**: Execute complete (T1–T10) — Verifier FAIL (CLLF-19 uncovered); fix iteration 1 in progress (CLLF-19 empty-diagnostics asserts)
 
 ---
 
@@ -230,6 +230,7 @@ T8 → T9 → T10
 - [x] Abstract/interface target + no concrete overrides → `UnresolvedRecord(NoCandidateFound)` (CLLF-08)
 - [x] No confirmed `Invokes` to abstract/interface member (CLLF-09)
 - [x] Fallback-owner observation → `UnresolvedRecord(InsufficientEvidence)` only; no `OpenFrontier` (CLLF-14)
+- [x] Fallback-owner / owner-not-symbol skip paths (Invocation and ObjectCreation) emit `UnresolvedRecord` (or skip) without a redundant diagnostic (CLLF-19) — Verifier fix iteration 1
 - [x] BCL/framework prefix skip: container starts with `global::System.` or `global::Microsoft.` → silent skip (CLLF-20)
 - [x] Cross-project call (target in different project) → confirmed `Invokes` if in same solution (CLLF-17)
 - [x] External-package call (target signature matches no `Symbol` fact and not BCL-skip) → `UnresolvedRecord(NoCandidateFound)` + `OpenFrontier` (CLLF-18)

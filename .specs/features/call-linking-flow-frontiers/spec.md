@@ -188,12 +188,12 @@ Every ambiguity is resolved or recorded here — nothing is left silently unclea
 | CLLF-16 | P2: Multi-receiver shapes | - | Implementing |
 | CLLF-17 | P2: Cross-project resolution | - | Implementing |
 | CLLF-18 | P2: Cross-project resolution | - | Implementing |
-| CLLF-19 | P3: Diagnostic coverage | - | ❌ Needs Fix |
+| CLLF-19 | P3: Diagnostic coverage | - | Implementing |
 | CLLF-20 | P3: Diagnostic coverage | - | Implementing |
 
 **ID format:** `CLLF-NN`
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
-**Coverage:** 20 total, 19 with verifier evidence, 1 gap (CLLF-19). Status not Verified: overall Verifier FAIL.
+**Coverage:** 20 total. CLLF-19 Implementing (Verifier fix iteration 1: empty-diagnostics asserts). Status not Verified until Verifier re-runs.
 
 ---
 

@@ -58,6 +58,7 @@ public sealed class InvokesPassTests
 
     [Fact]
     [Trait("Requirement", "CLLF-04")]
+    [Trait("Requirement", "CLLF-19")]
     public void Execute_OwnerIsNotASymbol_DoesNotCreateConfirmedInvokes()
     {
         var pipeline = Arrange();
@@ -72,6 +73,7 @@ public sealed class InvokesPassTests
         Assert.DoesNotContain(
             pipeline.Accumulator.ToSnapshot().ConfirmedRelations,
             relation => relation.Kind is RelationKind.Invokes);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Diagnostics);
     }
 
     [Fact]
@@ -295,6 +297,7 @@ public sealed class InvokesPassTests
 
     [Fact]
     [Trait("Requirement", "CLLF-14")]
+    [Trait("Requirement", "CLLF-19")]
     public void Execute_FallbackOwner_EmitsInsufficientEvidenceWithoutOpenFrontier()
     {
         var pipeline = Arrange();
@@ -312,6 +315,30 @@ public sealed class InvokesPassTests
         Assert.Equal(UnresolvedCause.InsufficientEvidence, unresolved.Cause);
         Assert.Empty(pipeline.Accumulator.ToSnapshot().Frontiers);
         Assert.Empty(pipeline.Accumulator.ToSnapshot().ConfirmedRelations);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Diagnostics);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CLLF-19")]
+    public void Execute_FallbackOwnerObjectCreation_EmitsInsufficientEvidenceWithoutDiagnostic()
+    {
+        var pipeline = Arrange();
+        var fallback = pipeline.Accumulator.ToSnapshot().Facts.OfType<Symbol>()
+            .Where(symbol => symbol.OwningProject.Equals(OrdersProject))
+            .OrderBy(symbol => symbol.Signature.Value, StringComparer.Ordinal)
+            .First();
+        var ctor = AddMethod(pipeline, ".ctor", "global::Acme.Shared.Contracts.PaymentClient", OrdersProject);
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(fallback.Reference, ObservationKind.ObjectCreation, 1, BoundMessage(ctor)));
+        var context = new ClassifierContext(pipeline);
+
+        new InvokesPass().Execute(context, CancellationToken.None);
+
+        var unresolved = Assert.Single(pipeline.Accumulator.ToSnapshot().Unresolved.ToArray());
+        Assert.Equal(UnresolvedCause.InsufficientEvidence, unresolved.Cause);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Frontiers);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().ConfirmedRelations);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Diagnostics);
     }
 
     [Fact]
@@ -355,6 +382,7 @@ public sealed class InvokesPassTests
 
     [Fact]
     [Trait("Requirement", "CLLF-18")]
+    [Trait("Requirement", "CLLF-19")]
     public void Execute_ExternalPackageTarget_EmitsUnresolvedNoCandidateFoundAndFrontier()
     {
         var pipeline = Arrange();
@@ -375,6 +403,7 @@ public sealed class InvokesPassTests
         Assert.Equal(UnresolvedCause.NoCandidateFound, unresolved.Cause);
         Assert.Single(pipeline.Accumulator.ToSnapshot().Frontiers.ToArray());
         Assert.Empty(pipeline.Accumulator.ToSnapshot().ConfirmedRelations);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Diagnostics);
     }
 
     [Fact]
