@@ -33,7 +33,8 @@ internal static class DocumentInventory
     public static InventoriedDocuments Collect(
         string authorizedRoot,
         Project owningProject,
-        string projectFilePath)
+        string projectFilePath,
+        IReadOnlyList<string>? listedProjectFilePaths = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(authorizedRoot);
         ArgumentNullException.ThrowIfNull(owningProject);
@@ -43,13 +44,14 @@ internal static class DocumentInventory
         var projectFullPath = Path.GetFullPath(projectFilePath);
         var projectDirectory = Path.GetDirectoryName(projectFullPath)
             ?? throw new ArgumentException($"'{projectFilePath}' has no containing directory.", nameof(projectFilePath));
+        var listedDirectories = ListedProjectDirectories(listedProjectFilePaths, projectFullPath);
 
         var comparison = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
         var absolutePaths = new HashSet<string>(comparison);
 
         if (Directory.Exists(projectDirectory) && ContainsPath(root, projectDirectory))
         {
-            foreach (var file in EnumerateProjectDirectoryFiles(projectDirectory))
+            foreach (var file in EnumerateProjectDirectoryFiles(projectDirectory, listedDirectories))
             {
                 TryAddInventoriedPath(absolutePaths, root, file);
             }
@@ -107,7 +109,9 @@ internal static class DocumentInventory
         absolutePaths.Add(Path.GetFullPath(candidate));
     }
 
-    private static IEnumerable<string> EnumerateProjectDirectoryFiles(string projectDirectory)
+    private static IEnumerable<string> EnumerateProjectDirectoryFiles(
+        string projectDirectory,
+        IReadOnlyList<string> listedProjectDirectories)
     {
         var pending = new Stack<string>();
         pending.Push(projectDirectory);
@@ -121,7 +125,8 @@ internal static class DocumentInventory
 
             foreach (var child in Directory.EnumerateDirectories(directory))
             {
-                if (ExcludedDirectoryNames.Contains(Path.GetFileName(child)))
+                if (ExcludedDirectoryNames.Contains(Path.GetFileName(child))
+                    || IsNestedListedProjectDirectory(child, projectDirectory, listedProjectDirectories))
                 {
                     continue;
                 }
@@ -129,6 +134,48 @@ internal static class DocumentInventory
                 pending.Push(child);
             }
         }
+    }
+
+    private static IReadOnlyList<string> ListedProjectDirectories(
+        IReadOnlyList<string>? listedProjectFilePaths,
+        string projectFilePath)
+    {
+        var paths = listedProjectFilePaths is { Count: > 0 } listed ? listed : [projectFilePath];
+        var directories = new List<string>(paths.Count);
+        foreach (var path in paths)
+        {
+            var directory = Path.GetDirectoryName(Path.GetFullPath(path));
+            if (!string.IsNullOrEmpty(directory))
+            {
+                directories.Add(Normalize(directory));
+            }
+        }
+
+        return directories;
+    }
+
+    private static bool IsNestedListedProjectDirectory(
+        string directory,
+        string owningProjectDirectory,
+        IReadOnlyList<string> listedProjectDirectories)
+    {
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var owning = Normalize(owningProjectDirectory);
+        var candidate = Normalize(directory);
+        var owningPrefix = owning + Path.DirectorySeparatorChar;
+        foreach (var listed in listedProjectDirectories)
+        {
+            if (listed.Equals(owning, comparison)
+                || !listed.Equals(candidate, comparison)
+                || !listed.StartsWith(owningPrefix, comparison))
+            {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     private static IEnumerable<string> ReadExplicitProjectItems(string projectFilePath, string projectDirectory)

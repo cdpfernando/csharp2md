@@ -64,6 +64,7 @@ internal sealed class BoundaryPass : IClassifierPass
             .ToDictionary(static component => component.Reference.Id.Value, StringComparer.Ordinal);
 
         var factCount = 0;
+        var emittedKeys = new HashSet<string>(StringComparer.Ordinal);
         foreach (var entry in context.FactsByType<EntryPoint>().OrderBy(static e => e.Reference.Id.Value, StringComparer.Ordinal))
         {
             if (!symbolsById.TryGetValue(entry.Symbol.Id.Value, out var symbol)
@@ -93,7 +94,17 @@ internal sealed class BoundaryPass : IClassifierPass
                 continue;
             }
 
-            var protocolOperationKey = StructuralLiteral.Create(LiteralRole.ProtocolName, template, "protocol-operation-key");
+            // SPEC_DEVIATION: EBC-06 names the route template as protocolOperationKey.
+            // Reason: TAX-30 inbound identity is that key; GET vs DELETE on the same
+            // template must not share one identity (Domain example is "POST /charge").
+            var httpMethod = ReadPayloadValue(routeDeclaration, MethodNameKey);
+            var operationKey = httpMethod is null ? template : httpMethod + " " + template;
+            if (!emittedKeys.Add(string.Join('\u0000', component.Reference.Id.Value, operationKey)))
+            {
+                continue;
+            }
+
+            var protocolOperationKey = StructuralLiteral.Create(LiteralRole.ProtocolName, operationKey, "protocol-operation-key");
             context.Accumulator.AddFact(
                 BoundaryOperation.Create(
                     symbol.Reference,
@@ -232,6 +243,7 @@ internal sealed class BoundaryPass : IClassifierPass
             .ToDictionary(static component => component.Name, StringComparer.Ordinal);
 
         var factCount = 0;
+        var emittedKeys = new HashSet<string>(StringComparer.Ordinal);
         foreach (var observation in context.ObservationsByKind(ObservationKind.MessageOperation)
             .OrderBy(static o => o.Identity.Owner.Id.Value, StringComparer.Ordinal)
             .ThenBy(static o => o.Identity.OccurrenceOrdinal))
@@ -262,6 +274,11 @@ internal sealed class BoundaryPass : IClassifierPass
                 continue;
             }
 
+            if (!emittedKeys.Add(string.Join('\u0000', component.Reference.Id.Value, eventType)))
+            {
+                continue;
+            }
+
             var protocolOperationKey = StructuralLiteral.Create(LiteralRole.ProtocolName, eventType, "protocol-operation-key");
             context.Accumulator.AddFact(
                 BoundaryOperation.Create(
@@ -287,6 +304,7 @@ internal sealed class BoundaryPass : IClassifierPass
             .ToArray();
 
         var factCount = 0;
+        var emittedKeys = new HashSet<string>(StringComparer.Ordinal);
         foreach (var entry in context.FactsByType<EntryPoint>().OrderBy(static e => e.Reference.Id.Value, StringComparer.Ordinal))
         {
             if (!symbolsById.TryGetValue(entry.Symbol.Id.Value, out var symbol)
@@ -308,6 +326,11 @@ internal sealed class BoundaryPass : IClassifierPass
                         "missing-message-type-argument",
                         $"HandleAsync '{symbol.Reference.Id.Value}' has no TEvent type argument.",
                         symbol.Reference.Id.Value));
+                continue;
+            }
+
+            if (!emittedKeys.Add(string.Join('\u0000', component.Reference.Id.Value, eventType)))
+            {
                 continue;
             }
 

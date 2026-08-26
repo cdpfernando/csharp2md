@@ -65,7 +65,7 @@ internal sealed class InventoryStage : IPipelineStage
                 targetFrameworks.Add(tfm);
             }
 
-            var inventoried = DocumentInventory.Collect(root, project, projectPath);
+            var inventoried = DocumentInventory.Collect(root, project, projectPath, existing);
             foreach (var document in inventoried.Documents)
             {
                 var absolute = Path.GetFullPath(

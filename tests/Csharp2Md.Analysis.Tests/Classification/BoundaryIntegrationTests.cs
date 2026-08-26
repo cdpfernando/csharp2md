@@ -53,7 +53,7 @@ public sealed class BoundaryIntegrationTests
             operation => operation.Symbol.Id.Contains("GetOrderStatus", StringComparison.Ordinal)
                 && operation.Direction == "inbound"
                 && operation.Protocol == "http");
-        Assert.Equal("orders/{id}", getOrderStatus.ProtocolOperationKey?.Value);
+        Assert.Equal("GET orders/{id}", getOrderStatus.ProtocolOperationKey?.Value);
         Assert.Contains("{id}", getOrderStatus.ProtocolOperationKey?.Value, StringComparison.Ordinal);
 
         Assert.Contains(

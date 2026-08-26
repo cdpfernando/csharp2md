@@ -72,6 +72,62 @@ public sealed class BoundaryPassTests
 
     [Fact]
     [Trait("Requirement", "EBC-06")]
+    [Trait("Requirement", "EBC-31")]
+    public void Execute_GetAndDeleteSameRouteTemplate_CreatesTwoInboundHttpBoundariesWithoutCorruption()
+    {
+        var pipeline = ArrangeOrders();
+        var controller = AddNamedType(pipeline, "OrdersController", "global::Acme.Orders.Api", OrdersProject);
+        var get = AddMethod(pipeline, "GetOrderStatus", "global::Acme.Orders.Api.OrdersController", OrdersProject);
+        var delete = AddMethod(pipeline, "DeleteOrder", "global::Acme.Orders.Api.OrdersController", OrdersProject);
+        var component = AddComponent(pipeline, [controller.Reference, get.Reference, delete.Reference]);
+        pipeline.Accumulator.AddFact(EntryPoint.Create(get.Reference, component.Reference));
+        pipeline.Accumulator.AddFact(EntryPoint.Create(delete.Reference, component.Reference));
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(get.Reference, ObservationKind.RouteDeclaration, ordinal: 1, RoutePayload("{id:int}", "GET")));
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(delete.Reference, ObservationKind.RouteDeclaration, ordinal: 1, RoutePayload("{id:int}", "DELETE")));
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        Assert.False(pipeline.Accumulator.StructuralCorruption);
+        Assert.Null(pipeline.Accumulator.CollidingIdentity);
+        Assert.Equal(2, result.FactCount);
+        var operations = pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray();
+        Assert.Equal(2, operations.Length);
+        Assert.Contains(operations, operation => operation.ProtocolOperationKey?.Value == "GET {id:int}");
+        Assert.Contains(operations, operation => operation.ProtocolOperationKey?.Value == "DELETE {id:int}");
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-06")]
+    [Trait("Requirement", "EBC-31")]
+    public void Execute_TwoEntryPointsWithSameGetRoute_CreatesOneInboundHttpBoundaryWithoutCorruption()
+    {
+        var pipeline = ArrangeOrders();
+        var controller = AddNamedType(pipeline, "OrdersController", "global::Acme.Orders.Api", OrdersProject);
+        var first = AddMethod(pipeline, "GetOrderStatus", "global::Acme.Orders.Api.OrdersController", OrdersProject);
+        var second = AddMethod(pipeline, "GetOrderById", "global::Acme.Orders.Api.OrdersController", OrdersProject);
+        var component = AddComponent(pipeline, [controller.Reference, first.Reference, second.Reference]);
+        pipeline.Accumulator.AddFact(EntryPoint.Create(first.Reference, component.Reference));
+        pipeline.Accumulator.AddFact(EntryPoint.Create(second.Reference, component.Reference));
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(first.Reference, ObservationKind.RouteDeclaration, ordinal: 1, RoutePayload("{id:int}", "GET")));
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(second.Reference, ObservationKind.RouteDeclaration, ordinal: 1, RoutePayload("{id:int}", "GET")));
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        Assert.False(pipeline.Accumulator.StructuralCorruption);
+        Assert.Null(pipeline.Accumulator.CollidingIdentity);
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal(1, result.FactCount);
+        Assert.Equal("GET {id:int}", operation.ProtocolOperationKey!.Value.Value);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-06")]
     public void Execute_ControllerEntryPointWithoutRouteDeclaration_DoesNotCreateBoundaryOperation()
     {
         var pipeline = ArrangeOrders();
@@ -322,6 +378,32 @@ public sealed class BoundaryPassTests
 
     [Fact]
     [Trait("Requirement", "EBC-17")]
+    [Trait("Requirement", "EBC-31")]
+    public void Execute_TwoPublishAsyncOfSameEventInOneComponent_CreatesOneOutboundMessagingBoundaryWithoutCorruption()
+    {
+        var pipeline = ArrangeOrders();
+        var service = AddNamedType(pipeline, "OrderService", "global::Acme.Orders", OrdersProject);
+        var first = AddMethod(pipeline, "PlaceOrderAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        var second = AddMethod(pipeline, "RetryPlaceOrderAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        AddComponent(pipeline, [service.Reference, first.Reference, second.Reference]);
+        AddMessageOperation(pipeline, first.Reference, "PublishAsync", "global::Acme.Shared.Contracts.OrderPlaced", ordinal: 1);
+        AddMessageOperation(pipeline, second.Reference, "PublishAsync", "global::Acme.Shared.Contracts.OrderPlaced", ordinal: 1);
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        Assert.False(pipeline.Accumulator.StructuralCorruption);
+        Assert.Null(pipeline.Accumulator.CollidingIdentity);
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal(1, result.FactCount);
+        Assert.Equal(BoundaryDirection.Outbound, operation.Direction);
+        Assert.Equal(BoundaryProtocol.Messaging, operation.Protocol);
+        Assert.Equal("global::Acme.Shared.Contracts.OrderPlaced", operation.ProtocolOperationKey!.Value.Value);
+        Assert.Equal(first.Reference, operation.Symbol);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-17")]
     public void Execute_SubscribeMessageOperation_DoesNotCreateOutboundMessagingBoundary()
     {
         var pipeline = ArrangeOrders();
@@ -471,13 +553,24 @@ public sealed class BoundaryPassTests
         return symbol;
     }
 
-    private static NormalizedPayload RoutePayload(string template) =>
-        NormalizedPayload.Create(
-        [
-            new PayloadEntry(
+    private static NormalizedPayload RoutePayload(string template, string? httpMethod = null)
+    {
+        var entries = new List<PayloadEntry>
+        {
+            new(
                 BoundaryPass.RouteKey,
                 StructuralLiteral.Create(LiteralRole.Route, template, BoundaryPass.RouteKey)),
-        ]);
+        };
+        if (httpMethod is not null)
+        {
+            entries.Add(
+                new PayloadEntry(
+                    BoundaryPass.MethodNameKey,
+                    StructuralLiteral.Create(LiteralRole.ProtocolName, httpMethod, BoundaryPass.MethodNameKey)));
+        }
+
+        return NormalizedPayload.Create(entries);
+    }
 
     private static void AddCreateClient(PipelineContext pipeline, FactReference owner, string clientName, int ordinal) =>
         pipeline.Accumulator.AddObservation(
