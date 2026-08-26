@@ -1830,11 +1830,11 @@ reference to Domain.
 
 **Done when**:
 
-- [ ] Analyze product options remain exactly `--output` and `--solution`
-- [ ] CLI project references still exclude Domain
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean on this phase's changes
+- [x] Analyze product options remain exactly `--output` and `--solution`
+- [x] CLI project references still exclude Domain
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean on this phase's changes
 
 **Tests**: unit
 **Gate**: build

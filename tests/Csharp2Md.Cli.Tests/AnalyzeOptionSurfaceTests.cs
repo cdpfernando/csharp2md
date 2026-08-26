@@ -21,6 +21,7 @@ public sealed class AnalyzeOptionSurfaceTests
     [Trait("Requirement", "ENG-45")]
     [Trait("Requirement", "STOR-47")]
     [Trait("Requirement", "STOR-52")]
+    [Trait("Requirement", "ROSE-61")]
     public void AnalyzeAndRoot_DoNotExposeRemovedMarkdownEraOptions()
     {
         var root = CommandFactory.CreateRootCommand();
@@ -48,6 +49,7 @@ public sealed class AnalyzeOptionSurfaceTests
     [Trait("Requirement", "ENG-45")]
     [Trait("Requirement", "STOR-47")]
     [Trait("Requirement", "STOR-52")]
+    [Trait("Requirement", "ROSE-61")]
     public void LaunchSettings_UsesAnalyzeSolutionAgainstTheFixture()
     {
         var path = Path.Combine(
