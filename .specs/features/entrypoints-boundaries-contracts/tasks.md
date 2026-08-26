@@ -205,9 +205,9 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] `PipelineStages.CreateDefault()` sets index 3 to `ClassificationAndPromotionStage` with an initially empty pass list
-- [ ] Existing pipeline tests still pass (stage name matches, zero output from empty passes)
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] `PipelineStages.CreateDefault()` sets index 3 to `ClassificationAndPromotionStage` with an initially empty pass list
+- [x] Existing pipeline tests still pass (stage name matches, zero output from empty passes)
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: unit
 **Gate**: full

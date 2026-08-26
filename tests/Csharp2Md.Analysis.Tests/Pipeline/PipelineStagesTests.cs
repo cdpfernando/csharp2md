@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Classification;
 using Csharp2Md.Analysis.Extraction;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
@@ -46,5 +47,16 @@ public sealed class PipelineStagesTests
         Assert.IsType<InventoryStage>(PipelineStages.CreateDefault()[0]);
         Assert.IsType<ObservationExtractionStage>(PipelineStages.CreateDefault()[2]);
         Assert.IsNotType<ObservationExtractionStub>(PipelineStages.CreateDefault()[2]);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-27")]
+    public void CreateDefault_UsesClassificationAndPromotionStageNotStub()
+    {
+        var classification = PipelineStages.CreateDefault()[3];
+
+        Assert.IsType<ClassificationAndPromotionStage>(classification);
+        Assert.IsNotType<ClassificationAndPromotionStub>(classification);
+        Assert.Equal("Classification and Promotion", classification.Name);
     }
 }
