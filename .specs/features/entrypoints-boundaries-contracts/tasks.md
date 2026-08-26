@@ -572,10 +572,10 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Each classifier fact type survives JSON serialization/deserialization through `DomainMapper`
-- [ ] `CandidateLink` and `UnresolvedRecord` survive round-trip
-- [ ] `ConfirmedRelation` with `ImplementsOperation` and `UsesContract` kinds survive round-trip
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Each classifier fact type survives JSON serialization/deserialization through `DomainMapper`
+- [x] `CandidateLink` and `UnresolvedRecord` survive round-trip
+- [x] `ConfirmedRelation` with `ImplementsOperation` and `UsesContract` kinds survive round-trip
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
 
 **Tests**: unit
 **Gate**: build
