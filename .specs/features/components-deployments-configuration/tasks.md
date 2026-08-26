@@ -1321,12 +1321,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `DeploymentUnit` and `ConfigurationBinding` facts round-trip with identical identities and fields
-- [ ] `belongs-to`, `included-in` and `configured-by` relations round-trip with kind, source, target and evidence method preserved
-- [ ] The `ConfigurationFactsShard` is written and read back non-empty
-- [ ] The manifest reports non-zero counts for the configuration artifact
-- [ ] Gate check passes: build gate command
-- [ ] Test count reported; no silent deletions
+- [x] `DeploymentUnit` and `ConfigurationBinding` facts round-trip with identical identities and fields
+- [x] `belongs-to`, `included-in` and `configured-by` relations round-trip with kind, source, target and evidence method preserved
+- [x] The `ConfigurationFactsShard` is written and read back non-empty
+- [x] The manifest reports non-zero counts for the configuration artifact
+- [x] Gate check passes: build gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: build
