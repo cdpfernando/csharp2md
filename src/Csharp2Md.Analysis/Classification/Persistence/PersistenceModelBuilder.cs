@@ -18,6 +18,9 @@ internal static class PersistenceModelBuilder
     internal const string ConfigurationKeyKey = "key";
     internal const string EntityTypeKey = "entity-type";
     internal const string TableNameKey = "table-name";
+    internal const string SqlTargetKey = "sql-target";
+    internal const string SqlOperationKey = "sql-operation";
+    internal const string ExecuteOperation = "execute";
 
     /// <summary>PK-17: the honest literal for a schema no code states. Empty text is not constructible.</summary>
     internal const string UnknownSchema = "unknown";
@@ -75,7 +78,7 @@ internal static class PersistenceModelBuilder
                 contextType,
                 DataStoreTechnology.Relational,
                 ResolveStoreName(context, contextType, references),
-                ResolveObjects(contextType, symbols, entityMappings, typeSymbols, observationsBySymbol))),
+                ResolveObjects(context, contextType, symbols, entityMappings, typeSymbols, observationsBySymbol))),
         ];
     }
 
@@ -88,6 +91,7 @@ internal static class PersistenceModelBuilder
     /// is never a merge key (PK-20).
     /// </summary>
     private static ImmutableArray<ObjectNode> ResolveObjects(
+        ClassifierContext context,
         string contextTypeFqn,
         ImmutableArray<Symbol> symbols,
         IReadOnlyDictionary<string, EntityMapping> entityMappings,
@@ -125,12 +129,109 @@ internal static class PersistenceModelBuilder
                     Chain(evidence)));
         }
 
+        objects.AddRange(ResolveSqlObjects(context, contextTypeFqn, symbols));
+
         return
         [
             .. objects
                 .OrderBy(static node => node.TableName, StringComparer.Ordinal)
                 .ThenBy(static node => node.EntityTypeFqn ?? string.Empty, StringComparer.Ordinal),
         ];
+    }
+
+    /// <summary>
+    /// One <see cref="ObjectNode"/> per distinct <c>sql-target</c> the store executes, always a
+    /// <c>ConventionalCandidate</c> - a statement names its table, it does not configure one (PK-18).
+    /// A target every occurrence executes is a procedure, so its form is <c>unknown</c> (PK-21). SQL
+    /// objects are never folded into an entity-set object: similarity, a shared prefix and
+    /// pluralization are not evidence (PK-20). Two statements naming one target share one object.
+    /// </summary>
+    private static IEnumerable<ObjectNode> ResolveSqlObjects(
+        ClassifierContext context,
+        string contextTypeFqn,
+        ImmutableArray<Symbol> symbols)
+    {
+        var contextByEntity = ContextTypeByEntityType(symbols);
+        var drafts = new SortedDictionary<string, SqlObjectDraft>(StringComparer.Ordinal);
+        foreach (var access in context.ObservationsByKind(ObservationKind.DataAccess))
+        {
+            if (PayloadReader.Value(access, SqlTargetKey) is not { } target
+                || !string.Equals(ExecutingContext(access, contextByEntity), contextTypeFqn, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (!drafts.TryGetValue(target, out var draft))
+            {
+                draft = new SqlObjectDraft();
+                drafts[target] = draft;
+            }
+
+            draft.Evidence.Add(access.Identity);
+            draft.EveryOccurrenceExecutes &=
+                string.Equals(PayloadReader.Value(access, SqlOperationKey), ExecuteOperation, StringComparison.Ordinal);
+        }
+
+        return drafts.Select(pair => new ObjectNode(
+            null,
+            pair.Value.EveryOccurrenceExecutes ? DataObjectForm.Unknown : DataObjectForm.Table,
+            UnknownSchema,
+            pair.Key,
+            MappingStateKind.ConventionalCandidate,
+            null,
+            [],
+            [],
+            Chain(pair.Value.Evidence)));
+    }
+
+    /// <summary>
+    /// The context a data-access occurrence executes against: its own <c>context-type</c> entry, or
+    /// the context exposing the entity set the statement runs on when the receiver was a
+    /// <c>DbSet&lt;T&gt;</c> rather than the context itself.
+    /// </summary>
+    private static string? ExecutingContext(Observation access, IReadOnlyDictionary<string, string> contextTypeByEntityType)
+    {
+        if (PayloadReader.Value(access, ContextTypeKey) is { } contextType)
+        {
+            return contextType;
+        }
+
+        return PayloadReader.Value(access, EntityTypeKey) is { } entityTypeFqn
+            && contextTypeByEntityType.TryGetValue(entityTypeFqn, out var owning)
+                ? owning
+                : null;
+    }
+
+    /// <summary>The context exposing each entity type, ordinal-first when several expose it.</summary>
+    private static IReadOnlyDictionary<string, string> ContextTypeByEntityType(ImmutableArray<Symbol> symbols)
+    {
+        var contexts = new Dictionary<string, SortedSet<string>>(StringComparer.Ordinal);
+        foreach (var property in DbSetProperties(symbols))
+        {
+            if (SignatureReader.SoleTypeArgument(SignatureReader.Type(property)) is not { } entityTypeFqn
+                || SignatureReader.Container(property) is not { } container)
+            {
+                continue;
+            }
+
+            if (!contexts.TryGetValue(entityTypeFqn, out var candidates))
+            {
+                candidates = new SortedSet<string>(StringComparer.Ordinal);
+                contexts[entityTypeFqn] = candidates;
+            }
+
+            candidates.Add(container);
+        }
+
+        return contexts.ToDictionary(static pair => pair.Key, static pair => pair.Value.Min!, StringComparer.Ordinal);
+    }
+
+    /// <summary>One SQL statement target as it accumulates across the occurrences naming it.</summary>
+    private sealed class SqlObjectDraft
+    {
+        public List<ObservationIdentity> Evidence { get; } = [];
+
+        public bool EveryOccurrenceExecutes { get; set; } = true;
     }
 
     /// <summary>

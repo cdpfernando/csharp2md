@@ -224,6 +224,159 @@ public sealed class PersistenceModelBuilderTests
         Assert.All(objects, dataObject => Assert.Equal(OrderFqn, dataObject.EntityTypeFqn));
     }
 
+    [Fact]
+    [Trait("Requirement", "PK-18")]
+    public void Build_SqlTargetUnderAContext_CreatesOneConventionalCandidateTableObject()
+    {
+        var pipeline = Arrange();
+        var reader = AddMethod(pipeline, "SelectOrder", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(
+            pipeline,
+            reader,
+            ordinal: 1,
+            ("operation", "read"),
+            ("context-type", OrderDbContextFqn),
+            ("sql-operation", "read"),
+            ("sql-target", "Orders"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var dataObject = Assert.Single(Assert.Single(model.Stores).Objects);
+        Assert.Null(dataObject.EntityTypeFqn);
+        Assert.Equal("Orders", dataObject.TableName);
+        Assert.Equal(DataObjectForm.Table, dataObject.Form);
+        Assert.Equal(MappingStateKind.ConventionalCandidate, dataObject.MappingState);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-18")]
+    public void Build_SqlOnADbSetReceiver_PlacesTheObjectUnderTheContextExposingThatEntity()
+    {
+        var pipeline = Arrange();
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var reader = AddMethod(pipeline, "SelectOrder", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(
+            pipeline,
+            reader,
+            ordinal: 1,
+            ("operation", "read"),
+            ("entity-type", OrderFqn),
+            ("sql-operation", "read"),
+            ("sql-target", "OrderArchive"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var store = Assert.Single(model.Stores);
+        Assert.Equal(OrderDbContextFqn, store.ContextTypeFqn);
+        Assert.Contains(store.Objects, dataObject => dataObject.TableName == "OrderArchive" && dataObject.EntityTypeFqn is null);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-21")]
+    public void Build_ExecStatementTarget_GetsFormUnknown()
+    {
+        var pipeline = Arrange();
+        var caller = AddMethod(pipeline, "RebuildTotals", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(
+            pipeline,
+            caller,
+            ordinal: 1,
+            ("operation", "execute"),
+            ("context-type", OrderDbContextFqn),
+            ("sql-operation", "execute"),
+            ("sql-target", "usp_RebuildOrderTotals"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var dataObject = Assert.Single(Assert.Single(model.Stores).Objects);
+        Assert.Equal("usp_RebuildOrderTotals", dataObject.TableName);
+        Assert.Equal(DataObjectForm.Unknown, dataObject.Form);
+        Assert.Equal(MappingStateKind.ConventionalCandidate, dataObject.MappingState);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-18")]
+    public void Build_TwoStatementsNamingOneTarget_ShareOneObject()
+    {
+        var pipeline = Arrange();
+        var reader = AddMethod(pipeline, "SelectOrder", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(
+            pipeline,
+            reader,
+            ordinal: 1,
+            ("operation", "read"),
+            ("context-type", OrderDbContextFqn),
+            ("sql-operation", "read"),
+            ("sql-target", "Orders"));
+        var deleter = AddMethod(pipeline, "DeleteArchived", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(
+            pipeline,
+            deleter,
+            ordinal: 1,
+            ("operation", "delete"),
+            ("context-type", OrderDbContextFqn),
+            ("sql-operation", "delete"),
+            ("sql-target", "Orders"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var dataObject = Assert.Single(Assert.Single(model.Stores).Objects);
+        Assert.Equal("Orders", dataObject.TableName);
+        Assert.Equal(DataObjectForm.Table, dataObject.Form);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-20")]
+    public void Build_SqlTargetAndMappedEntityObject_StayTwoObjectsDespiteTheirNames()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var configure = AddMethod(pipeline, "Configure", "global::Acme.Orders.Data.OrderConfiguration");
+        AddInvocation(pipeline, configure, ordinal: 1, ("entity-type", OrderFqn), ("table-name", "order_headers"));
+        var reader = AddMethod(pipeline, "SelectOrder", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(
+            pipeline,
+            reader,
+            ordinal: 1,
+            ("operation", "read"),
+            ("context-type", OrderDbContextFqn),
+            ("sql-operation", "read"),
+            ("sql-target", "Orders"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var objects = Assert.Single(model.Stores).Objects;
+        Assert.Equal<string>(["Orders", "order_headers"], objects.Select(dataObject => dataObject.TableName));
+        Assert.Equal(MappingStateKind.ConventionalCandidate, objects[0].MappingState);
+        Assert.Equal(MappingStateKind.ExplicitConfirmation, objects[1].MappingState);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-20")]
+    public void Build_SqlTargetDifferingOnlyByPluralizationFromAnEntityObject_IsNotMerged()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Order", OrderFqn);
+        var reader = AddMethod(pipeline, "SelectOrder", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(
+            pipeline,
+            reader,
+            ordinal: 1,
+            ("operation", "read"),
+            ("context-type", OrderDbContextFqn),
+            ("sql-operation", "read"),
+            ("sql-target", "Orders"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var objects = Assert.Single(model.Stores).Objects;
+        Assert.Equal<string>(["Order", "Orders"], objects.Select(dataObject => dataObject.TableName));
+        Assert.Equal(OrderFqn, objects[0].EntityTypeFqn);
+        Assert.Null(objects[1].EntityTypeFqn);
+    }
+
     private static PipelineContext Arrange()
     {
         var pipeline = new PipelineContext(new SwallowingSession(), "alpha.sln");

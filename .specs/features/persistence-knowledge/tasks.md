@@ -540,13 +540,13 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] One `ObjectNode` per distinct `sql-target`, under the store named by that occurrence's `context-type`, always `ConventionalCandidate` (PK-18)
-- [ ] An `EXEC` target gets form `unknown` (PK-21)
-- [ ] `Orders` and `order_headers` remain two distinct objects — no merge on similarity, prefix or pluralization (PK-20)
-- [ ] Two statements naming the same target share one object
-- [ ] Unit tests cover the merge-refusal case explicitly, with a name pair that differs only by pluralization
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + tests added so far pass (no silent deletions)
+- [x] One `ObjectNode` per distinct `sql-target`, under the store named by that occurrence's `context-type` — or, when the receiver was a `DbSet<T>` and no `context-type` reached the payload, the context exposing that entity set — always `ConventionalCandidate` (PK-18)
+- [x] An `EXEC` target gets form `unknown` (PK-21)
+- [x] `Orders` and `order_headers` remain two distinct objects — no merge on similarity, prefix or pluralization (PK-20)
+- [x] Two statements naming the same target share one object
+- [x] Unit tests cover the merge-refusal case explicitly, with a name pair that differs only by pluralization
+- [x] Gate check passes: full gate command
+- [x] Test count: 1091 pass — Domain 545, Analysis 355, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
