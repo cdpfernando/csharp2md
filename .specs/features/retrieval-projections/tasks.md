@@ -172,10 +172,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] The ordering key includes the content hash as the final component
-- [ ] A test maps two observations sharing owner, kind and occurrence ordinal but differing in payload, from two insertion orders, and asserts identical output order
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1344+ tests pass (no silent deletions)
+- [x] The ordering key includes the content hash as the final component
+- [x] A test maps two observations sharing owner, kind and occurrence ordinal but differing in payload, from two insertion orders, and asserts identical output order
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1344+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

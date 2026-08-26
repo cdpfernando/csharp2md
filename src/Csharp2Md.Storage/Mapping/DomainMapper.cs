@@ -99,7 +99,7 @@ public static class DomainMapper
                 group => group.Key,
                 group => Ordered(
                     group.Select(WireObservationMapping.ToDto),
-                    static dto => $"{dto.Identity.Owner.Id}:{dto.Identity.Kind}:{dto.Identity.OccurrenceOrdinal}"));
+                    static dto => $"{dto.Identity.Owner.Id}:{dto.Identity.Kind}:{dto.Identity.OccurrenceOrdinal}:{dto.ContentSha256}"));
 
         var confirmedDtos = snapshot.ConfirmedRelations
             .GroupBy(relation => WireRelationMapping.WireName(relation.Kind))
