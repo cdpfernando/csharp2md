@@ -491,11 +491,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Both slots default to an empty/unset value so every existing construction path still compiles
-- [ ] No stage reads either slot yet, so behaviour is unchanged
-- [ ] Unit tests assert the defaults and that a set value round-trips
-- [ ] Gate check passes: quick gate command
-- [ ] Test count reported; no silent deletions
+- [x] Both slots default to an empty/unset value so every existing construction path still compiles
+- [x] No stage reads either slot yet, so behaviour is unchanged
+- [x] Unit tests assert the defaults and that a set value round-trips
+- [x] Gate check passes: quick gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: quick
