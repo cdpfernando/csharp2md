@@ -304,7 +304,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-61 | P1: Commit the extracted graph | Tasks (T56) | Implemented |
 | ROSE-62 | P1: Commit the extracted graph | Tasks (T56) | Implemented |
 | ROSE-63 | P1: Commit the extracted graph | Tasks (T23, T62) | Implemented |
-| ROSE-64 | P1: Commit the extracted graph | Tasks (T55, T63) | Pending |
+| ROSE-64 | P1: Commit the extracted graph | Tasks (T55, T63) | Implemented |
 
 **Coverage:** 64 total, 64 mapped to tasks, 0 unmapped
 

@@ -11,6 +11,7 @@ namespace Csharp2Md.Analysis.Tests.Extraction;
 public sealed class ObservationMaterializerTests
 {
     [Fact]
+    [Trait("Requirement", "ROSE-46")]
     [Trait("Requirement", "ROSE-50")]
     public async Task ExtractInto_AcmeOrders_LocatorIsRelativeWithForwardSlashesAndOneBasedSpan()
     {
@@ -21,6 +22,9 @@ public sealed class ObservationMaterializerTests
             observations,
             observation =>
             {
+                Assert.False(string.IsNullOrWhiteSpace(observation.Identity.Owner.Id.Value));
+                Assert.True(Enum.IsDefined(observation.Identity.Kind), $"Kind was {observation.Identity.Kind}.");
+                Assert.True(observation.Identity.OccurrenceOrdinal >= 1, $"Ordinal was {observation.Identity.OccurrenceOrdinal}.");
                 Assert.Contains('/', observation.Locator.RelativePath);
                 Assert.DoesNotContain('\\', observation.Locator.RelativePath);
                 Assert.False(Path.IsPathRooted(observation.Locator.RelativePath));
@@ -30,6 +34,9 @@ public sealed class ObservationMaterializerTests
                     $"Span start line was {observation.Locator.Span.StartLine}.");
                 Assert.StartsWith("id1:document", observation.Locator.Document.Value, StringComparison.Ordinal);
                 Assert.False(HasDrivePrefix(observation.Locator.Document.Value));
+                Assert.True(Enum.IsDefined(observation.ExtractionMethod), $"Method was {observation.ExtractionMethod}.");
+                Assert.False(string.IsNullOrWhiteSpace(observation.Diagnostic.Code));
+                Assert.Equal(64, observation.DocumentHash.Value.Length);
                 Assert.Equal(1, observation.ExtractorVersion.Value);
             });
     }

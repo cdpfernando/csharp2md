@@ -2029,11 +2029,11 @@ well-formed. Mirror the STOR scanner's decoy for malformed ids.
 
 **Done when**:
 
-- [ ] Uncovered ROSE id list is empty
-- [ ] A decoy `ROSE-9` is flagged as malformed
-- [ ] Gate check passes: `dotnet test csharp2md.slnx`
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean on this phase's changes
+- [x] Uncovered ROSE id list is empty
+- [x] A decoy `ROSE-9` is flagged as malformed
+- [x] Gate check passes: `dotnet test csharp2md.slnx`
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean on this phase's changes
 
 **Tests**: unit
 **Gate**: solution
