@@ -10,7 +10,9 @@ Workstream 2, [`engine-bootstrap`](features/engine-bootstrap/spec.md), is comple
 
 Workstream 3, [`factual-storage`](features/factual-storage/spec.md), is complete, verified and on `feat/factual-storage` (`4c4948b`). Verifier report: `.specs/features/factual-storage/validation.md` (PASS, 801 tests).
 
-Workstream 4, [`roslyn-observation-extraction`](features/roslyn-observation-extraction/spec.md), is complete, verified and on `feat/roslyn-observation-extraction` (`65fa91a`). Verifier report: `.specs/features/roslyn-observation-extraction/validation.md` (PASS, 930 tests). Next: classifier workstreams 5A–5D, created only when explicitly started.
+Workstream 4, [`roslyn-observation-extraction`](features/roslyn-observation-extraction/spec.md), is complete, verified and on `feat/roslyn-observation-extraction` (`65fa91a`). Verifier report: `.specs/features/roslyn-observation-extraction/validation.md` (PASS, 930 tests).
+
+Workstream 5A, [`entrypoints-boundaries-contracts`](features/entrypoints-boundaries-contracts/spec.md), is complete, verified and on `feat/entrypoints-boundaries-contracts` (`e0cf903`). Verifier report: `.specs/features/entrypoints-boundaries-contracts/validation.md` (PASS, 1019 tests). Next: classifier workstreams 5B–5D, created only when explicitly started.
 
 Normative documentation:
 
@@ -148,11 +150,11 @@ Normative documentation:
 
 ## Handoff
 
-- **Feature**: `roslyn-observation-extraction` — `.specs/features/roslyn-observation-extraction/`
-- **Phase / Task**: Execute complete. Verifier PASS (iteration 1 after ROSE-21/ROSE-23 fixes).
-- **Completed**: T1–T63 on `feat/roslyn-observation-extraction`. T63 `bcd94c5`. Post-T63: `52ada04` ROSE-21 abort-on-collision; `65fa91a` ROSE-23 bound observations after compile errors. Gate: Domain 544, Analysis 213, Storage 143, Projection 3, Cli 27 (930, `Category!=LocalCorpus`).
+- **Feature**: `entrypoints-boundaries-contracts` — `.specs/features/entrypoints-boundaries-contracts/`
+- **Phase / Task**: Execute complete. Verifier PASS (`e0cf903`). Report: `.specs/features/entrypoints-boundaries-contracts/validation.md`.
+- **Completed**: T1–T20 on `feat/entrypoints-boundaries-contracts`. T1 `d5f64ee` … T20 `b9846cf`. Gate: Domain 545, Analysis 283, Storage 161, Cli 27, Projection 3 (1019, `Category!=LocalCorpus`).
 - **In-progress** (file:line): none.
-- **Next step**: Do not start a classifier workstream (5A–5D) unprompted. Create a feature only when the user explicitly starts one.
-- **Blockers**: none. `fixtures/eShop` and `fixtures/eShopOnContainers` were absent; LocalCorpus skipped. Discrimination sensor remains skipped. Carry-forward: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run the five test projects separately.
-- **Uncommitted files**: unrelated `.gitignore` / `AGENTS.md` / `CLAUDE.md` / roadmap / `docs/architecture/README.md` / `FixtureRetentionTests.cs`.
-- **Branch**: `feat/roslyn-observation-extraction`
+- **Next step**: Do not start classifier workstreams 5B–5D unprompted. Create a feature only when the user explicitly starts one.
+- **Blockers**: none. `fixtures/eShop` and `fixtures/eShopOnContainers` were absent; LocalCorpus skipped. Discrimination sensor remains skipped. Carry-forward: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run the five test projects separately. CLI filter uses VSTest `--filter "Category!=LocalCorpus"`. EBC-06 empty-route edge is a SPEC_DEVIATION (`StructuralLiteral` rejects empty canonical text).
+- **Uncommitted files**: unrelated `AGENTS.md` / `CLAUDE.md` / roadmap / `docs/architecture/README.md`; untracked `design.md` for this feature (spec/tasks/validation are committed).
+- **Branch**: `feat/entrypoints-boundaries-contracts`
