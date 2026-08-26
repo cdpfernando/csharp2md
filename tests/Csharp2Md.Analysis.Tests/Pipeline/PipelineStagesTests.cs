@@ -60,6 +60,7 @@ public sealed class PipelineStagesTests
         Assert.Equal("Classification and Promotion", classification.Name);
         Assert.Contains("new ComponentPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
         Assert.Contains("new EntryPointPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
+        Assert.Contains("new BoundaryPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
     }
 
     private static string PipelineStagesPath() =>

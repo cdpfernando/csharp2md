@@ -370,6 +370,47 @@ public sealed class BoundaryPassTests
         Assert.Equal(1, BoundaryPass.MessagingIdentity.Version);
     }
 
+    [Fact]
+    [Trait("Requirement", "EBC-18")]
+    public void Execute_HandleAsyncOnIntegrationEventHandler_CreatesInboundMessagingBoundary()
+    {
+        var pipeline = ArrangeOrders();
+        var handler = AddNamedType(pipeline, "OrderPlacedEventHandler", "global::Acme.Orders.Events", OrdersProject);
+        var method = AddHandleAsync(pipeline, "global::Acme.Orders.Events.OrderPlacedEventHandler", OrdersProject);
+        var component = AddComponent(pipeline, [handler.Reference, method.Reference]);
+        pipeline.Accumulator.AddFact(EntryPoint.Create(method.Reference, component.Reference));
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(
+                handler.Reference,
+                ObservationKind.BaseType,
+                ordinal: 1,
+                NormalizedPayload.Create(
+                [
+                    new PayloadEntry(
+                        BoundaryPass.TargetTypeKey,
+                        StructuralLiteral.Create(
+                            LiteralRole.ProtocolName,
+                            BoundaryPass.IntegrationEventHandlerTypeName,
+                            BoundaryPass.TargetTypeKey)),
+                    new PayloadEntry(
+                        BoundaryPass.TypeArgumentKey,
+                        StructuralLiteral.Create(
+                            LiteralRole.ProtocolName,
+                            "global::Acme.Shared.Contracts.OrderPlaced",
+                            BoundaryPass.TypeArgumentKey)),
+                ])));
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal(1, result.FactCount);
+        Assert.Equal(BoundaryDirection.Inbound, operation.Direction);
+        Assert.Equal(BoundaryProtocol.Messaging, operation.Protocol);
+        Assert.Equal(method.Reference, operation.Symbol);
+        Assert.Equal("global::Acme.Shared.Contracts.OrderPlaced", operation.ProtocolOperationKey!.Value.Value);
+    }
+
     private static PipelineContext ArrangeOrders()
     {
         var pipeline = new PipelineContext(new SwallowingSession(), "alpha.sln");
@@ -409,6 +450,25 @@ public sealed class BoundaryPassTests
         var component = Component.Create(AcmeSolution, "Acme.Orders/Acme.Orders.csproj", owners);
         pipeline.Accumulator.AddFact(component);
         return component;
+    }
+
+    private static Symbol AddHandleAsync(PipelineContext pipeline, string container, ProjectId project)
+    {
+        var symbol = Symbol.Create(
+            CanonicalSymbolSignature.Create(
+                "method",
+                container,
+                "HandleAsync",
+                0,
+                "global::System.Threading.Tasks.Task",
+                [
+                    new SymbolParameterSignature("global::Acme.Shared.Contracts.OrderPlaced"),
+                    new SymbolParameterSignature("global::System.Threading.CancellationToken"),
+                ]),
+            project,
+            SymbolFacetSet.Create([SymbolFacet.Callable]));
+        pipeline.Accumulator.AddFact(symbol);
+        return symbol;
     }
 
     private static NormalizedPayload RoutePayload(string template) =>

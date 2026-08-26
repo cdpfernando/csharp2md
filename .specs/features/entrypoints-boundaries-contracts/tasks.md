@@ -387,16 +387,16 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Detects `BaseType` observations for `IIntegrationEventHandler<TEvent>`
-- [ ] Extracts `TEvent` FQN and creates inbound messaging `BoundaryOperation`
-- [ ] `BoundaryPass` registered in `PipelineStages.CreateDefault()`
-- [ ] Integration test: `OrdersController.GetOrderStatus` → inbound HTTP boundary with route `orders/{id}`
-- [ ] Integration test: `PlaceOrderAsync` → outbound HTTP boundaries for `PaymentService`, outbound messaging for `OrderPlaced`
-- [ ] Integration test: `NotifyOrderPlacedAsync` → outbound HTTP for `NotificationService`
-- [ ] Integration test: `RequestShippingAsync` → outbound HTTP for `ShippingService`
-- [ ] Integration test: `OrderPlacedEventHandler.HandleAsync` → inbound messaging boundary
-- [ ] Integration test: candidate `ExternalSystem` facts exist for all three HTTP client names
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Detects `BaseType` observations for `IIntegrationEventHandler<TEvent>`
+- [x] Extracts `TEvent` FQN and creates inbound messaging `BoundaryOperation`
+- [x] `BoundaryPass` registered in `PipelineStages.CreateDefault()`
+- [x] Integration test: `OrdersController.GetOrderStatus` → inbound HTTP boundary with route `orders/{id}`
+- [x] Integration test: `PlaceOrderAsync` → outbound HTTP boundaries for `PaymentService`, outbound messaging for `OrderPlaced`
+- [x] Integration test: `NotifyOrderPlacedAsync` → outbound HTTP for `NotificationService`
+- [x] Integration test: `RequestShippingAsync` → outbound HTTP for `ShippingService`
+- [x] Integration test: `OrderPlacedEventHandler.HandleAsync` → inbound messaging boundary
+- [x] Integration test: candidate `ExternalSystem` facts exist for all three HTTP client names
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: integration
 **Gate**: full

@@ -18,6 +18,7 @@ internal sealed class BoundaryPass : IClassifierPass
     internal const string TypeArgumentKey = "type-argument";
     internal const string HttpClientFactoryTypeName = "IHttpClientFactory";
     internal const string EventBusTypeName = "IEventBus";
+    internal const string IntegrationEventHandlerTypeName = "IIntegrationEventHandler";
     internal const string CreateClientMethodName = "CreateClient";
 
     private static readonly Dictionary<string, string> HttpMethodsByInvocationName = new(StringComparer.Ordinal)
@@ -47,7 +48,7 @@ internal sealed class BoundaryPass : IClassifierPass
 
         var factCount = ClassifyHttpInbound(context);
         var outbound = ClassifyHttpOutbound(context);
-        var messagingFacts = ClassifyMessagingOutbound(context);
+        var messagingFacts = ClassifyMessagingOutbound(context) + ClassifyMessagingInbound(context);
         return new ClassifierPassResult(
             factCount + outbound.FactCount + messagingFacts,
             0,
@@ -124,6 +125,7 @@ internal sealed class BoundaryPass : IClassifierPass
         var createClients = context.ObservationsByKind(ObservationKind.Invocation)
             .Where(IsCreateClient)
             .OrderBy(static observation => observation.Identity.Owner.Id.Value, StringComparer.Ordinal)
+            .ThenBy(static observation => observation.Locator)
             .ThenBy(static observation => observation.Identity.OccurrenceOrdinal)
             .ToArray();
 
@@ -152,20 +154,16 @@ internal sealed class BoundaryPass : IClassifierPass
 
             var ownerInvocations = context.ObservationsByOwner(callable.Reference)
                 .Where(static observation => observation.Identity.Kind is ObservationKind.Invocation)
-                .OrderBy(static observation => observation.Identity.OccurrenceOrdinal)
+                .OrderBy(static observation => observation.Locator)
+                .ThenBy(static observation => observation.Identity.OccurrenceOrdinal)
                 .ToArray();
-            var nextCreateOrdinal = ownerInvocations
-                .Where(observation =>
-                    observation.Identity.OccurrenceOrdinal > createClient.Identity.OccurrenceOrdinal
-                    && IsCreateClient(observation))
-                .Select(static observation => observation.Identity.OccurrenceOrdinal)
-                .DefaultIfEmpty(int.MaxValue)
-                .Min();
+            var nextCreate = ownerInvocations.FirstOrDefault(observation =>
+                CompareSourceOrder(observation, createClient) > 0 && IsCreateClient(observation));
 
             foreach (var invocation in ownerInvocations)
             {
-                if (invocation.Identity.OccurrenceOrdinal <= createClient.Identity.OccurrenceOrdinal
-                    || invocation.Identity.OccurrenceOrdinal >= nextCreateOrdinal
+                if (CompareSourceOrder(invocation, createClient) <= 0
+                    || (nextCreate is not null && CompareSourceOrder(invocation, nextCreate) >= 0)
                     || !TryHttpMethod(invocation, out var httpMethod))
                 {
                     continue;
@@ -276,6 +274,140 @@ internal sealed class BoundaryPass : IClassifierPass
         }
 
         return factCount;
+    }
+
+    private static int ClassifyMessagingInbound(ClassifierContext context)
+    {
+        var symbolsById = context.FactsByType<Symbol>()
+            .ToDictionary(static symbol => symbol.Reference.Id.Value, StringComparer.Ordinal);
+        var componentsById = context.FactsByType<Component>()
+            .ToDictionary(static component => component.Reference.Id.Value, StringComparer.Ordinal);
+        var types = symbolsById.Values
+            .Where(static symbol => string.Equals(ReadField(symbol.Signature.Value, "kind"), "namedtype", StringComparison.Ordinal))
+            .ToArray();
+
+        var factCount = 0;
+        foreach (var entry in context.FactsByType<EntryPoint>().OrderBy(static e => e.Reference.Id.Value, StringComparer.Ordinal))
+        {
+            if (!symbolsById.TryGetValue(entry.Symbol.Id.Value, out var symbol)
+                || !componentsById.TryGetValue(entry.OwningComponent.Id.Value, out var component)
+                || !string.Equals(ReadField(symbol.Signature.Value, "metadata"), "HandleAsync", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var declaringType = types.FirstOrDefault(type => IsDeclaredOn(symbol, type));
+            var eventType = declaringType is null
+                ? null
+                : TryEventTypeFromHandlerBases(context, declaringType);
+            eventType ??= TryFirstParameterType(symbol);
+            if (eventType is null)
+            {
+                context.Accumulator.AddDiagnostic(
+                    new DiagnosticRecord(
+                        "missing-message-type-argument",
+                        $"HandleAsync '{symbol.Reference.Id.Value}' has no TEvent type argument.",
+                        symbol.Reference.Id.Value));
+                continue;
+            }
+
+            var protocolOperationKey = StructuralLiteral.Create(LiteralRole.ProtocolName, eventType, "protocol-operation-key");
+            context.Accumulator.AddFact(
+                BoundaryOperation.Create(
+                    symbol.Reference,
+                    component.Reference,
+                    BoundaryDirection.Inbound,
+                    BoundaryProtocol.Messaging,
+                    protocolOperationKey: protocolOperationKey));
+            factCount++;
+        }
+
+        return factCount;
+    }
+
+    private static string? TryEventTypeFromHandlerBases(ClassifierContext context, Symbol declaringType)
+    {
+        foreach (var observation in context.ObservationsByOwner(declaringType.Reference))
+        {
+            if (observation.Identity.Kind is not ObservationKind.BaseType
+                || !PayloadContains(observation, TargetTypeKey, IntegrationEventHandlerTypeName))
+            {
+                continue;
+            }
+
+            var typeArgument = ReadPayloadValue(observation, TypeArgumentKey);
+            if (typeArgument is not null)
+            {
+                return typeArgument;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsDeclaredOn(Symbol method, Symbol type)
+    {
+        var container = ReadField(method.Signature.Value, "container");
+        if (container is null)
+        {
+            return false;
+        }
+
+        var typeName = ReadField(type.Signature.Value, "type");
+        if (string.Equals(container, typeName, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        var typeContainer = ReadField(type.Signature.Value, "container");
+        var typeMetadata = ReadField(type.Signature.Value, "metadata");
+        return typeContainer is not null
+            && typeMetadata is not null
+            && string.Equals(container, typeContainer + "." + typeMetadata, StringComparison.Ordinal);
+    }
+
+    private static string? TryFirstParameterType(Symbol method)
+    {
+        var parameters = ReadField(method.Signature.Value, "parameters");
+        if (string.IsNullOrWhiteSpace(parameters))
+        {
+            return null;
+        }
+
+        var first = parameters.Split(',')[0].Trim();
+        foreach (var prefix in new[] { "ref ", "out ", "in " })
+        {
+            if (first.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                first = first[prefix.Length..];
+                break;
+            }
+        }
+
+        return string.IsNullOrWhiteSpace(first) ? null : first;
+    }
+
+    private static string? ReadField(string identity, string key)
+    {
+        var marker = ";" + key + "=";
+        var start = identity.IndexOf(marker, StringComparison.Ordinal);
+        if (start < 0)
+        {
+            return null;
+        }
+
+        start += marker.Length;
+        var end = identity.IndexOf(';', start);
+        var encoded = end < 0 ? identity[start..] : identity[start..end];
+        return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
+    }
+
+    private static int CompareSourceOrder(Observation left, Observation right)
+    {
+        var locator = left.Locator.CompareTo(right.Locator);
+        return locator != 0
+            ? locator
+            : left.Identity.OccurrenceOrdinal.CompareTo(right.Identity.OccurrenceOrdinal);
     }
 
     private static bool IsCreateClient(Observation observation) =>
