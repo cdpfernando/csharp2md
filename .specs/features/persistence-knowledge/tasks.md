@@ -296,12 +296,12 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] `entity-type` holds the assigned member's containing type, fully qualified
-- [ ] `field-name` holds the assigned member's name with `LiteralRole.FieldName`
-- [ ] Existing `AssignmentDetectorTests` still pass
-- [ ] A test asserts the fixture's `PayOrder` assignment carries `field-name=Status` and `Reprice` carries `field-name=Amount`
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + new tests pass (no silent deletions)
+- [x] `entity-type` holds the assigned member's containing type, fully qualified
+- [x] `field-name` holds the assigned member's name with `LiteralRole.FieldName`
+- [x] Existing `AssignmentDetectorTests` still pass (the empty-payload assertion is rewritten to assert the new `entity-type`/`field-name` entries, since PK-06 now requires both on every Assignment observation)
+- [x] A test asserts the fixture's `PayOrder` assignment carries `field-name=Status` and `Reprice` carries `field-name=Amount`
+- [x] Gate check passes: full gate command
+- [x] Test count: 545 + 313 = 858 pass (no silent deletions)
 
 **Tests**: unit + integration
 **Gate**: full
