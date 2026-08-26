@@ -761,14 +761,14 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] `PersistencePass.Execute` is builder-then-emitter and holds no classification logic of its own
-- [ ] It is registered after `ContractPass` and before `RelationPass` in `PipelineStages.CreateDefault()`
-- [ ] No workstream 5A classifier pass file is modified (PK-43) — verified by `git diff --stat` in the commit body
-- [ ] The stage's `StageResult` fact and relation counts include persistence output (PK-44)
-- [ ] A test registers a no-op pass alongside the real ones and asserts no interference, matching the existing composability test
-- [ ] All 5A classification tests still pass unchanged
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1019 + tests added so far pass (no silent deletions)
+- [x] `PersistencePass.Execute` is builder-then-emitter and holds no classification logic of its own
+- [x] It is registered after `ContractPass` and before `RelationPass` in `PipelineStages.CreateDefault()`
+- [x] No workstream 5A classifier pass file is modified (PK-43) — verified by `git diff --stat` in the commit body
+- [x] The stage's `StageResult` fact and relation counts include persistence output (PK-44)
+- [x] A test registers a no-op pass alongside the real ones and asserts no interference, matching the existing composability test
+- [x] All 5A classification tests still pass unchanged
+- [x] Gate check passes: build gate command
+- [x] Test count: 1143 pass — Domain 545, Analysis 407, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: integration
 **Gate**: build

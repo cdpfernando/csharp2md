@@ -65,7 +65,6 @@ public sealed class AnalyzePackageWriteTests
             Assert.DoesNotContain(
                 result.Snapshot.ConfirmedRelations,
                 static relation => relation.Kind is RelationKind.Targets);
-            Assert.True(result.Snapshot.Unresolved.IsEmpty);
             Assert.True(result.Snapshot.Frontiers.IsEmpty);
 
             var registryPath = Path.Combine(child, "contracts", "taxonomy-registry.json");

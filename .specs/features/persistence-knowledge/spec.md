@@ -307,8 +307,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | PK-40 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
 | PK-41 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
 | PK-42 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
-| PK-43 | P1: Unresolved evidence and negative cases | - | Pending |
-| PK-44 | P1: Unresolved evidence and negative cases | - | Pending |
+| PK-43 | P1: Unresolved evidence and negative cases | Phase 5 (T22) | Implementing |
+| PK-44 | P1: Unresolved evidence and negative cases | Phase 5 (T22) | Implementing |
 | PK-45 | P1: Determinism, security and invariants | - | Pending |
 | PK-46 | P1: Determinism, security and invariants | - | Pending |
 | PK-47 | P1: Determinism, security and invariants | - | Pending |

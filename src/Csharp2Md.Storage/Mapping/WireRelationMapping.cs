@@ -118,6 +118,11 @@ internal static class WireRelationMapping
             axes = axes.Add(new FacetAxisDescriptor("payload-role", TaxonomyTables.Default.PayloadRoles));
         }
 
+        if (allowed.Contains("mapping-role", StringComparer.Ordinal))
+        {
+            axes = axes.Add(new FacetAxisDescriptor("mapping-role", TaxonomyTables.Default.MappingRoles));
+        }
+
         return FacetBinding.Create(axes, allowed, values);
     }
 

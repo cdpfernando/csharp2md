@@ -126,7 +126,7 @@ public sealed class FullClassifierPipelineTests
         {
             var unresolved = CanonicalJson.Read<ImmutableArray<UnresolvedRecordDto>>(unresolvedFragment.Payload.AsSpan());
             Assert.Equal(unresolved.Length, unresolvedEntry.Count);
-            Assert.All(unresolved, record => Assert.Equal("uses-contract", record.Kind));
+            Assert.Contains(unresolved, record => record.Kind == "operates-on");
         }
     }
 

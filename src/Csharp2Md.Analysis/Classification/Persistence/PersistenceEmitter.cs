@@ -191,7 +191,9 @@ internal static class PersistenceEmitter
         FactReference target,
         string mappingRole)
     {
-        if (mappingState is not MappingStateKind.ExplicitConfirmation || clrSymbol is null)
+        if (mappingState is not MappingStateKind.ExplicitConfirmation
+            || clrSymbol is null
+            || evidence.DerivedFrom.IsDefaultOrEmpty)
         {
             return 0;
         }
@@ -240,7 +242,9 @@ internal static class PersistenceEmitter
         EvidenceChain evidence,
         FactReference target)
     {
-        if (mappingState is not MappingStateKind.ConventionalCandidate || clrSymbol is null)
+        if (mappingState is not MappingStateKind.ConventionalCandidate
+            || clrSymbol is null
+            || evidence.DerivedFrom.IsDefaultOrEmpty)
         {
             return 0;
         }
@@ -258,6 +262,11 @@ internal static class PersistenceEmitter
             .ThenBy(static record => record.Kind.ToString(), StringComparer.Ordinal)
             .ThenBy(static record => record.Cause.ToString(), StringComparer.Ordinal))
         {
+            if (node.Available.DerivedFrom.IsDefaultOrEmpty)
+            {
+                continue;
+            }
+
             context.Accumulator.AddUnresolved(
                 UnresolvedRecord.Create(node.Kind, node.Source, node.Cause, node.Available));
             count++;
