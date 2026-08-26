@@ -1237,10 +1237,10 @@ a `Microsoft.CodeAnalysis` type. Extractor/Stage type names stay off the exporte
 
 **Done when**:
 
-- [ ] `GetExportedTypes` plus public member signatures contain no `Microsoft.CodeAnalysis` type
-- [ ] `InventoryStage`, `SemanticAnalysisStage`, `ObservationExtractor` are not exported
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `GetExportedTypes` plus public member signatures contain no `Microsoft.CodeAnalysis` type
+- [x] `InventoryStage`, `SemanticAnalysisStage`, `ObservationExtractor` are not exported
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

@@ -101,6 +101,39 @@ public sealed class AnalysisIsolationTests
             $"Type '{offendingType?.FullName}' from forbidden namespace '{forbiddenNamespace}' is exposed by a public member of Csharp2Md.Analysis.");
     }
 
+    [Fact]
+    [Trait("Requirement", "ROSE-31")]
+    public void PublicSurface_ExportedTypesAndSignatures_ContainNoMicrosoftCodeAnalysisType()
+    {
+        var exported = typeof(AssemblyMarker).Assembly.GetExportedTypes();
+        Assert.DoesNotContain(
+            exported,
+            type => BelongsToNamespace(type, "Microsoft.CodeAnalysis"));
+
+        var offendingMember = exported
+            .SelectMany(ExposedPublicMemberTypes)
+            .FirstOrDefault(exposed => BelongsToNamespace(exposed, "Microsoft.CodeAnalysis"));
+        Assert.True(
+            offendingMember is null,
+            $"Type '{offendingMember?.FullName}' from Microsoft.CodeAnalysis is exposed by a public member of Csharp2Md.Analysis.");
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-31")]
+    public void PublicSurface_DoesNotExportInventoryStageSemanticAnalysisStageOrObservationExtractor()
+    {
+        var names = typeof(AssemblyMarker).Assembly
+            .GetExportedTypes()
+            .Select(type => type.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.DoesNotContain("InventoryStage", names);
+        Assert.DoesNotContain("SemanticAnalysisStage", names);
+        Assert.DoesNotContain("ObservationExtractor", names);
+        Assert.DoesNotContain("BoundSolution", names);
+        Assert.Contains("DiagnosticRecord", names);
+    }
+
     private static string AnalysisCsprojPath() =>
         Path.Combine(
             AnalysisTestPaths.RepoRoot,
