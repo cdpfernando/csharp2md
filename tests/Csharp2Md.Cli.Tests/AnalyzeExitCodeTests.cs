@@ -169,11 +169,14 @@ public sealed class AnalyzeExitCodeTests
         var solutionPath = ExistingFixturePath();
         IAnalysisEngine engine = new AnalysisEngine(new RejectingTransactionalStore());
 
-        var (exitCode, _, _) = await CliInvoke.RunAsync(
+        var (exitCode, _, stderr) = await CliInvoke.RunAsync(
             ["analyze", "--solution", solutionPath, "--output", CliTestPaths.UniqueOutputPath()],
             engine);
 
         Assert.Equal(2, exitCode);
+        Assert.Contains("unpublished", stderr, StringComparison.Ordinal);
+        Assert.Contains("structural corruption", stderr, StringComparison.Ordinal);
+        Assert.Contains("schema: facts/structural.json", stderr, StringComparison.Ordinal);
     }
 
     private static string ExistingFixturePath()

@@ -24,6 +24,26 @@ public static class PackageValidator
         .Select(descriptor => descriptor.WireName)
         .ToFrozenSet(StringComparer.Ordinal);
 
+    private static readonly FrozenSet<string> UnixFilesystemRoots = FrozenSet.ToFrozenSet(
+        [
+            "home",
+            "usr",
+            "opt",
+            "var",
+            "etc",
+            "tmp",
+            "root",
+            "dev",
+            "proc",
+            "sys",
+            "mnt",
+            "media",
+            "users",
+            "private",
+            "volumes",
+        ],
+        StringComparer.OrdinalIgnoreCase);
+
     public static ValidationReport Validate(WireDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
@@ -343,7 +363,7 @@ public static class PackageValidator
     {
         switch (node)
         {
-            case JsonValue value when value.TryGetValue<string>(out var text) && IsAbsolutePath(text):
+            case JsonValue value when value.TryGetValue<string>(out var text) && IsAbsoluteFilesystemPath(text):
                 throw new PublicationRejectedException("absolute-path", field);
             case JsonObject obj:
                 foreach (var property in obj)
@@ -362,10 +382,47 @@ public static class PackageValidator
         }
     }
 
-    private static bool IsAbsolutePath(string text) =>
-        text.Length > 0
-        && (text[0] is '/' or '\\'
-            || (text.Length >= 2 && char.IsAsciiLetter(text[0]) && text[1] == ':'));
+    private static bool IsAbsoluteFilesystemPath(string text)
+    {
+        if (text.Length == 0)
+        {
+            return false;
+        }
+
+        if (text[0] == '\\' || text.StartsWith("//", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (text.Length >= 2 && char.IsAsciiLetter(text[0]) && text[1] == ':')
+        {
+            return true;
+        }
+
+        return text[0] == '/' && UnixFilesystemRoots.Contains(FirstPathSegment(text));
+    }
+
+    private static string FirstPathSegment(string path)
+    {
+        var start = 0;
+        while (start < path.Length && path[start] is '/' or '\\')
+        {
+            start++;
+        }
+
+        if (start >= path.Length)
+        {
+            return string.Empty;
+        }
+
+        var end = start;
+        while (end < path.Length && path[end] is not '/' and not '\\')
+        {
+            end++;
+        }
+
+        return path[start..end];
+    }
 
     private static void EnsureStructuralConstruction(WireDocument document)
     {

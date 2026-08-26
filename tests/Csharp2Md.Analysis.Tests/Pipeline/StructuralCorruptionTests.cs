@@ -92,6 +92,7 @@ public sealed class StructuralCorruptionTests
         Assert.Equal(PublicationStatus.Unpublished, outcome.Status);
         Assert.True(outcome.StructuralCorruption);
         Assert.Null(outcome.FailingStage);
+        Assert.Equal("schema: facts/structural.json", outcome.Detail);
         Assert.True(second.HasUnpublishedSolution);
         Assert.Equal(1, rejecting.AbortCount);
 

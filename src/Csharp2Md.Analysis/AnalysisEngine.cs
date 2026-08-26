@@ -63,7 +63,7 @@ public sealed class AnalysisEngine : IAnalysisEngine
             {
                 session.Commit();
             }
-            catch (PublicationRejectedException)
+            catch (PublicationRejectedException exception)
             {
                 session.Abort();
                 return CreateOutcome(
@@ -73,7 +73,7 @@ public sealed class AnalysisEngine : IAnalysisEngine
                     failingStage: null,
                     context.Reports,
                     run with { StructuralCorruption = true },
-                    context.Detail);
+                    exception.Message);
             }
 
             return CreateOutcome(
