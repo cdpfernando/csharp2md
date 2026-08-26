@@ -1,5 +1,6 @@
 using System.Reflection;
 using Csharp2Md.Analysis;
+using Csharp2Md.Analysis.Extraction;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Semantics;
@@ -185,6 +186,19 @@ public sealed class SemanticAnalysisStageTests
                 Assert.Contains(
                     context.Accumulator.ToSnapshot().Facts.OfType<Csharp2Md.Domain.Facts.Symbol>(),
                     symbol => symbol.Signature.Value.Contains("metadata=Good", StringComparison.Ordinal));
+
+                var extraction = await new ObservationExtractionStage().ExecuteAsync(context, CancellationToken.None);
+
+                Assert.False(extraction.AbortPublication);
+                Assert.False(extraction.StructuralCorruption);
+                Assert.Contains(
+                    context.Accumulator.ToSnapshot().Observations,
+                    observation =>
+                        observation.Locator.RelativePath.Contains("Good.cs", StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(observation.Diagnostic.Code, "bound", StringComparison.Ordinal));
+                Assert.Contains(
+                    context.Accumulator.ToSnapshot().Diagnostics,
+                    record => string.Equals(record.Code, "compilation-error", StringComparison.Ordinal));
             }
             finally
             {
@@ -253,7 +267,14 @@ public sealed class SemanticAnalysisStageTests
             </Project>
             """;
         File.WriteAllText(Path.Combine(goodDir, "Good.csproj"), sdkProject);
-        File.WriteAllText(Path.Combine(goodDir, "Good.cs"), "class Good;");
+        File.WriteAllText(
+            Path.Combine(goodDir, "Good.cs"),
+            """
+            class Good
+            {
+                public void Run() => System.Console.WriteLine();
+            }
+            """);
         File.WriteAllText(Path.Combine(brokenDir, "Broken.csproj"), sdkProject);
         File.WriteAllText(Path.Combine(brokenDir, "Broken.cs"), """class Broken { int M() => "compile-error"; }""");
 
