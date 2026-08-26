@@ -8,6 +8,7 @@ using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
+using Csharp2Md.Domain.Relations;
 
 namespace Csharp2Md.Analysis.Tests.Classification;
 
@@ -238,6 +239,103 @@ public sealed class ConfigurationModelBuilderTests
         Assert.Empty(pipeline.Accumulator.ToSnapshot().Unresolved);
     }
 
+    [Fact]
+    [Trait("Requirement", "CDC-43")]
+    [Trait("Requirement", "CDC-46")]
+    [Trait("Requirement", "CDC-47")]
+    public void Build_LiteralServicesKeyWithAddress_PromotesCandidateWithBothObservations()
+    {
+        var pipeline = Arrange();
+        var project = AddProject(pipeline, "Acme.Orders/Acme.Orders.csproj");
+        var document = AddDocument(pipeline, project, "Acme.Orders/appsettings.json");
+        var component = Group(pipeline, project, "Acme.Orders/Acme.Orders.csproj");
+        AddDeclaredKey(pipeline, document, "Services:PaymentService", "literal", "https://payments.internal.acme.local:8443", ordinal: 1);
+        var (operation, external, csharp) = AddTargetsCandidate(pipeline, project, component, "PaymentService");
+        var externalsBefore = pipeline.Accumulator.ToSnapshot().Facts.OfType<ExternalSystem>().Count();
+
+        var model = ConfigurationModelBuilder.Build(new ClassifierContext(pipeline));
+
+        var decision = Assert.Single(model.Targets);
+        Assert.Equal(TargetOutcome.Promote, decision.Outcome);
+        Assert.Equal(operation.Reference, decision.Candidate.Source);
+        Assert.Equal(external.Reference, decision.Candidate.ProposedTarget);
+        Assert.Contains(decision.Evidence.DerivedFrom, identity => identity.Equals(csharp.Identity));
+        Assert.Contains(decision.Evidence.DerivedFrom, identity => identity.Owner.Equals(document.Reference));
+        Assert.Equal(externalsBefore, pipeline.Accumulator.ToSnapshot().Facts.OfType<ExternalSystem>().Count());
+        Assert.Equal(1, externalsBefore);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-44")]
+    public void Build_DynamicServicesKey_YieldsFrontier()
+    {
+        var pipeline = Arrange();
+        var project = AddProject(pipeline, "Acme.Orders/Acme.Orders.csproj");
+        var document = AddDocument(pipeline, project, "Acme.Orders/appsettings.json");
+        var component = Group(pipeline, project, "Acme.Orders/Acme.Orders.csproj");
+        AddDeclaredKey(pipeline, document, "Services:NotificationService", "dynamic", address: null, ordinal: 1);
+        AddTargetsCandidate(pipeline, project, component, "NotificationService");
+
+        var model = ConfigurationModelBuilder.Build(new ClassifierContext(pipeline));
+
+        var decision = Assert.Single(model.Targets);
+        Assert.Equal(TargetOutcome.Frontier, decision.Outcome);
+        Assert.Contains(decision.Evidence.DerivedFrom, identity => identity.Owner.Equals(document.Reference));
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-45")]
+    public void Build_NoMatchingServicesKey_YieldsLeaveWithNoFrontier()
+    {
+        var pipeline = Arrange();
+        var project = AddProject(pipeline, "Acme.Orders/Acme.Orders.csproj");
+        var document = AddDocument(pipeline, project, "Acme.Orders/appsettings.json");
+        var component = Group(pipeline, project, "Acme.Orders/Acme.Orders.csproj");
+        AddDeclaredKey(pipeline, document, "Services:PaymentService", "literal", "https://payments.internal.acme.local:8443", ordinal: 1);
+        AddTargetsCandidate(pipeline, project, component, "ShippingService");
+
+        var model = ConfigurationModelBuilder.Build(new ClassifierContext(pipeline));
+
+        var decision = Assert.Single(model.Targets);
+        Assert.Equal(TargetOutcome.Leave, decision.Outcome);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-43")]
+    public void Build_LiteralServicesKeyWithoutAddress_YieldsLeaveNotPromote()
+    {
+        var pipeline = Arrange();
+        var project = AddProject(pipeline, "Acme.Orders/Acme.Orders.csproj");
+        var document = AddDocument(pipeline, project, "Acme.Orders/appsettings.json");
+        var component = Group(pipeline, project, "Acme.Orders/Acme.Orders.csproj");
+        AddDeclaredKey(pipeline, document, "Services:PaymentService", "literal", address: null, ordinal: 1);
+        AddTargetsCandidate(pipeline, project, component, "PaymentService");
+
+        var model = ConfigurationModelBuilder.Build(new ClassifierContext(pipeline));
+
+        var decision = Assert.Single(model.Targets);
+        Assert.Equal(TargetOutcome.Leave, decision.Outcome);
+        Assert.NotEqual(TargetOutcome.Promote, decision.Outcome);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-48")]
+    public void Build_PrefixOrCaseVariantClientName_YieldsLeave()
+    {
+        var pipeline = Arrange();
+        var project = AddProject(pipeline, "Acme.Orders/Acme.Orders.csproj");
+        var document = AddDocument(pipeline, project, "Acme.Orders/appsettings.json");
+        var component = Group(pipeline, project, "Acme.Orders/Acme.Orders.csproj");
+        AddDeclaredKey(pipeline, document, "Services:PaymentService", "literal", "https://payments.internal.acme.local:8443", ordinal: 1);
+        AddTargetsCandidate(pipeline, project, component, "Payment");
+        AddTargetsCandidate(pipeline, project, component, "paymentservice");
+
+        var model = ConfigurationModelBuilder.Build(new ClassifierContext(pipeline));
+
+        Assert.Equal(2, model.Targets.Length);
+        Assert.All(model.Targets, decision => Assert.Equal(TargetOutcome.Leave, decision.Outcome));
+    }
+
     private static PipelineContext Arrange()
     {
         var pipeline = new PipelineContext(new SwallowingSession(), "alpha.sln");
@@ -282,6 +380,51 @@ public sealed class ConfigurationModelBuilderTests
             SymbolFacetSet.Create([SymbolFacet.Callable]));
         pipeline.Accumulator.AddFact(symbol);
         return symbol;
+    }
+
+    private static (BoundaryOperation Operation, ExternalSystem External, Observation Csharp) AddTargetsCandidate(
+        PipelineContext pipeline,
+        Project project,
+        Component component,
+        string clientName)
+    {
+        var callable = AddCallable(pipeline, project, clientName + "Call", "global::Acme.Orders.Clients");
+        var operation = BoundaryOperation.Create(
+            callable.Reference,
+            component.Reference,
+            BoundaryDirection.Outbound,
+            BoundaryProtocol.Http,
+            clientName,
+            "POST",
+            StructuralLiteral.Create(LiteralRole.Route, "payments/authorize", "route"));
+        pipeline.Accumulator.AddFact(operation);
+        var external = ExternalSystem.Create(
+            SolutionId,
+            StructuralLiteral.Create(LiteralRole.ClientName, clientName, "client-name"));
+        pipeline.Accumulator.AddFact(external);
+        var csharp = Observation.Create(
+            callable.Reference,
+            ObservationKind.Invocation,
+            NormalizedPayload.Create(
+            [
+                new PayloadEntry(
+                    "client-name",
+                    StructuralLiteral.Create(LiteralRole.ClientName, clientName, "client-name")),
+            ]),
+            1,
+            new EvidenceLocator(DocumentId.Create("doc"), "Acme.Orders/OrderService.cs", new SourceSpan(1, 1, 1, 8)),
+            EvidenceMethod.Semantic,
+            new BindingDiagnostic("bound", "bound"),
+            DocumentHash.Create(new string('a', 64)),
+            new ExtractorVersion(1));
+        pipeline.Accumulator.AddObservation(csharp);
+        pipeline.Accumulator.AddCandidate(
+            CandidateLink.Create(
+                RelationKind.Targets,
+                operation.Reference,
+                external.Reference,
+                EvidenceChain.Create([csharp.Identity])));
+        return (operation, external, csharp);
     }
 
     private static FactReference[] OwnersOf(PipelineContext pipeline, Project project) =>

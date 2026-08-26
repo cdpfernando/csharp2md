@@ -4,6 +4,7 @@ using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
+using Csharp2Md.Domain.Relations;
 
 namespace Csharp2Md.Analysis.Classification.Configuration;
 
@@ -28,6 +29,7 @@ internal static class ConfigurationModelBuilder
 
         var keys = CollectDeclaredKeys(context);
         var (edges, unbound) = CorrelateConsumers(context, keys);
+        var targets = DecideTargets(context, keys);
         var bound = edges
             .Select(static edge => edge.KeyPath)
             .Distinct(StringComparer.Ordinal)
@@ -35,7 +37,7 @@ internal static class ConfigurationModelBuilder
         return new ConfigurationModel(
             keys,
             edges,
-            [],
+            targets,
             unbound,
             new ConfigurationCoverage(keys.Length, bound, unbound.Length));
     }
@@ -185,6 +187,44 @@ internal static class ConfigurationModelBuilder
                     .OrderBy(static read => read.Symbol.Id.Value, StringComparer.Ordinal)
                     .ThenBy(static read => read.Evidence.OccurrenceOrdinal),
             ]);
+    }
+
+    private static ImmutableArray<TargetDecision> DecideTargets(ClassifierContext context, ImmutableArray<DeclaredKey> keys)
+    {
+        var externals = context.FactsByType<ExternalSystem>()
+            .ToDictionary(static system => system.Reference.Id.Value, StringComparer.Ordinal);
+        var decisions = new List<TargetDecision>();
+        foreach (var candidate in context.Accumulator.ToSnapshot().Candidates
+            .Where(static candidate => candidate.Kind is RelationKind.Targets)
+            .OrderBy(static candidate => candidate.Source.Id.Value, StringComparer.Ordinal)
+            .ThenBy(static candidate => candidate.ProposedTarget.Id.Value, StringComparer.Ordinal))
+        {
+            if (!externals.TryGetValue(candidate.ProposedTarget.Id.Value, out var external))
+            {
+                decisions.Add(new TargetDecision(candidate, TargetOutcome.Leave, candidate.DerivedFrom));
+                continue;
+            }
+
+            var match = MatchLastSegment(keys, ServicesPrefix, external.Name.Value);
+            if (match is null)
+            {
+                decisions.Add(new TargetDecision(candidate, TargetOutcome.Leave, candidate.DerivedFrom));
+                continue;
+            }
+
+            var outcome = match.Resolution switch
+            {
+                KeyResolution.Literal when match.Address is not null => TargetOutcome.Promote,
+                KeyResolution.Dynamic => TargetOutcome.Frontier,
+                _ => TargetOutcome.Leave,
+            };
+            var evidence = outcome is TargetOutcome.Leave
+                ? candidate.DerivedFrom
+                : EvidenceChain.Create(candidate.DerivedFrom.DerivedFrom.Append(match.Evidence));
+            decisions.Add(new TargetDecision(candidate, outcome, evidence));
+        }
+
+        return [.. decisions];
     }
 
     private static DeclaredKey? MatchKeyPath(ImmutableArray<DeclaredKey> keys, string keyPath)

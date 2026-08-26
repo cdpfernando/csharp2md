@@ -967,15 +967,15 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] A `literal` key with an address yields `Promote` with an evidence chain holding both the C# and the configuration observation
-- [ ] A `dynamic` key yields `Frontier`
-- [ ] No matching key yields `Leave` with no frontier
-- [ ] A `literal` key without an address yields `Leave`, not `Promote`
-- [ ] Matching is exact ordinal against the key's last segment; a prefix or case variant yields `Leave`
-- [ ] No decision creates an `ExternalSystem`
-- [ ] Unit tests cover all five outcomes above against a hand-built ledger
-- [ ] Gate check passes: quick gate command
-- [ ] Test count reported; no silent deletions
+- [x] A `literal` key with an address yields `Promote` with an evidence chain holding both the C# and the configuration observation
+- [x] A `dynamic` key yields `Frontier`
+- [x] No matching key yields `Leave` with no frontier
+- [x] A `literal` key without an address yields `Leave`, not `Promote`
+- [x] Matching is exact ordinal against the key's last segment; a prefix or case variant yields `Leave`
+- [x] No decision creates an `ExternalSystem`
+- [x] Unit tests cover all five outcomes above against a hand-built ledger
+- [x] Gate check passes: quick gate command
+- [x] Test count reported; no silent deletions (Analysis 557 pass)
 
 **Tests**: unit
 **Gate**: quick
