@@ -766,13 +766,13 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] The pass name stays `"Components"` and the classifier identity is `csharp2md.classifier.component-topology` version 1
-- [ ] The four candidate observation kinds and the local `TryLogicalPath` helper are gone, replaced by the shared helper
-- [ ] `ClassifierPassResult` reports fact, relation and unresolved counts from the emitter
-- [ ] An empty ledger produces a zero result without throwing
-- [ ] `ComponentPassTests` is rewritten against the new rule — deployable, private-use, shared, unreached — rather than loosened
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] The pass name stays `"Components"` and the classifier identity is `csharp2md.classifier.component-topology` version 1
+- [x] The four candidate observation kinds and the local `TryLogicalPath` helper are gone, replaced by the shared helper
+- [x] `ClassifierPassResult` reports fact, relation and unresolved counts from the emitter
+- [x] An empty ledger produces a zero result without throwing
+- [x] `ComponentPassTests` is rewritten against the new rule — deployable, private-use, shared, unreached — rather than loosened
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: full
