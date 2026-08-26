@@ -478,7 +478,14 @@ public static class PackageValidator
         var dataOperations = KeepOrQuarantine(document.DataOperations, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
         var configurationBindings = KeepOrQuarantine(document.ConfigurationBindings, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
 
-        var factsById = IndexDerivedFacts(document.Symbols, boundaryOperations, contracts);
+        var factsById = IndexDerivedFacts(
+            document.Symbols,
+            boundaryOperations,
+            contracts,
+            dataStores,
+            dataObjects,
+            dataFields,
+            dataOperations);
         var confirmed = ImmutableDictionary.CreateBuilder<string, ImmutableArray<ConfirmedRelationDto>>(StringComparer.Ordinal);
         foreach (var (key, records) in document.ConfirmedRelations)
         {
@@ -523,12 +530,20 @@ public static class PackageValidator
     private static IReadOnlyDictionary<string, IFact> IndexDerivedFacts(
         ImmutableArray<SymbolDto> symbols,
         ImmutableArray<BoundaryOperationDto> boundaryOperations,
-        ImmutableArray<ContractDto> contracts)
+        ImmutableArray<ContractDto> contracts,
+        ImmutableArray<DataStoreDto> dataStores,
+        ImmutableArray<DataObjectDto> dataObjects,
+        ImmutableArray<DataFieldDto> dataFields,
+        ImmutableArray<DataOperationDto> dataOperations)
     {
         var facts = new Dictionary<string, IFact>(StringComparer.Ordinal);
         Index(symbols, WireFactMapping.FromDto, facts);
         Index(boundaryOperations, WireFactMapping.FromDto, facts);
         Index(contracts, WireFactMapping.FromDto, facts);
+        Index(dataStores, WireFactMapping.FromDto, facts);
+        Index(dataObjects, WireFactMapping.FromDto, facts);
+        Index(dataFields, WireFactMapping.FromDto, facts);
+        Index(dataOperations, WireFactMapping.FromDto, facts);
         return facts;
     }
 

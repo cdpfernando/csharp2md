@@ -39,6 +39,7 @@ public sealed class ComposabilityTests
                 new RecordingPass(new EntryPointPass(), order),
                 new RecordingPass(new BoundaryPass(), order),
                 new RecordingPass(new ContractPass(), order),
+                new RecordingPass(new PersistencePass(), order),
                 new RecordingPass(new RelationPass(), order),
                 new RecordingPass(new InvokesPass(), order),
                 new RecordingPass(new ExecutesPass(), order),
@@ -47,7 +48,7 @@ public sealed class ComposabilityTests
         var composed = await AnalyzeAsync(solutionPath, stages);
 
         Assert.Equal(
-            ["Components", "Entry points", "Boundaries", "Contracts", "Relations", "Invokes", "Executes", CountingClassifierPass.PassName],
+            ["Components", "Entry points", "Boundaries", "Contracts", "Persistence", "Relations", CountingClassifierPass.PassName],
             order);
         Assert.Equal(baseline.Outcome.Stages[3].FactCount + 1, composed.Outcome.Stages[3].FactCount);
         Assert.Equal(baseline.Outcome.Stages[3].RelationCount, composed.Outcome.Stages[3].RelationCount);

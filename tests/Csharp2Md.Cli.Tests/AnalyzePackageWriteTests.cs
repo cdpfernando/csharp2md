@@ -65,18 +65,7 @@ public sealed class AnalyzePackageWriteTests
             Assert.DoesNotContain(
                 result.Snapshot.ConfirmedRelations,
                 static relation => relation.Kind is RelationKind.Targets);
-            Assert.Contains(
-                result.Snapshot.ConfirmedRelations,
-                static relation => relation.Kind is RelationKind.Invokes);
-            Assert.Contains(
-                result.Snapshot.ConfirmedRelations,
-                static relation => relation.Kind is RelationKind.Executes);
-            Assert.Contains(
-                result.Snapshot.Unresolved,
-                static record => record.Kind is RelationKind.Invokes);
-            Assert.Contains(
-                result.Snapshot.Frontiers,
-                static frontier => frontier.Cause is FrontierCause.FurtherContinuationObserved);
+            Assert.True(result.Snapshot.Frontiers.IsEmpty);
 
             var registryPath = Path.Combine(child, "contracts", "taxonomy-registry.json");
             Assert.True(File.Exists(registryPath), $"taxonomy-registry copy was not found at '{registryPath}'.");

@@ -25,6 +25,16 @@ namespace Microsoft.Extensions.Configuration
     public interface IConfiguration
     {
         string? this[string key] { get; }
+
+        string? GetConnectionString(string name);
+    }
+
+    /// <summary>Minimal stand-in configuration store used by the composition root.</summary>
+    public sealed class ConfigurationRoot : IConfiguration
+    {
+        public string? this[string key] => null;
+
+        public string? GetConnectionString(string name) => null;
     }
 }
 

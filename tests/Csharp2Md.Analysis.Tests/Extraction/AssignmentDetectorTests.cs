@@ -3,6 +3,7 @@ using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Semantics;
 using Csharp2Md.Analysis.Tests.Pipeline;
+using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Observations;
 
 namespace Csharp2Md.Analysis.Tests.Extraction;
@@ -11,7 +12,8 @@ public sealed class AssignmentDetectorTests
 {
     [Fact]
     [Trait("Requirement", "ROSE-37")]
-    public async Task ExtractInto_PayOrderStatusWrite_EmitsAssignmentWithEmptyPayload()
+    [Trait("Requirement", "PK-06")]
+    public async Task ExtractInto_PayOrderStatusWrite_EmitsAssignmentWithEntityTypeAndFieldName()
     {
         var observations = await ExtractAcmeOrdersAsync();
         var orderDbContext = Path.Combine(
@@ -30,7 +32,48 @@ public sealed class AssignmentDetectorTests
                 && SpannedLines(orderDbContext, observation).Contains("order.Status", StringComparison.Ordinal));
 
         Assert.Equal(ObservationKind.Assignment, statusWrite.Identity.Kind);
-        Assert.Empty(statusWrite.Identity.Payload.Entries);
+        var entries = statusWrite.Identity.Payload.Entries;
+        Assert.Equal(2, entries.Length);
+        Assert.Contains(
+            entries,
+            entry => entry.Key == "entity-type"
+                && entry.Value.Role == LiteralRole.ProtocolName
+                && entry.Value.Value == "global::Acme.Orders.Data.Order");
+        Assert.Contains(
+            entries,
+            entry => entry.Key == "field-name"
+                && entry.Value.Role == LiteralRole.FieldName
+                && entry.Value.Value == "Status");
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-06")]
+    public async Task ExtractInto_RepriceAmountWrite_EmitsAssignmentWithFieldNameAmount()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+        var orderDbContext = Path.Combine(
+            AnalysisTestPaths.RepoRoot,
+            "fixtures",
+            "SyntheticSolution",
+            "Acme.Orders",
+            "Data",
+            "OrderDbContext.cs");
+
+        var amountWrite = Assert.Single(
+            observations,
+            observation => observation.Identity.Kind is ObservationKind.Assignment
+                && observation.Locator.RelativePath.Replace('\\', '/')
+                    .EndsWith("Acme.Orders/Data/OrderDbContext.cs", StringComparison.Ordinal)
+                && SpannedLines(orderDbContext, observation).Contains("order.Amount = amount", StringComparison.Ordinal));
+
+        var entries = amountWrite.Identity.Payload.Entries;
+        Assert.Contains(
+            entries,
+            entry => entry.Key == "entity-type"
+                && entry.Value.Value == "global::Acme.Orders.Data.Order");
+        Assert.Contains(
+            entries,
+            entry => entry.Key == "field-name" && entry.Value.Value == "Amount");
     }
 
     [Fact]

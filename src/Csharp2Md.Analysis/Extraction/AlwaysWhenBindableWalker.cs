@@ -355,7 +355,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
 
     private static readonly SymbolDisplayFormat Qualified = SymbolDisplayFormat.FullyQualifiedFormat;
 
-    private static NormalizedPayload InvocationPayload(IMethodSymbol method, InvocationExpressionSyntax invocation)
+    private NormalizedPayload InvocationPayload(IMethodSymbol method, InvocationExpressionSyntax invocation)
     {
         var entries = new List<PayloadEntry>
         {
@@ -388,6 +388,8 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                         StructuralLiteral.Create(LiteralRole.Route, literal, "route")));
             }
         }
+
+        entries.AddRange(EfMappingPayload.For(_model, method, invocation, _cancellationToken));
 
         return NormalizedPayload.Create(entries);
     }

@@ -12,7 +12,9 @@ Workstream 3, [`factual-storage`](features/factual-storage/spec.md), is complete
 
 Workstream 4, [`roslyn-observation-extraction`](features/roslyn-observation-extraction/spec.md), is complete, verified and on `feat/roslyn-observation-extraction` (`65fa91a`). Verifier report: `.specs/features/roslyn-observation-extraction/validation.md` (PASS, 930 tests).
 
-Workstream 5A, [`entrypoints-boundaries-contracts`](features/entrypoints-boundaries-contracts/spec.md), is complete, verified and on `feat/entrypoints-boundaries-contracts` (`e0cf903`). Verifier report: `.specs/features/entrypoints-boundaries-contracts/validation.md` (PASS, 1019 tests). Next: classifier workstreams 5B–5D, created only when explicitly started.
+Workstream 5A, [`entrypoints-boundaries-contracts`](features/entrypoints-boundaries-contracts/spec.md), is complete, verified and on `feat/entrypoints-boundaries-contracts` (`e0cf903`). Verifier report: `.specs/features/entrypoints-boundaries-contracts/validation.md` (PASS, 1019 tests).
+
+Workstream 5C, [`persistence-knowledge`](features/persistence-knowledge/spec.md), is complete, verified and on `feature/persistence-knowledge` (`7b064e2`). Verifier report: `.specs/features/persistence-knowledge/validation.md` (PASS, 1158 tests). Next: classifier workstreams 5B and 5D, created only when explicitly started.
 
 Normative documentation:
 
@@ -159,11 +161,11 @@ Normative documentation:
 
 ## Handoff
 
-- **Feature**: `call-linking-flow-frontiers` — `.specs/features/call-linking-flow-frontiers/`
-- **Phase / Task**: Execute complete (T1–T10). Verifier PASS. Report: `.specs/features/call-linking-flow-frontiers/validation.md`.
-- **Completed**: T1 `b05dd17`, T2 `bb15dd6`, T3 `e80c432`, T4 `8edc6e5`, T5 `95b1d01`, T6 `fd122ec`, T7 `976827a`, T8 `cb6b03d`, T9 `85731a1`, T10 `80efa26` (AD-018 + Handoff). Fix `9dc2713` (CLLF-19 empty-diagnostics asserts). Gate (Verifier re-run): Domain 549, Analysis 331, Storage 166, Cli 27, Projection 3 (1076, `Category!=LocalCorpus`).
+- **Feature**: `persistence-knowledge` — `.specs/features/persistence-knowledge/`
+- **Phase / Task**: Execute complete. Verifier PASS. Report: `.specs/features/persistence-knowledge/validation.md`.
+- **Completed**: T1–T26 on `feature/persistence-knowledge`. T1 `343a248` … T18 `1c908a0` … T26 `7b064e2`. Gate: Domain 545, Analysis 417, Storage 166, Cli 27, Projection 3 (1158, `Category!=LocalCorpus`).
 - **In-progress** (file:line): none.
-- **Next step**: Workstream 5B is verified. Create the next classifier workstream (5C/5D) only when explicitly started. Discrimination sensor skipped (standing).
-- **Blockers**: none. LocalCorpus: `fixtures/eShop` absent (expected skip); `fixtures/eShopOnContainers` directory present but `eShopOnContainers-ServicesAndWebApps.sln` missing, so analyze did not run (not a feature FAIL). Carry-forward: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run the five test projects separately. CLI filter uses VSTest `--filter "Category!=LocalCorpus"`. Discrimination sensor remains skipped.
-- **Uncommitted files**: unrelated `AGENTS.md` / `CLAUDE.md` / `architecture-knowledge-engine-roadmap.md` / `docs/architecture/README.md`; untracked `.specs/features/entrypoints-boundaries-contracts/design.md`.
-- **Branch**: `feature/call-linking-flow-frontiers`
+- **Next step**: Do not start classifier workstreams 5B or 5D unprompted. Create a feature only when the user explicitly starts one.
+- **Blockers**: none. LocalCorpus: `fixtures/eShop` absent; `fixtures/eShopOnContainers` directory present but `eShopOnContainers-ServicesAndWebApps.sln` missing, so both theory cases dynamic-skipped (runner surfaces `$XunitDynamicSkip$` as InvalidOperationException). Discrimination sensor remains skipped. Carry-forward: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run the five test projects separately. CLI filter uses VSTest `--filter "Category!=LocalCorpus"`. PK-39/PK-40: ledger cannot distinguish interpolation-hole vs unread keyword by payload; kind/cause derived from whether the occurrence reached an object (`PersistenceModelBuilder.cs:84-88`); spec-precision gap, tests still assert fixture UnresolvedRecord kind/cause. T23 added `OrderDbContext` parameter on `ConfigureHost` so PK-11 binds `OrdersDb`.
+- **Uncommitted files**: unrelated stale `AGENTS.md` / `CLAUDE.md` / roadmap / `docs/architecture/README.md` (do not commit as-is; they still say next feature is `factual-storage`). Untracked `entrypoints-boundaries-contracts/design.md`.
+- **Branch**: `feature/persistence-knowledge`

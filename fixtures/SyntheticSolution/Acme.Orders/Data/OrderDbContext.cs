@@ -8,6 +8,10 @@
 // catalogues DbSet properties per document, so a query whose context is declared elsewhere is not
 // recognised. The table and column configuration deliberately lives in another document
 // (OrderConfiguration.cs), which is what exercises the cross-document mapping pass.
+//
+// DbSet<T> and DbContext also expose EF Core's raw-SQL surface (FromSqlRaw, FromSqlInterpolated,
+// ExecuteSqlRaw), so OrderSqlQueries.cs can execute its hand-written statements instead of merely
+// returning them as text.
 
 using Acme.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
@@ -16,12 +20,19 @@ namespace Microsoft.EntityFrameworkCore
 {
     /// <summary>Stand-in for an EF Core entity set.</summary>
     public sealed class DbSet<TEntity> : List<TEntity>
-        where TEntity : class;
+        where TEntity : class
+    {
+        public DbSet<TEntity> FromSqlRaw(string sql) => this;
+
+        public DbSet<TEntity> FromSqlInterpolated(FormattableString sql) => this;
+    }
 
     /// <summary>Stand-in for the EF Core unit of work.</summary>
     public abstract class DbContext
     {
         public int SaveChanges() => 0;
+
+        public int ExecuteSqlRaw(string sql) => 0;
     }
 }
 

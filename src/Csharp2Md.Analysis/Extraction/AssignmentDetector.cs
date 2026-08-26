@@ -8,8 +8,8 @@ namespace Csharp2Md.Analysis.Extraction;
 
 internal sealed class AssignmentDetector : IRegisteredContextDetector
 {
-    private static readonly NormalizedPayload EmptyPayload = NormalizedPayload.Create([]);
     private static readonly BindingDiagnostic Bound = new("bound", "bound");
+    private static readonly SymbolDisplayFormat Qualified = SymbolDisplayFormat.FullyQualifiedFormat;
 
     private Compilation? _compilation;
     private HashSet<ISymbol> _entities = new(SymbolEqualityComparer.Default);
@@ -34,10 +34,18 @@ internal sealed class AssignmentDetector : IRegisteredContextDetector
             return null;
         }
 
+        var payload = NormalizedPayload.Create(
+        [
+            new PayloadEntry(
+                "entity-type",
+                StructuralLiteral.Create(LiteralRole.ProtocolName, containingType.ToDisplayString(Qualified), "entity-type")),
+            new PayloadEntry("field-name", StructuralLiteral.Create(LiteralRole.FieldName, symbol.Name, "field-name")),
+        ]);
+
         return new ObservationDraft(
             occurrence.Owner,
             ObservationKind.Assignment,
-            EmptyPayload,
+            payload,
             ObservationMaterializer.CreateLocator(occurrence.Document, assignment.Left),
             EvidenceMethod.Semantic,
             Bound,
