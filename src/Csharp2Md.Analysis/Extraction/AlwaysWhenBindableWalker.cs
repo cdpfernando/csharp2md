@@ -200,12 +200,20 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
     private void TryEmitBindable(SyntaxNode node, ObservationKind kind, bool requireType = false)
     {
         var info = _model.GetSymbolInfo(node, _cancellationToken);
-        if (info.Symbol is null)
+        var boundSymbol = info.Symbol;
+        EvidenceMethod method;
+        BindingDiagnostic diagnostic;
+        if (boundSymbol is not null && (!requireType || boundSymbol is ITypeSymbol))
         {
-            return;
+            method = EvidenceMethod.Semantic;
+            diagnostic = Bound;
         }
-
-        if (requireType && info.Symbol is not ITypeSymbol)
+        else if (boundSymbol is null && kind is not ObservationKind.TypeUsage)
+        {
+            method = EvidenceMethod.Syntactic;
+            diagnostic = new BindingDiagnostic("unbound", "The occurrence did not bind.");
+        }
+        else
         {
             return;
         }
@@ -222,8 +230,8 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                 kind,
                 EmptyPayload,
                 CreateLocator(node),
-                EvidenceMethod.Semantic,
-                Bound,
+                method,
+                diagnostic,
                 _documentHash));
     }
 

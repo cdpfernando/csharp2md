@@ -1356,10 +1356,10 @@ binding diagnostic that names the failure, and no invented target fact id. Succe
 
 **Done when**:
 
-- [ ] An unbound invocation observation exists, diagnostic code is not `bound`, payload has no target fact id
-- [ ] A bound invocation uses `Semantic` and diagnostic `bound`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] An unbound invocation observation exists, diagnostic code is not `bound`, payload has no target fact id
+- [x] A bound invocation uses `Semantic` and diagnostic `bound`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
