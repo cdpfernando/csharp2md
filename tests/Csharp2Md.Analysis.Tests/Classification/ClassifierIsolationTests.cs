@@ -58,6 +58,8 @@ public sealed class ClassifierIsolationTests
         Assert.DoesNotContain("BoundaryPass", exportedNames);
         Assert.DoesNotContain("ContractPass", exportedNames);
         Assert.DoesNotContain("RelationPass", exportedNames);
+        Assert.DoesNotContain("InvokesPass", exportedNames);
+        Assert.DoesNotContain("ExecutesPass", exportedNames);
 
         var classifierTypes = typeof(IClassifierPass).Assembly.GetTypes()
             .Where(type => type.Namespace is "Csharp2Md.Analysis.Classification"

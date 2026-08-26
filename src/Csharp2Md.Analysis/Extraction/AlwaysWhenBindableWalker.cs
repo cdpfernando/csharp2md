@@ -17,8 +17,11 @@ namespace Csharp2Md.Analysis.Extraction;
 
 internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
 {
+    private const string BoundCode = "bound";
+    private const string BoundSignaturePrefix = "bound::";
+
     private static readonly NormalizedPayload EmptyPayload = NormalizedPayload.Create([]);
-    private static readonly BindingDiagnostic Bound = new("bound", "bound");
+    private static readonly BindingDiagnostic Bound = new(BoundCode, BoundCode);
 
     private readonly SemanticModel _model;
     private readonly DomainDocument _document;
@@ -282,7 +285,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
         if (boundSymbol is not null && (!requireType || boundSymbol is ITypeSymbol))
         {
             evidenceMethod = EvidenceMethod.Semantic;
-            diagnostic = Bound;
+            diagnostic = BoundDiagnostic(kind, boundSymbol);
         }
         else if (boundSymbol is null && kind is not ObservationKind.TypeUsage)
         {
@@ -315,6 +318,30 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                 evidenceMethod,
                 diagnostic,
                 _documentHash));
+    }
+
+    internal static string? TryExtractTargetSignature(string diagnosticMessage)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(diagnosticMessage);
+        if (!diagnosticMessage.StartsWith(BoundSignaturePrefix, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var signature = diagnosticMessage[BoundSignaturePrefix.Length..];
+        return signature.Length > 0 ? signature : null;
+    }
+
+    private static BindingDiagnostic BoundDiagnostic(ObservationKind kind, ISymbol boundSymbol)
+    {
+        if (kind is ObservationKind.Invocation or ObservationKind.ObjectCreation
+            && boundSymbol is IMethodSymbol
+            && SymbolFactEmitter.TrySignature(boundSymbol) is { } signature)
+        {
+            return new BindingDiagnostic(BoundCode, BoundSignaturePrefix + signature.Value);
+        }
+
+        return Bound;
     }
 
     private static readonly HashSet<string> HttpInvocationNames =

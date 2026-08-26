@@ -1,5 +1,6 @@
 using System.Text;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Literals;
@@ -84,6 +85,19 @@ public sealed class PackageValidatorTests
 
         Assert.Equal("unregistered-kind", exception.Gate);
         Assert.Contains(unregistered, exception.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-26")]
+    public void Validate_InvocationObservation_AcceptsBoundSignatureDiagnosticMessage()
+    {
+        var document = DomainMapper.ToWire(ObservationSnapshot(), Context);
+        PackageValidator.Validate(document);
+
+        var observation = Assert.Single(document.Observations.Values.SelectMany(values => values));
+        Assert.Equal("invocation", observation.Identity.Kind);
+        Assert.Equal("bound", observation.Diagnostic.Code);
+        Assert.StartsWith("bound::", observation.Diagnostic.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -281,6 +295,27 @@ public sealed class PackageValidatorTests
         Assert.Equal("not_evaluated", report.Document.RunCertification.Status);
     }
 
+    [Fact]
+    [Trait("Requirement", "CLLF-07")]
+    [Trait("Requirement", "CLLF-08")]
+    [Trait("Requirement", "CLLF-11")]
+    public void Validate_InvokesCandidateUnresolvedAndFrontier_AcceptsRegisteredKinds()
+    {
+        var document = DomainMapper.ToWire(InvokesPackageSnapshot(), Context);
+
+        var report = PackageValidator.Validate(document);
+
+        var candidate = Assert.Single(report.Document.Candidates);
+        Assert.Equal("invokes", candidate.Kind);
+        var unresolved = Assert.Single(report.Document.Unresolved);
+        Assert.Equal("invokes", unresolved.Kind);
+        Assert.Equal(nameof(UnresolvedCause.NoCandidateFound), unresolved.Cause);
+        var frontier = Assert.Single(report.Document.Frontiers);
+        Assert.Equal(nameof(FrontierCause.FurtherContinuationObserved), frontier.Cause);
+        Assert.True(report.Quarantine.IsEmpty);
+        Assert.Equal("not_evaluated", report.Document.RunCertification.Status);
+    }
+
     private static SolutionDto ValidSolutionDto() =>
         DomainMapper.ToWire(SolutionSnapshot(), Context).Solutions[0];
 
@@ -312,7 +347,9 @@ public sealed class PackageValidatorTests
                 1,
                 new EvidenceLocator(DocumentId.Create("doc"), "src/Acme.Payments/Invoice.cs", new SourceSpan(1, 1, 1, 8)),
                 EvidenceMethod.Semantic,
-                new BindingDiagnostic("BIND001", "Bound successfully."),
+                new BindingDiagnostic(
+                    "bound",
+                    "bound::sig1:kind=method|container=global::Host|metadata=Target|arity=0|type=void"),
                 DocumentHash.Create(new string('a', 64)),
                 new ExtractorVersion(1))],
             [],
@@ -373,6 +410,36 @@ public sealed class PackageValidatorTests
     {
         var frontier = OpenFrontier.Create(Occurrence(), FrontierCause.FurtherContinuationObserved);
         return new FactualSnapshot([], [], [], [], [], [frontier]);
+    }
+
+    private static FactualSnapshot InvokesPackageSnapshot()
+    {
+        var source = Symbol.Create(
+            CanonicalSymbolSignature.Create(
+                "method",
+                "global::Acme.Orders.OrderService",
+                "PlaceOrderAsync",
+                0,
+                "global::System.Threading.Tasks.Task"),
+            AcmeProject,
+            SymbolFacetSet.Create([SymbolFacet.Callable]));
+        var proposed = Symbol.Create(
+            CanonicalSymbolSignature.Create(
+                "method",
+                "global::Acme.Payments.InMemoryEventBus",
+                "PublishAsync",
+                0,
+                "global::System.Threading.Tasks.Task"),
+            AcmeProject,
+            SymbolFacetSet.Create([SymbolFacet.Callable]));
+        var evidence = EvidenceChain.Create([Occurrence()]);
+        return new FactualSnapshot(
+            [source, proposed],
+            [],
+            [],
+            [CandidateLink.Create(RelationKind.Invokes, source.Reference, proposed.Reference, evidence)],
+            [UnresolvedRecord.Create(RelationKind.Invokes, source.Reference, UnresolvedCause.NoCandidateFound, evidence)],
+            [OpenFrontier.Create(Occurrence(), FrontierCause.FurtherContinuationObserved)]);
     }
 
     private static ObservationIdentity Occurrence() =>

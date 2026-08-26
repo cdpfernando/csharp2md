@@ -164,10 +164,17 @@ internal static class SymbolFactEmitter
         return signature is null ? null : Symbol.Create(signature.Value, projectId, Facets(symbol));
     }
 
-    private static SymbolFacetSet Facets(ISymbol symbol) =>
-        symbol is IMethodSymbol
-            ? SymbolFacetSet.Create([SymbolFacet.Callable])
-            : SymbolFacetSet.Create([]);
+    private static SymbolFacetSet Facets(ISymbol symbol)
+    {
+        if (symbol is not IMethodSymbol method)
+        {
+            return SymbolFacetSet.Create([]);
+        }
+
+        return method.IsAbstract || method.ContainingType?.TypeKind is TypeKind.Interface
+            ? SymbolFacetSet.Create([SymbolFacet.Callable, SymbolFacet.Abstract])
+            : SymbolFacetSet.Create([SymbolFacet.Callable]);
+    }
 
     private static string Container(ISymbol symbol)
     {

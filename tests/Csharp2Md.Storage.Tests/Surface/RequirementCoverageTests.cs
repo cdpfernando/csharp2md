@@ -143,7 +143,8 @@ public sealed class RequirementCoverageTests
         {
             if (value.StartsWith("ENG-", StringComparison.Ordinal)
                 || value.StartsWith("ROSE-", StringComparison.Ordinal)
-                || value.StartsWith("EBC-", StringComparison.Ordinal))
+                || value.StartsWith("EBC-", StringComparison.Ordinal)
+                || value.StartsWith("CLLF-", StringComparison.Ordinal))
             {
                 continue;
             }

@@ -185,6 +185,80 @@ public sealed class SnapshotAccumulatorTests
 
     [Fact]
     [Trait("Requirement", "ROSE-21")]
+    public void AddCandidate_AppearsInSnapshot()
+    {
+        var candidate = CreateCandidateLink();
+        var accumulator = new SnapshotAccumulator();
+
+        accumulator.AddCandidate(candidate);
+
+        Assert.Equal(candidate, Assert.Single(accumulator.ToSnapshot().Candidates.ToArray()));
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-21")]
+    public void AddUnresolved_AppearsInSnapshot()
+    {
+        var unresolved = CreateUnresolvedRecord();
+        var accumulator = new SnapshotAccumulator();
+
+        accumulator.AddUnresolved(unresolved);
+
+        Assert.Equal(unresolved, Assert.Single(accumulator.ToSnapshot().Unresolved.ToArray()));
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-21")]
+    public void AddOpenFrontier_AppearsInSnapshot()
+    {
+        var frontier = CreateOpenFrontier();
+        var accumulator = new SnapshotAccumulator();
+
+        accumulator.AddOpenFrontier(frontier);
+
+        Assert.Equal(frontier, Assert.Single(accumulator.ToSnapshot().Frontiers.ToArray()));
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-21")]
+    public void ToSnapshot_NoAdditions_ReturnsEmptyCollections()
+    {
+        var snapshot = new SnapshotAccumulator().ToSnapshot();
+
+        Assert.Empty(snapshot.Facts);
+        Assert.Empty(snapshot.Observations);
+        Assert.Empty(snapshot.ConfirmedRelations);
+        Assert.Empty(snapshot.Candidates);
+        Assert.Empty(snapshot.Unresolved);
+        Assert.Empty(snapshot.Frontiers);
+        Assert.Empty(snapshot.Diagnostics);
+        Assert.Empty(snapshot.SuspectedSecrets);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-21")]
+    public void AddUnresolved_AndAddOpenFrontier_DoNotDeduplicate()
+    {
+        var unresolved = CreateUnresolvedRecord();
+        var frontier = CreateOpenFrontier();
+        var accumulator = new SnapshotAccumulator();
+
+        accumulator.AddUnresolved(unresolved);
+        accumulator.AddUnresolved(unresolved);
+        accumulator.AddOpenFrontier(frontier);
+        accumulator.AddOpenFrontier(frontier);
+
+        var snapshot = accumulator.ToSnapshot();
+        Assert.Equal(2, snapshot.Unresolved.Length);
+        Assert.Equal(2, snapshot.Frontiers.Length);
+        Assert.Equal(unresolved, snapshot.Unresolved[0]);
+        Assert.Equal(unresolved, snapshot.Unresolved[1]);
+        Assert.Equal(frontier, snapshot.Frontiers[0]);
+        Assert.Equal(frontier, snapshot.Frontiers[1]);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-21")]
     public void PipelineContext_ExposesAnEmptyAccumulator()
     {
         var context = new PipelineContext(new SwallowingSession(), "alpha.sln");
@@ -249,6 +323,11 @@ public sealed class SnapshotAccumulatorTests
             UnresolvedCause.InsufficientEvidence,
             EvidenceChain.Create([CreateObservation(new SourceSpan(1, 1, 1, 8), new BindingDiagnostic("bound", "bound")).Identity]));
     }
+
+    private static OpenFrontier CreateOpenFrontier() =>
+        OpenFrontier.Create(
+            CreateObservation(new SourceSpan(1, 1, 1, 8), new BindingDiagnostic("bound", "bound")).Identity,
+            FrontierCause.FurtherContinuationObserved);
 
     private static ConfirmedRelation CreateContainsRelation()
     {
