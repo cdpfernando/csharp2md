@@ -595,11 +595,11 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Test-only `CountingClassifierPass` adds a dummy fact and reports count
-- [ ] Stage executes all passes (5A + test pass) in registration order
-- [ ] Aggregate counts include both 5A and test pass output
-- [ ] Test pass sees facts from earlier 5A passes in the context
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test-only `CountingClassifierPass` adds a dummy fact and reports count
+- [x] Stage executes all passes (5A + test pass) in registration order
+- [x] Aggregate counts include both 5A and test pass output
+- [x] Test pass sees facts from earlier 5A passes in the context
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: integration
 **Gate**: full
