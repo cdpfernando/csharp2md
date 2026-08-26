@@ -166,11 +166,11 @@ T8 → T9 → T10
 - Skill: `dotnet-test:assertion-quality`
 
 **Done when**:
-- [ ] All five test projects compile and all tests pass with `"Category!=LocalCorpus"` filter
-- [ ] No test uses `Assert.Equal("bound", observation.Diagnostic.Message)` for an Invocation observation without `StartsWith("bound")`
-- [ ] `PackageValidatorTests.cs` updated: any fixture `BindingDiagnostic("bound", "bound")` for an Invocation observation uses `StartsWith("bound")` or a new fixture value
-- [ ] `dotnet test tests/Csharp2Md.Storage.Tests --filter "Category!=LocalCorpus"` passes
-- [ ] Test count: 0 tests deleted; adjustments only
+- [x] All five test projects compile and all tests pass with `"Category!=LocalCorpus"` filter
+- [x] No test uses `Assert.Equal("bound", observation.Diagnostic.Message)` for an Invocation observation without `StartsWith("bound")`
+- [x] `PackageValidatorTests.cs` updated: any fixture `BindingDiagnostic("bound", "bound")` for an Invocation observation uses `StartsWith("bound")` or a new fixture value
+- [x] `dotnet test tests/Csharp2Md.Storage.Tests --filter "Category!=LocalCorpus"` passes
+- [x] Test count: 0 tests deleted; adjustments only
 
 **Tests**: unit
 **Gate**: full (all five projects compile and pass)

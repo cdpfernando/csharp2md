@@ -88,6 +88,19 @@ public sealed class PackageValidatorTests
 
     [Fact]
     [Trait("Requirement", "STOR-26")]
+    public void Validate_InvocationObservation_AcceptsBoundSignatureDiagnosticMessage()
+    {
+        var document = DomainMapper.ToWire(ObservationSnapshot(), Context);
+        PackageValidator.Validate(document);
+
+        var observation = Assert.Single(document.Observations.Values.SelectMany(values => values));
+        Assert.Equal("invocation", observation.Identity.Kind);
+        Assert.Equal("bound", observation.Diagnostic.Code);
+        Assert.StartsWith("bound::", observation.Diagnostic.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "STOR-26")]
     public void Validate_UnregisteredRelationKind_AbortsNamingTheValue()
     {
         const string unregistered = "not-a-registered-relation";
@@ -312,7 +325,9 @@ public sealed class PackageValidatorTests
                 1,
                 new EvidenceLocator(DocumentId.Create("doc"), "src/Acme.Payments/Invoice.cs", new SourceSpan(1, 1, 1, 8)),
                 EvidenceMethod.Semantic,
-                new BindingDiagnostic("BIND001", "Bound successfully."),
+                new BindingDiagnostic(
+                    "bound",
+                    "bound::sig1:kind=method|container=global::Host|metadata=Target|arity=0|type=void"),
                 DocumentHash.Create(new string('a', 64)),
                 new ExtractorVersion(1))],
             [],
