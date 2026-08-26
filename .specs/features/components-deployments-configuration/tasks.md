@@ -1291,13 +1291,13 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] The fixture connection-string password appears in no fact, observation, relation, candidate, frontier or diagnostic
-- [ ] `SuspectedSecretEvidence` for that value is present with a redacted excerpt
-- [ ] No emitted record contains an absolute path or drive-letter prefix
-- [ ] No type under `Csharp2Md.Analysis.Classification` references `Microsoft.CodeAnalysis`
-- [ ] `contracts/taxonomy-registry.json` is byte-identical and the drift gate passes
-- [ ] Gate check passes: build gate command
-- [ ] Test count reported; no silent deletions
+- [x] The fixture connection-string password appears in no fact, observation, relation, candidate, frontier or diagnostic
+- [x] `SuspectedSecretEvidence` for that value is present with a redacted excerpt
+- [x] No emitted record contains an absolute path or drive-letter prefix
+- [x] No type under `Csharp2Md.Analysis.Classification` references `Microsoft.CodeAnalysis`
+- [x] `contracts/taxonomy-registry.json` is byte-identical and the drift gate passes
+- [x] Gate check passes: build gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: integration
 **Gate**: build
