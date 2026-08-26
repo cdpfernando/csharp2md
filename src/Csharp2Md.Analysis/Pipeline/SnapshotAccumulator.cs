@@ -67,6 +67,12 @@ internal sealed class SnapshotAccumulator
         _candidates.Add(candidate);
     }
 
+    public bool RemoveCandidate(CandidateLink candidate)
+    {
+        ArgumentNullException.ThrowIfNull(candidate);
+        return _candidates.RemoveAll(existing => existing.Equals(candidate)) > 0;
+    }
+
     public void AddUnresolved(UnresolvedRecord record)
     {
         ArgumentNullException.ThrowIfNull(record);

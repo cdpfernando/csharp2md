@@ -999,12 +999,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `RemoveCandidate` removes every structurally equal candidate and reports whether it removed any
-- [ ] Removing a candidate that was never added is a no-op returning false, not a throw
-- [ ] Removal does not set `StructuralCorruption` and does not touch facts, relations, frontiers or unresolved records
-- [ ] Unit tests cover removal, absent removal and the untouched-neighbours case
-- [ ] Gate check passes: quick gate command
-- [ ] Test count reported; no silent deletions
+- [x] `RemoveCandidate` removes every structurally equal candidate and reports whether it removed any
+- [x] Removing a candidate that was never added is a no-op returning false, not a throw
+- [x] Removal does not set `StructuralCorruption` and does not touch facts, relations, frontiers or unresolved records
+- [x] Unit tests cover removal, absent removal and the untouched-neighbours case
+- [x] Gate check passes: quick gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: quick

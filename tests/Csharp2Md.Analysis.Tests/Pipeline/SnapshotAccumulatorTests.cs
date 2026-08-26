@@ -184,6 +184,72 @@ public sealed class SnapshotAccumulatorTests
     }
 
     [Fact]
+    [Trait("Requirement", "CDC-43")]
+    public void RemoveCandidate_MatchingCandidates_RemovesEveryEqualAndReturnsTrue()
+    {
+        var matching = CreateCandidateLink();
+        var duplicate = CreateCandidateLink();
+        var neighbour = CreateCandidateLink(kind: RelationKind.MapsTo);
+        var accumulator = new SnapshotAccumulator();
+        accumulator.AddCandidate(matching);
+        accumulator.AddCandidate(neighbour);
+        accumulator.AddCandidate(duplicate);
+
+        var removed = accumulator.RemoveCandidate(CreateCandidateLink());
+
+        Assert.True(removed);
+        Assert.Equal(neighbour, Assert.Single(accumulator.ToSnapshot().Candidates.ToArray()));
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-43")]
+    public void RemoveCandidate_AbsentCandidate_ReturnsFalseWithoutThrowing()
+    {
+        var neighbour = CreateCandidateLink(kind: RelationKind.MapsTo);
+        var accumulator = new SnapshotAccumulator();
+        accumulator.AddCandidate(neighbour);
+
+        var removed = accumulator.RemoveCandidate(CreateCandidateLink());
+
+        Assert.False(removed);
+        Assert.Equal(neighbour, Assert.Single(accumulator.ToSnapshot().Candidates.ToArray()));
+        Assert.False(accumulator.StructuralCorruption);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-43")]
+    public void RemoveCandidate_DoesNotTouchNeighboursOrSetCorruption()
+    {
+        var solution = Solution.Create(AcmeSolution);
+        var observation = CreateObservation(new SourceSpan(1, 1, 1, 8), new BindingDiagnostic("bound", "bound"));
+        var relation = CreateContainsRelation();
+        var unresolved = CreateUnresolvedRecord();
+        var frontier = CreateOpenFrontier();
+        var candidate = CreateCandidateLink();
+        var neighbour = CreateCandidateLink(kind: RelationKind.MapsTo);
+        var accumulator = new SnapshotAccumulator();
+        accumulator.AddFact(solution);
+        accumulator.AddObservation(observation);
+        accumulator.AddRelation(relation);
+        accumulator.AddUnresolved(unresolved);
+        accumulator.AddOpenFrontier(frontier);
+        accumulator.AddCandidate(candidate);
+        accumulator.AddCandidate(neighbour);
+
+        accumulator.RemoveCandidate(candidate);
+
+        var snapshot = accumulator.ToSnapshot();
+        Assert.False(accumulator.StructuralCorruption);
+        Assert.Null(accumulator.CollidingIdentity);
+        Assert.Equal(solution, Assert.Single(snapshot.Facts.ToArray()));
+        Assert.Equal(observation, Assert.Single(snapshot.Observations.ToArray()));
+        Assert.Equal(relation, Assert.Single(snapshot.ConfirmedRelations.ToArray()));
+        Assert.Equal(unresolved, Assert.Single(snapshot.Unresolved.ToArray()));
+        Assert.Equal(frontier, Assert.Single(snapshot.Frontiers.ToArray()));
+        Assert.Equal(neighbour, Assert.Single(snapshot.Candidates.ToArray()));
+    }
+
+    [Fact]
     [Trait("Requirement", "ROSE-21")]
     public void AddCandidate_AppearsInSnapshot()
     {
