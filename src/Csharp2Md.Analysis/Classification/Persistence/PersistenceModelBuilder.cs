@@ -1,6 +1,8 @@
 using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Observations;
+using Csharp2Md.Domain.Proof;
 
 namespace Csharp2Md.Analysis.Classification.Persistence;
 
@@ -14,6 +16,11 @@ internal static class PersistenceModelBuilder
     internal const string DbSetTypePrefix = "global::Microsoft.EntityFrameworkCore.DbSet<";
     internal const string ContextTypeKey = "context-type";
     internal const string ConfigurationKeyKey = "key";
+    internal const string EntityTypeKey = "entity-type";
+    internal const string TableNameKey = "table-name";
+
+    /// <summary>PK-17: the honest literal for a schema no code states. Empty text is not constructible.</summary>
+    internal const string UnknownSchema = "unknown";
 
     private const string GlobalPrefix = "global::";
 
@@ -59,15 +66,157 @@ internal static class PersistenceModelBuilder
         }
 
         var references = ReferencesByOwner(context, symbols);
+        var entityMappings = ResolveEntityMappings(context);
+        var typeSymbols = TypeSymbolsByFullyQualifiedName(symbols);
+        var observationsBySymbol = ObservationsBySymbol(context);
         return
         [
             .. contextTypes.Select(contextType => new StoreNode(
                 contextType,
                 DataStoreTechnology.Relational,
                 ResolveStoreName(context, contextType, references),
-                [])),
+                ResolveObjects(contextType, symbols, entityMappings, typeSymbols, observationsBySymbol))),
         ];
     }
+
+    /// <summary>
+    /// One <see cref="ObjectNode"/> per <c>DbSet&lt;T&gt;</c> member the store exposes, form
+    /// <c>table</c> (PK-14). A proven <c>ToTable</c> supplies the physical name and
+    /// <c>ExplicitConfirmation</c> (PK-15); everything else keeps the member name as a
+    /// <c>ConventionalCandidate</c> (PK-16). The schema stays the literal <c>unknown</c> until one is
+    /// proven (PK-17). Two members exposing the same entity type stay two objects - the entity type
+    /// is never a merge key (PK-20).
+    /// </summary>
+    private static ImmutableArray<ObjectNode> ResolveObjects(
+        string contextTypeFqn,
+        ImmutableArray<Symbol> symbols,
+        IReadOnlyDictionary<string, EntityMapping> entityMappings,
+        IReadOnlyDictionary<string, FactReference> typeSymbols,
+        IReadOnlyDictionary<string, List<ObservationIdentity>> observationsBySymbol)
+    {
+        var objects = new List<ObjectNode>();
+        foreach (var property in DbSetProperties(symbols))
+        {
+            if (!string.Equals(SignatureReader.Container(property), contextTypeFqn, StringComparison.Ordinal)
+                || SignatureReader.SoleTypeArgument(SignatureReader.Type(property)) is not { } entityTypeFqn
+                || SignatureReader.Metadata(property) is not { } memberName)
+            {
+                continue;
+            }
+
+            entityMappings.TryGetValue(entityTypeFqn, out var mapping);
+            var proven = mapping?.TableName;
+            var evidence = new List<ObservationIdentity>(mapping?.Evidence ?? []);
+            if (observationsBySymbol.TryGetValue(property.Reference.Id.Value, out var declared))
+            {
+                evidence.AddRange(declared);
+            }
+
+            objects.Add(
+                new ObjectNode(
+                    entityTypeFqn,
+                    DataObjectForm.Table,
+                    UnknownSchema,
+                    proven ?? memberName,
+                    proven is null ? MappingStateKind.ConventionalCandidate : MappingStateKind.ExplicitConfirmation,
+                    typeSymbols.TryGetValue(entityTypeFqn, out var clrSymbol) ? clrSymbol : null,
+                    [],
+                    [],
+                    Chain(evidence)));
+        }
+
+        return
+        [
+            .. objects
+                .OrderBy(static node => node.TableName, StringComparer.Ordinal)
+                .ThenBy(static node => node.EntityTypeFqn ?? string.Empty, StringComparer.Ordinal),
+        ];
+    }
+
+    /// <summary>
+    /// The physical table each entity type is explicitly mapped to, from the <c>table-name</c> plus
+    /// <c>entity-type</c> pair a <c>ToTable</c> invocation writes into the ledger. A non-constant
+    /// argument leaves <c>table-name</c> out of the payload, which is what makes PK-16's convention
+    /// fallback fire. Several mappings for one entity resolve to the ordinal-first name.
+    /// </summary>
+    private static IReadOnlyDictionary<string, EntityMapping> ResolveEntityMappings(ClassifierContext context)
+    {
+        var names = new Dictionary<string, SortedSet<string>>(StringComparer.Ordinal);
+        var evidence = new Dictionary<string, List<ObservationIdentity>>(StringComparer.Ordinal);
+        foreach (var invocation in context.ObservationsByKind(ObservationKind.Invocation))
+        {
+            if (PayloadReader.Value(invocation, TableNameKey) is not { } tableName
+                || PayloadReader.Value(invocation, EntityTypeKey) is not { } entityTypeFqn)
+            {
+                continue;
+            }
+
+            if (!names.TryGetValue(entityTypeFqn, out var candidates))
+            {
+                candidates = new SortedSet<string>(StringComparer.Ordinal);
+                names[entityTypeFqn] = candidates;
+                evidence[entityTypeFqn] = [];
+            }
+
+            candidates.Add(tableName);
+            evidence[entityTypeFqn].Add(invocation.Identity);
+        }
+
+        return names.ToDictionary(
+            static pair => pair.Key,
+            pair => new EntityMapping(pair.Value.Min!, evidence[pair.Key]),
+            StringComparer.Ordinal);
+    }
+
+    /// <summary>Named-type <see cref="Symbol"/> facts by fully-qualified name - the CLR side of <c>maps-to</c>.</summary>
+    private static IReadOnlyDictionary<string, FactReference> TypeSymbolsByFullyQualifiedName(ImmutableArray<Symbol> symbols)
+    {
+        var references = new Dictionary<string, FactReference>(StringComparer.Ordinal);
+        foreach (var symbol in symbols)
+        {
+            if (string.Equals(SignatureReader.Kind(symbol), "namedtype", StringComparison.Ordinal)
+                && SignatureReader.Type(symbol) is { } typeName
+                && !references.ContainsKey(typeName))
+            {
+                references[typeName] = symbol.Reference;
+            }
+        }
+
+        return references;
+    }
+
+    /// <summary>The observations each symbol owns, so a declaration can anchor an evidence chain.</summary>
+    private static IReadOnlyDictionary<string, List<ObservationIdentity>> ObservationsBySymbol(ClassifierContext context)
+    {
+        var owned = new Dictionary<string, List<ObservationIdentity>>(StringComparer.Ordinal);
+        foreach (var observation in context.Observations)
+        {
+            var ownerId = observation.Identity.Owner.Id.Value;
+            if (!owned.TryGetValue(ownerId, out var identities))
+            {
+                identities = [];
+                owned[ownerId] = identities;
+            }
+
+            identities.Add(observation.Identity);
+        }
+
+        return owned;
+    }
+
+    /// <summary>
+    /// An evidence chain over the distinct identities, or the uninitialized chain when nothing in the
+    /// ledger backs the node - <see cref="Csharp2Md.Domain.Proof.EvidenceChain.Create"/> refuses an
+    /// empty chain, and a node resting on a <see cref="Symbol"/> fact alone has no observation.
+    /// </summary>
+    private static EvidenceChain Chain(IEnumerable<ObservationIdentity> identities)
+    {
+        var ordered = identities.Distinct().ToArray();
+        return ordered.Length == 0 ? default : EvidenceChain.Create(ordered);
+    }
+
+    /// <summary>A proven physical table name for one entity type and the invocations that prove it.</summary>
+    private sealed record EntityMapping(string TableName, IReadOnlyList<ObservationIdentity> Evidence);
 
     /// <summary>
     /// The proven connection-string key when a <c>Configuration</c> observation's owning callable

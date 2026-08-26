@@ -508,15 +508,15 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] One `ObjectNode` per `DbSet<T>` property, form `table` (PK-14)
-- [ ] A proven `ToTable` sets the physical name and `ExplicitConfirmation` (PK-15)
-- [ ] No `ToTable` falls back to the `DbSet` member name with `ConventionalCandidate` (PK-16)
-- [ ] `SchemaName` is the literal `unknown` when no schema is proven (PK-17)
-- [ ] A non-constant `ToTable` argument falls back to convention (spec edge case)
-- [ ] Two `DbSet` members exposing the same entity type produce two objects, unmerged (spec edge case)
-- [ ] Unit tests cover each path against a hand-built context
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + tests added so far pass (no silent deletions)
+- [x] One `ObjectNode` per `DbSet<T>` property, form `table` (PK-14)
+- [x] A proven `ToTable` sets the physical name and `ExplicitConfirmation` (PK-15)
+- [x] No `ToTable` falls back to the `DbSet` member name with `ConventionalCandidate` (PK-16)
+- [x] `SchemaName` is the literal `unknown` when no schema is proven (PK-17)
+- [x] A non-constant `ToTable` argument falls back to convention (spec edge case)
+- [x] Two `DbSet` members exposing the same entity type produce two objects, unmerged (spec edge case)
+- [x] Unit tests cover each path against a hand-built context
+- [x] Gate check passes: full gate command
+- [x] Test count: 1085 pass — Domain 545, Analysis 349, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

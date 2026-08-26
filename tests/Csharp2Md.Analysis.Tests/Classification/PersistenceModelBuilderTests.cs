@@ -140,6 +140,90 @@ public sealed class PersistenceModelBuilderTests
         Assert.Equal("OrdersDb", model.Stores[1].Name);
     }
 
+    [Fact]
+    [Trait("Requirement", "PK-14")]
+    [Trait("Requirement", "PK-17")]
+    public void Build_DbSetMember_CreatesOneTableObjectWithAnUnknownSchemaAndTheEntitySymbol()
+    {
+        var pipeline = Arrange();
+        var entity = AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var dataObject = Assert.Single(Assert.Single(model.Stores).Objects);
+        Assert.Equal(OrderFqn, dataObject.EntityTypeFqn);
+        Assert.Equal(DataObjectForm.Table, dataObject.Form);
+        Assert.Equal("unknown", dataObject.SchemaName);
+        Assert.Equal(entity.Reference, dataObject.ClrSymbol);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-15")]
+    public void Build_ProvenToTable_SetsThePhysicalNameAndExplicitConfirmation()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var configure = AddMethod(pipeline, "Configure", "global::Acme.Orders.Data.OrderConfiguration");
+        AddInvocation(pipeline, configure, ordinal: 1, ("entity-type", OrderFqn), ("table-name", "order_headers"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var dataObject = Assert.Single(Assert.Single(model.Stores).Objects);
+        Assert.Equal("order_headers", dataObject.TableName);
+        Assert.Equal(MappingStateKind.ExplicitConfirmation, dataObject.MappingState);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-16")]
+    public void Build_NoToTable_FallsBackToTheDbSetMemberNameAsAConventionalCandidate()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderLineFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "OrderLines", OrderLineFqn);
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var dataObject = Assert.Single(Assert.Single(model.Stores).Objects);
+        Assert.Equal("OrderLines", dataObject.TableName);
+        Assert.Equal(MappingStateKind.ConventionalCandidate, dataObject.MappingState);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-16")]
+    public void Build_NonConstantToTableArgument_FallsBackToConvention()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var configure = AddMethod(pipeline, "Configure", "global::Acme.Orders.Data.OrderConfiguration");
+        AddInvocation(pipeline, configure, ordinal: 1, ("entity-type", OrderFqn), ("method-name", "ToTable"));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var dataObject = Assert.Single(Assert.Single(model.Stores).Objects);
+        Assert.Equal("Orders", dataObject.TableName);
+        Assert.Equal(MappingStateKind.ConventionalCandidate, dataObject.MappingState);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-14")]
+    [Trait("Requirement", "PK-20")]
+    public void Build_TwoDbSetMembersExposingOneEntityType_ProducesTwoUnmergedObjects()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "ArchivedOrders", OrderFqn);
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var objects = Assert.Single(model.Stores).Objects;
+        Assert.Equal<string>(["ArchivedOrders", "Orders"], objects.Select(dataObject => dataObject.TableName));
+        Assert.All(objects, dataObject => Assert.Equal(OrderFqn, dataObject.EntityTypeFqn));
+    }
+
     private static PipelineContext Arrange()
     {
         var pipeline = new PipelineContext(new SwallowingSession(), "alpha.sln");
@@ -185,6 +269,29 @@ public sealed class PersistenceModelBuilderTests
         pipeline.Accumulator.AddFact(symbol);
         return symbol;
     }
+
+    private static Symbol AddNamedType(PipelineContext pipeline, string fullyQualifiedName)
+    {
+        var lastDot = fullyQualifiedName.LastIndexOf('.');
+        var symbol = Symbol.Create(
+            CanonicalSymbolSignature.Create(
+                "namedtype",
+                fullyQualifiedName[..lastDot],
+                fullyQualifiedName[(lastDot + 1)..],
+                0,
+                fullyQualifiedName),
+            OrdersProject,
+            SymbolFacetSet.Create([]));
+        pipeline.Accumulator.AddFact(symbol);
+        return symbol;
+    }
+
+    private static void AddInvocation(
+        PipelineContext pipeline,
+        Symbol owner,
+        int ordinal,
+        params (string Key, string Value)[] entries) =>
+        pipeline.Accumulator.AddObservation(Observe(owner, ObservationKind.Invocation, ordinal, entries));
 
     private static void AddDataAccess(
         PipelineContext pipeline,
