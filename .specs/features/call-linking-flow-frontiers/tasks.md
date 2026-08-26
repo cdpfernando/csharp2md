@@ -220,25 +220,25 @@ T8 → T9 → T10
 - Skill: `dotnet-skills:csharp-coding-standards`, `dotnet-test:assertion-quality`
 
 **Done when**:
-- [ ] `InvokesPass` implements `IClassifierPass`; classifier identity `csharp2md.classifier.invokes` v1
-- [ ] Index building: `symbolsBySig` (all-project, by sig value), `symbolByProjectAndSig` (same-project preference), pre-built before iteration
-- [ ] Bound + method-target + same-project match → `ConfirmedRelation(Invokes)` with `EvidenceMethod.Semantic` and `sourceFact: ownerSymbol` (CLLF-01)
-- [ ] Bound + constructor `ObjectCreation` → `ConfirmedRelation(Invokes)` (CLLF-02)
-- [ ] No confirmed `Invokes` when owner or target not a `Symbol` fact (CLLF-04)
-- [ ] Dedup `HashSet<(RelationKind, FactId, FactId)>` prevents duplicate relations (CLLF-05)
-- [ ] Abstract/interface target + concrete overrides in scope → `CandidateLink` per override (CLLF-07, CLLF-10)
-- [ ] Abstract/interface target + no concrete overrides → `UnresolvedRecord(NoCandidateFound)` (CLLF-08)
-- [ ] No confirmed `Invokes` to abstract/interface member (CLLF-09)
-- [ ] Fallback-owner observation → `UnresolvedRecord(InsufficientEvidence)` only; no `OpenFrontier` (CLLF-14)
-- [ ] BCL/framework prefix skip: container starts with `global::System.` or `global::Microsoft.` → silent skip (CLLF-20)
-- [ ] Cross-project call (target in different project) → confirmed `Invokes` if in same solution (CLLF-17)
-- [ ] External-package call (target signature matches no `Symbol` fact and not BCL-skip) → `UnresolvedRecord(NoCandidateFound)` + `OpenFrontier` (CLLF-18)
-- [ ] Unbound observation → `UnresolvedRecord(NoCandidateFound)` + `OpenFrontier` (CLLF-11)
-- [ ] Receiver shapes: field/property/parameter/pattern-variable — all produce the same confirmed `Invokes` when target is concrete (CLLF-15); no duplicates for same `(source, target)` pair (CLLF-16)
-- [ ] Unit tests in `tests/Csharp2Md.Analysis.Tests/Classification/InvokesPassTests.cs`: one test per numbered AC above, using in-memory `ClassifierContext` with crafted `Symbol` facts and `Observation` objects
-- [ ] Integration test in `tests/Csharp2Md.Analysis.Tests/Classification/InvokesPassFixtureTests.cs`: load `Acme.Orders.slnx` through full pipeline; assert `OrderService.AuthorizeViaPaymentClientAsync → PaymentClient.Authorize` produces `ConfirmedRelation(Invokes)` (CLLF-17, cross-project)
-- [ ] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
-- [ ] Test count: ≥ 18 new tests (≥ 15 unit + ≥ 3 integration)
+- [x] `InvokesPass` implements `IClassifierPass`; classifier identity `csharp2md.classifier.invokes` v1
+- [x] Index building: `symbolsBySig` (all-project, by sig value), `symbolByProjectAndSig` (same-project preference), pre-built before iteration
+- [x] Bound + method-target + same-project match → `ConfirmedRelation(Invokes)` with `EvidenceMethod.Semantic` and `sourceFact: ownerSymbol` (CLLF-01)
+- [x] Bound + constructor `ObjectCreation` → `ConfirmedRelation(Invokes)` (CLLF-02)
+- [x] No confirmed `Invokes` when owner or target not a `Symbol` fact (CLLF-04)
+- [x] Dedup `HashSet<(RelationKind, FactId, FactId)>` prevents duplicate relations (CLLF-05)
+- [x] Abstract/interface target + concrete overrides in scope → `CandidateLink` per override (CLLF-07, CLLF-10)
+- [x] Abstract/interface target + no concrete overrides → `UnresolvedRecord(NoCandidateFound)` (CLLF-08)
+- [x] No confirmed `Invokes` to abstract/interface member (CLLF-09)
+- [x] Fallback-owner observation → `UnresolvedRecord(InsufficientEvidence)` only; no `OpenFrontier` (CLLF-14)
+- [x] BCL/framework prefix skip: container starts with `global::System.` or `global::Microsoft.` → silent skip (CLLF-20)
+- [x] Cross-project call (target in different project) → confirmed `Invokes` if in same solution (CLLF-17)
+- [x] External-package call (target signature matches no `Symbol` fact and not BCL-skip) → `UnresolvedRecord(NoCandidateFound)` + `OpenFrontier` (CLLF-18)
+- [x] Unbound observation → `UnresolvedRecord(NoCandidateFound)` + `OpenFrontier` (CLLF-11)
+- [x] Receiver shapes: field/property/parameter/pattern-variable — all produce the same confirmed `Invokes` when target is concrete (CLLF-15); no duplicates for same `(source, target)` pair (CLLF-16)
+- [x] Unit tests in `tests/Csharp2Md.Analysis.Tests/Classification/InvokesPassTests.cs`: one test per numbered AC above, using in-memory `ClassifierContext` with crafted `Symbol` facts and `Observation` objects
+- [x] Integration test in `tests/Csharp2Md.Analysis.Tests/Classification/InvokesPassFixtureTests.cs`: load `Acme.Orders.slnx` through full pipeline; assert `OrderService.AuthorizeViaPaymentClientAsync → PaymentClient.Authorize` produces `ConfirmedRelation(Invokes)` (CLLF-17, cross-project)
+- [x] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
+- [x] Test count: ≥ 18 new tests (≥ 15 unit + ≥ 3 integration)
 
 **Tests**: unit + integration
 **Gate**: full (Analysis)

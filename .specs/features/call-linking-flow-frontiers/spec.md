@@ -170,26 +170,26 @@ Every ambiguity is resolved or recorded here — nothing is left silently unclea
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| CLLF-01 | P1: Confirmed call edges | Design | Pending |
-| CLLF-02 | P1: Confirmed call edges | Design | Pending |
+| CLLF-01 | P1: Confirmed call edges | Design | Implementing |
+| CLLF-02 | P1: Confirmed call edges | Design | Implementing |
 | CLLF-03 | P1: Confirmed call edges | Design | Pending |
-| CLLF-04 | P1: Confirmed call edges | Design | Pending |
-| CLLF-05 | P1: Confirmed call edges | Design | Pending |
+| CLLF-04 | P1: Confirmed call edges | Design | Implementing |
+| CLLF-05 | P1: Confirmed call edges | Design | Implementing |
 | CLLF-06 | P1: Confirmed call edges | Design | Implementing |
 | CLLF-07 | P1: Polymorphic candidates | Design | Implementing |
-| CLLF-08 | P1: Polymorphic candidates | Design | Pending |
+| CLLF-08 | P1: Polymorphic candidates | Design | Implementing |
 | CLLF-09 | P1: Polymorphic candidates | Design | Implementing |
-| CLLF-10 | P1: Polymorphic candidates | Design | Pending |
-| CLLF-11 | P1: Open frontiers | Design | Pending |
-| CLLF-12 | P1: Open frontiers | Design | Pending |
-| CLLF-13 | P1: Open frontiers | Design | Pending |
-| CLLF-14 | P1: Open frontiers | Design | Pending |
-| CLLF-15 | P2: Multi-receiver shapes | - | Pending |
-| CLLF-16 | P2: Multi-receiver shapes | - | Pending |
-| CLLF-17 | P2: Cross-project resolution | - | Pending |
-| CLLF-18 | P2: Cross-project resolution | - | Pending |
+| CLLF-10 | P1: Polymorphic candidates | Design | Implementing |
+| CLLF-11 | P1: Open frontiers | Design | Implementing |
+| CLLF-12 | P1: Open frontiers | Design | Implementing |
+| CLLF-13 | P1: Open frontiers | Design | Implementing |
+| CLLF-14 | P1: Open frontiers | Design | Implementing |
+| CLLF-15 | P2: Multi-receiver shapes | - | Implementing |
+| CLLF-16 | P2: Multi-receiver shapes | - | Implementing |
+| CLLF-17 | P2: Cross-project resolution | - | Implementing |
+| CLLF-18 | P2: Cross-project resolution | - | Implementing |
 | CLLF-19 | P3: Diagnostic coverage | - | Pending |
-| CLLF-20 | P3: Diagnostic coverage | - | Pending |
+| CLLF-20 | P3: Diagnostic coverage | - | Implementing |
 
 **ID format:** `CLLF-NN`
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
