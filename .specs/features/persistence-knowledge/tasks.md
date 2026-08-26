@@ -235,14 +235,14 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] `operation` is always present and drawn from the closed table in PK-35 (PK-01)
-- [ ] `entity-type` is present when the receiver binds to `DbSet<TEntity>` (PK-02)
-- [ ] `context-type` is present when the receiver is or derives from `DbContext` (PK-03)
-- [ ] `field-names` holds the LINQ lambda member accesses, ordinal-sorted and `|`-joined into one entry (PK-05)
-- [ ] `NormalizedPayload.Create` is never called with a duplicate key
-- [ ] Existing `DataAccessDetectorTests` still pass; new tests assert each payload entry against the fixture
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count: 828 + new tests pass (no silent deletions)
+- [x] `operation` is always present and drawn from the closed table in PK-35 (PK-01)
+- [x] `entity-type` is present when the receiver binds to `DbSet<TEntity>` (PK-02)
+- [x] `context-type` is present when the receiver is or derives from `DbContext` (PK-03)
+- [x] `field-names` holds the LINQ lambda member accesses, ordinal-sorted and `|`-joined into one entry (PK-05)
+- [x] `NormalizedPayload.Create` is never called with a duplicate key
+- [x] Existing `DataAccessDetectorTests` still pass (the SaveChanges empty-payload assertion is rewritten to assert the new `operation`/`context-type` entries, since an empty payload can no longer be correct once PK-01 requires `operation` on every occurrence); new tests assert each payload entry against the fixture
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count: 545 + 307 = 852 pass (no silent deletions)
 
 **Tests**: unit + integration
 **Gate**: full

@@ -3,6 +3,7 @@ using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Semantics;
 using Csharp2Md.Analysis.Tests.Pipeline;
+using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Observations;
 
 namespace Csharp2Md.Analysis.Tests.Extraction;
@@ -11,7 +12,9 @@ public sealed class DataAccessDetectorTests
 {
     [Fact]
     [Trait("Requirement", "ROSE-41")]
-    public async Task ExtractInto_SaveChanges_EmitsDataAccessWithEmptyPayload()
+    [Trait("Requirement", "PK-01")]
+    [Trait("Requirement", "PK-03")]
+    public async Task ExtractInto_SaveChanges_EmitsDataAccessWithUnknownOperationAndContextType()
     {
         var observations = await ExtractAcmeOrdersAsync();
         var writesPath = Path.Combine(
@@ -30,7 +33,95 @@ public sealed class DataAccessDetectorTests
             .ToArray();
 
         Assert.NotEmpty(saveChanges);
-        Assert.All(saveChanges, observation => Assert.Empty(observation.Identity.Payload.Entries));
+        Assert.All(
+            saveChanges,
+            observation =>
+            {
+                var entries = observation.Identity.Payload.Entries;
+                Assert.Equal(2, entries.Length);
+                Assert.Contains(
+                    entries,
+                    entry => entry.Key == "operation"
+                        && entry.Value.Role == LiteralRole.ProtocolName
+                        && entry.Value.Value == "unknown");
+                Assert.Contains(
+                    entries,
+                    entry => entry.Key == "context-type"
+                        && entry.Value.Role == LiteralRole.ProtocolName
+                        && entry.Value.Value == "global::Acme.Orders.Data.OrderDbContext");
+            });
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-01")]
+    [Trait("Requirement", "PK-02")]
+    public async Task ExtractInto_PlaceOrderAdd_EmitsInsertOperationWithEntityType()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+
+        var insertAccess = Assert.Single(
+            observations,
+            observation => observation.Identity.Kind is ObservationKind.DataAccess
+                && observation.Locator.RelativePath.Replace('\\', '/')
+                    .EndsWith("Acme.Orders/Data/OrderDbContext.cs", StringComparison.Ordinal)
+                && observation.Identity.Payload.Entries.Any(entry => entry.Key == "operation" && entry.Value.Value == "insert"));
+
+        var entries = insertAccess.Identity.Payload.Entries;
+        Assert.Contains(
+            entries,
+            entry => entry.Key == "entity-type" && entry.Value.Value == "global::Acme.Orders.Data.Order");
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-05")]
+    public async Task ExtractInto_WhereOverDbSet_EmitsSingleFilteredFieldName()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+
+        var whereAccess = Assert.Single(
+            observations,
+            observation => observation.Identity.Kind is ObservationKind.DataAccess
+                && observation.Locator.RelativePath.Replace('\\', '/')
+                    .EndsWith("Acme.Orders/Data/OrderDbContext.cs", StringComparison.Ordinal)
+                && observation.Identity.Payload.Entries.Any(entry => entry.Key == "field-names" && entry.Value.Value == "Id"));
+
+        var entries = whereAccess.Identity.Payload.Entries;
+        Assert.Contains(entries, entry => entry.Key == "operation" && entry.Value.Value == "read");
+        Assert.Contains(
+            entries,
+            entry => entry.Key == "entity-type" && entry.Value.Value == "global::Acme.Orders.Data.Order");
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-05")]
+    public async Task ExtractInto_SelectProjectionOverDbSet_EmitsOrdinalSortedJoinedFieldNames()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+
+        var selectAccess = Assert.Single(
+            observations,
+            observation => observation.Identity.Kind is ObservationKind.DataAccess
+                && observation.Locator.RelativePath.Replace('\\', '/')
+                    .EndsWith("Acme.Orders/Data/OrderDbContext.cs", StringComparison.Ordinal)
+                && observation.Identity.Payload.Entries.Any(
+                    entry => entry.Key == "field-names" && entry.Value.Value == "Amount|Id|Status"));
+
+        Assert.Contains(
+            selectAccess.Identity.Payload.Entries,
+            entry => entry.Key == "operation" && entry.Value.Value == "read");
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-01")]
+    public async Task ExtractInto_EveryDataAccessObservation_CarriesAnOperationEntry()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+        var dataAccesses = observations.Where(observation => observation.Identity.Kind is ObservationKind.DataAccess);
+
+        Assert.NotEmpty(dataAccesses);
+        Assert.All(
+            dataAccesses,
+            observation => Assert.Contains(observation.Identity.Payload.Entries, entry => entry.Key == "operation"));
     }
 
     [Fact]
