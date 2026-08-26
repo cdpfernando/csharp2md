@@ -324,10 +324,10 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `OutputType` is `Exe`; the `Protobuf` item, project reference and package reference are unchanged
-- [ ] `Acme.Payments.slnx` still loads and its gRPC assertions still hold
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1211 pass; any count change is explained in the commit body
+- [x] `OutputType` is `Exe`; the `Protobuf` item, project reference and package reference are unchanged
+- [x] `Acme.Payments.slnx` still loads and its gRPC assertions still hold
+- [x] Gate check passes: build gate command
+- [x] Test count: 1211 pass; any count change is explained in the commit body
 
 **Tests**: none
 **Gate**: build
