@@ -178,14 +178,14 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] `Name` returns `"Classification and Promotion"`
-- [ ] Executes all passes in registration order
-- [ ] Refreshes `ClassifierContext` between passes
-- [ ] Reports aggregate `StageResult` (sum of pass counts)
-- [ ] Sets `HasUnknownsOrCandidatesOrFrontiers` when candidates/unresolved exist
-- [ ] Skips gracefully when no passes are registered (returns zero counts)
-- [ ] Unit tests with a mock no-op pass and a counting test pass
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] `Name` returns `"Classification and Promotion"`
+- [x] Executes all passes in registration order
+- [x] Refreshes `ClassifierContext` between passes
+- [x] Reports aggregate `StageResult` (sum of pass counts)
+- [x] Sets `HasUnknownsOrCandidatesOrFrontiers` when candidates/unresolved exist
+- [x] Skips gracefully when no passes are registered (returns zero counts)
+- [x] Unit tests with a mock no-op pass and a counting test pass
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: unit
 **Gate**: full
