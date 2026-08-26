@@ -63,6 +63,7 @@ public sealed class PipelineStagesTests
         Assert.Contains("new BoundaryPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
         Assert.Contains("new ContractPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
         Assert.Contains("new PersistencePass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
+        Assert.Contains("new ConfigurationPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
         Assert.Contains("new RelationPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
         Assert.Contains("new InvokesPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
         Assert.Contains("new ExecutesPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
@@ -74,11 +75,12 @@ public sealed class PipelineStagesTests
             "new BoundaryPass()",
             "new ContractPass()",
             "new PersistencePass()",
+            "new ConfigurationPass()",
             "new RelationPass()",
             "new InvokesPass()",
             "new ExecutesPass()",
         };
-        Assert.Equal(8, passConstructors.Count(ctor => source.Contains(ctor, StringComparison.Ordinal)));
+        Assert.Equal(9, passConstructors.Count(ctor => source.Contains(ctor, StringComparison.Ordinal)));
         Assert.True(
             source.IndexOf("new ComponentPass()", StringComparison.Ordinal)
                 < source.IndexOf("new EntryPointPass()", StringComparison.Ordinal)
@@ -89,12 +91,14 @@ public sealed class PipelineStagesTests
                 && source.IndexOf("new ContractPass()", StringComparison.Ordinal)
                     < source.IndexOf("new PersistencePass()", StringComparison.Ordinal)
                 && source.IndexOf("new PersistencePass()", StringComparison.Ordinal)
+                    < source.IndexOf("new ConfigurationPass()", StringComparison.Ordinal)
+                && source.IndexOf("new ConfigurationPass()", StringComparison.Ordinal)
                     < source.IndexOf("new RelationPass()", StringComparison.Ordinal)
                 && source.IndexOf("new RelationPass()", StringComparison.Ordinal)
                     < source.IndexOf("new InvokesPass()", StringComparison.Ordinal)
                 && source.IndexOf("new InvokesPass()", StringComparison.Ordinal)
                     < source.IndexOf("new ExecutesPass()", StringComparison.Ordinal),
-            "CreateDefault pass order must be ComponentPass → EntryPointPass → BoundaryPass → ContractPass → PersistencePass → RelationPass → InvokesPass → ExecutesPass.");
+            "CreateDefault pass order must be ComponentPass → EntryPointPass → BoundaryPass → ContractPass → PersistencePass → ConfigurationPass → RelationPass → InvokesPass → ExecutesPass.");
     }
 
     private static string PipelineStagesPath() =>

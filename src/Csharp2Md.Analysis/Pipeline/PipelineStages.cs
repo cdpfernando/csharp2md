@@ -20,6 +20,7 @@ internal static class PipelineStages
                 new BoundaryPass(),
                 new ContractPass(),
                 new PersistencePass(),
+                new ConfigurationPass(),
                 new RelationPass(),
                 new InvokesPass(),
                 new ExecutesPass(),

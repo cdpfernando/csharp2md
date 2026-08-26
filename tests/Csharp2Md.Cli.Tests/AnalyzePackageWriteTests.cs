@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Proof;
 using Csharp2Md.Domain.Relations;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Wire;
@@ -62,10 +63,13 @@ public sealed class AnalyzePackageWriteTests
             Assert.Contains(
                 result.Snapshot.Candidates,
                 static link => link.Kind is RelationKind.Targets);
-            Assert.DoesNotContain(
+            Assert.Contains(
                 result.Snapshot.ConfirmedRelations,
                 static relation => relation.Kind is RelationKind.Targets);
-            Assert.True(result.Snapshot.Frontiers.IsEmpty);
+            Assert.Contains(
+                result.Snapshot.Frontiers,
+                static frontier => frontier.Frontier is Frontier.Open
+                    && frontier.Cause is FrontierCause.FurtherContinuationObserved);
 
             var registryPath = Path.Combine(child, "contracts", "taxonomy-registry.json");
             Assert.True(File.Exists(registryPath), $"taxonomy-registry copy was not found at '{registryPath}'.");

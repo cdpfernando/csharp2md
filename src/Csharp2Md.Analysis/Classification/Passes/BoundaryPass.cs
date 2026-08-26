@@ -122,10 +122,6 @@ internal sealed class BoundaryPass : IClassifierPass
     {
         var symbolsById = context.FactsByType<Symbol>()
             .ToDictionary(static symbol => symbol.Reference.Id.Value, StringComparer.Ordinal);
-        var projectsById = context.FactsByType<Project>()
-            .ToDictionary(static project => project.Id.Value, StringComparer.Ordinal);
-        var componentsByPath = context.FactsByType<Component>()
-            .ToDictionary(static component => component.Name, StringComparer.Ordinal);
 
         var factCount = 0;
         var candidateCount = 0;
@@ -143,9 +139,7 @@ internal sealed class BoundaryPass : IClassifierPass
         foreach (var createClient in createClients)
         {
             if (!symbolsById.TryGetValue(createClient.Identity.Owner.Id.Value, out var callable)
-                || !projectsById.TryGetValue(callable.OwningProject.Value, out var project)
-                || TryLogicalPath(project) is not { } path
-                || !componentsByPath.TryGetValue(path, out var component))
+                || context.ComponentForSymbol(callable.Reference) is not { } component)
             {
                 continue;
             }
@@ -237,10 +231,6 @@ internal sealed class BoundaryPass : IClassifierPass
     {
         var symbolsById = context.FactsByType<Symbol>()
             .ToDictionary(static symbol => symbol.Reference.Id.Value, StringComparer.Ordinal);
-        var projectsById = context.FactsByType<Project>()
-            .ToDictionary(static project => project.Id.Value, StringComparer.Ordinal);
-        var componentsByPath = context.FactsByType<Component>()
-            .ToDictionary(static component => component.Name, StringComparer.Ordinal);
 
         var factCount = 0;
         var emittedKeys = new HashSet<string>(StringComparer.Ordinal);
@@ -256,9 +246,7 @@ internal sealed class BoundaryPass : IClassifierPass
             }
 
             if (!symbolsById.TryGetValue(observation.Identity.Owner.Id.Value, out var callable)
-                || !projectsById.TryGetValue(callable.OwningProject.Value, out var project)
-                || TryLogicalPath(project) is not { } path
-                || !componentsByPath.TryGetValue(path, out var component))
+                || context.ComponentForSymbol(callable.Reference) is not { } component)
             {
                 continue;
             }
@@ -476,21 +464,5 @@ internal sealed class BoundaryPass : IClassifierPass
         }
 
         return null;
-    }
-
-    private static string? TryLogicalPath(Project project)
-    {
-        const string marker = ";path=";
-        var id = project.Id.Value;
-        var start = id.IndexOf(marker, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += marker.Length;
-        var end = id.IndexOf(';', start);
-        var encoded = end < 0 ? id[start..] : id[start..end];
-        return string.IsNullOrWhiteSpace(encoded) ? null : Uri.UnescapeDataString(encoded);
     }
 }

@@ -16,6 +16,8 @@ public sealed class ComponentEntryPointIntegrationTests
     [Trait("Requirement", "EBC-19")]
     [Trait("Requirement", "EBC-27")]
     [Trait("Requirement", "EBC-35")]
+    [Trait("Requirement", "CDC-09")]
+    [Trait("Requirement", "CDC-11")]
     public async Task AnalyzeAsync_AcmeOrders_PromotesComponentAndEntryPoints()
     {
         var solutionPath = Path.Combine(
@@ -44,16 +46,17 @@ public sealed class ComponentEntryPointIntegrationTests
             artifact => artifact.CanonicalKey == "facts/architecture.json");
         var architecture = CanonicalJson.Read<ArchitectureFactsShard>(architectureFragment.Payload.AsSpan());
 
-        Assert.Contains(
-            architecture.Components,
-            component => component.Name.Contains("Acme.Orders", StringComparison.Ordinal)
-                && component.Name.Contains("Acme.Orders.csproj", StringComparison.Ordinal));
+        Assert.Equal(
+            new[]
+            {
+                "Acme.Orders/Acme.Orders.csproj",
+                "Acme.Orders.Worker/Acme.Orders.Worker.csproj",
+                "Acme.Shared.Contracts/Acme.Shared.Contracts.csproj",
+            }.OrderBy(name => name, StringComparer.Ordinal).ToArray(),
+            architecture.Components.Select(component => component.Name).OrderBy(name => name, StringComparer.Ordinal).ToArray());
         Assert.DoesNotContain(
             architecture.Components,
-            component => component.Name.Contains("Acme.Shared.Contracts", StringComparison.Ordinal));
-        Assert.DoesNotContain(
-            architecture.Components,
-            component => component.Name.Contains("Acme.Broken", StringComparison.Ordinal));
+            component => component.Name == "Acme.Broken/Acme.Broken.csproj");
 
         Assert.Contains(
             architecture.EntryPoints,

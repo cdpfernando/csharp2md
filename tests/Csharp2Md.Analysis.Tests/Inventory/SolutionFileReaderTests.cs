@@ -24,12 +24,14 @@ public sealed class SolutionFileReaderTests
                 "../Acme.Shared.Contracts/Acme.Shared.Contracts.csproj",
                 "../Acme.Broken/Acme.Broken.csproj",
                 "../Acme.DoesNotExist/Acme.DoesNotExist.csproj",
+                "../Acme.Orders.Worker/Acme.Orders.Worker.csproj",
             ],
             paths);
         Assert.Contains(paths, path => path.Contains("Acme.Orders", StringComparison.Ordinal));
         Assert.Contains(paths, path => path.Contains("Acme.Shared.Contracts", StringComparison.Ordinal));
         Assert.Contains(paths, path => path.Contains("Acme.Broken", StringComparison.Ordinal));
         Assert.Contains(paths, path => path.Contains("Acme.DoesNotExist", StringComparison.Ordinal));
+        Assert.Contains(paths, path => path.Contains("Acme.Orders.Worker", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -19,6 +19,8 @@ internal sealed class ObservationExtractionStage : IPipelineStage
 
             AlwaysWhenBindableWalker.ExtractInto(context, cancellationToken);
             var relationCount = ContainsRelationEmitter.Emit(context, cancellationToken);
+            ProjectMetadataEmitter.Emit(context, cancellationToken);
+            ConfigurationDocumentReader.Emit(context, cancellationToken);
             var snapshot = context.Accumulator.ToSnapshot();
             return ValueTask.FromResult(new StageResult(
                 0,
