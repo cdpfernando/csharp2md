@@ -214,11 +214,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Line 68's `Assert.True(result.Snapshot.Frontiers.IsEmpty)` is replaced by a positive assertion naming the frontier kind and cause 5B emits
-- [ ] The `targets` candidate and no-confirmed-`targets` assertions are left unchanged; T32 revises them when the promotion lands
-- [ ] The whole suite is green: 1211 passing
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1211 pass — Domain 549, Analysis 461, Storage 171, Cli 27, Projection 3 (no silent deletions)
+- [x] Line 68's `Assert.True(result.Snapshot.Frontiers.IsEmpty)` is replaced by a positive assertion naming the frontier kind and cause 5B emits
+- [x] The `targets` candidate and no-confirmed-`targets` assertions are left unchanged; T32 revises them when the promotion lands
+- [x] The whole suite is green: 1211 passing
+- [x] Gate check passes: build gate command
+- [x] Test count: 1211 pass — Domain 549, Analysis 461, Storage 171, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: unit
 **Gate**: build
