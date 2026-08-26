@@ -379,11 +379,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `OutputType` is `Exe` and `TargetFramework` is `net10.0`, matching every sibling fixture project
-- [ ] The only `ProjectReference` is `Acme.Shared.Contracts`; there is no reference to `Acme.Orders`
-- [ ] The project compiles against the `Main` added in T8
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1211 pass; any count change is explained in the commit body
+- [x] `OutputType` is `Exe` and `TargetFramework` is `net10.0`, matching every sibling fixture project
+- [x] The only `ProjectReference` is `Acme.Shared.Contracts`; there is no reference to `Acme.Orders`
+- [x] The project compiles against the `Main` added in T8
+- [x] Gate check passes: build gate command
+- [x] Test count: 1211 pass; any count change is explained in the commit body
 
 **Tests**: none
 **Gate**: build
