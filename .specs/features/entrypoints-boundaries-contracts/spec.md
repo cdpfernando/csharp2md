@@ -285,7 +285,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | EBC-32 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T17) | In Tasks |
 | EBC-33 | P1: Candidates, unresolved, and diagnostics | Phase 3 (T9) | In Tasks |
 | EBC-34 | P1: Candidates, unresolved, and diagnostics | Phase 4 (T14) | In Tasks |
-| EBC-35 | P1: Candidates, unresolved, and diagnostics | Phase 2 (T8), Phase 5 (T16) | In Tasks |
+| EBC-35 | P1: Candidates, unresolved, and diagnostics | Phase 2 (T8), Phase 5 (T16) | Implementing |
 | EBC-36 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T16) | In Tasks |
 | EBC-37 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T16, T19) | In Tasks |
 | EBC-38 | P1: Candidates, unresolved, and diagnostics | Phase 1 (T1) | Implementing |

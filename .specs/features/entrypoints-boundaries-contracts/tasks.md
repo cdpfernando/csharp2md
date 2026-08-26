@@ -281,13 +281,13 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] `PipelineStages.CreateDefault()` includes `ComponentPass` and `EntryPointPass`
-- [ ] Integration test analyzes `Acme.Orders.slnx` and asserts `Acme.Orders` has a `Component`
-- [ ] Integration test asserts `OrdersController.GetOrderStatus` is an `EntryPoint`
-- [ ] Integration test asserts `OrderPlacedEventHandler.HandleAsync` is an `EntryPoint`
-- [ ] Integration test asserts `Acme.Shared.Contracts` has no `Component`
-- [ ] Classification stage reports non-zero fact count
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] `PipelineStages.CreateDefault()` includes `ComponentPass` and `EntryPointPass`
+- [x] Integration test analyzes `Acme.Orders.slnx` and asserts `Acme.Orders` has a `Component`
+- [x] Integration test asserts `OrdersController.GetOrderStatus` is an `EntryPoint`
+- [x] Integration test asserts `OrderPlacedEventHandler.HandleAsync` is an `EntryPoint`
+- [x] Integration test asserts `Acme.Shared.Contracts` has no `Component`
+- [x] Classification stage reports non-zero fact count
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: integration
 **Gate**: full

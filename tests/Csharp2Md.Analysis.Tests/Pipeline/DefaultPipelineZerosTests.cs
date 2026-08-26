@@ -12,6 +12,7 @@ public sealed class DefaultPipelineZerosTests
     [Trait("Requirement", "ROSE-13")]
     [Trait("Requirement", "ROSE-59")]
     [Trait("Requirement", "ROSE-60")]
+    [Trait("Requirement", "EBC-35")]
     [Trait("Requirement", "ENG-15")]
     public async Task AnalyzeAsync_DefaultPipeline_InventorySemanticAndExtractionAreNonZeroAndLaterStubsStayZero()
     {
@@ -55,10 +56,15 @@ public sealed class DefaultPipelineZerosTests
         var persistence = outcome.Stages[5];
         Assert.Equal("Persistence", persistence.Name);
 
-        AssertZeroProduction(outcome.Stages[3], "Classification and Promotion");
         AssertZeroProduction(outcome.Stages[4], "Validation and Coverage");
         AssertZeroProduction(outcome.Stages[6], "Retrieval Projection");
         AssertZeroProduction(outcome.Stages[7], "Batch Composition");
+
+        var classification = outcome.Stages[3];
+        Assert.Equal("Classification and Promotion", classification.Name);
+        Assert.True(classification.FactCount > 0, $"Classification fact count was {classification.FactCount}.");
+        Assert.Equal(0, classification.ObservationCount);
+        Assert.Equal(0, classification.RelationCount);
     }
 
     private static void AssertZeroProduction(StageReport report, string name)

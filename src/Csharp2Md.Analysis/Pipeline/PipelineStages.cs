@@ -1,4 +1,5 @@
 using Csharp2Md.Analysis.Classification;
+using Csharp2Md.Analysis.Classification.Passes;
 using Csharp2Md.Analysis.Extraction;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Semantics;
@@ -12,6 +13,10 @@ internal static class PipelineStages
             .SetItem(0, new InventoryStage())
             .SetItem(1, new SemanticAnalysisStage())
             .SetItem(2, new ObservationExtractionStage())
-            .SetItem(3, new ClassificationAndPromotionStage([]))
+            .SetItem(3, new ClassificationAndPromotionStage(
+            [
+                new ComponentPass(),
+                new EntryPointPass(),
+            ]))
             .SetItem(5, new PersistenceStage());
 }

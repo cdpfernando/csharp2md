@@ -58,5 +58,15 @@ public sealed class PipelineStagesTests
         Assert.IsType<ClassificationAndPromotionStage>(classification);
         Assert.IsNotType<ClassificationAndPromotionStub>(classification);
         Assert.Equal("Classification and Promotion", classification.Name);
+        Assert.Contains("new ComponentPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
+        Assert.Contains("new EntryPointPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
     }
+
+    private static string PipelineStagesPath() =>
+        Path.Combine(
+            AnalysisTestPaths.RepoRoot,
+            "src",
+            "Csharp2Md.Analysis",
+            "Pipeline",
+            "PipelineStages.cs");
 }
