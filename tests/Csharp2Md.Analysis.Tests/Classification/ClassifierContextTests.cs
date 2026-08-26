@@ -135,6 +135,100 @@ public sealed class ClassifierContextTests
         Assert.Equal(observation, Assert.Single(context.ObservationsByKind(ObservationKind.BaseType).ToArray()));
         Assert.Equal(observation, Assert.Single(context.ObservationsByOwner(symbol.Reference).ToArray()));
         Assert.Equal(symbol, context.SymbolsBySignatureKey()[ClassifierContext.SignatureKey(OrdersProject, RunSignature)]);
+        Assert.Null(context.ComponentForSymbol(symbol.Reference));
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-14")]
+    public void ComponentForSymbol_DeployableOwner_ReturnsThatComponent()
+    {
+        var pipeline = CreatePipeline();
+        var symbol = Symbol.Create(RunSignature, OrdersProject, SymbolFacetSet.Create([]));
+        var component = Component.Create(AcmeSolution, "Acme.Orders/Acme.Orders.csproj", [symbol.Reference]);
+        pipeline.Accumulator.AddFact(Solution.Create(AcmeSolution));
+        pipeline.Accumulator.AddFact(symbol);
+        pipeline.Accumulator.AddFact(component);
+
+        var context = new ClassifierContext(pipeline);
+
+        Assert.Equal(component, context.ComponentForSymbol(symbol.Reference));
+        Assert.Equal(component, context.ComponentForProject(OrdersProject));
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-14")]
+    public void ComponentForSymbol_SharedOwner_ReturnsSharedComponent()
+    {
+        var pipeline = CreatePipeline();
+        var symbol = Symbol.Create(RunSignature, ContractsProject, SymbolFacetSet.Create([]));
+        var shared = Component.Create(AcmeSolution, "Acme.Shared.Contracts/Acme.Shared.Contracts.csproj", [symbol.Reference]);
+        pipeline.Accumulator.AddFact(Solution.Create(AcmeSolution));
+        pipeline.Accumulator.AddFact(symbol);
+        pipeline.Accumulator.AddFact(shared);
+
+        var context = new ClassifierContext(pipeline);
+
+        Assert.Equal(shared, context.ComponentForSymbol(symbol.Reference));
+        Assert.Equal("Acme.Shared.Contracts/Acme.Shared.Contracts.csproj", context.ComponentForSymbol(symbol.Reference)!.Name);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-14")]
+    public void ComponentForSymbol_PrivateUseLibrarySymbol_ReturnsApplicationComponent()
+    {
+        var pipeline = CreatePipeline();
+        var librarySymbol = Symbol.Create(RunSignature, ContractsProject, SymbolFacetSet.Create([]));
+        var application = Component.Create(
+            AcmeSolution,
+            "Acme.Orders/Acme.Orders.csproj",
+            [librarySymbol.Reference]);
+        pipeline.Accumulator.AddFact(Solution.Create(AcmeSolution));
+        pipeline.Accumulator.AddFact(librarySymbol);
+        pipeline.Accumulator.AddFact(application);
+
+        var context = new ClassifierContext(pipeline);
+
+        Assert.Equal(application, context.ComponentForSymbol(librarySymbol.Reference));
+        Assert.Equal("Acme.Orders/Acme.Orders.csproj", context.ComponentForSymbol(librarySymbol.Reference)!.Name);
+        Assert.NotEqual(
+            "Acme.Shared.Contracts/Acme.Shared.Contracts.csproj",
+            context.ComponentForSymbol(librarySymbol.Reference)!.Name);
+        Assert.Equal(application, context.ComponentForProject(ContractsProject));
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-14")]
+    public void ComponentForSymbol_SymbolInNoComponent_ReturnsNull()
+    {
+        var pipeline = CreatePipeline();
+        var symbol = Symbol.Create(RunSignature, OrdersProject, SymbolFacetSet.Create([]));
+        pipeline.Accumulator.AddFact(Solution.Create(AcmeSolution));
+        pipeline.Accumulator.AddFact(symbol);
+
+        var context = new ClassifierContext(pipeline);
+
+        Assert.Null(context.ComponentForSymbol(symbol.Reference));
+        Assert.Null(context.ComponentForProject(OrdersProject));
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-14")]
+    public void Refresh_RebuildsComponentForSymbolFromCurrentOwners()
+    {
+        var pipeline = CreatePipeline();
+        var symbol = Symbol.Create(RunSignature, OrdersProject, SymbolFacetSet.Create([]));
+        pipeline.Accumulator.AddFact(Solution.Create(AcmeSolution));
+        pipeline.Accumulator.AddFact(symbol);
+        var context = new ClassifierContext(pipeline);
+        Assert.Null(context.ComponentForSymbol(symbol.Reference));
+
+        var component = Component.Create(AcmeSolution, "Acme.Orders/Acme.Orders.csproj", [symbol.Reference]);
+        pipeline.Accumulator.AddFact(component);
+        Assert.Null(context.ComponentForSymbol(symbol.Reference));
+
+        context.Refresh();
+
+        Assert.Equal(component, context.ComponentForSymbol(symbol.Reference));
     }
 
     private static PipelineContext CreatePipeline() =>

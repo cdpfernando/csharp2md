@@ -796,11 +796,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] The map is rebuilt on every `Refresh`, so a pass sees components emitted by earlier passes
-- [ ] A symbol in no component returns null rather than throwing
-- [ ] Unit tests cover a symbol in a deployable component, one in a shared component, one in a private-use grouping, and one in none
-- [ ] Gate check passes: quick gate command
-- [ ] Test count reported; no silent deletions
+- [x] The map is rebuilt on every `Refresh`, so a pass sees components emitted by earlier passes
+- [x] A symbol in no component returns null rather than throwing
+- [x] Unit tests cover a symbol in a deployable component, one in a shared component, one in a private-use grouping, and one in none
+- [x] Gate check passes: quick gate command
+- [x] Test count reported; no silent deletions (Analysis 532 pass)
 
 **Tests**: unit
 **Gate**: quick
