@@ -283,7 +283,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-40 | P1: Observation ledger | Tasks (T49) | Pending |
 | ROSE-41 | P1: Observation ledger | Tasks (T50) | Pending |
 | ROSE-42 | P1: Observation ledger | Tasks (T46, T49, T50) | Pending |
-| ROSE-43 | P1: Observation ledger | Tasks (T38, T44) | Pending |
+| ROSE-43 | P1: Observation ledger | Tasks (T38, T44) | Implemented |
 | ROSE-44 | P1: Observation ledger | Tasks (T6, T38, T44) | Implemented |
 | ROSE-45 | P1: Observation ledger | Tasks (T40) | Pending |
 | ROSE-46 | P1: Observation ledger | Tasks (T38, T39, T41) | Pending |

@@ -1296,10 +1296,10 @@ sort (`relative path`, then span), assign occurrence ordinal 1..n per `(owner, k
 
 **Done when**:
 
-- [ ] Two drafts that share owner/kind/payload get ordinals 1 and 2 in locator order
-- [ ] Shuffling the input list does not change assigned ordinals
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Two drafts that share owner/kind/payload get ordinals 1 and 2 in locator order
+- [x] Shuffling the input list does not change assigned ordinals
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
