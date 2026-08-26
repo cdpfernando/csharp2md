@@ -1124,10 +1124,10 @@ field. Dispose happens in Observation Extraction (T43); this task only attaches 
 
 **Done when**:
 
-- [ ] After Semantic Analysis on the fixture, context holds a non-null lease
-- [ ] Production constructor no longer uses `SemanticAnalysisStub`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] After Semantic Analysis on the fixture, context holds a non-null lease
+- [x] Production constructor no longer uses `SemanticAnalysisStub`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

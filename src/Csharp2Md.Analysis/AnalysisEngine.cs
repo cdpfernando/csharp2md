@@ -43,45 +43,52 @@ public sealed class AnalysisEngine : IAnalysisEngine
         var canonical = Path.GetFullPath(path);
         var session = _store.Open(canonical);
         var context = new PipelineContext(session, path);
-        var run = await _orchestrator.RunAsync(context, cancellationToken).ConfigureAwait(false);
-        if (run.Status is not PipelineCompletion.Succeeded)
+        try
         {
-            session.Abort();
+            var run = await _orchestrator.RunAsync(context, cancellationToken).ConfigureAwait(false);
+            if (run.Status is not PipelineCompletion.Succeeded)
+            {
+                session.Abort();
+                return CreateOutcome(
+                    canonical,
+                    path,
+                    PublicationStatus.Unpublished,
+                    run.FailedStageName,
+                    context.Reports,
+                    run,
+                    context.Detail);
+            }
+
+            try
+            {
+                session.Commit();
+            }
+            catch (PublicationRejectedException)
+            {
+                session.Abort();
+                return CreateOutcome(
+                    canonical,
+                    path,
+                    PublicationStatus.Unpublished,
+                    failingStage: null,
+                    context.Reports,
+                    run with { StructuralCorruption = true },
+                    context.Detail);
+            }
+
             return CreateOutcome(
                 canonical,
                 path,
-                PublicationStatus.Unpublished,
-                run.FailedStageName,
+                PublicationStatus.Committed,
+                failingStage: null,
                 context.Reports,
                 run,
                 context.Detail);
         }
-
-        try
+        finally
         {
-            session.Commit();
+            context.BoundSolution?.Dispose();
         }
-        catch (PublicationRejectedException)
-        {
-            session.Abort();
-            return CreateOutcome(
-                canonical,
-                path,
-                PublicationStatus.Unpublished,
-                failingStage: null,
-                context.Reports,
-                run with { StructuralCorruption = true },
-                context.Detail);
-        }
-
-        return CreateOutcome(
-            canonical,
-            path,
-            PublicationStatus.Committed,
-            failingStage: null,
-            context.Reports,
-            run,
-            context.Detail);
     }
 
     private static SolutionOutcome CreateOutcome(

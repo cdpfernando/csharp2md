@@ -30,18 +30,21 @@ internal sealed class SemanticAnalysisStage : IPipelineStage
 
         const string configuration = AnalysisVariantFactory.DefaultConfiguration;
         var compilations = ImmutableArray.CreateBuilder<Compilation>();
+        var leases = ImmutableArray.CreateBuilder<MsBuildWorkspaceLease>();
         var recordedSdkProjects = new HashSet<string>(StringComparer.Ordinal);
         var recordedCompileErrors = new HashSet<string>(StringComparer.Ordinal);
         var recordedVariants = new HashSet<string>(StringComparer.Ordinal);
         var variants = ImmutableArray.CreateBuilder<AnalysisVariantId>();
         var hasUnknowns = false;
+        var attached = false;
         try
         {
             foreach (var targetFramework in context.DeclaredTargetFrameworks)
             {
-                await using var lease = await _factory
+                var lease = await _factory
                     .Open(context.SolutionPath, configuration, targetFramework, cancellationToken)
                     .ConfigureAwait(false);
+                leases.Add(lease);
 
                 foreach (var diagnostic in lease.Diagnostics)
                 {
@@ -106,6 +109,16 @@ internal sealed class SemanticAnalysisStage : IPipelineStage
                         identity));
                 }
             }
+
+            context.BoundSolution = new BoundSolution(leases.ToImmutable(), compilations.ToImmutable());
+            attached = true;
+            context.AnalysisVariants = variants.ToImmutable();
+            return new StageResult(
+                0,
+                0,
+                0,
+                StructuralCorruption: false,
+                HasUnknownsOrCandidatesOrFrontiers: hasUnknowns);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -122,15 +135,16 @@ internal sealed class SemanticAnalysisStage : IPipelineStage
                 HasUnknownsOrCandidatesOrFrontiers: false,
                 AbortPublication: true);
         }
-
-        context.Compilations = compilations.ToImmutable();
-        context.AnalysisVariants = variants.ToImmutable();
-        return new StageResult(
-            0,
-            0,
-            0,
-            StructuralCorruption: false,
-            HasUnknownsOrCandidatesOrFrontiers: hasUnknowns);
+        finally
+        {
+            if (!attached)
+            {
+                foreach (var lease in leases)
+                {
+                    lease.Dispose();
+                }
+            }
+        }
     }
 
     private static bool IsUnresolvableSdk(string message) =>

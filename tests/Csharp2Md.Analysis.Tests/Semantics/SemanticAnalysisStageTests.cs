@@ -1,3 +1,4 @@
+using System.Reflection;
 using Csharp2Md.Analysis;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
@@ -11,6 +12,41 @@ namespace Csharp2Md.Analysis.Tests.Semantics;
 
 public sealed class SemanticAnalysisStageTests
 {
+    [Fact]
+    [Trait("Requirement", "ROSE-31")]
+    public async Task ExecuteAsync_AcmeOrders_AttachesNonNullBoundSolutionLease()
+    {
+        var solutionPath = AcmeOrdersSolutionPath();
+        var context = new PipelineContext(new SwallowingSession(), solutionPath);
+        try
+        {
+            await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+
+            await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+
+            Assert.NotNull(context.BoundSolution);
+            Assert.NotEmpty(context.BoundSolution.Compilations);
+        }
+        finally
+        {
+            DisposeBoundSolution(context);
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-31")]
+    public void AnalysisEngine_HasNoCompilationInstanceField()
+    {
+        var fields = typeof(AnalysisEngine).GetFields(
+            BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+
+        Assert.DoesNotContain(
+            fields,
+            field => field.FieldType == typeof(Compilation)
+                || (field.FieldType.IsGenericType
+                    && field.FieldType.GetGenericArguments().Any(argument => argument == typeof(Compilation))));
+    }
+
     [Fact]
     [Trait("Requirement", "ROSE-22")]
     public async Task AnalyzeAsync_OpenThrows_UnpublishedThatSolutionOnlyAndSecondFixtureCommits()
@@ -57,14 +93,21 @@ public sealed class SemanticAnalysisStageTests
         }
 
         var context = new PipelineContext(new SwallowingSession(), solutionPath);
-        await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
-        var stage = new SemanticAnalysisStage(factory);
+        try
+        {
+            await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+            var stage = new SemanticAnalysisStage(factory);
 
-        var result = await stage.ExecuteAsync(context, CancellationToken.None);
+            var result = await stage.ExecuteAsync(context, CancellationToken.None);
 
-        Assert.False(result.AbortPublication);
-        Assert.False(result.StructuralCorruption);
-        Assert.Null(context.Detail);
+            Assert.False(result.AbortPublication);
+            Assert.False(result.StructuralCorruption);
+            Assert.Null(context.Detail);
+        }
+        finally
+        {
+            DisposeBoundSolution(context);
+        }
     }
 
     [Fact]
@@ -73,25 +116,33 @@ public sealed class SemanticAnalysisStageTests
     {
         var solutionPath = AcmeOrdersSolutionPath();
         var context = new PipelineContext(new SwallowingSession(), solutionPath);
-        await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+        try
+        {
+            await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
 
-        var result = await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+            var result = await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
 
-        Assert.False(result.AbortPublication);
-        Assert.False(result.StructuralCorruption);
-        Assert.True(result.HasUnknownsOrCandidatesOrFrontiers);
+            Assert.False(result.AbortPublication);
+            Assert.False(result.StructuralCorruption);
+            Assert.True(result.HasUnknownsOrCandidatesOrFrontiers);
 
-        var sdk = Assert.Single(
-            context.Accumulator.ToSnapshot().Diagnostics,
-            record => string.Equals(record.Code, "unresolvable-sdk", StringComparison.Ordinal));
-        Assert.Equal("Acme.Broken/Acme.Broken.csproj", sdk.IdentityOrKey);
-        Assert.False(Path.IsPathRooted(sdk.IdentityOrKey));
-        Assert.Contains("Acme.Broken", sdk.Message, StringComparison.Ordinal);
+            var sdk = Assert.Single(
+                context.Accumulator.ToSnapshot().Diagnostics,
+                record => string.Equals(record.Code, "unresolvable-sdk", StringComparison.Ordinal));
+            Assert.Equal("Acme.Broken/Acme.Broken.csproj", sdk.IdentityOrKey);
+            Assert.False(Path.IsPathRooted(sdk.IdentityOrKey));
+            Assert.Contains("Acme.Broken", sdk.Message, StringComparison.Ordinal);
 
-        Assert.Contains(
-            context.Compilations,
-            compilation => compilation.SyntaxTrees.Any(tree =>
-                tree.FilePath.Contains("OrdersController.cs", StringComparison.OrdinalIgnoreCase)));
+            Assert.NotNull(context.BoundSolution);
+            Assert.Contains(
+                context.BoundSolution.Compilations,
+                compilation => compilation.SyntaxTrees.Any(tree =>
+                    tree.FilePath.Contains("OrdersController.cs", StringComparison.OrdinalIgnoreCase)));
+        }
+        finally
+        {
+            DisposeBoundSolution(context);
+        }
     }
 
     [Fact]
@@ -105,30 +156,38 @@ public sealed class SemanticAnalysisStageTests
         {
             var solutionPath = WriteCompileErrorSolution(tree.FullName);
             var context = new PipelineContext(new SwallowingSession(), solutionPath);
-            await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+            try
+            {
+                await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
 
-            var result = await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+                var result = await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
 
-            Assert.False(result.AbortPublication);
-            Assert.False(result.StructuralCorruption);
-            Assert.True(result.HasUnknownsOrCandidatesOrFrontiers);
+                Assert.False(result.AbortPublication);
+                Assert.False(result.StructuralCorruption);
+                Assert.True(result.HasUnknownsOrCandidatesOrFrontiers);
 
-            var compileError = Assert.Single(
-                context.Accumulator.ToSnapshot().Diagnostics,
-                record => string.Equals(record.Code, "compilation-error", StringComparison.Ordinal));
-            Assert.Equal("Broken/Broken.csproj", compileError.IdentityOrKey);
-            Assert.False(Path.IsPathRooted(compileError.IdentityOrKey));
-            Assert.Contains("Broken/Broken.csproj", compileError.Message, StringComparison.Ordinal);
+                var compileError = Assert.Single(
+                    context.Accumulator.ToSnapshot().Diagnostics,
+                    record => string.Equals(record.Code, "compilation-error", StringComparison.Ordinal));
+                Assert.Equal("Broken/Broken.csproj", compileError.IdentityOrKey);
+                Assert.False(Path.IsPathRooted(compileError.IdentityOrKey));
+                Assert.Contains("Broken/Broken.csproj", compileError.Message, StringComparison.Ordinal);
 
-            Assert.Contains(
-                context.Compilations,
-                compilation => compilation.SyntaxTrees.Any(tree =>
-                    tree.FilePath.Contains("Good.cs", StringComparison.OrdinalIgnoreCase)));
-            Assert.Contains(
-                context.Compilations,
-                compilation => compilation.SyntaxTrees.Any(tree =>
-                    tree.FilePath.Contains("Broken.cs", StringComparison.OrdinalIgnoreCase)));
-            Assert.Empty(context.Accumulator.ToSnapshot().Facts.OfType<Csharp2Md.Domain.Facts.Symbol>());
+                Assert.NotNull(context.BoundSolution);
+                Assert.Contains(
+                    context.BoundSolution.Compilations,
+                    compilation => compilation.SyntaxTrees.Any(syntaxTree =>
+                        syntaxTree.FilePath.Contains("Good.cs", StringComparison.OrdinalIgnoreCase)));
+                Assert.Contains(
+                    context.BoundSolution.Compilations,
+                    compilation => compilation.SyntaxTrees.Any(syntaxTree =>
+                        syntaxTree.FilePath.Contains("Broken.cs", StringComparison.OrdinalIgnoreCase)));
+                Assert.Empty(context.Accumulator.ToSnapshot().Facts.OfType<Csharp2Md.Domain.Facts.Symbol>());
+            }
+            finally
+            {
+                DisposeBoundSolution(context);
+            }
         }
         finally
         {
@@ -154,6 +213,9 @@ public sealed class SemanticAnalysisStageTests
         Assert.False(outcome.StructuralCorruption);
         Assert.True(outcome.HasUnknownsOrCandidatesOrFrontiers);
     }
+
+    private static void DisposeBoundSolution(PipelineContext context) =>
+        context.BoundSolution?.Dispose();
 
     private static bool PathsEqual(string left, string right) =>
         string.Equals(Path.GetFullPath(left), Path.GetFullPath(right), StringComparison.OrdinalIgnoreCase);

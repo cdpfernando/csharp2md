@@ -48,22 +48,29 @@ public sealed class AnalysisVariantFactoryTests
     {
         var solutionPath = AcmeOrdersSolutionPath();
         var context = new PipelineContext(new SwallowingSession(), solutionPath);
-        await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+        try
+        {
+            await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
 
-        await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+            await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
 
-        Assert.Contains("net10.0", context.DeclaredTargetFrameworks, StringComparer.Ordinal);
-        Assert.NotEmpty(context.AnalysisVariants);
-        Assert.All(
-            context.AnalysisVariants,
-            variant =>
-            {
-                Assert.Contains("configuration=Debug", variant.Value, StringComparison.Ordinal);
-                Assert.Contains("environment=local", variant.Value, StringComparison.Ordinal);
-            });
-        Assert.Contains(
-            context.AnalysisVariants,
-            variant => variant.Value.Contains("tfm=net10.0", StringComparison.Ordinal));
+            Assert.Contains("net10.0", context.DeclaredTargetFrameworks, StringComparer.Ordinal);
+            Assert.NotEmpty(context.AnalysisVariants);
+            Assert.All(
+                context.AnalysisVariants,
+                variant =>
+                {
+                    Assert.Contains("configuration=Debug", variant.Value, StringComparison.Ordinal);
+                    Assert.Contains("environment=local", variant.Value, StringComparison.Ordinal);
+                });
+            Assert.Contains(
+                context.AnalysisVariants,
+                variant => variant.Value.Contains("tfm=net10.0", StringComparison.Ordinal));
+        }
+        finally
+        {
+            context.BoundSolution?.Dispose();
+        }
     }
 
     private static string AcmeOrdersSolutionPath()

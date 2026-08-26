@@ -1,4 +1,6 @@
+using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
+using Csharp2Md.Analysis.Semantics;
 
 namespace Csharp2Md.Analysis.Tests.Pipeline;
 
@@ -30,5 +32,16 @@ public sealed class PipelineStagesTests
         var names = PipelineStages.CreateDefault().Select(stage => stage.Name).ToArray();
 
         Assert.Equal(StubStages.DeclaredNames.ToArray(), names);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-31")]
+    public void CreateDefault_UsesSemanticAnalysisStageNotStub()
+    {
+        var semantic = PipelineStages.CreateDefault()[1];
+
+        Assert.IsType<SemanticAnalysisStage>(semantic);
+        Assert.IsNotType<SemanticAnalysisStub>(semantic);
+        Assert.IsType<InventoryStage>(PipelineStages.CreateDefault()[0]);
     }
 }
