@@ -702,15 +702,15 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] An application groups into its own component named by its logical path
-- [ ] A library reached by exactly one application groups into that application's component and produces no component of its own
-- [ ] A library reached by two or more applications gets its own component named by its own path
-- [ ] A library reached by none gets its own component and an unreached record, with no deployment unit
-- [ ] Deployment units are derived only from applications; a solution with no application produces none
-- [ ] Every emitted collection is ordinal-sorted, so observation order cannot change the model
-- [ ] Unit tests cover all four grouping states, the no-application solution, and order independence
-- [ ] Gate check passes: quick gate command
-- [ ] Test count reported; no silent deletions
+- [x] An application groups into its own component named by its logical path
+- [x] A library reached by exactly one application groups into that application's component and produces no component of its own
+- [x] A library reached by two or more applications gets its own component named by its own path
+- [x] A library reached by none gets its own component and an unreached record, with no deployment unit
+- [x] Deployment units are derived only from applications; a solution with no application produces none
+- [x] Every emitted collection is ordinal-sorted, so observation order cannot change the model
+- [x] Unit tests cover all four grouping states, the no-application solution, and order independence
+- [x] Gate check passes: quick gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: quick
