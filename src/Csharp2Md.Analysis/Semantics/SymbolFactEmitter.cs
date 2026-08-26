@@ -154,8 +154,13 @@ internal static class SymbolFactEmitter
             TypeDisplay(symbol),
             Parameters(symbol),
             TypeArguments(symbol));
-        return Symbol.Create(signature, projectId, SymbolFacetSet.Create([]));
+        return Symbol.Create(signature, projectId, Facets(symbol));
     }
+
+    private static SymbolFacetSet Facets(ISymbol symbol) =>
+        symbol is IMethodSymbol
+            ? SymbolFacetSet.Create([SymbolFacet.Callable])
+            : SymbolFacetSet.Create([]);
 
     private static string Container(ISymbol symbol)
     {

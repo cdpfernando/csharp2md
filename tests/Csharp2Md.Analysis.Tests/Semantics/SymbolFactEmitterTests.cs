@@ -2,6 +2,7 @@ using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Semantics;
 using Csharp2Md.Analysis.Tests.Pipeline;
+using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 
 namespace Csharp2Md.Analysis.Tests.Semantics;
@@ -107,6 +108,100 @@ public sealed class SymbolFactEmitterTests
         {
             tree.Delete(recursive: true);
         }
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-15")]
+    public async Task ExecuteAsync_AcmeOrders_PlaceOrderAsyncFacetsContainCallable()
+    {
+        var solutionPath = AcmeOrdersSolutionPath();
+        var context = new PipelineContext(new SwallowingSession(), solutionPath);
+        try
+        {
+            await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+            await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+
+            var placeOrder = Assert.Single(
+                context.Accumulator.ToSnapshot().Facts.OfType<Symbol>(),
+                symbol => symbol.Signature.Value.Contains("metadata=PlaceOrderAsync", StringComparison.Ordinal));
+
+            Assert.Contains(SymbolFacet.Callable, placeOrder.Facets.Facets);
+        }
+        finally
+        {
+            context.BoundSolution?.Dispose();
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-15")]
+    public async Task ExecuteAsync_AcmeOrders_OrdersControllerTypeFacetsDoNotContainCallable()
+    {
+        var solutionPath = AcmeOrdersSolutionPath();
+        var context = new PipelineContext(new SwallowingSession(), solutionPath);
+        try
+        {
+            await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+            await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+
+            var controller = Assert.Single(
+                context.Accumulator.ToSnapshot().Facts.OfType<Symbol>(),
+                symbol => symbol.Signature.Value.Contains("metadata=OrdersController", StringComparison.Ordinal)
+                    && symbol.Signature.Value.Contains("kind=namedtype", StringComparison.Ordinal));
+
+            Assert.DoesNotContain(SymbolFacet.Callable, controller.Facets.Facets);
+        }
+        finally
+        {
+            context.BoundSolution?.Dispose();
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-15")]
+    public async Task ExecuteAsync_DeclaredShapes_CallableOnlyOnMethodsConstructorsLocalFunctionsAndLambdas()
+    {
+        var tree = Directory.CreateTempSubdirectory("csharp2md-callable-");
+        try
+        {
+            var solutionPath = WriteDeclaredShapesSolution(tree.FullName);
+            var context = new PipelineContext(new SwallowingSession(), solutionPath);
+            try
+            {
+                await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+                await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+
+                var symbols = context.Accumulator.ToSnapshot().Facts.OfType<Symbol>().ToArray();
+                Assert.Contains(SymbolFacet.Callable, FacetsNamed(symbols, "Method"));
+                Assert.Contains(SymbolFacet.Callable, FacetsNamed(symbols, ".ctor"));
+                Assert.Contains(SymbolFacet.Callable, FacetsNamed(symbols, "Local"));
+                Assert.Contains(SymbolFacet.Callable, FacetsNamed(symbols, "identifiable"));
+                Assert.DoesNotContain(SymbolFacet.Callable, FacetsNamed(symbols, "Declared", "namedtype"));
+                Assert.DoesNotContain(SymbolFacet.Callable, FacetsNamed(symbols, "Prop", "property"));
+                Assert.DoesNotContain(SymbolFacet.Callable, FacetsNamed(symbols, "Field", "field"));
+                Assert.DoesNotContain(SymbolFacet.Callable, FacetsNamed(symbols, "Changed", "event"));
+            }
+            finally
+            {
+                context.BoundSolution?.Dispose();
+            }
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+        }
+    }
+
+    private static ImmutableArray<SymbolFacet> FacetsNamed(
+        IReadOnlyList<Symbol> symbols,
+        string metadata,
+        string? kind = null)
+    {
+        var match = Assert.Single(
+            symbols,
+            symbol => symbol.Signature.Value.Contains("metadata=" + metadata, StringComparison.Ordinal)
+                && (kind is null || symbol.Signature.Value.Contains("kind=" + kind, StringComparison.Ordinal)));
+        return match.Facets.Facets;
     }
 
     private static int PlaceOrderAsyncCount(PipelineContext context) =>

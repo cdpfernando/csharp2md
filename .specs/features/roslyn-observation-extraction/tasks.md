@@ -1180,10 +1180,10 @@ multi-TFM does not duplicate symbols. Consult Context7 for `ISymbol` members use
 
 **Done when**:
 
-- [ ] `PlaceOrderAsync` facets contain `Callable`
-- [ ] `OrdersController` type facets do not contain `Callable`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `PlaceOrderAsync` facets contain `Callable`
+- [x] `OrdersController` type facets do not contain `Callable`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
