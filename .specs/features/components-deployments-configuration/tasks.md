@@ -672,13 +672,13 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Only `Configuration` observations owned by a `Project` fact are read; symbol-owned and document-owned ones are ignored
-- [ ] Reach is transitive: an application reaching A which references B reaches B
-- [ ] A reference cycle terminates without infinite recursion
-- [ ] An empty project-metadata set yields an empty model rather than throwing
-- [ ] Unit tests cover a chain, a diamond, a cycle, an isolated library and an empty ledger against a hand-built ledger
-- [ ] Gate check passes: quick gate command
-- [ ] Test count reported; no silent deletions
+- [x] Only `Configuration` observations owned by a `Project` fact are read; symbol-owned and document-owned ones are ignored
+- [x] Reach is transitive: an application reaching A which references B reaches B
+- [x] A reference cycle terminates without infinite recursion
+- [x] An empty project-metadata set yields an empty model rather than throwing
+- [x] Unit tests cover a chain, a diamond, a cycle, an isolated library and an empty ledger against a hand-built ledger
+- [x] Gate check passes: quick gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: quick
