@@ -826,12 +826,12 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] Two clone paths produce equal persistence fact identities, relations, candidates and unresolved records (PK-45)
-- [ ] Two commits of the same solution produce byte-identical canonical payloads (PK-46)
-- [ ] No persistence fact, relation, candidate, unresolved record or diagnostic contains an absolute filesystem path (PK-47)
-- [ ] Document-order independence holds for persistence output, matching the existing `DocumentOrderIndependenceTests` pattern
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + tests added so far pass (no silent deletions)
+- [x] Two clone paths produce equal persistence fact identities, relations, candidates and unresolved records (PK-45)
+- [x] Two commits of the same solution produce byte-identical canonical payloads (PK-46)
+- [x] No persistence fact, relation, candidate, unresolved record or diagnostic contains an absolute filesystem path (PK-47)
+- [x] Document-order independence holds for persistence output, matching the existing `DocumentOrderIndependenceTests` pattern
+- [x] Gate check passes: full gate command
+- [x] Test count: 1147 pass — Domain 545, Analysis 411, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: integration
 **Gate**: full
