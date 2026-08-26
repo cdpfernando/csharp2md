@@ -1801,10 +1801,10 @@ unchanged when the store is in-memory. Structural facts and observations are pre
 
 **Done when**:
 
-- [ ] Before/after working-tree hashes match
-- [ ] The in-memory publication has non-zero facts and observations
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Before/after working-tree hashes match
+- [x] The in-memory publication has non-zero facts and observations
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
