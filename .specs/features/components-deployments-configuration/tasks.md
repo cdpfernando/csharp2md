@@ -1117,12 +1117,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] The pass order is `Components`, `Entry points`, `Boundaries`, `Contracts`, `Persistence`, `Configuration`, `Relations`, `Invokes`, `Executes`
-- [ ] The stage's aggregate counts include the new pass's output
-- [ ] `ComposabilityTests`' pass-name assertion is updated to the nine-pass order rather than loosened
-- [ ] Integration tests assert the order and the aggregate counts
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] The pass order is `Components`, `Entry points`, `Boundaries`, `Contracts`, `Persistence`, `Configuration`, `Relations`, `Invokes`, `Executes`
+- [x] The stage's aggregate counts include the new pass's output
+- [x] `ComposabilityTests`' pass-name assertion is updated to the nine-pass order rather than loosened
+- [x] Integration tests assert the order and the aggregate counts
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: integration
 **Gate**: full

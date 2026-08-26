@@ -75,6 +75,38 @@ public sealed class ComposabilityTests
         Assert.Equal(baselineArchitecture.DeploymentUnits.Length + 1, architecture.DeploymentUnits.Length);
     }
 
+    [Fact]
+    [Trait("Requirement", "CDC-55")]
+    public async Task AnalyzeAsync_DefaultPipeline_ClassificationCountsIncludeConfigurationOutput()
+    {
+        var solutionPath = Path.Combine(
+            AnalysisTestPaths.RepoRoot,
+            "fixtures",
+            "SyntheticSolution",
+            "Acme.Orders",
+            "Acme.Orders.slnx");
+        Assert.True(File.Exists(solutionPath), $"Expected fixture at '{solutionPath}'.");
+
+        var (outcome, publication) = await AnalyzeAsync(solutionPath, PipelineStages.CreateDefault());
+
+        var configuration = CanonicalJson.Read<ConfigurationFactsShard>(
+            Assert.Single(
+                publication.ArtifactsInPublicationOrder,
+                artifact => artifact.CanonicalKey == "facts/configuration.json").Payload.AsSpan());
+        Assert.NotEmpty(configuration.ConfigurationBindings);
+        var configuredBy = CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(
+            Assert.Single(
+                publication.ArtifactsInPublicationOrder,
+                artifact => artifact.CanonicalKey == "relations/confirmed/configured-by.json").Payload.AsSpan());
+        Assert.NotEmpty(configuredBy);
+        Assert.True(
+            outcome.Stages[3].FactCount >= configuration.ConfigurationBindings.Length,
+            $"Classification fact count {outcome.Stages[3].FactCount} did not include {configuration.ConfigurationBindings.Length} configuration bindings.");
+        Assert.True(
+            outcome.Stages[3].RelationCount >= configuredBy.Length,
+            $"Classification relation count {outcome.Stages[3].RelationCount} did not include {configuredBy.Length} configured-by relations.");
+    }
+
     private static async Task<(SolutionOutcome Outcome, CommittedPublication Publication)> AnalyzeAsync(
         string solutionPath,
         ImmutableArray<IPipelineStage> stages)
