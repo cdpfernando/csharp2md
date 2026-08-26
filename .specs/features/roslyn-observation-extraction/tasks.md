@@ -1208,10 +1208,10 @@ multi-TFM does not duplicate symbols. Consult Context7 for `ISymbol` members use
 
 **Done when**:
 
-- [ ] `OrdersController` is not tagged `Controller`
-- [ ] `OrderRepository` is not tagged `Repository`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `OrdersController` is not tagged `Controller`
+- [x] `OrderRepository` is not tagged `Repository`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

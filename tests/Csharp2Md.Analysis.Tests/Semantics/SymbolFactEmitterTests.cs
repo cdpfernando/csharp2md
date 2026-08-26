@@ -192,6 +192,98 @@ public sealed class SymbolFactEmitterTests
         }
     }
 
+    [Fact]
+    [Trait("Requirement", "ROSE-16")]
+    public async Task ExecuteAsync_AcmeOrders_OrdersControllerIsNotTaggedController()
+    {
+        var solutionPath = AcmeOrdersSolutionPath();
+        var context = new PipelineContext(new SwallowingSession(), solutionPath);
+        try
+        {
+            await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+            await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+
+            var controller = Assert.Single(
+                context.Accumulator.ToSnapshot().Facts.OfType<Symbol>(),
+                symbol => symbol.Signature.Value.Contains("metadata=OrdersController", StringComparison.Ordinal)
+                    && symbol.Signature.Value.Contains("kind=namedtype", StringComparison.Ordinal));
+
+            Assert.DoesNotContain(SymbolFacet.Controller, controller.Facets.Facets);
+            Assert.DoesNotContain(SymbolFacet.Handler, controller.Facets.Facets);
+            Assert.DoesNotContain(SymbolFacet.Repository, controller.Facets.Facets);
+            Assert.DoesNotContain(SymbolFacet.Client, controller.Facets.Facets);
+            Assert.DoesNotContain(SymbolFacet.Service, controller.Facets.Facets);
+        }
+        finally
+        {
+            context.BoundSolution?.Dispose();
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-16")]
+    public async Task ExecuteAsync_AcmeOrders_OrderRepositoryIsNotTaggedRepository()
+    {
+        var solutionPath = AcmeOrdersSolutionPath();
+        var context = new PipelineContext(new SwallowingSession(), solutionPath);
+        try
+        {
+            await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+            await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+
+            var repository = Assert.Single(
+                context.Accumulator.ToSnapshot().Facts.OfType<Symbol>(),
+                symbol => symbol.Signature.Value.Contains("metadata=OrderRepository", StringComparison.Ordinal)
+                    && symbol.Signature.Value.Contains("kind=namedtype", StringComparison.Ordinal));
+
+            Assert.DoesNotContain(SymbolFacet.Repository, repository.Facets.Facets);
+            Assert.DoesNotContain(SymbolFacet.Controller, repository.Facets.Facets);
+            Assert.DoesNotContain(SymbolFacet.Handler, repository.Facets.Facets);
+            Assert.DoesNotContain(SymbolFacet.Client, repository.Facets.Facets);
+            Assert.DoesNotContain(SymbolFacet.Service, repository.Facets.Facets);
+        }
+        finally
+        {
+            context.BoundSolution?.Dispose();
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-16")]
+    public async Task ExecuteAsync_AcmeOrders_TypePropertyFieldAndEventFacetsOmitArchitectureRoles()
+    {
+        var solutionPath = AcmeOrdersSolutionPath();
+        var context = new PipelineContext(new SwallowingSession(), solutionPath);
+        try
+        {
+            await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+            await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+
+            var architectureFacets = new[]
+            {
+                SymbolFacet.Controller,
+                SymbolFacet.Handler,
+                SymbolFacet.Repository,
+                SymbolFacet.Client,
+                SymbolFacet.Service,
+            };
+            var structural = context.Accumulator.ToSnapshot().Facts.OfType<Symbol>()
+                .Where(symbol => symbol.Signature.Value.Contains("kind=namedtype", StringComparison.Ordinal)
+                    || symbol.Signature.Value.Contains("kind=property", StringComparison.Ordinal)
+                    || symbol.Signature.Value.Contains("kind=field", StringComparison.Ordinal)
+                    || symbol.Signature.Value.Contains("kind=event", StringComparison.Ordinal))
+                .ToArray();
+            Assert.NotEmpty(structural);
+            Assert.All(
+                structural,
+                symbol => Assert.DoesNotContain(symbol.Facets.Facets, facet => architectureFacets.Contains(facet)));
+        }
+        finally
+        {
+            context.BoundSolution?.Dispose();
+        }
+    }
+
     private static ImmutableArray<SymbolFacet> FacetsNamed(
         IReadOnlyList<Symbol> symbols,
         string metadata,
