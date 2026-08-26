@@ -313,12 +313,12 @@ T8 → T9 → T10
 - Skill: `dotnet-test:assertion-quality`
 
 **Done when**:
-- [ ] A round-trip test asserts `CandidateLink` present before commit → present after read
-- [ ] A round-trip test asserts `UnresolvedRecord` present before commit → present after read
-- [ ] A round-trip test asserts `OpenFrontier` present before commit → present after read
-- [ ] `PackageValidatorTests` for `BindingDiagnostic.Message` assertions are consistent with T3's fix (no regression)
-- [ ] `dotnet test tests/Csharp2Md.Storage.Tests --filter "Category!=LocalCorpus"` passes
-- [ ] Test count: ≥ 3 new round-trip tests; no existing tests deleted
+- [x] A round-trip test asserts `CandidateLink` present before commit → present after read
+- [x] A round-trip test asserts `UnresolvedRecord` present before commit → present after read
+- [x] A round-trip test asserts `OpenFrontier` present before commit → present after read
+- [x] `PackageValidatorTests` for `BindingDiagnostic.Message` assertions are consistent with T3's fix (no regression)
+- [x] `dotnet test tests/Csharp2Md.Storage.Tests --filter "Category!=LocalCorpus"` passes
+- [x] Test count: ≥ 3 new round-trip tests; no existing tests deleted
 
 **Tests**: unit
 **Gate**: full (Storage)
