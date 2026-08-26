@@ -548,11 +548,11 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Analysis public surface has no `Microsoft.CodeAnalysis` types from classifier paths
-- [ ] `Csharp2Md.Cli` has no project reference to `Csharp2Md.Domain`
-- [ ] In-memory adapter run produces classifier facts and relations, no filesystem writes
-- [ ] No secrets in classifier-produced content
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
+- [x] Analysis public surface has no `Microsoft.CodeAnalysis` types from classifier paths
+- [x] `Csharp2Md.Cli` has no project reference to `Csharp2Md.Domain`
+- [x] In-memory adapter run produces classifier facts and relations, no filesystem writes
+- [x] No secrets in classifier-produced content
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj`
 
 **Tests**: unit
 **Gate**: full

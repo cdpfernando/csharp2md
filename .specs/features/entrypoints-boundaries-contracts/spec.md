@@ -292,10 +292,10 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | EBC-39 | P1: Determinism and invariants | Phase 5 (T17) | Implementing |
 | EBC-40 | P1: Determinism and invariants | Phase 5 (T17) | Implementing |
 | EBC-41 | P1: Determinism and invariants | Phase 5 (T17) | Implementing |
-| EBC-42 | P1: Determinism and invariants | Phase 5 (T18) | In Tasks |
-| EBC-43 | P1: Determinism and invariants | Phase 5 (T18) | In Tasks |
-| EBC-44 | P1: Determinism and invariants | Phase 5 (T18) | In Tasks |
-| EBC-45 | P1: Determinism and invariants | Phase 5 (T18) | In Tasks |
+| EBC-42 | P1: Determinism and invariants | Phase 5 (T18) | Implementing |
+| EBC-43 | P1: Determinism and invariants | Phase 5 (T18) | Implementing |
+| EBC-44 | P1: Determinism and invariants | Phase 5 (T18) | Implementing |
+| EBC-45 | P1: Determinism and invariants | Phase 5 (T18) | Implementing |
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
