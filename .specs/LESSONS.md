@@ -62,6 +62,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: PK-39/PK-40 PersistenceModelBuilder.cs:84 (analysis-classification)
 - last seen: 2026-08-26T16:56:36Z
 
+### L-009 - When a spec WHEN is multi-TFM uniqueness, assert two target frameworks or analysis variants, not emitter re-entry on a single-TFM ledger.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · harmful: 0
+- features: components-deployments-configuration
+- evidence: CDC-04
+- last seen: 2026-08-26T21:45:33Z
+
+### L-010 - A diagnostic that must name both the referencing project and the missing target must assert both identities, not only the missing path.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · harmful: 0
+- features: components-deployments-configuration
+- evidence: CDC-07
+- last seen: 2026-08-26T21:45:46Z
+
+### L-011 - When an Independent Test names a published envelope file, assert those records on that file after a fixture analyze, not only on a hand-built snapshot.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · harmful: 0
+- features: components-deployments-configuration
+- evidence: P2 Independent Test CDC-56/CDC-57
+- last seen: 2026-08-26T21:45:54Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

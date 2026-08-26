@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 9,
+  "next_id": 12,
   "lessons": [
     {
       "id": "L-001",
@@ -148,6 +148,60 @@
       ],
       "created": "2026-08-26T16:56:36Z",
       "last_seen": "2026-08-26T16:56:36Z"
+    },
+    {
+      "id": "L-009",
+      "key": "spec_precision_gap::when a spec when is multi tfm uniqueness assert two target frameworks or analysis variants not emitter re entry on a single tfm ledger",
+      "text": "When a spec WHEN is multi-TFM uniqueness, assert two target frameworks or analysis variants, not emitter re-entry on a single-TFM ledger.",
+      "signal": "spec_precision_gap",
+      "scope": "",
+      "status": "candidate",
+      "features": [
+        "components-deployments-configuration"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "CDC-04"
+      ],
+      "created": "2026-08-26T21:45:33Z",
+      "last_seen": "2026-08-26T21:45:33Z"
+    },
+    {
+      "id": "L-010",
+      "key": "spec_precision_gap::a diagnostic that must name both the referencing project and the missing target must assert both identities not only the missing path",
+      "text": "A diagnostic that must name both the referencing project and the missing target must assert both identities, not only the missing path.",
+      "signal": "spec_precision_gap",
+      "scope": "",
+      "status": "candidate",
+      "features": [
+        "components-deployments-configuration"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "CDC-07"
+      ],
+      "created": "2026-08-26T21:45:46Z",
+      "last_seen": "2026-08-26T21:45:46Z"
+    },
+    {
+      "id": "L-011",
+      "key": "spec_precision_gap::when an independent test names a published envelope file assert those records on that file after a fixture analyze not only on a hand built snapshot",
+      "text": "When an Independent Test names a published envelope file, assert those records on that file after a fixture analyze, not only on a hand-built snapshot.",
+      "signal": "spec_precision_gap",
+      "scope": "",
+      "status": "candidate",
+      "features": [
+        "components-deployments-configuration"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "P2 Independent Test CDC-56/CDC-57"
+      ],
+      "created": "2026-08-26T21:45:54Z",
+      "last_seen": "2026-08-26T21:45:54Z"
     }
   ]
 }
