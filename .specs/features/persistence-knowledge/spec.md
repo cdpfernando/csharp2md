@@ -278,15 +278,15 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | PK-11 | P1: Data store classification | - | Pending |
 | PK-12 | P1: Data store classification | - | Pending |
 | PK-13 | P1: Data store classification | - | Pending |
-| PK-14 | P1: Data object classification | - | Pending |
+| PK-14 | P1: Data object classification | Phase 5 (T19) | Implementing |
 | PK-15 | P1: Data object classification | - | Pending |
 | PK-16 | P1: Data object classification | - | Pending |
 | PK-17 | P1: Data object classification | - | Pending |
-| PK-18 | P1: Data object classification | - | Pending |
+| PK-18 | P1: Data object classification | Phase 5 (T19) | Implementing |
 | PK-19 | P1: Data object classification | - | Pending |
 | PK-20 | P1: Data object classification | - | Pending |
 | PK-21 | P1: Data object classification | - | Pending |
-| PK-22 | P1: Data field classification and mapping | - | Pending |
+| PK-22 | P1: Data field classification and mapping | Phase 5 (T19) | Implementing |
 | PK-23 | P1: Data field classification and mapping | - | Pending |
 | PK-24 | P1: Data field classification and mapping | - | Pending |
 | PK-25 | P1: Data field classification and mapping | - | Pending |
@@ -295,7 +295,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | PK-28 | P1: Data field classification and mapping | - | Pending |
 | PK-29 | P1: Data field classification and mapping | - | Pending |
 | PK-30 | P1: Data field classification and mapping | - | Pending |
-| PK-31 | P1: Data operations and access relations | - | Pending |
+| PK-31 | P1: Data operations and access relations | Phase 5 (T19) | Implementing |
 | PK-32 | P1: Data operations and access relations | - | Pending |
 | PK-33 | P1: Data operations and access relations | - | Pending |
 | PK-34 | P1: Data operations and access relations | - | Pending |

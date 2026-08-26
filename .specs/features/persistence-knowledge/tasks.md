@@ -669,13 +669,13 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] Facts are emitted in one ordered walk, ordinal-sorted by canonical id at every level
-- [ ] The store name literal uses `LiteralRole.SchemaName` regardless of derivation
-- [ ] `DataObject` schema and table literals carry the roles their `Create` guards require
-- [ ] Two structurally identical facts deduplicate through `AddFact` without flagging corruption (spec edge case)
-- [ ] Unit tests assert emitted fact identities for a hand-built model
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + tests added so far pass (no silent deletions)
+- [x] Facts are emitted in one ordered walk, ordinal-sorted by canonical id at every level
+- [x] The store name literal uses `LiteralRole.SchemaName` regardless of derivation
+- [x] `DataObject` schema and table literals carry the roles their `Create` guards require
+- [x] Two structurally identical facts deduplicate through `AddFact` without flagging corruption (spec edge case)
+- [x] Unit tests assert emitted fact identities for a hand-built model
+- [x] Gate check passes: full gate command
+- [x] Test count: 1127 pass — Domain 545, Analysis 391, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
