@@ -1088,12 +1088,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] The pass name is `"Configuration"` and the classifier identity is `csharp2md.classifier.configuration` version 1
-- [ ] `ClassifierPassResult` reports fact, relation, candidate and unresolved counts from the emitter
-- [ ] An empty ledger produces a zero result without throwing
-- [ ] Unit tests assert the pass's counts and emitted records for a hand-built ledger
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] The pass name is `"Configuration"` and the classifier identity is `csharp2md.classifier.configuration` version 1
+- [x] `ClassifierPassResult` reports fact, relation, candidate and unresolved counts from the emitter
+- [x] An empty ledger produces a zero result without throwing
+- [x] Unit tests assert the pass's counts and emitted records for a hand-built ledger
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: full
