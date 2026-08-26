@@ -699,14 +699,14 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] `accesses-data` is emitted per callable with `EvidenceMethod.Semantic`, the pass's classifier identity, and a non-empty `derived_from` naming the originating observation (PK-32)
-- [ ] `operates-on` reaches the target `DataObject` (PK-33) and each touched `DataField` (PK-34)
-- [ ] `maps-to` is emitted with `EvidenceMethod.Configured` and a `mapping-role` facet of `data-object-mapping` (PK-28) or `data-field-mapping` (PK-29)
-- [ ] `mapping-role` is registered by appending a `FacetAxisDescriptor` over `TaxonomyTables.Default.MappingRoles`, mirroring `RelationPass`
-- [ ] `Create` is called with `sourceFact` for `accesses-data` and `targetFact` for `operates-on`, satisfying the shape guards
-- [ ] Unit tests assert relation kind, evidence method, facets and evidence chain for each of the five relation shapes
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + tests added so far pass (no silent deletions)
+- [x] `accesses-data` is emitted per callable with `EvidenceMethod.Semantic`, the pass's classifier identity, and a non-empty `derived_from` naming the originating observation (PK-32)
+- [x] `operates-on` reaches the target `DataObject` (PK-33) and each touched `DataField` (PK-34)
+- [x] `maps-to` is emitted with `EvidenceMethod.Configured` and a `mapping-role` facet of `data-object-mapping` (PK-28) or `data-field-mapping` (PK-29)
+- [x] `mapping-role` is registered by appending a `FacetAxisDescriptor` over `TaxonomyTables.Default.MappingRoles`, mirroring `RelationPass`
+- [x] `Create` is called with `sourceFact` for `accesses-data` and `targetFact` for `operates-on`, satisfying the shape guards
+- [x] Unit tests assert relation kind, evidence method, facets and evidence chain for each of the five relation shapes
+- [x] Gate check passes: full gate command
+- [x] Test count: 1133 pass — Domain 545, Analysis 397, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
