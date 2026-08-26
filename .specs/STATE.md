@@ -160,10 +160,10 @@ Normative documentation:
 ## Handoff
 
 - **Feature**: `call-linking-flow-frontiers` — `.specs/features/call-linking-flow-frontiers/`
-- **Phase / Task**: Execute complete (T1–T10). Verifier FAIL. Report: `.specs/features/call-linking-flow-frontiers/validation.md`.
-- **Completed**: T1 `b05dd17`, T2 `bb15dd6`, T3 `e80c432`, T4 `8edc6e5`, T5 `95b1d01`, T6 `fd122ec`, T7 `976827a`, T8 `cb6b03d`, T9 `85731a1`, T10 `80efa26` (AD-018 + Handoff). Gate (Verifier re-run): Domain 549, Analysis 330, Storage 166, Cli 27, Projection 3 (1075, `Category!=LocalCorpus`).
+- **Phase / Task**: Execute complete (T1–T10). Verifier PASS. Report: `.specs/features/call-linking-flow-frontiers/validation.md`.
+- **Completed**: T1 `b05dd17`, T2 `bb15dd6`, T3 `e80c432`, T4 `8edc6e5`, T5 `95b1d01`, T6 `fd122ec`, T7 `976827a`, T8 `cb6b03d`, T9 `85731a1`, T10 `80efa26` (AD-018 + Handoff). Fix `9dc2713` (CLLF-19 empty-diagnostics asserts). Gate (Verifier re-run): Domain 549, Analysis 331, Storage 166, Cli 27, Projection 3 (1076, `Category!=LocalCorpus`).
 - **In-progress** (file:line): none.
-- **Next step**: Route CLLF-19 fix to an implementer (assert no redundant diagnostic on fallback/skip paths), then re-dispatch the Verifier. Discrimination sensor skipped (standing).
-- **Blockers**: CLLF-19 uncovered (no `file:line` evidence). LocalCorpus: `fixtures/eShop` absent (expected skip); `fixtures/eShopOnContainers` directory present but `eShopOnContainers-ServicesAndWebApps.sln` missing, so analyze did not run. `validate_state.py` exits non-zero on FAIL (expected). Discrimination sensor remains skipped. Carry-forward: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run the five test projects separately. CLI filter uses VSTest `--filter "Category!=LocalCorpus"`.
+- **Next step**: Workstream 5B is verified. Create the next classifier workstream (5C/5D) only when explicitly started. Discrimination sensor skipped (standing).
+- **Blockers**: none. LocalCorpus: `fixtures/eShop` absent (expected skip); `fixtures/eShopOnContainers` directory present but `eShopOnContainers-ServicesAndWebApps.sln` missing, so analyze did not run (not a feature FAIL). Carry-forward: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run the five test projects separately. CLI filter uses VSTest `--filter "Category!=LocalCorpus"`. Discrimination sensor remains skipped.
 - **Uncommitted files**: unrelated `AGENTS.md` / `CLAUDE.md` / `architecture-knowledge-engine-roadmap.md` / `docs/architecture/README.md`; untracked `.specs/features/entrypoints-boundaries-contracts/design.md`.
 - **Branch**: `feature/call-linking-flow-frontiers`

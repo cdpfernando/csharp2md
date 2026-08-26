@@ -170,30 +170,30 @@ Every ambiguity is resolved or recorded here — nothing is left silently unclea
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| CLLF-01 | P1: Confirmed call edges | Design | Implementing |
-| CLLF-02 | P1: Confirmed call edges | Design | Implementing |
-| CLLF-03 | P1: Confirmed call edges | Design | Implementing |
-| CLLF-04 | P1: Confirmed call edges | Design | Implementing |
-| CLLF-05 | P1: Confirmed call edges | Design | Implementing |
-| CLLF-06 | P1: Confirmed call edges | Design | Implementing |
-| CLLF-07 | P1: Polymorphic candidates | Design | Implementing |
-| CLLF-08 | P1: Polymorphic candidates | Design | Implementing |
-| CLLF-09 | P1: Polymorphic candidates | Design | Implementing |
-| CLLF-10 | P1: Polymorphic candidates | Design | Implementing |
-| CLLF-11 | P1: Open frontiers | Design | Implementing |
-| CLLF-12 | P1: Open frontiers | Design | Implementing |
-| CLLF-13 | P1: Open frontiers | Design | Implementing |
-| CLLF-14 | P1: Open frontiers | Design | Implementing |
-| CLLF-15 | P2: Multi-receiver shapes | - | Implementing |
-| CLLF-16 | P2: Multi-receiver shapes | - | Implementing |
-| CLLF-17 | P2: Cross-project resolution | - | Implementing |
-| CLLF-18 | P2: Cross-project resolution | - | Implementing |
-| CLLF-19 | P3: Diagnostic coverage | - | Implementing |
-| CLLF-20 | P3: Diagnostic coverage | - | Implementing |
+| CLLF-01 | P1: Confirmed call edges | Design | ✅ Verified |
+| CLLF-02 | P1: Confirmed call edges | Design | ✅ Verified |
+| CLLF-03 | P1: Confirmed call edges | Design | ✅ Verified |
+| CLLF-04 | P1: Confirmed call edges | Design | ✅ Verified |
+| CLLF-05 | P1: Confirmed call edges | Design | ✅ Verified |
+| CLLF-06 | P1: Confirmed call edges | Design | ✅ Verified |
+| CLLF-07 | P1: Polymorphic candidates | Design | ✅ Verified |
+| CLLF-08 | P1: Polymorphic candidates | Design | ✅ Verified |
+| CLLF-09 | P1: Polymorphic candidates | Design | ✅ Verified |
+| CLLF-10 | P1: Polymorphic candidates | Design | ✅ Verified |
+| CLLF-11 | P1: Open frontiers | Design | ✅ Verified |
+| CLLF-12 | P1: Open frontiers | Design | ✅ Verified |
+| CLLF-13 | P1: Open frontiers | Design | ✅ Verified |
+| CLLF-14 | P1: Open frontiers | Design | ✅ Verified |
+| CLLF-15 | P2: Multi-receiver shapes | - | ✅ Verified |
+| CLLF-16 | P2: Multi-receiver shapes | - | ✅ Verified |
+| CLLF-17 | P2: Cross-project resolution | - | ✅ Verified |
+| CLLF-18 | P2: Cross-project resolution | - | ✅ Verified |
+| CLLF-19 | P3: Diagnostic coverage | - | ✅ Verified |
+| CLLF-20 | P3: Diagnostic coverage | - | ✅ Verified |
 
 **ID format:** `CLLF-NN`
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
-**Coverage:** 20 total. CLLF-19 Implementing (Verifier fix iteration 1: empty-diagnostics asserts). Status not Verified until Verifier re-runs.
+**Coverage:** 20 total. All ✅ Verified (re-verify 2026-08-26, including CLLF-19 empty-diagnostics asserts in `9dc2713`).
 
 ---
 

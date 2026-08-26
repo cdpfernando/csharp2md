@@ -165,7 +165,7 @@
         "spec.md Independent Test vs CLLF-07/09 (analysis-classification)"
       ],
       "created": "2026-08-26T12:11:48Z",
-      "last_seen": "2026-08-26T12:11:48Z"
+      "last_seen": "2026-08-26T12:23:25Z"
     },
     {
       "id": "L-010",
@@ -183,7 +183,7 @@
         "spec.md Edge Cases multi-match UnresolvedRecord (analysis-classification)"
       ],
       "created": "2026-08-26T12:11:48Z",
-      "last_seen": "2026-08-26T12:11:48Z"
+      "last_seen": "2026-08-26T12:23:25Z"
     }
   ]
 }

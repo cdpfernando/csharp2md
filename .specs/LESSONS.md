@@ -66,13 +66,13 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `analysis-classification` · harmful: 0
 - features: call-linking-flow-frontiers
 - evidence: spec.md Independent Test vs CLLF-07/09 (analysis-classification)
-- last seen: 2026-08-26T12:11:48Z
+- last seen: 2026-08-26T12:23:25Z
 
 ### L-010 - If a collision edge is unreachable because identity uniqueness already aborted as StructuralCorruption, say that out of band rather than requiring UnresolvedRecord from classification
 - signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `analysis-classification` · harmful: 0
 - features: call-linking-flow-frontiers
 - evidence: spec.md Edge Cases multi-match UnresolvedRecord (analysis-classification)
-- last seen: 2026-08-26T12:11:48Z
+- last seen: 2026-08-26T12:23:25Z
 
 ## Quarantined (failed when applied - ignore)
 
