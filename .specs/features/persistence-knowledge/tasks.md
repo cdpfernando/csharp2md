@@ -144,13 +144,13 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] All six shapes survive as executed statements: `SELECT … WHERE`, `INSERT … (cols)`, `UPDATE … SET`, `EXEC usp_RebuildOrderTotals`, `DELETE FROM [Orders]`, and the interpolated `SELECT * FROM {tableName}`
-- [ ] Each statement literal sits at its own execution call site, reachable by `TryFirstStringLiteral`
-- [ ] The interpolated statement goes through `FromSqlInterpolated`; `EXEC` and `DELETE` go through `ExecuteSqlRaw`
-- [ ] The `ConnectionString` constant is unchanged and still unused by any execution path
-- [ ] The file's header comment describes the current contract; the "bounded reader refuses to read `[Orders]`" narrative is removed as superseded
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1019 tests pass (no silent deletions); any count change is explained in the commit body
+- [x] All six shapes survive as executed statements: `SELECT … WHERE`, `INSERT … (cols)`, `UPDATE … SET`, `EXEC usp_RebuildOrderTotals`, `DELETE FROM [Orders]`, and the interpolated `SELECT * FROM {tableName}`
+- [x] Each statement literal sits at its own execution call site, reachable by `TryFirstStringLiteral`
+- [x] The interpolated statement goes through `FromSqlInterpolated`; `EXEC` and `DELETE` go through `ExecuteSqlRaw`
+- [x] The `ConnectionString` constant is unchanged and still unused by any execution path
+- [x] The file's header comment describes the current contract; the "bounded reader refuses to read `[Orders]`" narrative is removed as superseded
+- [x] Gate check passes: build gate command
+- [x] Test count: 1023 tests pass (no silent deletions); any count change is explained in the commit body
 
 **Tests**: none
 **Gate**: build
