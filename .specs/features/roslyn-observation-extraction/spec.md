@@ -293,7 +293,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-50 | P1: Source fidelity, secrets, and determinism | Tasks (T41) | Implemented |
 | ROSE-51 | P1: Source fidelity, secrets, and determinism | Tasks (T41) | Implemented |
 | ROSE-52 | P1: Source fidelity, secrets, and determinism | Tasks (T57) | Implemented |
-| ROSE-53 | P1: Source fidelity, secrets, and determinism | Tasks (T19, T58) | Pending |
+| ROSE-53 | P1: Source fidelity, secrets, and determinism | Tasks (T19, T58) | Implemented |
 | ROSE-54 | P1: Source fidelity, secrets, and determinism | Tasks (T38, T44, T59) | Pending |
 | ROSE-55 | P1: Source fidelity, secrets, and determinism | Tasks (T13, T42, T47, T61) | Implemented |
 | ROSE-56 | P1: Source fidelity, secrets, and determinism | Tasks (T1, T60) | Implemented |

@@ -1889,9 +1889,9 @@ canonical payload file is byte-identical.
 
 **Done when**:
 
-- [ ] Pairwise payload bytes match, including `diagnostics.json`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Pairwise payload bytes match, including `diagnostics.json`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
