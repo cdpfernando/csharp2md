@@ -23,7 +23,7 @@ Verify before starting Execute.
 
 **Spec**: `.specs/features/call-linking-flow-frontiers/spec.md`
 **Design**: `.specs/features/call-linking-flow-frontiers/design.md`
-**Status**: Approved — Execute pending
+**Status**: Execute complete (T1–T10) — Verifier pending
 
 ---
 
@@ -364,10 +364,10 @@ T8 → T9 → T10
 - Skill: NONE
 
 **Done when**:
-- [ ] AD-018 appended: `SymbolFacet.Abstract` — Domain extends `SymbolFacetSet` with `Abstract` facet; emitted by `SymbolFactEmitter` for abstract methods and interface members; required by 5B+ classifiers to distinguish abstract/interface targets without re-entering Roslyn
+- [x] AD-018 appended: `SymbolFacet.Abstract` — Domain extends `SymbolFacetSet` with `Abstract` facet; emitted by `SymbolFactEmitter` for abstract methods and interface members; required by 5B+ classifiers to distinguish abstract/interface targets without re-entering Roslyn
 - [ ] `validate_state.py call-linking-flow-frontiers` exits 0 (feature validation report exists — will be written by Verifier, but state gate checks structure)
-- [ ] Full build gate passes: all five test projects with `--filter "Category!=LocalCorpus"`
-- [ ] Handoff section updated in `STATE.md`
+- [x] Full build gate passes: all five test projects with `--filter "Category!=LocalCorpus"`
+- [x] Handoff section updated in `STATE.md`
 
 **Tests**: none — governance task; Test Coverage Matrix row for `STATE.md` says none
 **Gate**: build (all five projects)
