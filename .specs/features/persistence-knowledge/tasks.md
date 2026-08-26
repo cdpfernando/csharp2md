@@ -886,12 +886,12 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] `DataStore`, `DataObject`, `DataField` and `DataOperation` round-trip with equal identities and facets
-- [ ] `accesses-data`, `operates-on` and `maps-to` relations round-trip with their facets and evidence chains intact
-- [ ] `CandidateLink` and `UnresolvedRecord` entries for persistence round-trip
-- [ ] The coverage `DiagnosticRecord` reaches `diagnostics.json`
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1019 + tests added so far pass (no silent deletions)
+- [x] `DataStore`, `DataObject`, `DataField` and `DataOperation` round-trip with equal identities and facets
+- [x] `accesses-data`, `operates-on` and `maps-to` relations round-trip with their facets and evidence chains intact
+- [x] `CandidateLink` and `UnresolvedRecord` entries for persistence round-trip
+- [x] The coverage `DiagnosticRecord` reaches `diagnostics.json`
+- [x] Gate check passes: build gate command
+- [x] Test count: 1158 pass — Domain 545, Analysis 417, Storage 166, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: unit
 **Gate**: build
