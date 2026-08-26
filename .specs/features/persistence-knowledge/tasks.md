@@ -446,11 +446,11 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] `PersistenceModel`, `StoreNode`, `ObjectNode`, `FieldNode`, `OperationNode`, `UnresolvedNode` and `CoverageCounts` match the design's shapes exactly
-- [ ] `OperationNode.Callables` is a collection, encoding the many-to-one that PK-38 requires
-- [ ] All types are `internal sealed` and hold no Roslyn type
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1019 + tests added so far pass (no silent deletions)
+- [x] `PersistenceModel`, `StoreNode`, `ObjectNode`, `FieldNode`, `OperationNode`, `UnresolvedNode` and `CoverageCounts` match the design's shapes exactly
+- [x] `OperationNode.Callables` is a collection, encoding the many-to-one that PK-38 requires
+- [x] All types are `internal sealed` and hold no Roslyn type (`CoverageCounts` is the design's `internal readonly record struct`, sealed implicitly)
+- [x] Gate check passes: build gate command
+- [x] Test count: 1072 pass — Domain 545, Analysis 336, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: none
 **Gate**: build
