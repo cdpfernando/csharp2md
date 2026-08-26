@@ -107,7 +107,7 @@ public static class DomainMapper
                 group => group.Key,
                 group => Ordered(
                     group.Select(WireRelationMapping.ToDto),
-                    static dto => $"{dto.Kind}:{dto.Source.Id}:{dto.Target.Id}"));
+                    static dto => $"{dto.Kind}:{dto.Source.Id}:{dto.Target.Id}:{dto.ContentSha256}"));
 
         var candidateDtos = Ordered(
             snapshot.Candidates.Select(WireRelationMapping.ToDto),
