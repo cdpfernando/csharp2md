@@ -357,13 +357,13 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] `GetConnectionString` joins `GetSection` and `GetValue` in the recognized set (PK-08)
-- [ ] The payload shape is unchanged — a single `key` entry with `LiteralRole.ConfigurationKey`
-- [ ] Existing `ConfigurationDetectorTests` still pass
-- [ ] A test asserts the fixture emits a `Configuration` observation with `key=OrdersDb`
-- [ ] A test asserts no connection-string value reaches the payload
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + new tests pass (no silent deletions)
+- [x] `GetConnectionString` joins `GetSection` and `GetValue` in the recognized set (PK-08)
+- [x] The payload shape is unchanged — a single `key` entry with `LiteralRole.ConfigurationKey`
+- [x] Existing `ConfigurationDetectorTests` still pass
+- [x] A test asserts the fixture emits a `Configuration` observation with `key=OrdersDb`
+- [x] A test asserts no connection-string value reaches the payload
+- [x] Gate check passes: full gate command
+- [x] Test count: 545 + 318 = 863 pass (no silent deletions)
 
 **Tests**: unit + integration
 **Gate**: full

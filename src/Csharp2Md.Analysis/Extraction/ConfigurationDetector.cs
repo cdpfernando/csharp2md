@@ -62,7 +62,7 @@ internal sealed class ConfigurationDetector : IRegisteredContextDetector
 
         var name = method.Name;
         var receiver = method.ReceiverType ?? method.ContainingType;
-        var matchesConfigurationCall = name is "GetSection" or "GetValue"
+        var matchesConfigurationCall = name is "GetSection" or "GetValue" or "GetConnectionString"
             && IsConfigurationType(receiver, occurrence.Compilation);
         var matchesConfigure = name is "Configure";
         var matchesOptions = IsOptionsType(method.ContainingType, occurrence.Compilation)

@@ -47,6 +47,42 @@ public sealed class ConfigurationDetectorTests
     }
 
     [Fact]
+    [Trait("Requirement", "PK-08")]
+    public async Task ExtractInto_GetConnectionStringCall_EmitsConfigurationWithOrdersDbKey()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+
+        var configuration = Assert.Single(
+            observations,
+            observation => observation.Identity.Kind is ObservationKind.Configuration
+                && observation.Identity.Payload.Entries.Any(entry => entry.Value.Value == "OrdersDb"));
+
+        var entry = Assert.Single(configuration.Identity.Payload.Entries);
+        Assert.Equal("key", entry.Key);
+        Assert.Equal(LiteralRole.ConfigurationKey, entry.Value.Role);
+        Assert.Equal("OrdersDb", entry.Value.Value);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-08")]
+    [Trait("Requirement", "PK-09")]
+    public async Task ExtractInto_Fixture_NoObservationPayloadCarriesAConnectionStringValue()
+    {
+        var observations = await ExtractAcmeOrdersAsync();
+
+        Assert.All(
+            observations,
+            observation => Assert.All(
+                observation.Identity.Payload.Entries,
+                entry =>
+                {
+                    Assert.DoesNotContain("inline-fixture-secret", entry.Value.Value, StringComparison.Ordinal);
+                    Assert.DoesNotContain("appsettings-fixture-secret", entry.Value.Value, StringComparison.Ordinal);
+                    Assert.DoesNotContain("Server=", entry.Value.Value, StringComparison.Ordinal);
+                }));
+    }
+
+    [Fact]
     [Trait("Requirement", "ROSE-38")]
     [Trait("Requirement", "ROSE-42")]
     public async Task ExtractInto_NonConfigurationIndexer_DoesNotEmitConfiguration()
