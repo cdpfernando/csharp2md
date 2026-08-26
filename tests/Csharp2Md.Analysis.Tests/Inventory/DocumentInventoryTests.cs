@@ -249,6 +249,171 @@ public sealed class DocumentInventoryTests
         }
     }
 
+    [Fact]
+    [Trait("Requirement", "CDC-25")]
+    public void Collect_MatchingAppsettingsNames_AreConfigurationDocumentsWithoutUnsupportedDiagnostic()
+    {
+        var tree = Directory.CreateTempSubdirectory("csharp2md-doc-inv-appsettings-");
+        try
+        {
+            var projectDir = Path.Combine(tree.FullName, "App");
+            Directory.CreateDirectory(projectDir);
+            File.WriteAllText(
+                Path.Combine(projectDir, "App.csproj"),
+                """
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net10.0</TargetFramework>
+                  </PropertyGroup>
+                </Project>
+                """);
+            File.WriteAllText(Path.Combine(projectDir, "Program.cs"), "class Program;");
+            File.WriteAllText(Path.Combine(projectDir, "appsettings.json"), """{"Services":{"PaymentService":"https://payments.example"}}""");
+            File.WriteAllText(Path.Combine(projectDir, "appsettings.Development.json"), """{"Services":{"ShippingService":"https://shipping.example"}}""");
+            File.WriteAllText(Path.Combine(projectDir, "AppSettings.Production.json"), """{"Services":{"PaymentService":"https://payments.prod.example"}}""");
+            var solutionPath = Path.Combine(projectDir, "App.slnx");
+            File.WriteAllText(solutionPath, """<Solution><Project Path="App.csproj" /></Solution>""");
+
+            var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
+            var root = AuthorizedRoot.Compute(solutionPath, ExistingAbsolutePaths(solutionPath, listed));
+            var facts = InventoryFacts.Create(solutionPath, listed, root);
+            var project = Assert.Single(facts.Projects);
+
+            var inventoried = DocumentInventory.Collect(root, project, Path.Combine(projectDir, "App.csproj"));
+
+            AssertConfigurationDocument(inventoried, project, "appsettings.json");
+            AssertConfigurationDocument(inventoried, project, "appsettings.Development.json");
+            AssertConfigurationDocument(inventoried, project, "AppSettings.Production.json");
+            AssertUnsupportedDocument(inventoried, "App.csproj");
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-25")]
+    public void Collect_NearMissMyAppsettingsJson_IsUnsupportedNotConfiguration()
+    {
+        var tree = Directory.CreateTempSubdirectory("csharp2md-doc-inv-myappsettings-");
+        try
+        {
+            var projectDir = Path.Combine(tree.FullName, "App");
+            Directory.CreateDirectory(projectDir);
+            File.WriteAllText(
+                Path.Combine(projectDir, "App.csproj"),
+                """
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net10.0</TargetFramework>
+                  </PropertyGroup>
+                </Project>
+                """);
+            File.WriteAllText(Path.Combine(projectDir, "Program.cs"), "class Program;");
+            File.WriteAllText(Path.Combine(projectDir, "myappsettings.json"), """{"ok":true}""");
+            var solutionPath = Path.Combine(projectDir, "App.slnx");
+            File.WriteAllText(solutionPath, """<Solution><Project Path="App.csproj" /></Solution>""");
+
+            var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
+            var root = AuthorizedRoot.Compute(solutionPath, ExistingAbsolutePaths(solutionPath, listed));
+            var facts = InventoryFacts.Create(solutionPath, listed, root);
+            var project = Assert.Single(facts.Projects);
+
+            var inventoried = DocumentInventory.Collect(root, project, Path.Combine(projectDir, "App.csproj"));
+
+            var nearMiss = Assert.Single(
+                inventoried.Documents,
+                document => string.Equals(document.RelativePath, "myappsettings.json", StringComparison.Ordinal));
+            Assert.Equal(Document.Create(project.Id, "myappsettings.json"), nearMiss);
+            Assert.DoesNotContain(
+                inventoried.ConfigurationDocuments,
+                document => string.Equals(document.RelativePath, "myappsettings.json", StringComparison.Ordinal));
+            AssertUnsupportedDocument(inventoried, "myappsettings.json");
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-25")]
+    public void Collect_UnmatchedNonCsharpIncludingCsproj_KeepsUnsupportedDocument()
+    {
+        var tree = Directory.CreateTempSubdirectory("csharp2md-doc-inv-unmatched-");
+        try
+        {
+            var projectDir = Path.Combine(tree.FullName, "App");
+            Directory.CreateDirectory(projectDir);
+            File.WriteAllText(
+                Path.Combine(projectDir, "App.csproj"),
+                """
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net10.0</TargetFramework>
+                  </PropertyGroup>
+                </Project>
+                """);
+            File.WriteAllText(Path.Combine(projectDir, "Program.cs"), "class Program;");
+            File.WriteAllText(Path.Combine(projectDir, "notes.json"), """{"ok":true}""");
+            var solutionPath = Path.Combine(projectDir, "App.slnx");
+            File.WriteAllText(solutionPath, """<Solution><Project Path="App.csproj" /></Solution>""");
+
+            var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
+            var root = AuthorizedRoot.Compute(solutionPath, ExistingAbsolutePaths(solutionPath, listed));
+            var facts = InventoryFacts.Create(solutionPath, listed, root);
+            var project = Assert.Single(facts.Projects);
+
+            var inventoried = DocumentInventory.Collect(root, project, Path.Combine(projectDir, "App.csproj"));
+
+            AssertUnsupportedDocument(inventoried, "notes.json");
+            AssertUnsupportedDocument(inventoried, "App.csproj");
+            Assert.Empty(inventoried.ConfigurationDocuments);
+            Assert.DoesNotContain(
+                inventoried.Diagnostics,
+                record => string.Equals(record.IdentityOrKey, "Program.cs", StringComparison.Ordinal));
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+        }
+    }
+
+    private static void AssertConfigurationDocument(
+        InventoriedDocuments inventoried,
+        Project project,
+        string relativePath)
+    {
+        var document = Assert.Single(
+            inventoried.Documents,
+            candidate => string.Equals(candidate.RelativePath, relativePath, StringComparison.Ordinal));
+        Assert.Equal(Document.Create(project.Id, relativePath), document);
+        Assert.Contains(
+            inventoried.ConfigurationDocuments,
+            candidate => candidate.Equals(document));
+        Assert.DoesNotContain(
+            inventoried.CSharpDocuments,
+            candidate => string.Equals(candidate.RelativePath, relativePath, StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            inventoried.Diagnostics,
+            record => string.Equals(record.IdentityOrKey, relativePath, StringComparison.Ordinal));
+    }
+
+    private static void AssertUnsupportedDocument(InventoriedDocuments inventoried, string relativePath)
+    {
+        Assert.Contains(
+            inventoried.Documents,
+            document => string.Equals(document.RelativePath, relativePath, StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            inventoried.ConfigurationDocuments,
+            document => string.Equals(document.RelativePath, relativePath, StringComparison.Ordinal));
+        var unsupported = Assert.Single(
+            inventoried.Diagnostics,
+            record => string.Equals(record.IdentityOrKey, relativePath, StringComparison.Ordinal));
+        Assert.Equal("unsupported-document", unsupported.Code);
+    }
+
     private static string AcmeOrdersSolutionPath()
     {
         var path = Path.Combine(

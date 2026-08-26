@@ -7,6 +7,7 @@ namespace Csharp2Md.Analysis.Inventory;
 internal sealed record InventoriedDocuments(
     ImmutableArray<Document> Documents,
     ImmutableArray<Document> CSharpDocuments,
+    ImmutableArray<Document> ConfigurationDocuments,
     ImmutableArray<DiagnosticRecord> Diagnostics);
 
 internal static class DocumentInventory
@@ -67,6 +68,7 @@ internal static class DocumentInventory
 
         var documents = ImmutableArray.CreateBuilder<Document>();
         var csharpDocuments = ImmutableArray.CreateBuilder<Document>();
+        var configurationDocuments = ImmutableArray.CreateBuilder<Document>();
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticRecord>();
         foreach (var absolute in absolutePaths.OrderBy(path => path, comparison))
         {
@@ -84,6 +86,12 @@ internal static class DocumentInventory
                 continue;
             }
 
+            if (IsConfigurationDocument(relative))
+            {
+                configurationDocuments.Add(document);
+                continue;
+            }
+
             diagnostics.Add(new DiagnosticRecord(
                 "unsupported-document",
                 "The document is not C# and will not be extracted.",
@@ -93,11 +101,19 @@ internal static class DocumentInventory
         return new InventoriedDocuments(
             documents.ToImmutable(),
             csharpDocuments.ToImmutable(),
+            configurationDocuments.ToImmutable(),
             diagnostics.ToImmutable());
     }
 
     private static bool IsCSharpDocument(string relativePath) =>
         relativePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsConfigurationDocument(string relativePath)
+    {
+        var fileName = Path.GetFileName(relativePath);
+        return fileName.StartsWith("appsettings", StringComparison.OrdinalIgnoreCase)
+            && fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static void TryAddInventoriedPath(HashSet<string> absolutePaths, string root, string candidate)
     {

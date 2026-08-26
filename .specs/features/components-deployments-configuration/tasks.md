@@ -462,12 +462,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Matching is on the file name with ordinal-ignore-case, so `appsettings.json` and `appsettings.Development.json` both match and `myappsettings.json` does not
-- [ ] A matched document appears in `Documents` and `ConfigurationDocuments` and produces no `unsupported-document` diagnostic
-- [ ] Every other non-C# document, including the `.csproj`, keeps today's diagnostic
-- [ ] Unit tests cover matched, near-miss and unmatched names, and assert the diagnostic is absent only for matches
-- [ ] Gate check passes: quick gate command
-- [ ] Test count reported; no silent deletions
+- [x] Matching is on the file name with ordinal-ignore-case, so `appsettings.json` and `appsettings.Development.json` both match and `myappsettings.json` does not
+- [x] A matched document appears in `Documents` and `ConfigurationDocuments` and produces no `unsupported-document` diagnostic
+- [x] Every other non-C# document, including the `.csproj`, keeps today's diagnostic
+- [x] Unit tests cover matched, near-miss and unmatched names, and assert the diagnostic is absent only for matches
+- [x] Gate check passes: quick gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: quick
