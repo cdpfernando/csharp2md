@@ -614,12 +614,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Both emitters run before the stage disposes `BoundSolution`
-- [ ] The stage's reported observation count includes both sources
-- [ ] The early return when `BoundSolution` is null still emits nothing and throws nothing
-- [ ] Integration tests analyze both fixture solutions and assert the project-metadata and configuration observations reach the accumulator with the expected owners, payloads and evidence methods
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] Both emitters run before the stage disposes `BoundSolution`
+- [x] The stage's reported observation count includes both sources
+- [x] The early return when `BoundSolution` is null still emits nothing and throws nothing
+- [x] Integration tests analyze both fixture solutions and assert the project-metadata and configuration observations reach the accumulator with the expected owners, payloads and evidence methods
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: integration
 **Gate**: full

@@ -71,17 +71,24 @@ public sealed class SuspectedSecretExtractionTests
 
             var diagnostics = Assert.Single(payloads, fragment => fragment.CanonicalKey == "diagnostics.json");
             var envelope = CanonicalJson.Read<DiagnosticsEnvelope>(diagnostics.Payload.AsSpan());
-            var suspected = Assert.Single(
-                envelope.Records,
-                record => record.Code == "suspected-secret"
-                    && record.Message.Contains("Password=", StringComparison.Ordinal));
-            Assert.True(
-                suspected.Message.Contains("***", StringComparison.Ordinal)
-                || suspected.Message.Contains("[REDACTED]", StringComparison.Ordinal),
-                "A flagged excerpt must carry a visible redaction marker.");
-            Assert.DoesNotContain(PlantedSecret, suspected.Message, StringComparison.Ordinal);
-            Assert.DoesNotContain(PlantedLiteral, suspected.Message, StringComparison.Ordinal);
-            Assert.Contains(':', suspected.Message);
+            var suspected = envelope.Records
+                .Where(record => record.Code == "suspected-secret")
+                .ToArray();
+            Assert.Contains(
+                suspected,
+                record => record.Message.Contains("Password=", StringComparison.Ordinal));
+            Assert.All(
+                suspected,
+                record =>
+                {
+                    Assert.True(
+                        record.Message.Contains("***", StringComparison.Ordinal)
+                        || record.Message.Contains("[REDACTED]", StringComparison.Ordinal),
+                        "A flagged excerpt must carry a visible redaction marker.");
+                    Assert.DoesNotContain(PlantedSecret, record.Message, StringComparison.Ordinal);
+                    Assert.DoesNotContain(PlantedLiteral, record.Message, StringComparison.Ordinal);
+                    Assert.Contains(':', record.Message);
+                });
 
             var observations = payloads
                 .Where(fragment => fragment.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal))

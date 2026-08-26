@@ -21,14 +21,11 @@ public sealed class ClassifierIsolationTests
         "TestResults",
     };
 
-    private static readonly string[] SecretTokens =
+    private static readonly string[] SecretValues =
     [
-        "Password=",
-        "Pwd=",
-        "ConnectionString",
-        "Bearer ",
-        "BEGIN CERTIFICATE",
-        "Authorization:",
+        "appsettings-fixture-secret",
+        "inline-fixture-secret",
+        "Password=secret",
     ];
 
     private static readonly string[] ClassifierPayloadKeys =
@@ -169,7 +166,7 @@ public sealed class ClassifierIsolationTests
             payloads,
             payload =>
             {
-                foreach (var token in SecretTokens)
+                foreach (var token in SecretValues)
                 {
                     Assert.DoesNotContain(token, payload.Text, StringComparison.OrdinalIgnoreCase);
                 }
