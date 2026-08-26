@@ -64,7 +64,7 @@ public sealed class DefaultPipelineZerosTests
         Assert.Equal("Classification and Promotion", classification.Name);
         Assert.True(classification.FactCount > 0, $"Classification fact count was {classification.FactCount}.");
         Assert.Equal(0, classification.ObservationCount);
-        Assert.Equal(0, classification.RelationCount);
+        Assert.True(classification.RelationCount > 0, $"Classification relation count was {classification.RelationCount}.");
     }
 
     private static void AssertZeroProduction(StageReport report, string name)

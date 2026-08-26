@@ -61,6 +61,19 @@ public sealed class PipelineStagesTests
         Assert.Contains("new ComponentPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
         Assert.Contains("new EntryPointPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
         Assert.Contains("new BoundaryPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
+        Assert.Contains("new ContractPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
+        Assert.Contains("new RelationPass()", File.ReadAllText(PipelineStagesPath()), StringComparison.Ordinal);
+        var source = File.ReadAllText(PipelineStagesPath());
+        Assert.True(
+            source.IndexOf("new ComponentPass()", StringComparison.Ordinal)
+                < source.IndexOf("new EntryPointPass()", StringComparison.Ordinal)
+                && source.IndexOf("new EntryPointPass()", StringComparison.Ordinal)
+                    < source.IndexOf("new BoundaryPass()", StringComparison.Ordinal)
+                && source.IndexOf("new BoundaryPass()", StringComparison.Ordinal)
+                    < source.IndexOf("new ContractPass()", StringComparison.Ordinal)
+                && source.IndexOf("new ContractPass()", StringComparison.Ordinal)
+                    < source.IndexOf("new RelationPass()", StringComparison.Ordinal),
+            "CreateDefault pass order must be ComponentPass → EntryPointPass → BoundaryPass → ContractPass → RelationPass.");
     }
 
     private static string PipelineStagesPath() =>

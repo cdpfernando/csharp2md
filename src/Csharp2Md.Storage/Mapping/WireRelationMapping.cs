@@ -1,3 +1,4 @@
+using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Proof;
 using Csharp2Md.Domain.Registry;
@@ -34,9 +35,16 @@ internal static class WireRelationMapping
             static (dto, hash) => dto with { ContentSha256 = hash });
     }
 
-    public static ConfirmedRelation FromDto(ConfirmedRelationDto dto)
+    public static ConfirmedRelation FromDto(ConfirmedRelationDto dto) =>
+        FromDto(dto, factsById: null);
+
+    public static ConfirmedRelation FromDto(ConfirmedRelationDto dto, IReadOnlyDictionary<string, IFact>? factsById)
     {
         var kind = KindFromWire(dto.Kind);
+        IFact? sourceFact = null;
+        IFact? targetFact = null;
+        factsById?.TryGetValue(dto.Source.Id, out sourceFact);
+        factsById?.TryGetValue(dto.Target.Id, out targetFact);
         return ConfirmedRelation.Create(
             kind,
             WireFactMapping.FromDto(dto.Source),
@@ -45,7 +53,9 @@ internal static class WireRelationMapping
             EvidenceChain.Create(dto.DerivedFrom.Select(WireObservationMapping.FromDto)),
             ClassifierIdentity.Create(dto.Classifier.Id, dto.Classifier.Version),
             [.. dto.AnalysisVariants.Select(AnalysisVariantFromValue)],
-            Enum.Parse<EvidenceMethod>(dto.EvidenceMethod));
+            Enum.Parse<EvidenceMethod>(dto.EvidenceMethod),
+            sourceFact,
+            targetFact);
     }
 
     public static CandidateLinkDto ToDto(CandidateLink relation) =>
@@ -102,8 +112,13 @@ internal static class WireRelationMapping
             .Select(entry => entry.AxisName)
             .Distinct(StringComparer.Ordinal)
             .ToImmutableArray();
+        var axes = TaxonomyTables.Default.FacetAxes;
+        if (allowed.Contains("payload-role", StringComparer.Ordinal))
+        {
+            axes = axes.Add(new FacetAxisDescriptor("payload-role", TaxonomyTables.Default.PayloadRoles));
+        }
 
-        return FacetBinding.Create(TaxonomyTables.Default.FacetAxes, allowed, values);
+        return FacetBinding.Create(axes, allowed, values);
     }
 
     private static AnalysisVariantId AnalysisVariantFromValue(string value)

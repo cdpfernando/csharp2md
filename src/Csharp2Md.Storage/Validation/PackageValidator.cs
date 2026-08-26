@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
@@ -477,12 +478,13 @@ public static class PackageValidator
         var dataOperations = KeepOrQuarantine(document.DataOperations, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
         var configurationBindings = KeepOrQuarantine(document.ConfigurationBindings, WireFactMapping.FromDto, static dto => dto.Identity.FactType, static dto => dto.Identity.Id, quarantine);
 
+        var factsById = IndexDerivedFacts(document.Symbols, boundaryOperations, contracts);
         var confirmed = ImmutableDictionary.CreateBuilder<string, ImmutableArray<ConfirmedRelationDto>>(StringComparer.Ordinal);
         foreach (var (key, records) in document.ConfirmedRelations)
         {
             var kept = KeepOrQuarantine(
                 records,
-                WireRelationMapping.FromDto,
+                dto => WireRelationMapping.FromDto(dto, factsById),
                 static dto => dto.Kind,
                 static dto => RelationIdentity(dto.Kind, dto.Source.Id, dto.Target.Id),
                 quarantine);
@@ -516,6 +518,35 @@ public static class PackageValidator
         };
 
         return new ValidationReport(next, quarantined);
+    }
+
+    private static IReadOnlyDictionary<string, IFact> IndexDerivedFacts(
+        ImmutableArray<SymbolDto> symbols,
+        ImmutableArray<BoundaryOperationDto> boundaryOperations,
+        ImmutableArray<ContractDto> contracts)
+    {
+        var facts = new Dictionary<string, IFact>(StringComparer.Ordinal);
+        Index(symbols, WireFactMapping.FromDto, facts);
+        Index(boundaryOperations, WireFactMapping.FromDto, facts);
+        Index(contracts, WireFactMapping.FromDto, facts);
+        return facts;
+    }
+
+    private static void Index<TDto>(
+        ImmutableArray<TDto> records,
+        Func<TDto, IFact> fromDto,
+        Dictionary<string, IFact> facts)
+    {
+        if (records.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        foreach (var dto in records)
+        {
+            var fact = fromDto(dto);
+            facts[fact.Reference.Id.Value] = fact;
+        }
     }
 
     private static ImmutableArray<TDto> KeepOrQuarantine<TDto, TResult>(

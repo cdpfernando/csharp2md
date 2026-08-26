@@ -472,13 +472,13 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] `PipelineStages.CreateDefault()` includes all five passes in order
-- [ ] Integration test: `Contract` exists for `Acme.Shared.Contracts.OrderPlaced`
-- [ ] Integration test: `ContractBinding` links both publish and handler boundaries to the contract
-- [ ] Integration test: `uses-contract` confirmed relations exist with `payload-role` facet
-- [ ] Integration test: `PaymentProcessed` does NOT produce a `Contract` (no handler)
-- [ ] Integration test: `implements-operation` relations exist for HTTP and messaging entry points
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] `PipelineStages.CreateDefault()` includes all five passes in order
+- [x] Integration test: `Contract` exists for `Acme.Shared.Contracts.OrderPlaced`
+- [x] Integration test: `ContractBinding` links both publish and handler boundaries to the contract
+- [x] Integration test: `uses-contract` confirmed relations exist with `payload-role` facet
+- [x] Integration test: `PaymentProcessed` does NOT produce a `Contract` (no handler)
+- [x] Integration test: `implements-operation` relations exist for HTTP and messaging entry points
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: integration
 **Gate**: full

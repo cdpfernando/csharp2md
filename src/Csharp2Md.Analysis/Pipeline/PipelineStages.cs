@@ -18,6 +18,8 @@ internal static class PipelineStages
                 new ComponentPass(),
                 new EntryPointPass(),
                 new BoundaryPass(),
+                new ContractPass(),
+                new RelationPass(),
             ]))
             .SetItem(5, new PersistenceStage());
 }
