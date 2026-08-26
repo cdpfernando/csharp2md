@@ -500,12 +500,12 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Classification stage reports non-zero facts and relations
-- [ ] Validation, Retrieval, Batch stubs still report zeros (EBC-36)
-- [ ] Persistence stages the snapshot including classifier output (EBC-37)
-- [ ] Package contains `CandidateLink` records for outbound HTTP destinations
-- [ ] Package contains `UnresolvedRecord` if any messaging type was unresolvable
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Classification stage reports non-zero facts and relations
+- [x] Validation, Retrieval, Batch stubs still report zeros (EBC-36)
+- [x] Persistence stages the snapshot including classifier output (EBC-37)
+- [x] Package contains `CandidateLink` records for outbound HTTP destinations
+- [x] Package contains `UnresolvedRecord` if any messaging type was unresolvable
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: integration
 **Gate**: full
