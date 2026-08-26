@@ -286,12 +286,12 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-43 | P1: Observation ledger | Tasks (T38, T44) | Implemented |
 | ROSE-44 | P1: Observation ledger | Tasks (T6, T38, T44) | Implemented |
 | ROSE-45 | P1: Observation ledger | Tasks (T40) | Implemented |
-| ROSE-46 | P1: Observation ledger | Tasks (T38, T39, T41) | Pending |
+| ROSE-46 | P1: Observation ledger | Tasks (T38, T39, T41) | Implemented |
 | ROSE-47 | P1: Observation ledger | Tasks (T39, T47) | Pending |
 | ROSE-48 | P1: Observation ledger | Tasks (T36, T43) | Pending |
 | ROSE-49 | P1: Observation ledger | Tasks (T45, T50) | Pending |
-| ROSE-50 | P1: Source fidelity, secrets, and determinism | Tasks (T41) | Pending |
-| ROSE-51 | P1: Source fidelity, secrets, and determinism | Tasks (T41) | Pending |
+| ROSE-50 | P1: Source fidelity, secrets, and determinism | Tasks (T41) | Implemented |
+| ROSE-51 | P1: Source fidelity, secrets, and determinism | Tasks (T41) | Implemented |
 | ROSE-52 | P1: Source fidelity, secrets, and determinism | Tasks (T57) | Pending |
 | ROSE-53 | P1: Source fidelity, secrets, and determinism | Tasks (T19, T58) | Pending |
 | ROSE-54 | P1: Source fidelity, secrets, and determinism | Tasks (T38, T44, T59) | Pending |

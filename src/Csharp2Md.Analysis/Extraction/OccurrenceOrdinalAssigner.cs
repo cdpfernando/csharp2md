@@ -19,7 +19,7 @@ internal static class OccurrenceOrdinalAssigner
 
         var ordinals = new Dictionary<OrdinalGroup, int>();
         var assigned = ImmutableArray.CreateBuilder<Observation>(sorted.Length);
-        var extractorVersion = new ExtractorVersion(1);
+        var extractorVersion = ObservationMaterializer.Version;
         foreach (var draft in sorted)
         {
             var group = new OrdinalGroup(draft.Owner, draft.Kind, draft.Payload);

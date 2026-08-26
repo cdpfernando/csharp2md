@@ -1385,10 +1385,10 @@ filesystem path.
 
 **Done when**:
 
-- [ ] Locator path has `/` and no drive prefix; span start line is >= 1
-- [ ] Hash matches SHA-256 of the file bytes independently of clone path
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Locator path has `/` and no drive prefix; span start line is >= 1
+- [x] Hash matches SHA-256 of the file bytes independently of clone path
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

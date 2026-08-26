@@ -101,7 +101,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                 var walker = new AlwaysWhenBindableWalker(
                     model,
                     document,
-                    HashFileBytes(tree.FilePath),
+                    ObservationMaterializer.HashFileBytes(tree.FilePath),
                     symbolsBySignature,
                     fallbackOwner,
                     cancellationToken);
@@ -229,7 +229,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                 owner.Value,
                 kind,
                 EmptyPayload,
-                CreateLocator(node),
+                ObservationMaterializer.CreateLocator(_document, node),
                 method,
                 diagnostic,
                 _documentHash));
@@ -272,28 +272,6 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
         }
 
         return null;
-    }
-
-    private EvidenceLocator CreateLocator(SyntaxNode node)
-    {
-        var lineSpan = node.SyntaxTree.GetLineSpan(node.Span);
-        var start = lineSpan.StartLinePosition;
-        var end = lineSpan.EndLinePosition;
-        var span = new SourceSpan(
-            start.Line + 1,
-            start.Character + 1,
-            Math.Max(end.Line + 1, start.Line + 1),
-            Math.Max(end.Character + 1, 1));
-        return new EvidenceLocator(
-            Domain.Literals.DocumentId.Create(_document.Reference.Id.Value),
-            _document.RelativePath,
-            span);
-    }
-
-    private static DocumentHash HashFileBytes(string absolutePath)
-    {
-        var digest = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(absolutePath)));
-        return DocumentHash.Create(digest);
     }
 
     private static string SignatureKey(DomainProjectId projectId, CanonicalSymbolSignature signature) =>
