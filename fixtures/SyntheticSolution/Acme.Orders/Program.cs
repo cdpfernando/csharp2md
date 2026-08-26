@@ -5,9 +5,15 @@
 // the fixture must build and restore without pulling in an external dependency. The frontmatter
 // heuristics classify this file as `configuration` from its name and tag it `bootstrapping` from
 // the WebApplication.CreateBuilder call, so the stand-in exercises the real rules.
+//
+// ConfigureHost also binds OrderDbContext to a configuration key: it calls
+// Configuration.GetConnectionString("OrdersDb") in the same callable that registers the context, so
+// OrderDbContext's DataStore can be named from C#-observable evidence instead of falling back to its
+// CLR type name.
 
 using Acme.Orders.Hosting;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.AspNetCore.Builder
 {
@@ -15,6 +21,8 @@ namespace Microsoft.AspNetCore.Builder
     public sealed class WebApplicationBuilder
     {
         public IServiceCollection Services { get; } = new ServiceCollection();
+
+        public IConfiguration Configuration { get; } = new ConfigurationRoot();
     }
 
     /// <summary>Stand-in for the ASP.NET Core application entry type.</summary>
@@ -40,6 +48,7 @@ namespace Acme.Orders
 
             builder.Services.AddScoped<OrderService>();
             builder.Services.AddSingleton<Data.OrderDbContext>();
+            _ = builder.Configuration.GetConnectionString("OrdersDb");
 
             return builder;
         }

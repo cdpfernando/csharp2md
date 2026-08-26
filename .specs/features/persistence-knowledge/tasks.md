@@ -174,12 +174,12 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] `Microsoft.Extensions.Configuration.IConfiguration` is declared locally with `GetConnectionString(string)`, matching the metadata name `ConfigurationDetector` resolves
-- [ ] `ConfigureHost` calls `GetConnectionString("OrdersDb")` in the same callable that registers `OrderDbContext`
-- [ ] The key string matches the `ConnectionStrings:OrdersDb` entry already in `appsettings.json`
-- [ ] No connection-string *value* appears anywhere in the C# source
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1019 tests pass (no silent deletions); any count change is explained in the commit body
+- [x] `Microsoft.Extensions.Configuration.IConfiguration` is declared locally with `GetConnectionString(string)`, matching the metadata name `ConfigurationDetector` resolves
+- [x] `ConfigureHost` calls `GetConnectionString("OrdersDb")` in the same callable that registers `OrderDbContext`
+- [x] The key string matches the `ConnectionStrings:OrdersDb` entry already in `appsettings.json`
+- [x] No connection-string *value* appears anywhere in the C# source
+- [x] Gate check passes: build gate command
+- [x] Test count: 1023 tests pass (no silent deletions); any count change is explained in the commit body
 
 **Tests**: none
 **Gate**: build
