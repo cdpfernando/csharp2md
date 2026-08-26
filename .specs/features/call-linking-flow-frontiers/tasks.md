@@ -191,14 +191,14 @@ T8 → T9 → T10
 - Skill: NONE
 
 **Done when**:
-- [ ] `private readonly List<CandidateLink> _candidates` and `AddCandidate(CandidateLink)` added
-- [ ] `private readonly List<UnresolvedRecord> _unresolved` and `AddUnresolved(UnresolvedRecord)` added
-- [ ] `private readonly List<OpenFrontier> _frontiers` and `AddOpenFrontier(OpenFrontier)` added
-- [ ] `ToSnapshot()` uses `[.. _candidates]`, `[.. _unresolved]`, `[.. _frontiers]` instead of `.Empty`
-- [ ] **Coordination check**: if WS5A already added `AddCandidate`/`AddUnresolved`, verify they match this design and do not add duplicates — document the check in the commit message
-- [ ] New tests in `SnapshotAccumulatorTests.cs`: `AddCandidate_AppearsInSnapshot`, `AddUnresolved_AppearsInSnapshot`, `AddOpenFrontier_AppearsInSnapshot`, `ToSnapshot_NoAdditions_ReturnsEmptyCollections` (for regression)
-- [ ] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
-- [ ] Test count: ≥ 4 new tests; existing SnapshotAccumulator tests still pass
+- [x] `private readonly List<CandidateLink> _candidates` and `AddCandidate(CandidateLink)` added
+- [x] `private readonly List<UnresolvedRecord> _unresolved` and `AddUnresolved(UnresolvedRecord)` added
+- [x] `private readonly List<OpenFrontier> _frontiers` and `AddOpenFrontier(OpenFrontier)` added
+- [x] `ToSnapshot()` uses `[.. _candidates]`, `[.. _unresolved]`, `[.. _frontiers]` instead of `.Empty`
+- [x] **Coordination check**: if WS5A already added `AddCandidate`/`AddUnresolved`, verify they match this design and do not add duplicates — document the check in the commit message
+- [x] New tests in `SnapshotAccumulatorTests.cs`: `AddCandidate_AppearsInSnapshot`, `AddUnresolved_AppearsInSnapshot`, `AddOpenFrontier_AppearsInSnapshot`, `ToSnapshot_NoAdditions_ReturnsEmptyCollections` (for regression)
+- [x] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
+- [x] Test count: ≥ 4 new tests; existing SnapshotAccumulator tests still pass
 
 **Tests**: unit
 **Gate**: quick (Analysis)
