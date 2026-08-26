@@ -734,15 +734,15 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `Component.Owners` holds exactly the symbols with at least one observation, ordinal-sorted by fact id
-- [ ] A symbol owning no observation appears in no `Owners` and produces no `belongs-to`
-- [ ] Each symbol is the source of at most one `belongs-to`, carrying `EvidenceMethod.Semantic` and that symbol's own observations
-- [ ] `included-in` carries `EvidenceMethod.Configured` and the `output-kind` plus `project-reference` observations that prove the reach
-- [ ] A shared component emits one `included-in` per reaching application
-- [ ] An unreached component emits an `UnresolvedRecord` and no confirmed relation
-- [ ] Unit tests assert emitted identities, relation counts and evidence chains for a hand-built model
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] `Component.Owners` holds exactly the symbols with at least one observation, ordinal-sorted by fact id
+- [x] A symbol owning no observation appears in no `Owners` and produces no `belongs-to`
+- [x] Each symbol is the source of at most one `belongs-to`, carrying `EvidenceMethod.Semantic` and that symbol's own observations
+- [x] `included-in` carries `EvidenceMethod.Configured` and the `output-kind` plus `project-reference` observations that prove the reach
+- [x] A shared component emits one `included-in` per reaching application
+- [x] An unreached component emits an `UnresolvedRecord` and no confirmed relation
+- [x] Unit tests assert emitted identities, relation counts and evidence chains for a hand-built model
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: full
