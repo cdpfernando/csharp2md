@@ -118,11 +118,13 @@ public sealed class PersistencePassTests
                     new RecordingPass(new ContractPass(), order),
                     new RecordingPass(new PersistencePass(), order),
                     new RecordingPass(new RelationPass(), order),
+                    new RecordingPass(new InvokesPass(), order),
+                    new RecordingPass(new ExecutesPass(), order),
                     new NoOpPass(order),
                 ])));
 
         Assert.Equal(
-            ["Components", "Entry points", "Boundaries", "Contracts", "Persistence", "Relations", NoOpPass.PassName],
+            ["Components", "Entry points", "Boundaries", "Contracts", "Persistence", "Relations", "Invokes", "Executes", NoOpPass.PassName],
             order);
 
         var baselinePersistence = ReadPersistence(baseline.Publication);
