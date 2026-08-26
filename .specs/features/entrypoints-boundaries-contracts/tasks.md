@@ -446,13 +446,13 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Creates `implements-operation` for each `EntryPoint`/`BoundaryOperation` pair (source = callable Symbol, target = BoundaryOperation)
-- [ ] `implements-operation` supplies `sourceFact` as materialized `Symbol` with `Callable`
-- [ ] Creates `uses-contract` for each `ContractBinding` (source = BoundaryOperation, target = Contract, facets include `payload-role`)
-- [ ] All relations carry evidence method `Semantic`, non-empty `derived_from`, analysis variants
-- [ ] Records `UnresolvedRecord` for unresolvable messaging types (EBC-34)
-- [ ] Unit tests assert relation shape guards pass
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Creates `implements-operation` for each `EntryPoint`/`BoundaryOperation` pair (source = callable Symbol, target = BoundaryOperation)
+- [x] `implements-operation` supplies `sourceFact` as materialized `Symbol` with `Callable`
+- [x] Creates `uses-contract` for each `ContractBinding` (source = BoundaryOperation, target = Contract, facets include `payload-role`)
+- [x] All relations carry evidence method `Semantic`, non-empty `derived_from`, analysis variants
+- [x] Records `UnresolvedRecord` for unresolvable messaging types (EBC-34)
+- [x] Unit tests assert relation shape guards pass
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: unit
 **Gate**: full

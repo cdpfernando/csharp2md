@@ -257,14 +257,14 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | EBC-04 | P1: Project-as-component promotion | Phase 2 (T6) | Implementing |
 | EBC-05 | P1: HTTP entry point classification | Phase 2 (T7, T8) | Implementing |
 | EBC-06 | P1: HTTP entry point classification | Phase 3 (T9) | Implementing |
-| EBC-07 | P1: HTTP entry point classification | Phase 4 (T14, T15) | In Tasks |
+| EBC-07 | P1: HTTP entry point classification | Phase 4 (T14, T15) | Implementing |
 | EBC-08 | P1: HTTP entry point classification | Phase 2 (T7) | Implementing |
 | EBC-09 | P1: HTTP entry point classification | Phase 2 (T7) | Implementing |
 | EBC-10 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
 | EBC-11 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
 | EBC-12 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
 | EBC-13 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
-| EBC-14 | P1: Outbound HTTP boundary classification | Phase 4 (T14) | In Tasks |
+| EBC-14 | P1: Outbound HTTP boundary classification | Phase 4 (T14) | Implementing |
 | EBC-15 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
 | EBC-16 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
 | EBC-17 | P1: Messaging boundary classification | Phase 3 (T11) | Implementing |
@@ -273,7 +273,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | EBC-20 | P1: Messaging boundary classification | Phase 3 (T12), Phase 4 (T14) | Implementing |
 | EBC-21 | P1: Messaging contract classification | Phase 4 (T13, T15) | Implementing |
 | EBC-22 | P1: Messaging contract classification | Phase 4 (T13) | Implementing |
-| EBC-23 | P1: Messaging contract classification | Phase 4 (T14, T15) | In Tasks |
+| EBC-23 | P1: Messaging contract classification | Phase 4 (T14, T15) | Implementing |
 | EBC-24 | P1: Messaging contract classification | Phase 4 (T13, T15) | Implementing |
 | EBC-25 | P1: Messaging contract classification | Phase 4 (T13) | Implementing |
 | EBC-26 | P1: Messaging contract classification | Phase 4 (T13) | Implementing |
@@ -284,7 +284,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | EBC-31 | P1: Composable classification stage | Phase 1 (T4) | Implementing |
 | EBC-32 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T17) | In Tasks |
 | EBC-33 | P1: Candidates, unresolved, and diagnostics | Phase 3 (T9) | Implementing |
-| EBC-34 | P1: Candidates, unresolved, and diagnostics | Phase 4 (T14) | In Tasks |
+| EBC-34 | P1: Candidates, unresolved, and diagnostics | Phase 4 (T14) | Implementing |
 | EBC-35 | P1: Candidates, unresolved, and diagnostics | Phase 2 (T8), Phase 5 (T16) | Implementing |
 | EBC-36 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T16) | In Tasks |
 | EBC-37 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T16, T19) | In Tasks |
