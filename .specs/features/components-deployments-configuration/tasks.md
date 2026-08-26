@@ -407,11 +407,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] The worker is listed by relative path alongside the existing four entries
-- [ ] `Acme.Broken` and `Acme.DoesNotExist` entries are unchanged, so the compile-failure and missing-project paths still have coverage
-- [ ] The solution loads and the existing suite still passes
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1211 pass; any count change is explained in the commit body
+- [x] The worker is listed by relative path alongside the existing four entries
+- [x] `Acme.Broken` and `Acme.DoesNotExist` entries are unchanged, so the compile-failure and missing-project paths still have coverage
+- [x] The solution loads and the existing suite still passes
+- [x] Gate check passes: build gate command
+- [x] Test count: 1211 pass; any count change is explained in the commit body
 
 **Tests**: none
 **Gate**: build

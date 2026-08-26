@@ -56,9 +56,10 @@ public sealed class InventoryFactsTests
 
         var facts = InventoryFacts.Create(solutionPath, listed, root);
 
-        Assert.Equal(3, facts.Projects.Length);
+        Assert.Equal(4, facts.Projects.Length);
         Assert.Contains(facts.Projects, project => project.Id.Equals(ProjectId.Create(facts.Solution.Id, "Acme.Orders/Acme.Orders.csproj")));
         Assert.Contains(facts.Projects, project => project.Id.Equals(ProjectId.Create(facts.Solution.Id, "Acme.Broken/Acme.Broken.csproj")));
+        Assert.Contains(facts.Projects, project => project.Id.Equals(ProjectId.Create(facts.Solution.Id, "Acme.Orders.Worker/Acme.Orders.Worker.csproj")));
         Assert.DoesNotContain(
             facts.Projects,
             project => project.Id.Value.Contains("Acme.DoesNotExist", StringComparison.Ordinal));
