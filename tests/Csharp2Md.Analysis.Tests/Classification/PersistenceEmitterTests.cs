@@ -451,6 +451,168 @@ public sealed class PersistenceEmitterTests
     }
 
     [Fact]
+    [Trait("Requirement", "PK-30")]
+    public void Emit_ConventionalCandidateObject_YieldsMapsToCandidateAndNoConfirmedRelation()
+    {
+        var pipeline = Arrange(withVariants: true);
+        var entity = AddNamedType(pipeline, "global::Acme.Orders.Data.OrderLine");
+        var evidence = Evidence(entity.Reference, ObservationKind.Invocation, ordinal: 1);
+        var model = Model(Store(
+            "OrdersDb",
+            Object(
+                "OrderLines",
+                MappingStateKind.ConventionalCandidate,
+                entityTypeFqn: "global::Acme.Orders.Data.OrderLine",
+                clrSymbol: entity.Reference,
+                evidence: evidence)));
+
+        var result = PersistenceEmitter.Emit(model, new ClassifierContext(pipeline));
+
+        var dataObject = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<DataObject>());
+        var candidate = Assert.Single(pipeline.Accumulator.ToSnapshot().Candidates);
+        Assert.Equal(RelationKind.MapsTo, candidate.Kind);
+        Assert.Equal(entity.Reference, candidate.Source);
+        Assert.Equal(dataObject.Reference, candidate.ProposedTarget);
+        Assert.Equal(evidence, candidate.DerivedFrom);
+        Assert.DoesNotContain(
+            pipeline.Accumulator.ToSnapshot().ConfirmedRelations,
+            relation => relation.Kind is RelationKind.MapsTo);
+        Assert.Equal(1, result.CandidateCount);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-30")]
+    public void Emit_ConventionalCandidateField_YieldsMapsToCandidateAndNoConfirmedRelation()
+    {
+        var pipeline = Arrange(withVariants: true);
+        var property = AddProperty(pipeline, "global::Acme.Orders.Data.Order", "Id");
+        var evidence = Evidence(property.Reference, ObservationKind.Invocation, ordinal: 1);
+        var model = Model(Store(
+            "OrdersDb",
+            Object(
+                "order_headers",
+                MappingStateKind.ExplicitConfirmation,
+                fields: [Field("Id", MappingStateKind.ConventionalCandidate, property.Reference, evidence)])));
+
+        PersistenceEmitter.Emit(model, new ClassifierContext(pipeline));
+
+        var field = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<DataField>());
+        var candidate = Assert.Single(
+            pipeline.Accumulator.ToSnapshot().Candidates,
+            link => link.ProposedTarget.Equals(field.Reference));
+        Assert.Equal(RelationKind.MapsTo, candidate.Kind);
+        Assert.Equal(property.Reference, candidate.Source);
+        Assert.Equal(evidence, candidate.DerivedFrom);
+        Assert.DoesNotContain(
+            pipeline.Accumulator.ToSnapshot().ConfirmedRelations,
+            relation => relation.Kind is RelationKind.MapsTo && relation.Target.Equals(field.Reference));
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-28")]
+    [Trait("Requirement", "PK-30")]
+    public void Emit_ExplicitConfirmationObject_DoesNotAlsoEmitAMapsToCandidate()
+    {
+        var pipeline = Arrange(withVariants: true);
+        var entity = AddNamedType(pipeline, "global::Acme.Orders.Data.Order");
+        var model = Model(Store(
+            "OrdersDb",
+            Object(
+                "order_headers",
+                MappingStateKind.ExplicitConfirmation,
+                clrSymbol: entity.Reference)));
+
+        PersistenceEmitter.Emit(model, new ClassifierContext(pipeline));
+
+        Assert.Contains(
+            pipeline.Accumulator.ToSnapshot().ConfirmedRelations,
+            relation => relation.Kind is RelationKind.MapsTo);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Candidates);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-39")]
+    [Trait("Requirement", "PK-40")]
+    public void Emit_UnresolvedNodes_BecomeUnresolvedRecordsWithCauseAndEvidence()
+    {
+        var pipeline = Arrange();
+        var interpolated = AddCallable(pipeline, "SelectAllFrom");
+        var refused = AddCallable(pipeline, "MergeOrders");
+        var interpolatedEvidence = Evidence(interpolated.Reference, ObservationKind.DataAccess, 1);
+        var refusedEvidence = Evidence(refused.Reference, ObservationKind.DataAccess, 1);
+        var model = new PersistenceModel(
+            [Store("OrdersDb")],
+            [
+                new UnresolvedNode(
+                    RelationKind.OperatesOn,
+                    interpolated.Reference,
+                    UnresolvedCause.InsufficientEvidence,
+                    interpolatedEvidence),
+                new UnresolvedNode(
+                    RelationKind.AccessesData,
+                    refused.Reference,
+                    UnresolvedCause.NoCandidateFound,
+                    refusedEvidence),
+            ],
+            new CoverageCounts(2, 0, [interpolated.Reference.Id.Value, refused.Reference.Id.Value]));
+
+        var result = PersistenceEmitter.Emit(model, new ClassifierContext(pipeline));
+
+        var unresolved = pipeline.Accumulator.ToSnapshot().Unresolved
+            .OrderBy(record => record.Source.Id.Value, StringComparer.Ordinal)
+            .ToArray();
+        Assert.Equal(2, result.UnresolvedCount);
+        var operatesOn = Assert.Single(unresolved, record => record.Kind is RelationKind.OperatesOn);
+        Assert.Equal(UnresolvedCause.InsufficientEvidence, operatesOn.Cause);
+        Assert.Equal(interpolated.Reference, operatesOn.Source);
+        Assert.Equal(interpolatedEvidence, operatesOn.Available);
+        var accessesData = Assert.Single(unresolved, record => record.Kind is RelationKind.AccessesData);
+        Assert.Equal(UnresolvedCause.NoCandidateFound, accessesData.Cause);
+        Assert.Equal(refused.Reference, accessesData.Source);
+        Assert.Equal(refusedEvidence, accessesData.Available);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-51")]
+    [Trait("Requirement", "PK-52")]
+    [Trait("Requirement", "PK-53")]
+    public void Emit_CoverageDiagnostic_NamesCountsAndUnresolvedOwnersWithoutPercentageOrVerdict()
+    {
+        var pipeline = Arrange();
+        var owner = AddCallable(pipeline, "SelectAllFrom");
+        var storeName = "OrdersDb";
+        var model = new PersistenceModel(
+            [Store(storeName)],
+            [
+                new UnresolvedNode(
+                    RelationKind.OperatesOn,
+                    owner.Reference,
+                    UnresolvedCause.InsufficientEvidence,
+                    Evidence(owner.Reference, ObservationKind.DataAccess, 1)),
+            ],
+            new CoverageCounts(3, 2, [owner.Reference.Id.Value]));
+
+        PersistenceEmitter.Emit(model, new ClassifierContext(pipeline));
+
+        var store = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<DataStore>());
+        var diagnostic = Assert.Single(
+            pipeline.Accumulator.ToSnapshot().Diagnostics,
+            record => record.Code == "persistence-coverage");
+        Assert.Equal(store.Reference.Id.Value, diagnostic.IdentityOrKey);
+        Assert.NotNull(diagnostic.IdentityOrKey);
+        Assert.DoesNotContain('\\', diagnostic.IdentityOrKey);
+        Assert.DoesNotContain('/', diagnostic.IdentityOrKey);
+        Assert.Contains("3", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("2", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains(owner.Reference.Id.Value, diagnostic.Message, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"\b\d+(\.\d+)?\s*%", diagnostic.Message);
+        Assert.DoesNotContain("percent", diagnostic.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotMatch(@"(?i)\b(pass|fail|passed|failed|verdict)\b", diagnostic.Message);
+        Assert.Contains("Recognized data-access occurrences", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("resolved to operation and target", diagnostic.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Trait("Requirement", "PK-27")]
     public void Emit_ObjectWithNoFields_EmitsNoDataFields()
     {

@@ -294,7 +294,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | PK-27 | P1: Data field classification and mapping | - | Pending |
 | PK-28 | P1: Data field classification and mapping | Phase 5 (T20) | Implementing |
 | PK-29 | P1: Data field classification and mapping | Phase 5 (T20) | Implementing |
-| PK-30 | P1: Data field classification and mapping | - | Pending |
+| PK-30 | P1: Data field classification and mapping | Phase 5 (T21) | Implementing |
 | PK-31 | P1: Data operations and access relations | Phase 5 (T19) | Implementing |
 | PK-32 | P1: Data operations and access relations | Phase 5 (T20) | Implementing |
 | PK-33 | P1: Data operations and access relations | Phase 5 (T20) | Implementing |

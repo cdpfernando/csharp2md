@@ -730,14 +730,14 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] A `ConventionalCandidate` object or field yields a `CandidateLink` of kind `maps-to` and no confirmed relation (PK-30)
-- [ ] Every `UnresolvedNode` becomes an `UnresolvedRecord` with its cause and available evidence
-- [ ] One `DiagnosticRecord` carries the recognized and resolved counts (PK-51) and the unresolved owners' ids (PK-52)
-- [ ] The diagnostic message contains no percentage and no pass/fail verdict (PK-53)
-- [ ] The diagnostic's `identityOrKey` is a fact id, never an absolute path
-- [ ] Unit tests assert candidate/confirmed exclusivity and the diagnostic's content
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + tests added so far pass (no silent deletions)
+- [x] A `ConventionalCandidate` object or field yields a `CandidateLink` of kind `maps-to` and no confirmed relation (PK-30)
+- [x] Every `UnresolvedNode` becomes an `UnresolvedRecord` with its cause and available evidence
+- [x] One `DiagnosticRecord` carries the recognized and resolved counts (PK-51) and the unresolved owners' ids (PK-52)
+- [x] The diagnostic message contains no percentage and no pass/fail verdict (PK-53)
+- [x] The diagnostic's `identityOrKey` is a fact id, never an absolute path
+- [x] Unit tests assert candidate/confirmed exclusivity and the diagnostic's content
+- [x] Gate check passes: full gate command
+- [x] Test count: 1138 pass — Domain 545, Analysis 402, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
@@ -73,7 +74,10 @@ internal static class PersistenceEmitter
         }
 
         var relationCount = EmitRelations(context, emitted);
-        return new ClassifierPassResult(factCount, relationCount, 0, 0);
+        var candidateCount = EmitCandidates(context, emitted);
+        var unresolvedCount = EmitUnresolved(context, model);
+        EmitCoverageDiagnostic(context, model, stores);
+        return new ClassifierPassResult(factCount, relationCount, candidateCount, unresolvedCount);
     }
 
     private static int EmitRelations(ClassifierContext context, List<EmittedObject> emitted)
@@ -207,6 +211,77 @@ internal static class PersistenceEmitter
                 context.AnalysisVariants,
                 EvidenceMethod.Configured));
         return 1;
+    }
+
+    private static int EmitCandidates(ClassifierContext context, List<EmittedObject> emitted)
+    {
+        var count = 0;
+        foreach (var item in emitted)
+        {
+            count += EmitCandidate(context, item.Node.MappingState, item.Node.ClrSymbol, item.Node.Evidence, item.Fact.Reference);
+            foreach (var (fieldNode, fieldFact) in item.Fields)
+            {
+                count += EmitCandidate(
+                    context,
+                    fieldNode.MappingState,
+                    fieldNode.ClrSymbol,
+                    fieldNode.Evidence,
+                    fieldFact.Reference);
+            }
+        }
+
+        return count;
+    }
+
+    private static int EmitCandidate(
+        ClassifierContext context,
+        MappingStateKind mappingState,
+        FactReference? clrSymbol,
+        EvidenceChain evidence,
+        FactReference target)
+    {
+        if (mappingState is not MappingStateKind.ConventionalCandidate || clrSymbol is null)
+        {
+            return 0;
+        }
+
+        context.Accumulator.AddCandidate(
+            CandidateLink.Create(RelationKind.MapsTo, clrSymbol.Value, target, evidence));
+        return 1;
+    }
+
+    private static int EmitUnresolved(ClassifierContext context, PersistenceModel model)
+    {
+        var count = 0;
+        foreach (var node in model.Unresolved
+            .OrderBy(static record => record.Source.Id.Value, StringComparer.Ordinal)
+            .ThenBy(static record => record.Kind.ToString(), StringComparer.Ordinal)
+            .ThenBy(static record => record.Cause.ToString(), StringComparer.Ordinal))
+        {
+            context.Accumulator.AddUnresolved(
+                UnresolvedRecord.Create(node.Kind, node.Source, node.Cause, node.Available));
+            count++;
+        }
+
+        return count;
+    }
+
+    private static void EmitCoverageDiagnostic(
+        ClassifierContext context,
+        PersistenceModel model,
+        (StoreNode Node, DataStore Fact)[] stores)
+    {
+        var identityOrKey = stores.Length > 0
+            ? stores[0].Fact.Reference.Id.Value
+            : context.FactsByType<Solution>().SingleOrDefault()?.Reference.Id.Value;
+        var owners = string.Join(
+            ", ",
+            model.Coverage.UnresolvedOwnerIds.OrderBy(static id => id, StringComparer.Ordinal));
+        var message =
+            $"Recognized data-access occurrences: {model.Coverage.RecognizedOccurrences}; " +
+            $"resolved to operation and target: {model.Coverage.ResolvedOccurrences}; " +
+            $"unresolved owners: {owners}";
+        context.Accumulator.AddDiagnostic(new DiagnosticRecord("persistence-coverage", message, identityOrKey));
     }
 
     private static DataStore CreateStore(StoreNode node) =>
