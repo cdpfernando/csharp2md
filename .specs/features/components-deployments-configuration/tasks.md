@@ -1350,13 +1350,13 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Every count assertion shifted by the two new `Main` methods, the worker project and the second configuration file is updated to the exact new value, never widened to a range or a `> 0`
-- [ ] `BoundaryIntegrationTests`' three-candidate `targets` assertion becomes two candidates plus one confirmed relation
-- [ ] Any sibling test file needing the same reconciliation is updated in this task and named in the commit body
-- [ ] No test is skipped, weakened or deleted; the commit body explains every count change
-- [ ] The full suite is green
-- [ ] Gate check passes: build gate command
-- [ ] Test count reported and reconciled against the baseline; no silent deletions
+- [x] Every count assertion shifted by the two new `Main` methods, the worker project and the second configuration file is updated to the exact new value, never widened to a range or a `> 0`
+- [x] `BoundaryIntegrationTests`' three-candidate `targets` assertion becomes two candidates plus one confirmed relation
+- [x] Any sibling test file needing the same reconciliation is updated in this task and named in the commit body
+- [x] No test is skipped, weakened or deleted; the commit body explains every count change
+- [x] The full suite is green
+- [x] Gate check passes: build gate command
+- [x] Test count reported and reconciled against the baseline; no silent deletions
 
 **Tests**: integration
 **Gate**: build

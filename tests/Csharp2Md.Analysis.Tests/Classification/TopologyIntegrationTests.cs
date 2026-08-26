@@ -60,6 +60,11 @@ public sealed class TopologyIntegrationTests
             binding => binding.BoundFact.Id == ordersComponent.Identity.Id
                 && binding.ConfigurationKey.Value == "Services:PaymentService"
                 && binding.ConfigurationKey.Role == "ConfigurationKey");
+        Assert.Contains(
+            configuration.ConfigurationBindings,
+            binding => binding.BoundFact.Id == ordersComponent.Identity.Id
+                && binding.ConfigurationKey.Value == "Services:CatalogService"
+                && binding.ConfigurationKey.Role == "ConfigurationKey");
 
         var configuredBy = ReadOptionalRelations(publication, "relations/confirmed/configured-by.json");
         var ordersDbBinding = Assert.Single(
@@ -135,14 +140,22 @@ public sealed class TopologyIntegrationTests
             frontier => frontier.Cause == "FurtherContinuationObserved"
                 && notificationCandidate.DerivedFrom.Any(identity =>
                     identity.Owner.Id == frontier.Occurrence.Owner.Id
+                    && identity.Kind == frontier.Occurrence.Kind
                     && identity.OccurrenceOrdinal == frontier.Occurrence.OccurrenceOrdinal));
 
-        Assert.Contains(
+        var shippingCandidate = Assert.Single(
+            candidates,
+            link => link.Kind == "targets" && link.Source.Id == shippingOperation.Identity.Id);
+        Assert.DoesNotContain(
             confirmedTargets,
             relation => relation.Kind == "targets" && relation.Source.Id == shippingOperation.Identity.Id);
         Assert.DoesNotContain(
-            candidates,
-            link => link.Kind == "targets" && link.Source.Id == shippingOperation.Identity.Id);
+            frontiers,
+            frontier => frontier.Cause == "FurtherContinuationObserved"
+                && shippingCandidate.DerivedFrom.Any(identity =>
+                    identity.Owner.Id == frontier.Occurrence.Owner.Id
+                    && identity.Kind == frontier.Occurrence.Kind
+                    && identity.OccurrenceOrdinal == frontier.Occurrence.OccurrenceOrdinal));
 
         var diagnostics = CanonicalJson.Read<DiagnosticsEnvelope>(
             Assert.Single(

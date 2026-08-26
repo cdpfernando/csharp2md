@@ -18,6 +18,8 @@ public sealed class BoundaryIntegrationTests
     [Trait("Requirement", "EBC-18")]
     [Trait("Requirement", "EBC-20")]
     [Trait("Requirement", "EBC-33")]
+    [Trait("Requirement", "CDC-49")]
+    [Trait("Requirement", "CDC-55")]
     public async Task AnalyzeAsync_AcmeOrders_PromotesHttpAndMessagingBoundaries()
     {
         var solutionPath = Path.Combine(
@@ -88,16 +90,36 @@ public sealed class BoundaryIntegrationTests
                 && operation.ProtocolOperationKey is not null
                 && operation.ProtocolOperationKey.Value.Contains("OrderPlaced", StringComparison.Ordinal));
 
+        var paymentOperation = Assert.Single(
+            architecture.BoundaryOperations,
+            operation => operation.Symbol.Id.Contains("PlaceOrderAsync", StringComparison.Ordinal)
+                && operation.Direction == "outbound"
+                && operation.Protocol == "http"
+                && operation.DestinationScope == "PaymentService");
+        var notificationOperation = Assert.Single(
+            architecture.BoundaryOperations,
+            operation => operation.Symbol.Id.Contains("NotifyOrderPlacedAsync", StringComparison.Ordinal)
+                && operation.DestinationScope == "NotificationService");
+        var shippingOperation = Assert.Single(
+            architecture.BoundaryOperations,
+            operation => operation.Symbol.Id.Contains("RequestShippingAsync", StringComparison.Ordinal)
+                && operation.DestinationScope == "ShippingService");
+
         Assert.Contains(architecture.ExternalSystems, system => system.Name.Value == "PaymentService" && system.Name.Role == "ClientName");
         Assert.Contains(architecture.ExternalSystems, system => system.Name.Value == "NotificationService" && system.Name.Role == "ClientName");
         Assert.Contains(architecture.ExternalSystems, system => system.Name.Value == "ShippingService" && system.Name.Role == "ClientName");
 
-        Assert.Contains(candidates, link => link.Kind == "targets");
-        Assert.Equal(1, candidates.Count(link => link.Kind == "targets"));
+        var targetCandidates = candidates.Where(link => link.Kind == "targets").ToArray();
+        Assert.Equal(2, targetCandidates.Length);
+        Assert.Contains(targetCandidates, link => link.Source.Id == notificationOperation.Identity.Id);
+        Assert.Contains(targetCandidates, link => link.Source.Id == shippingOperation.Identity.Id);
+        Assert.DoesNotContain(targetCandidates, link => link.Source.Id == paymentOperation.Identity.Id);
+
         var confirmedTargetsFragment = Assert.Single(
             publication.ArtifactsInPublicationOrder,
             artifact => artifact.CanonicalKey == "relations/confirmed/targets.json");
         var confirmedTargets = CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(confirmedTargetsFragment.Payload.AsSpan());
-        Assert.Contains(confirmedTargets, relation => relation.Kind == "targets");
+        var confirmedTarget = Assert.Single(confirmedTargets, relation => relation.Kind == "targets");
+        Assert.Equal(paymentOperation.Identity.Id, confirmedTarget.Source.Id);
     }
 }
