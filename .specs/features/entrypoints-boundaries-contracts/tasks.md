@@ -309,12 +309,12 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Creates inbound HTTP `BoundaryOperation` with protocol `http`, direction `inbound`
-- [ ] `protocolOperationKey` carries the route template from `RouteDeclaration`
-- [ ] Skips controller actions with no `RouteDeclaration` (already diagnosed by `EntryPointPass`)
-- [ ] Classifier identity: `csharp2md.classifier.http-inbound` version 1
-- [ ] Unit tests with synthetic observations
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Creates inbound HTTP `BoundaryOperation` with protocol `http`, direction `inbound`
+- [x] `protocolOperationKey` carries the route template from `RouteDeclaration`
+- [x] Skips controller actions with no `RouteDeclaration` (already diagnosed by `EntryPointPass`)
+- [x] Classifier identity: `csharp2md.classifier.http-inbound` version 1
+- [x] Unit tests with synthetic observations
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: unit
 **Gate**: full
