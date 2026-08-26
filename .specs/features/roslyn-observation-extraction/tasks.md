@@ -1326,11 +1326,11 @@ inventoried declared symbol.
 
 **Done when**:
 
-- [ ] Fixture yields at least one of each of the five kinds (AttributeUsage may wait on T45's `[HttpGet]`)
-- [ ] `OrdersController : ControllerBase` is a `BaseType` observation
-- [ ] Payloads contain only `StructuralLiteral` values (here: none)
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Fixture yields at least one of each of the five kinds (AttributeUsage may wait on T45's `[HttpGet]`)
+- [x] `OrdersController : ControllerBase` is a `BaseType` observation
+- [x] Payloads contain only `StructuralLiteral` values (here: none)
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

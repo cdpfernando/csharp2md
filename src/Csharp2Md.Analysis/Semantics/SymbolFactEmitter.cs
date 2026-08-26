@@ -137,24 +137,31 @@ internal static class SymbolFactEmitter
         _ => null,
     };
 
-    private static Symbol? TryCreate(ISymbol symbol, DomainProjectId projectId, string metadataName)
+    internal static CanonicalSymbolSignature? TrySignature(ISymbol symbol, string? metadataName = null)
     {
+        ArgumentNullException.ThrowIfNull(symbol);
+        var name = metadataName ?? symbol.MetadataName;
         if (symbol.Kind is not (SymbolKind.NamedType or SymbolKind.Method or SymbolKind.Property
             or SymbolKind.Field or SymbolKind.Event)
-            || string.IsNullOrWhiteSpace(metadataName))
+            || string.IsNullOrWhiteSpace(name))
         {
             return null;
         }
 
-        var signature = CanonicalSymbolSignature.Create(
+        return CanonicalSymbolSignature.Create(
             symbol.Kind.ToString().ToLowerInvariant(),
             Container(symbol),
-            metadataName,
+            name,
             Arity(symbol),
             TypeDisplay(symbol),
             Parameters(symbol),
             TypeArguments(symbol));
-        return Symbol.Create(signature, projectId, Facets(symbol));
+    }
+
+    private static Symbol? TryCreate(ISymbol symbol, DomainProjectId projectId, string metadataName)
+    {
+        var signature = TrySignature(symbol, metadataName);
+        return signature is null ? null : Symbol.Create(signature.Value, projectId, Facets(symbol));
     }
 
     private static SymbolFacetSet Facets(ISymbol symbol) =>
