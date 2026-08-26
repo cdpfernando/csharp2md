@@ -82,7 +82,8 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
         var batches = ImmutableArray.CreateBuilder<ImmutableArray<ObservationDraft>>();
         foreach (var compilation in bound.Compilations)
         {
-                IRegisteredContextDetector[] detectors = [new AssignmentDetector(), new ConfigurationDetector()];
+                IRegisteredContextDetector[] detectors =
+                    [new AssignmentDetector(), new ConfigurationDetector(), new RouteDeclarationDetector()];
             var trees = compilation.SyntaxTrees.ToArray();
             var batch = ImmutableArray.CreateBuilder<ObservationDraft>();
             foreach (var tree in trees)
@@ -179,6 +180,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
     public override void VisitAttribute(AttributeSyntax node)
     {
         TryEmitBindable(node, ObservationKind.AttributeUsage);
+        TryEmitRegistered(node);
         base.VisitAttribute(node);
     }
 

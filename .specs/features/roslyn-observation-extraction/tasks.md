@@ -1591,10 +1591,10 @@ present.
 
 **Done when**:
 
-- [ ] Fixture `[HttpGet("orders/{id}")]` is a `RouteDeclaration` whose payload contains `orders/{id}`
-- [ ] The same attribute is also an `AttributeUsage` from T39
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Fixture `[HttpGet("orders/{id}")]` is a `RouteDeclaration` whose payload contains `orders/{id}`
+- [x] The same attribute is also an `AttributeUsage` from T39
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
