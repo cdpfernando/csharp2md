@@ -1413,10 +1413,10 @@ omit the value and `AddSuspectedSecret` with document, span, whole-document hash
 
 **Done when**:
 
-- [ ] A constructed occurrence whose literal is `Password=secret` never places `secret` on the observation
-- [ ] Accumulator contains one `SuspectedSecretEvidence` whose excerpt is masked
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] A constructed occurrence whose literal is `Password=secret` never places `secret` on the observation
+- [x] Accumulator contains one `SuspectedSecretEvidence` whose excerpt is masked
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

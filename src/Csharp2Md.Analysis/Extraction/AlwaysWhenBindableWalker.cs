@@ -115,7 +115,9 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
 
     internal static void ExtractInto(PipelineContext context, CancellationToken cancellationToken)
     {
-        foreach (var observation in OccurrenceOrdinalAssigner.Assign(Collect(context, cancellationToken)))
+        var drafts = Collect(context, cancellationToken)
+            .Select(draft => ObservationMaterializer.Redact(draft, context.Accumulator));
+        foreach (var observation in OccurrenceOrdinalAssigner.Assign(drafts))
         {
             context.Accumulator.AddObservation(observation);
         }

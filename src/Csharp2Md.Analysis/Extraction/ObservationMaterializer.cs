@@ -1,3 +1,5 @@
+using Csharp2Md.Analysis.Pipeline;
+using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Observations;
 using Microsoft.CodeAnalysis;
@@ -36,4 +38,46 @@ internal static class ObservationMaterializer
             System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(absolutePath)));
         return DocumentHash.Create(digest);
     }
+
+    public static ObservationDraft Redact(ObservationDraft draft, SnapshotAccumulator accumulator)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+        ArgumentNullException.ThrowIfNull(accumulator);
+
+        var kept = new List<PayloadEntry>();
+        foreach (var entry in draft.Payload.Entries)
+        {
+            if (SecretRedactor.TryRedact(entry.Value.Value, out var excerpt))
+            {
+                Record(draft, excerpt, accumulator);
+                continue;
+            }
+
+            kept.Add(entry);
+        }
+
+        var diagnostic = draft.Diagnostic;
+        if (SecretRedactor.TryRedact(diagnostic.Message, out var diagnosticExcerpt))
+        {
+            Record(draft, diagnosticExcerpt, accumulator);
+            diagnostic = new BindingDiagnostic(diagnostic.Code, diagnosticExcerpt.Value);
+        }
+
+        return draft with
+        {
+            Payload = NormalizedPayload.Create(kept),
+            Diagnostic = diagnostic,
+        };
+    }
+
+    private static void Record(
+        ObservationDraft draft,
+        RedactedExcerpt excerpt,
+        SnapshotAccumulator accumulator) =>
+        accumulator.AddSuspectedSecret(
+            SuspectedSecretEvidence.Create(
+                draft.Locator.Document,
+                draft.Locator.Span,
+                draft.DocumentHash,
+                excerpt));
 }
