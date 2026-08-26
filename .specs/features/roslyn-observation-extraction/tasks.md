@@ -1619,10 +1619,10 @@ present.
 
 **Done when**:
 
-- [ ] `PublishAsync` on the fixture event bus is a `MessageOperation`
-- [ ] A bound `Find` / `Add` invocation is not a `MessageOperation`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `PublishAsync` on the fixture event bus is a `MessageOperation`
+- [x] A bound `Find` / `Add` invocation is not a `MessageOperation`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
