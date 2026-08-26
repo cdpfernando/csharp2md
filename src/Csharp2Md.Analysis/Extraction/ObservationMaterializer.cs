@@ -31,6 +31,47 @@ internal static class ObservationMaterializer
             span);
     }
 
+    public static EvidenceLocator CreateWholeDocumentLocator(DomainDocument document, string absolutePath)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentException.ThrowIfNullOrWhiteSpace(absolutePath);
+
+        return new EvidenceLocator(
+            DomainDocumentId.Create(document.Reference.Id.Value),
+            document.RelativePath,
+            WholeDocumentSpan(absolutePath));
+    }
+
+    private static SourceSpan WholeDocumentSpan(string absolutePath)
+    {
+        var text = File.ReadAllText(absolutePath);
+        if (text.Length == 0)
+        {
+            return new SourceSpan(1, 1, 1, 1);
+        }
+
+        var line = 1;
+        var column = 1;
+        var endLine = 1;
+        var endColumn = 1;
+        foreach (var ch in text)
+        {
+            endLine = line;
+            endColumn = column;
+            if (ch == '\n')
+            {
+                line++;
+                column = 1;
+            }
+            else if (ch != '\r')
+            {
+                column++;
+            }
+        }
+
+        return new SourceSpan(1, 1, endLine, endColumn);
+    }
+
     public static DocumentHash HashFileBytes(string absolutePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(absolutePath);

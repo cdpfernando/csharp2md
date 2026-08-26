@@ -548,16 +548,16 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `output-kind` is `application` for `ConsoleApplication` and `WindowsApplication`, `library` otherwise
-- [ ] Each in-solution `ProjectReference` yields one `project-reference` observation holding the referenced logical path
-- [ ] A reference to a project not analyzed in this solution yields an `unanalyzed-project-reference` diagnostic and no observation
-- [ ] A project with no compilation yields no observation and leaves existing diagnostics untouched
-- [ ] Ordinals are assigned across the project's whole metadata set — `output-kind` takes 1, references take 2..N over ordinal-sorted paths — so no two observations share an `owner:kind:ordinal` key
-- [ ] Every observation carries `EvidenceMethod.Configured` and locates to the project's own `.csproj` document
-- [ ] Analyzing under two target frameworks yields the same observation set as one
-- [ ] Unit tests cover each branch above, including the ordinal-collision guard
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] `output-kind` is `application` for `ConsoleApplication` and `WindowsApplication`, `library` otherwise
+- [x] Each in-solution `ProjectReference` yields one `project-reference` observation holding the referenced logical path
+- [x] A reference to a project not analyzed in this solution yields an `unanalyzed-project-reference` diagnostic and no observation
+- [x] A project with no compilation yields no observation and leaves existing diagnostics untouched
+- [x] Ordinals are assigned across the project's whole metadata set — `output-kind` takes 1, references take 2..N over ordinal-sorted paths — so no two observations share an `owner:kind:ordinal` key
+- [x] Every observation carries `EvidenceMethod.Configured` and locates to the project's own `.csproj` document
+- [x] Analyzing under two target frameworks yields the same observation set as one
+- [x] Unit tests cover each branch above, including the ordinal-collision guard
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: full
