@@ -136,6 +136,30 @@ public sealed class EntryPointPassTests
         Assert.Equal(1, EntryPointPass.Identity.Version);
     }
 
+    [Fact]
+    [Trait("Requirement", "CDC-14")]
+    public void Execute_ControllerActionInPrivatelyUsedLibrary_ResolvesApplicationComponent()
+    {
+        var pipeline = ArrangeOrders();
+        pipeline.Accumulator.AddFact(Project.Create(ContractsProject));
+        var controller = AddNamedType(pipeline, "OrdersController", "global::Acme.Shared.Contracts.Api", ContractsProject);
+        var action = AddMethod(pipeline, "GetOrderStatus", "global::Acme.Shared.Contracts.Api.OrdersController", ContractsProject);
+        AddBaseType(pipeline, controller.Reference);
+        pipeline.Accumulator.AddObservation(CreateObservation(action.Reference, ObservationKind.RouteDeclaration, ordinal: 1));
+        var component = Component.Create(AcmeSolution, "Acme.Orders/Acme.Orders.csproj", [controller.Reference, action.Reference]);
+        pipeline.Accumulator.AddFact(component);
+        var context = new ClassifierContext(pipeline);
+
+        var result = new EntryPointPass().Execute(context, CancellationToken.None);
+
+        var entry = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<EntryPoint>().ToArray());
+        Assert.Equal(1, result.FactCount);
+        Assert.Equal(action.Reference, entry.Symbol);
+        Assert.Equal(component.Reference, entry.OwningComponent);
+        Assert.Equal("Acme.Orders/Acme.Orders.csproj", component.Name);
+        Assert.NotEqual("Acme.Shared.Contracts/Acme.Shared.Contracts.csproj", component.Name);
+    }
+
     private static PipelineContext ArrangeOrders()
     {
         var pipeline = new PipelineContext(new SwallowingSession(), "alpha.sln");
@@ -149,6 +173,9 @@ public sealed class EntryPointPassTests
 
     private static ProjectId OrdersProject =>
         ProjectId.Create(AcmeSolution, "Acme.Orders/Acme.Orders.csproj");
+
+    private static ProjectId ContractsProject =>
+        ProjectId.Create(AcmeSolution, "Acme.Shared.Contracts/Acme.Shared.Contracts.csproj");
 
     private static Symbol AddNamedType(PipelineContext pipeline, string metadata, string container, ProjectId project)
     {

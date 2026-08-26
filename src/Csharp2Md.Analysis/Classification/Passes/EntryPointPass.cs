@@ -58,11 +58,6 @@ internal sealed class EntryPointPass : IClassifierPass
             }
         }
 
-        var componentsByPath = context.FactsByType<Component>()
-            .ToDictionary(static component => component.Name, StringComparer.Ordinal);
-        var projectsById = context.FactsByType<Project>()
-            .ToDictionary(static project => project.Id.Value, StringComparer.Ordinal);
-
         var factCount = 0;
         foreach (var method in methods.OrderBy(static method => method.Reference.Id.Value, StringComparer.Ordinal))
         {
@@ -79,9 +74,7 @@ internal sealed class EntryPointPass : IClassifierPass
                 continue;
             }
 
-            if (!projectsById.TryGetValue(method.OwningProject.Value, out var project)
-                || TryLogicalPath(project) is not { } path
-                || !componentsByPath.TryGetValue(path, out var component))
+            if (context.ComponentForSymbol(method.Reference) is not { } component)
             {
                 continue;
             }
@@ -161,21 +154,5 @@ internal sealed class EntryPointPass : IClassifierPass
         var end = identity.IndexOf(';', start);
         var encoded = end < 0 ? identity[start..] : identity[start..end];
         return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
-    }
-
-    private static string? TryLogicalPath(Project project)
-    {
-        const string marker = ";path=";
-        var id = project.Id.Value;
-        var start = id.IndexOf(marker, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += marker.Length;
-        var end = id.IndexOf(';', start);
-        var encoded = end < 0 ? id[start..] : id[start..end];
-        return string.IsNullOrWhiteSpace(encoded) ? null : Uri.UnescapeDataString(encoded);
     }
 }

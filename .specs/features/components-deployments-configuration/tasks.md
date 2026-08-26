@@ -824,11 +824,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] The `componentsByPath` dictionary and the local `TryLogicalPath` helper are removed
-- [ ] Entry points declared in a privately-used library still resolve their component
-- [ ] Every existing `EntryPointPassTests` assertion still holds, with a new test covering the private-use case
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] The `componentsByPath` dictionary and the local `TryLogicalPath` helper are removed
+- [x] Entry points declared in a privately-used library still resolve their component
+- [x] Every existing `EntryPointPassTests` assertion still holds, with a new test covering the private-use case
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions (Domain 549 + Analysis 533 = 1082 pass)
 
 **Tests**: unit
 **Gate**: full
