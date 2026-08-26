@@ -56,6 +56,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: BoundaryPass.cs:85 SPEC_DEVIATION EBC-06 (analysis-classification)
 - last seen: 2026-08-26T06:33:57Z
 
+### L-008 - When two spec IF-conditions collapse to one ledger payload shape, assert each remaining distinguishable shape's UnresolvedRecord kind and cause.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `analysis-classification` · harmful: 0
+- features: persistence-knowledge
+- evidence: PK-39/PK-40 PersistenceModelBuilder.cs:84 (analysis-classification)
+- last seen: 2026-08-26T16:56:36Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

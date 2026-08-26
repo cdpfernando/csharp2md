@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 8,
+  "next_id": 9,
   "lessons": [
     {
       "id": "L-001",
@@ -130,6 +130,24 @@
       ],
       "created": "2026-08-26T06:33:57Z",
       "last_seen": "2026-08-26T06:33:57Z"
+    },
+    {
+      "id": "L-008",
+      "key": "spec_precision_gap::when two spec if conditions collapse to one ledger payload shape assert each remaining distinguishable shape s unresolvedrecord kind and cause",
+      "text": "When two spec IF-conditions collapse to one ledger payload shape, assert each remaining distinguishable shape's UnresolvedRecord kind and cause.",
+      "signal": "spec_precision_gap",
+      "scope": "analysis-classification",
+      "status": "candidate",
+      "features": [
+        "persistence-knowledge"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "PK-39/PK-40 PersistenceModelBuilder.cs:84 (analysis-classification)"
+      ],
+      "created": "2026-08-26T16:56:36Z",
+      "last_seen": "2026-08-26T16:56:36Z"
     }
   ]
 }

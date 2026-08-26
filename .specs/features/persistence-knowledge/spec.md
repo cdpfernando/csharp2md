@@ -265,59 +265,59 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| PK-01 | P1: Persistence evidence reaches the ledger | - | Pending |
-| PK-02 | P1: Persistence evidence reaches the ledger | - | Pending |
-| PK-03 | P1: Persistence evidence reaches the ledger | - | Pending |
-| PK-04 | P1: Persistence evidence reaches the ledger | - | Pending |
-| PK-05 | P1: Persistence evidence reaches the ledger | - | Pending |
-| PK-06 | P1: Persistence evidence reaches the ledger | - | Pending |
-| PK-07 | P1: Persistence evidence reaches the ledger | - | Pending |
-| PK-08 | P1: Persistence evidence reaches the ledger | - | Pending |
-| PK-09 | P1: Persistence evidence reaches the ledger | - | Pending |
-| PK-10 | P1: Data store classification | - | Pending |
-| PK-11 | P1: Data store classification | - | Pending |
-| PK-12 | P1: Data store classification | - | Pending |
-| PK-13 | P1: Data store classification | - | Pending |
-| PK-14 | P1: Data object classification | Phase 5 (T19) | Implementing |
-| PK-15 | P1: Data object classification | - | Pending |
-| PK-16 | P1: Data object classification | - | Pending |
-| PK-17 | P1: Data object classification | - | Pending |
-| PK-18 | P1: Data object classification | Phase 5 (T19) | Implementing |
-| PK-19 | P1: Data object classification | - | Pending |
-| PK-20 | P1: Data object classification | Phase 6 (T23) | Implementing |
-| PK-21 | P1: Data object classification | - | Pending |
-| PK-22 | P1: Data field classification and mapping | Phase 5 (T19) | Implementing |
-| PK-23 | P1: Data field classification and mapping | - | Pending |
-| PK-24 | P1: Data field classification and mapping | - | Pending |
-| PK-25 | P1: Data field classification and mapping | - | Pending |
-| PK-26 | P1: Data field classification and mapping | - | Pending |
-| PK-27 | P1: Data field classification and mapping | - | Pending |
-| PK-28 | P1: Data field classification and mapping | Phase 5 (T20) | Implementing |
-| PK-29 | P1: Data field classification and mapping | Phase 5 (T20) | Implementing |
-| PK-30 | P1: Data field classification and mapping | Phase 5 (T21) | Implementing |
-| PK-31 | P1: Data operations and access relations | Phase 5 (T19) | Implementing |
-| PK-32 | P1: Data operations and access relations | Phase 5 (T20) | Implementing |
-| PK-33 | P1: Data operations and access relations | Phase 5 (T20) | Implementing |
-| PK-34 | P1: Data operations and access relations | Phase 5 (T20) | Implementing |
-| PK-35 | P1: Data operations and access relations | - | Pending |
-| PK-36 | P1: Data operations and access relations | - | Pending |
-| PK-37 | P1: Data operations and access relations | - | Pending |
-| PK-38 | P1: Data operations and access relations | Phase 6 (T23) | Implementing |
-| PK-39 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
-| PK-40 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
-| PK-41 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
-| PK-42 | P1: Unresolved evidence and negative cases | Phase 4 (T18), Phase 6 (T23) | Implementing |
-| PK-43 | P1: Unresolved evidence and negative cases | Phase 5 (T22) | Implementing |
-| PK-44 | P1: Unresolved evidence and negative cases | Phase 5 (T22) | Implementing |
-| PK-45 | P1: Determinism, security and invariants | Phase 6 (T24) | Implementing |
-| PK-46 | P1: Determinism, security and invariants | Phase 6 (T24, T26) | Implementing |
-| PK-47 | P1: Determinism, security and invariants | Phase 6 (T24) | Implementing |
-| PK-48 | P1: Determinism, security and invariants | Phase 6 (T25) | Implementing |
-| PK-49 | P1: Determinism, security and invariants | Phase 6 (T25) | Implementing |
-| PK-50 | P1: Determinism, security and invariants | Phase 6 (T25) | Implementing |
-| PK-51 | P2: Persistence run coverage | Phase 4 (T18), Phase 6 (T23) | Implementing |
-| PK-52 | P2: Persistence run coverage | Phase 4 (T18) | Implementing |
-| PK-53 | P2: Persistence run coverage | Phase 4 (T18) | Implementing |
+| PK-01 | P1: Persistence evidence reaches the ledger | - | Verified |
+| PK-02 | P1: Persistence evidence reaches the ledger | - | Verified |
+| PK-03 | P1: Persistence evidence reaches the ledger | - | Verified |
+| PK-04 | P1: Persistence evidence reaches the ledger | - | Verified |
+| PK-05 | P1: Persistence evidence reaches the ledger | - | Verified |
+| PK-06 | P1: Persistence evidence reaches the ledger | - | Verified |
+| PK-07 | P1: Persistence evidence reaches the ledger | - | Verified |
+| PK-08 | P1: Persistence evidence reaches the ledger | - | Verified |
+| PK-09 | P1: Persistence evidence reaches the ledger | - | Verified |
+| PK-10 | P1: Data store classification | - | Verified |
+| PK-11 | P1: Data store classification | - | Verified |
+| PK-12 | P1: Data store classification | - | Verified |
+| PK-13 | P1: Data store classification | - | Verified |
+| PK-14 | P1: Data object classification | Phase 5 (T19) | Verified |
+| PK-15 | P1: Data object classification | - | Verified |
+| PK-16 | P1: Data object classification | - | Verified |
+| PK-17 | P1: Data object classification | - | Verified |
+| PK-18 | P1: Data object classification | Phase 5 (T19) | Verified |
+| PK-19 | P1: Data object classification | - | Verified |
+| PK-20 | P1: Data object classification | Phase 6 (T23) | Verified |
+| PK-21 | P1: Data object classification | - | Verified |
+| PK-22 | P1: Data field classification and mapping | Phase 5 (T19) | Verified |
+| PK-23 | P1: Data field classification and mapping | - | Verified |
+| PK-24 | P1: Data field classification and mapping | - | Verified |
+| PK-25 | P1: Data field classification and mapping | - | Verified |
+| PK-26 | P1: Data field classification and mapping | - | Verified |
+| PK-27 | P1: Data field classification and mapping | - | Verified |
+| PK-28 | P1: Data field classification and mapping | Phase 5 (T20) | Verified |
+| PK-29 | P1: Data field classification and mapping | Phase 5 (T20) | Verified |
+| PK-30 | P1: Data field classification and mapping | Phase 5 (T21) | Verified |
+| PK-31 | P1: Data operations and access relations | Phase 5 (T19) | Verified |
+| PK-32 | P1: Data operations and access relations | Phase 5 (T20) | Verified |
+| PK-33 | P1: Data operations and access relations | Phase 5 (T20) | Verified |
+| PK-34 | P1: Data operations and access relations | Phase 5 (T20) | Verified |
+| PK-35 | P1: Data operations and access relations | - | Verified |
+| PK-36 | P1: Data operations and access relations | - | Verified |
+| PK-37 | P1: Data operations and access relations | - | Verified |
+| PK-38 | P1: Data operations and access relations | Phase 6 (T23) | Verified |
+| PK-39 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Verified |
+| PK-40 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Verified |
+| PK-41 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Verified |
+| PK-42 | P1: Unresolved evidence and negative cases | Phase 4 (T18), Phase 6 (T23) | Verified |
+| PK-43 | P1: Unresolved evidence and negative cases | Phase 5 (T22) | Verified |
+| PK-44 | P1: Unresolved evidence and negative cases | Phase 5 (T22) | Verified |
+| PK-45 | P1: Determinism, security and invariants | Phase 6 (T24) | Verified |
+| PK-46 | P1: Determinism, security and invariants | Phase 6 (T24, T26) | Verified |
+| PK-47 | P1: Determinism, security and invariants | Phase 6 (T24) | Verified |
+| PK-48 | P1: Determinism, security and invariants | Phase 6 (T25) | Verified |
+| PK-49 | P1: Determinism, security and invariants | Phase 6 (T25) | Verified |
+| PK-50 | P1: Determinism, security and invariants | Phase 6 (T25) | Verified |
+| PK-51 | P2: Persistence run coverage | Phase 4 (T18), Phase 6 (T23) | Verified |
+| PK-52 | P2: Persistence run coverage | Phase 4 (T18) | Verified |
+| PK-53 | P2: Persistence run coverage | Phase 4 (T18) | Verified |
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
