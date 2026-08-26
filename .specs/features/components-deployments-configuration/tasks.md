@@ -908,12 +908,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Only observations owned by a `Document` fact are read; project-owned and symbol-owned ones are ignored
-- [ ] Two documents declaring the same key produce two entries and one binding identity, with no merge or override
-- [ ] A document whose project maps to no component is skipped with a diagnostic rather than binding to nothing
-- [ ] Unit tests cover the single-file, two-file and no-component cases against a hand-built ledger
-- [ ] Gate check passes: quick gate command
-- [ ] Test count reported; no silent deletions
+- [x] Only observations owned by a `Document` fact are read; project-owned and symbol-owned ones are ignored
+- [x] Two documents declaring the same key produce two entries and one binding identity, with no merge or override
+- [x] A document whose project maps to no component is skipped with a diagnostic rather than binding to nothing
+- [x] Unit tests cover the single-file, two-file and no-component cases against a hand-built ledger
+- [x] Gate check passes: quick gate command
+- [x] Test count reported; no silent deletions (Analysis 548 pass)
 
 **Tests**: unit
 **Gate**: quick
