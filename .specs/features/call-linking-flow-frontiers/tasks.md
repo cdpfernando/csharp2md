@@ -137,15 +137,15 @@ T8 → T9 → T10
 - Skill: NONE
 
 **Done when**:
-- [ ] `TryEmitBindable` emits `"bound::<sig>"` in `Diagnostic.Message` for bound `Invocation`/`ObjectCreation` when target is an `IMethodSymbol` and `TrySignature` returns non-null
-- [ ] Non-method-target bound invocations (e.g., delegate calls, property invocations resolved as non-method) keep `Diagnostic.Message == "bound"` (Code unchanged in all cases)
-- [ ] Unbound invocations keep `Diagnostic.Message == "unbound"`; Code == "unbound"
-- [ ] `TryExtractTargetSignature(string message)` helper returns the signature string or `null`; unit-tested
-- [ ] `ObservationIdentity` is unchanged (payload still empty for Invocation/ObjectCreation — verified by existing ROSE-32/45 tests still passing)
-- [ ] Existing WS4 test `ExtractInto_AcmeOrders_YieldsEachAlwaysWhenBindableKindWithEmptyPayload` still passes (payload stays empty)
-- [ ] New tests: `Invocation_BoundToMethod_DiagnosticMessageContainsSignature`, `Invocation_BoundToNonMethod_DiagnosticMessageIsPlainBound`, `Invocation_Unbound_DiagnosticMessageIsUnbound`, `TryExtractTargetSignature_BoundSignatureMessage_ReturnsSignature`, `TryExtractTargetSignature_PlainBound_ReturnsNull`
-- [ ] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
-- [ ] Test count: ≥ 5 new tests; 0 existing tests deleted or weakened
+- [x] `TryEmitBindable` emits `"bound::<sig>"` in `Diagnostic.Message` for bound `Invocation`/`ObjectCreation` when target is an `IMethodSymbol` and `TrySignature` returns non-null
+- [x] Non-method-target bound invocations (e.g., delegate calls, property invocations resolved as non-method) keep `Diagnostic.Message == "bound"` (Code unchanged in all cases)
+- [x] Unbound invocations keep `Diagnostic.Message == "unbound"`; Code == "unbound"
+- [x] `TryExtractTargetSignature(string message)` helper returns the signature string or `null`; unit-tested
+- [x] `ObservationIdentity` is unchanged (payload still empty for Invocation/ObjectCreation — verified by existing ROSE-32/45 tests still passing)
+- [x] Existing WS4 test `ExtractInto_AcmeOrders_YieldsEachAlwaysWhenBindableKindWithEmptyPayload` still passes (payload stays empty)
+- [x] New tests: `Invocation_BoundToMethod_DiagnosticMessageContainsSignature`, `Invocation_BoundToNonMethod_DiagnosticMessageIsPlainBound`, `Invocation_Unbound_DiagnosticMessageIsUnbound`, `TryExtractTargetSignature_BoundSignatureMessage_ReturnsSignature`, `TryExtractTargetSignature_PlainBound_ReturnsNull`
+- [x] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
+- [x] Test count: ≥ 5 new tests; 0 existing tests deleted or weakened
 
 **Tests**: unit
 **Gate**: quick (Analysis)
