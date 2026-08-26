@@ -1746,10 +1746,10 @@ Observation Extraction stay non-zero on the fixture.
 
 **Done when**:
 
-- [ ] The four later stubs are each 0/0/0 on the fixture default engine
-- [ ] The three filled stages each have a non-zero count in at least one of the three metrics
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] The four later stubs are each 0/0/0 on the fixture default engine
+- [x] The three filled stages each have a non-zero count in at least one of the three metrics
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

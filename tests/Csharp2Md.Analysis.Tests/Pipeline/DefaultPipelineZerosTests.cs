@@ -11,6 +11,7 @@ public sealed class DefaultPipelineZerosTests
     [Fact]
     [Trait("Requirement", "ROSE-13")]
     [Trait("Requirement", "ROSE-59")]
+    [Trait("Requirement", "ROSE-60")]
     [Trait("Requirement", "ENG-15")]
     public async Task AnalyzeAsync_DefaultPipeline_InventorySemanticAndExtractionAreNonZeroAndLaterStubsStayZero()
     {
@@ -51,13 +52,20 @@ public sealed class DefaultPipelineZerosTests
         Assert.True(extraction.ObservationCount > 0, $"Observation Extraction observation count was {extraction.ObservationCount}.");
         Assert.True(extraction.RelationCount > 0, $"Observation Extraction relation count was {extraction.RelationCount}.");
 
-        for (var index = 3; index < StubStages.DeclaredNames.Length; index++)
-        {
-            var report = outcome.Stages[index];
-            Assert.Equal(StubStages.DeclaredNames[index], report.Name);
-            Assert.Equal(0, report.FactCount);
-            Assert.Equal(0, report.ObservationCount);
-            Assert.Equal(0, report.RelationCount);
-        }
+        var persistence = outcome.Stages[5];
+        Assert.Equal("Persistence", persistence.Name);
+
+        AssertZeroProduction(outcome.Stages[3], "Classification and Promotion");
+        AssertZeroProduction(outcome.Stages[4], "Validation and Coverage");
+        AssertZeroProduction(outcome.Stages[6], "Retrieval Projection");
+        AssertZeroProduction(outcome.Stages[7], "Batch Composition");
+    }
+
+    private static void AssertZeroProduction(StageReport report, string name)
+    {
+        Assert.Equal(name, report.Name);
+        Assert.Equal(0, report.FactCount);
+        Assert.Equal(0, report.ObservationCount);
+        Assert.Equal(0, report.RelationCount);
     }
 }
