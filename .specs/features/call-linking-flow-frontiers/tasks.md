@@ -23,7 +23,7 @@ Verify before starting Execute.
 
 **Spec**: `.specs/features/call-linking-flow-frontiers/spec.md`
 **Design**: `.specs/features/call-linking-flow-frontiers/design.md`
-**Status**: Execute complete (T1–T10) — Verifier FAIL (CLLF-19 uncovered); fix iteration 1 in progress (CLLF-19 empty-diagnostics asserts)
+**Status**: Execute complete (T1–T10) — Verifier PASS (fix iteration 1 `9dc2713` closed CLLF-19). Merged to `master` in PR #11.
 
 ---
 

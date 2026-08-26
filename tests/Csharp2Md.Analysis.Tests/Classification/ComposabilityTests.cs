@@ -48,7 +48,7 @@ public sealed class ComposabilityTests
         var composed = await AnalyzeAsync(solutionPath, stages);
 
         Assert.Equal(
-            ["Components", "Entry points", "Boundaries", "Contracts", "Persistence", "Relations", CountingClassifierPass.PassName],
+            ["Components", "Entry points", "Boundaries", "Contracts", "Persistence", "Relations", "Invokes", "Executes", CountingClassifierPass.PassName],
             order);
         Assert.Equal(baseline.Outcome.Stages[3].FactCount + 1, composed.Outcome.Stages[3].FactCount);
         Assert.Equal(baseline.Outcome.Stages[3].RelationCount, composed.Outcome.Stages[3].RelationCount);
