@@ -56,4 +56,30 @@ public sealed class SymbolFacetsTests
         Assert.Contains(nameof(SymbolFacet), exception.Message, StringComparison.Ordinal);
         Assert.Equal(undefined, exception.ActualValue);
     }
+
+    [Fact]
+    [Trait("Requirement", "TAX-13")]
+    public void SymbolFacet_HasAbstractAsAValue()
+    {
+        Assert.True(Enum.IsDefined(SymbolFacet.Abstract));
+        Assert.Contains("Abstract", Enum.GetNames<SymbolFacet>());
+    }
+
+    [Fact]
+    [Trait("Requirement", "TAX-13")]
+    public void Create_AbstractFacet_IsAcceptedAndPresentInTheSet()
+    {
+        var set = SymbolFacetSet.Create([SymbolFacet.Abstract]);
+
+        Assert.Equal(new[] { SymbolFacet.Abstract }, set.Facets.ToArray());
+    }
+
+    [Fact]
+    [Trait("Requirement", "TAX-13")]
+    public void Create_AbstractTogetherWithCallable_ProducesOrderedDistinctSet()
+    {
+        var set = SymbolFacetSet.Create([SymbolFacet.Callable, SymbolFacet.Abstract, SymbolFacet.Callable]);
+
+        Assert.Equal(new[] { SymbolFacet.Callable, SymbolFacet.Abstract }, set.Facets.ToArray());
+    }
 }

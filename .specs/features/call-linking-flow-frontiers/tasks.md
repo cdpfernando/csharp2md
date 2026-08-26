@@ -109,13 +109,13 @@ T8 → T9 → T10
 - Skill: `dotnet-skills:csharp-coding-standards`
 
 **Done when**:
-- [ ] `SymbolFacet.Abstract` value defined in enum
-- [ ] `SymbolFactEmitter.Facets` emits `Abstract` when `symbol is IMethodSymbol { IsAbstract: true }` OR containing type `TypeKind == TypeKind.Interface`
-- [ ] `SymbolFacetSet` accepts the new value without throwing
-- [ ] Domain bijection test (existing `TaxonomyTablesAdditivityTests` or equivalent) covers the new facet value
-- [ ] `dotnet test tests/Csharp2Md.Domain.Tests --filter "Category!=LocalCorpus"` passes
-- [ ] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes (no regression)
-- [ ] Test count: ≥ 3 new tests in `tests/Csharp2Md.Domain.Tests/Facets/` covering: enum presence, `SymbolFacetSet` accepts it, `SymbolFacetSet` rejects unknown value (existing)
+- [x] `SymbolFacet.Abstract` value defined in enum
+- [x] `SymbolFactEmitter.Facets` emits `Abstract` when `symbol is IMethodSymbol { IsAbstract: true }` OR containing type `TypeKind == TypeKind.Interface`
+- [x] `SymbolFacetSet` accepts the new value without throwing
+- [x] Domain bijection test (existing `TaxonomyTablesAdditivityTests` or equivalent) covers the new facet value
+- [x] `dotnet test tests/Csharp2Md.Domain.Tests --filter "Category!=LocalCorpus"` passes
+- [x] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes (no regression)
+- [x] Test count: ≥ 3 new tests in `tests/Csharp2Md.Domain.Tests/Facets/` covering: enum presence, `SymbolFacetSet` accepts it, `SymbolFacetSet` rejects unknown value (existing)
 
 **Tests**: unit
 **Gate**: full (Domain + Analysis)

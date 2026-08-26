@@ -176,9 +176,9 @@ Every ambiguity is resolved or recorded here — nothing is left silently unclea
 | CLLF-04 | P1: Confirmed call edges | Design | Pending |
 | CLLF-05 | P1: Confirmed call edges | Design | Pending |
 | CLLF-06 | P1: Confirmed call edges | Design | Pending |
-| CLLF-07 | P1: Polymorphic candidates | Design | Pending |
+| CLLF-07 | P1: Polymorphic candidates | Design | Implementing |
 | CLLF-08 | P1: Polymorphic candidates | Design | Pending |
-| CLLF-09 | P1: Polymorphic candidates | Design | Pending |
+| CLLF-09 | P1: Polymorphic candidates | Design | Implementing |
 | CLLF-10 | P1: Polymorphic candidates | Design | Pending |
 | CLLF-11 | P1: Open frontiers | Design | Pending |
 | CLLF-12 | P1: Open frontiers | Design | Pending |

@@ -451,7 +451,8 @@
         "handler",
         "repository",
         "client",
-        "service"
+        "service",
+        "abstract"
       ]
     },
     {
