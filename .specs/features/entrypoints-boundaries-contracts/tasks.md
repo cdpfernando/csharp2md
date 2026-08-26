@@ -128,10 +128,10 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] `IClassifierPass` interface defined with `Name` and `Execute(ClassifierContext, CancellationToken)`
-- [ ] `ClassifierPassResult` record struct with `FactCount`, `RelationCount`, `CandidateCount`, `UnresolvedCount`
-- [ ] Compiles without errors
-- [ ] Gate check passes: `dotnet build`
+- [x] `IClassifierPass` interface defined with `Name` and `Execute(ClassifierContext, CancellationToken)`
+- [x] `ClassifierPassResult` record struct with `FactCount`, `RelationCount`, `CandidateCount`, `UnresolvedCount`
+- [x] Compiles without errors
+- [x] Gate check passes: `dotnet build`
 
 **Tests**: none
 **Gate**: build
