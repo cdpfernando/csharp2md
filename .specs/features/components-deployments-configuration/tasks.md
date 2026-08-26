@@ -1263,11 +1263,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Two clone paths produce identical components, deployment units, bindings, relations, candidates, frontiers and unresolved records, and byte-identical canonical payloads
-- [ ] Running the classifier twice over the same ledger produces identical output
-- [ ] A test asserts no two new observations share an `owner:kind:ordinal` ordering key
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] Two clone paths produce identical components, deployment units, bindings, relations, candidates, frontiers and unresolved records, and byte-identical canonical payloads
+- [x] Running the classifier twice over the same ledger produces identical output
+- [x] A test asserts no two new observations share an `owner:kind:ordinal` ordering key
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: integration
 **Gate**: full
