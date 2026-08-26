@@ -1028,12 +1028,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] One binding exists per (component, key) pair, deduplicating through `AddFact` without flagging corruption
-- [ ] Every `configured-by` relation carries `EvidenceMethod.Configured` and the declaring observation in its evidence chain
-- [ ] Facts and relations are emitted in one ordinal-sorted walk
-- [ ] Unit tests assert emitted identities, relation counts and evidence chains for a hand-built model
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] One binding exists per (component, key) pair, deduplicating through `AddFact` without flagging corruption
+- [x] Every `configured-by` relation carries `EvidenceMethod.Configured` and the declaring observation in its evidence chain
+- [x] Facts and relations are emitted in one ordinal-sorted walk
+- [x] Unit tests assert emitted identities, relation counts and evidence chains for a hand-built model
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: full
