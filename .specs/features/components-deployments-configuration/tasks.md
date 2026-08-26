@@ -351,11 +351,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] The worker consumes `IEventBus` so at least one symbol in the project owns an observation
-- [ ] It declares no HTTP client, no `DbContext` and no route, so it adds no boundary, contract or persistence facts
-- [ ] A header comment states the file's purpose in the 5D grouping ground truth
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1211 pass; any count change is explained in the commit body
+- [x] The worker consumes `IEventBus` so at least one symbol in the project owns an observation
+- [x] It declares no HTTP client, no `DbContext` and no route, so it adds no boundary, contract or persistence facts
+- [x] A header comment states the file's purpose in the 5D grouping ground truth
+- [x] Gate check passes: build gate command
+- [x] Test count: 1211 pass; any count change is explained in the commit body
 
 **Tests**: none
 **Gate**: build
