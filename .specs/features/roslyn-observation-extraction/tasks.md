@@ -1562,10 +1562,10 @@ never enter the payload. Secret-shaped values go through T42.
 
 **Done when**:
 
-- [ ] Fixture key `Logging:Level` is present; no bound configuration value is present
-- [ ] A non-configuration indexer is not this kind
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Fixture key `Logging:Level` is present; no bound configuration value is present
+- [x] A non-configuration indexer is not this kind
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
