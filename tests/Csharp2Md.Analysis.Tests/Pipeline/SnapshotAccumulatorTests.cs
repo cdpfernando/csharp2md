@@ -1,6 +1,8 @@
 using System.Reflection;
+using Csharp2Md.Analysis;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Storage;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Literals;
@@ -38,7 +40,28 @@ public sealed class SnapshotAccumulatorTests
         accumulator.AddFact(new CollidingFact(identity, "right"));
 
         Assert.True(accumulator.StructuralCorruption);
+        Assert.Equal(identity.Id.Value, accumulator.CollidingIdentity);
         Assert.Equal("left", Assert.IsType<CollidingFact>(Assert.Single(accumulator.ToSnapshot().Facts.ToArray())).Marker);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-21")]
+    public async Task AnalyzeAsync_UnequalFactsWithOneIdentity_UnpublishesNamingTheIdentity()
+    {
+        var identity = Solution.Create(AcmeSolution).Reference;
+        var store = new InMemoryTransactionalStore();
+        var stages = StubStages.CreateDefault().SetItem(0, new CollidingFactsStage(identity));
+        var engine = new AnalysisEngine(store, stages);
+
+        var result = await engine.AnalyzeAsync(AnalysisRequest.Create(["alpha.sln"]), CancellationToken.None);
+
+        var outcome = Assert.Single(result.Solutions);
+        Assert.Equal(PublicationStatus.Unpublished, outcome.Status);
+        Assert.True(outcome.StructuralCorruption);
+        Assert.False(string.IsNullOrWhiteSpace(outcome.Detail));
+        Assert.Contains(identity.Id.Value, outcome.Detail, StringComparison.Ordinal);
+        Assert.True(result.HasUnpublishedSolution);
+        Assert.False(store.TryGetPublication(Path.GetFullPath("alpha.sln"), out _));
     }
 
     [Fact]
@@ -175,5 +198,22 @@ public sealed class SnapshotAccumulatorTests
     private sealed record CollidingFact(FactReference Reference, string Marker) : IFact
     {
         public FactFamily Family => FactFamily.Structural;
+    }
+
+    private sealed class CollidingFactsStage : IPipelineStage
+    {
+        private readonly FactReference _identity;
+
+        public CollidingFactsStage(FactReference identity) => _identity = identity;
+
+        public string Name => "Inventory";
+
+        public ValueTask<StageResult> ExecuteAsync(PipelineContext context, CancellationToken cancellationToken)
+        {
+            context.Accumulator.AddFact(new CollidingFact(_identity, "left"));
+            context.Accumulator.AddFact(new CollidingFact(_identity, "right"));
+            return ValueTask.FromResult(
+                new StageResult(1, 0, 0, StructuralCorruption: false, HasUnknownsOrCandidatesOrFrontiers: false));
+        }
     }
 }

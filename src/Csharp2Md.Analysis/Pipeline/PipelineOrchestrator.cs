@@ -43,8 +43,9 @@ internal sealed class PipelineOrchestrator
                 var result = await stage.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
                 context.Record(new StageReport(stage.Name, result.FactCount, result.ObservationCount, result.RelationCount));
                 hasUnknownsOrCandidatesOrFrontiers |= result.HasUnknownsOrCandidatesOrFrontiers;
-                if (result.StructuralCorruption)
+                if (result.StructuralCorruption || context.Accumulator.StructuralCorruption)
                 {
+                    context.Detail ??= context.Accumulator.CollidingIdentity;
                     return PipelineRunResult.Corrupted(hasUnknownsOrCandidatesOrFrontiers);
                 }
 

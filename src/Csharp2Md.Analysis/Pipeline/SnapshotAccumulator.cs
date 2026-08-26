@@ -16,6 +16,8 @@ internal sealed class SnapshotAccumulator
 
     public bool StructuralCorruption { get; private set; }
 
+    public string? CollidingIdentity { get; private set; }
+
     public void AddFact(IFact fact)
     {
         ArgumentNullException.ThrowIfNull(fact);
@@ -25,6 +27,7 @@ internal sealed class SnapshotAccumulator
             if (!existing.Equals(fact))
             {
                 StructuralCorruption = true;
+                CollidingIdentity = key;
             }
 
             return;
