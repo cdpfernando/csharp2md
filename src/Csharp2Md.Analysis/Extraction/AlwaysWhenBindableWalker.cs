@@ -25,6 +25,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
     private readonly DocumentHash _documentHash;
     private readonly IReadOnlyDictionary<string, FactReference> _symbolsBySignature;
     private readonly FactReference _fallbackOwner;
+    private readonly IReadOnlyList<IRegisteredContextDetector> _detectors;
     private readonly List<ObservationDraft> _drafts = [];
     private readonly CancellationToken _cancellationToken;
 
@@ -34,6 +35,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
         DocumentHash documentHash,
         IReadOnlyDictionary<string, FactReference> symbolsBySignature,
         FactReference fallbackOwner,
+        IReadOnlyList<IRegisteredContextDetector> detectors,
         CancellationToken cancellationToken)
     {
         _model = model;
@@ -41,6 +43,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
         _documentHash = documentHash;
         _symbolsBySignature = symbolsBySignature;
         _fallbackOwner = fallbackOwner;
+        _detectors = detectors;
         _cancellationToken = cancellationToken;
     }
 
@@ -79,6 +82,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
         var batches = ImmutableArray.CreateBuilder<ImmutableArray<ObservationDraft>>();
         foreach (var compilation in bound.Compilations)
         {
+            IRegisteredContextDetector[] detectors = [new AssignmentDetector()];
             var trees = compilation.SyntaxTrees.ToArray();
             var batch = ImmutableArray.CreateBuilder<ObservationDraft>();
             foreach (var tree in trees)
@@ -106,6 +110,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                     ObservationMaterializer.HashFileBytes(tree.FilePath),
                     symbolsBySignature,
                     fallbackOwner,
+                    detectors,
                     cancellationToken);
                 walker.Visit(tree.GetRoot(cancellationToken));
                 batch.AddRange(walker._drafts);
@@ -132,6 +137,12 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                 context.Accumulator.AddObservation(observation);
             }
         }
+    }
+
+    public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
+    {
+        TryEmitRegistered(node);
+        base.VisitAssignmentExpression(node);
     }
 
     public override void VisitInvocationExpression(InvocationExpressionSyntax node)
@@ -206,6 +217,31 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
     {
         TryEmitTypeUsage(node);
         base.VisitAliasQualifiedName(node);
+    }
+
+    private void TryEmitRegistered(SyntaxNode node)
+    {
+        var owner = ResolveOwner(node);
+        if (owner is null)
+        {
+            return;
+        }
+
+        var occurrence = new BoundOccurrence(
+            node,
+            _model,
+            _document,
+            _documentHash,
+            owner.Value,
+            _cancellationToken);
+        foreach (var detector in _detectors)
+        {
+            var draft = detector.TryObserve(occurrence);
+            if (draft is not null)
+            {
+                _drafts.Add(draft);
+            }
+        }
     }
 
     private void TryEmitTypeUsage(ExpressionSyntax node) => TryEmitBindable(node, ObservationKind.TypeUsage, requireType: true);

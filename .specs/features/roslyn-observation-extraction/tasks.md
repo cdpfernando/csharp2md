@@ -1533,10 +1533,10 @@ the positive. Other assignments are not this kind (ROSE-42).
 
 **Done when**:
 
-- [ ] `order.Status =` is an `Assignment` observation
-- [ ] A non-entity property write in the fixture is not an `Assignment`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `order.Status =` is an `Assignment` observation
+- [x] A non-entity property write in the fixture is not an `Assignment`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
