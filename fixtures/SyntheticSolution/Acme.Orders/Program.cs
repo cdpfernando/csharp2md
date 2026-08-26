@@ -1,5 +1,9 @@
 // Host bootstrap for Acme.Orders, shaped like a minimal ASP.NET Core entry point.
 //
+// Main exists so the project can compile as an application (OutputType=Exe) without changing
+// the observable composition-root surface: it delegates to ConfigureHost and adds no new
+// configuration key, client name, or persistence call.
+//
 // The fixture declares the Microsoft.AspNetCore.Builder types itself rather than referencing the
 // ASP.NET Core framework, for the same reason PaymentsGrpcClient.cs declares Grpc.Core.ClientBase:
 // the fixture must build and restore without pulling in an external dependency. The frontmatter
@@ -41,6 +45,11 @@ namespace Acme.Orders
     /// <summary>Composition root: builds the host and registers the service's own dependencies.</summary>
     public static class Program
     {
+        public static void Main(string[] args)
+        {
+            _ = ConfigureHost(args);
+        }
+
         public static WebApplicationBuilder ConfigureHost(string[] args, Data.OrderDbContext? context = null)
         {
             var builder = WebApplication.CreateBuilder(args);

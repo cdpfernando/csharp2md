@@ -242,11 +242,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `Main` delegates to `ConfigureHost` and adds no new configuration key, client name or persistence call
-- [ ] The file's header comment describes the current contract, including why the entry point exists
-- [ ] The project still compiles as a library at this point
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1211 pass; any count change is explained in the commit body
+- [x] `Main` delegates to `ConfigureHost` and adds no new configuration key, client name or persistence call
+- [x] The file's header comment describes the current contract, including why the entry point exists
+- [x] The project still compiles as a library at this point
+- [x] Gate check passes: build gate command
+- [x] Test count: 1211 pass; any count change is explained in the commit body
 
 **Tests**: none
 **Gate**: build
