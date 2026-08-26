@@ -525,10 +525,10 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Two analysis runs produce identical classifier fact identities
-- [ ] Two analysis runs produce byte-identical canonical payload files
-- [ ] No absolute filesystem path in classifier-produced facts, relations, candidates, or diagnostics
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Two analysis runs produce identical classifier fact identities
+- [x] Two analysis runs produce byte-identical canonical payload files
+- [x] No absolute filesystem path in classifier-produced facts, relations, candidates, or diagnostics
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: integration
 **Gate**: full

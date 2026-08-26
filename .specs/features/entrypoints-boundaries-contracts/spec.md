@@ -282,16 +282,16 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | EBC-29 | P1: Composable classification stage | Phase 1 (T4), Phase 5 (T20) | Implementing |
 | EBC-30 | P1: Composable classification stage | Phase 1 (T4), Phase 5 (T20) | Implementing |
 | EBC-31 | P1: Composable classification stage | Phase 1 (T4) | Implementing |
-| EBC-32 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T17) | In Tasks |
+| EBC-32 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T17) | Implementing |
 | EBC-33 | P1: Candidates, unresolved, and diagnostics | Phase 3 (T9) | Implementing |
 | EBC-34 | P1: Candidates, unresolved, and diagnostics | Phase 4 (T14) | Implementing |
 | EBC-35 | P1: Candidates, unresolved, and diagnostics | Phase 2 (T8), Phase 5 (T16) | Implementing |
 | EBC-36 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T16) | Implementing |
 | EBC-37 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T16, T19) | Implementing |
 | EBC-38 | P1: Candidates, unresolved, and diagnostics | Phase 1 (T1) | Implementing |
-| EBC-39 | P1: Determinism and invariants | Phase 5 (T17) | In Tasks |
-| EBC-40 | P1: Determinism and invariants | Phase 5 (T17) | In Tasks |
-| EBC-41 | P1: Determinism and invariants | Phase 5 (T17) | In Tasks |
+| EBC-39 | P1: Determinism and invariants | Phase 5 (T17) | Implementing |
+| EBC-40 | P1: Determinism and invariants | Phase 5 (T17) | Implementing |
+| EBC-41 | P1: Determinism and invariants | Phase 5 (T17) | Implementing |
 | EBC-42 | P1: Determinism and invariants | Phase 5 (T18) | In Tasks |
 | EBC-43 | P1: Determinism and invariants | Phase 5 (T18) | In Tasks |
 | EBC-44 | P1: Determinism and invariants | Phase 5 (T18) | In Tasks |
