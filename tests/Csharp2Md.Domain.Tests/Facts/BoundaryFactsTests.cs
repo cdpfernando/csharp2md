@@ -190,6 +190,31 @@ public sealed class BoundaryFactsTests
         Assert.Equal("protocolOperationKey", exception.ParamName);
     }
 
+    [Fact]
+    [Trait("Requirement", "TAX-29")]
+    public void OutboundMessaging_IdentityDiffersFromInboundWithTheSameProtocolOperationKey()
+    {
+        var component = ComponentReference("payments-api");
+        var key = StructuralLiteral.Create(LiteralRole.ProtocolName, "global::Acme.Shared.Contracts.OrderPlaced", "protocolOperationKey");
+        var outbound = BoundaryOperation.Create(
+            SymbolReference("PlaceOrderAsync"),
+            component,
+            BoundaryDirection.Outbound,
+            BoundaryProtocol.Messaging,
+            protocolOperationKey: key);
+        var inbound = BoundaryOperation.Create(
+            SymbolReference("HandleAsync"),
+            component,
+            BoundaryDirection.Inbound,
+            BoundaryProtocol.Messaging,
+            protocolOperationKey: key);
+
+        Assert.NotEqual(outbound.Reference, inbound.Reference);
+        Assert.Equal(BoundaryDirection.Outbound, outbound.Direction);
+        Assert.Equal(BoundaryProtocol.Messaging, outbound.Protocol);
+        Assert.Equal("global::Acme.Shared.Contracts.OrderPlaced", outbound.ProtocolOperationKey!.Value.Value);
+    }
+
     private static BoundaryOperation CreateOutbound(
         FactReference component, string destinationScope, string httpMethod, StructuralLiteral route) =>
         BoundaryOperation.Create(

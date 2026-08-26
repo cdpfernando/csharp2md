@@ -362,12 +362,12 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Detects `MessageOperation` observations with method `PublishAsync` or `Publish`
-- [ ] Extracts `TEvent` fully qualified type name from observation payload
-- [ ] Creates outbound `BoundaryOperation` with protocol `messaging`, direction `outbound`, `protocolOperationKey` = event FQN
-- [ ] Classifier identity: `csharp2md.classifier.messaging` version 1
-- [ ] Unit tests with synthetic `MessageOperation` observations
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Detects `MessageOperation` observations with method `PublishAsync` or `Publish`
+- [x] Extracts `TEvent` fully qualified type name from observation payload
+- [x] Creates outbound `BoundaryOperation` with protocol `messaging`, direction `outbound`, `protocolOperationKey` = event FQN
+- [x] Classifier identity: `csharp2md.classifier.messaging` version 1
+- [x] Unit tests with synthetic `MessageOperation` observations
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: unit
 **Gate**: full

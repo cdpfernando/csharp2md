@@ -95,6 +95,8 @@ public sealed record BoundaryOperation : IFact
         {
             (BoundaryDirection.Outbound, BoundaryProtocol.Http) => CreateOutboundHttp(
                 symbol, owningComponent, destinationScope, httpMethod, route),
+            (BoundaryDirection.Outbound, BoundaryProtocol.Messaging) => CreateOutboundMessaging(
+                symbol, owningComponent, protocolOperationKey),
             (BoundaryDirection.Inbound, _) => CreateInbound(symbol, owningComponent, protocol, protocolOperationKey),
             _ => throw new ArgumentException(
                 $"Direction '{direction}' with protocol '{protocol}' is not a supported boundary-operation combination.",
@@ -137,6 +139,45 @@ public sealed record BoundaryOperation : IFact
         var reference = new FactReference(id, nameof(BoundaryOperation));
         return new BoundaryOperation(
             reference, symbol, owningComponent, BoundaryDirection.Outbound, BoundaryProtocol.Http, canonicalScope, canonicalMethod, route, null);
+    }
+
+    private static BoundaryOperation CreateOutboundMessaging(
+        FactReference symbol,
+        FactReference owningComponent,
+        StructuralLiteral? protocolOperationKey)
+    {
+        if (protocolOperationKey is null)
+        {
+            throw new ArgumentException(
+                "An outbound messaging boundary operation requires a protocol operation key.",
+                nameof(protocolOperationKey));
+        }
+
+        if (protocolOperationKey.Value.Role != LiteralRole.ProtocolName)
+        {
+            throw new ArgumentException(
+                $"An outbound messaging boundary operation's protocol operation key must be a structural literal with role '{nameof(LiteralRole.ProtocolName)}', but was '{protocolOperationKey.Value.Role}'.",
+                nameof(protocolOperationKey));
+        }
+
+        var operationKey = string.Join(
+            '\u0000',
+            FacetAxes.WireValue(BoundaryDirection.Outbound),
+            FacetAxes.WireValue(BoundaryProtocol.Messaging),
+            protocolOperationKey.Value.Value);
+
+        var id = FactIdGrammar.Create("boundary-operation", ("component", owningComponent.Id.Value), ("operation-key", operationKey));
+        var reference = new FactReference(id, nameof(BoundaryOperation));
+        return new BoundaryOperation(
+            reference,
+            symbol,
+            owningComponent,
+            BoundaryDirection.Outbound,
+            BoundaryProtocol.Messaging,
+            null,
+            null,
+            null,
+            protocolOperationKey);
     }
 
     private static BoundaryOperation CreateInbound(

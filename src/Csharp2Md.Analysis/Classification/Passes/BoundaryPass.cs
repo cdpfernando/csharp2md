@@ -15,7 +15,9 @@ internal sealed class BoundaryPass : IClassifierPass
     internal const string MethodNameKey = "method-name";
     internal const string TargetTypeKey = "target-type";
     internal const string ClientNameKey = "client-name";
+    internal const string TypeArgumentKey = "type-argument";
     internal const string HttpClientFactoryTypeName = "IHttpClientFactory";
+    internal const string EventBusTypeName = "IEventBus";
     internal const string CreateClientMethodName = "CreateClient";
 
     private static readonly Dictionary<string, string> HttpMethodsByInvocationName = new(StringComparer.Ordinal)
@@ -33,6 +35,9 @@ internal sealed class BoundaryPass : IClassifierPass
     internal static ClassifierIdentity HttpOutboundIdentity { get; } =
         ClassifierIdentity.Create("csharp2md.classifier.http-outbound", 1);
 
+    internal static ClassifierIdentity MessagingIdentity { get; } =
+        ClassifierIdentity.Create("csharp2md.classifier.messaging", 1);
+
     public string Name => "Boundaries";
 
     public ClassifierPassResult Execute(ClassifierContext context, CancellationToken cancellationToken)
@@ -42,8 +47,9 @@ internal sealed class BoundaryPass : IClassifierPass
 
         var factCount = ClassifyHttpInbound(context);
         var outbound = ClassifyHttpOutbound(context);
+        var messagingFacts = ClassifyMessagingOutbound(context);
         return new ClassifierPassResult(
-            factCount + outbound.FactCount,
+            factCount + outbound.FactCount + messagingFacts,
             0,
             outbound.CandidateCount,
             outbound.UnresolvedCount);
@@ -216,6 +222,60 @@ internal sealed class BoundaryPass : IClassifierPass
         }
 
         return (factCount, candidateCount, unresolvedCount);
+    }
+
+    private static int ClassifyMessagingOutbound(ClassifierContext context)
+    {
+        var symbolsById = context.FactsByType<Symbol>()
+            .ToDictionary(static symbol => symbol.Reference.Id.Value, StringComparer.Ordinal);
+        var projectsById = context.FactsByType<Project>()
+            .ToDictionary(static project => project.Id.Value, StringComparer.Ordinal);
+        var componentsByPath = context.FactsByType<Component>()
+            .ToDictionary(static component => component.Name, StringComparer.Ordinal);
+
+        var factCount = 0;
+        foreach (var observation in context.ObservationsByKind(ObservationKind.MessageOperation)
+            .OrderBy(static o => o.Identity.Owner.Id.Value, StringComparer.Ordinal)
+            .ThenBy(static o => o.Identity.OccurrenceOrdinal))
+        {
+            var methodName = ReadPayloadValue(observation, MethodNameKey);
+            if (methodName is not ("PublishAsync" or "Publish")
+                || !PayloadContains(observation, TargetTypeKey, EventBusTypeName))
+            {
+                continue;
+            }
+
+            if (!symbolsById.TryGetValue(observation.Identity.Owner.Id.Value, out var callable)
+                || !projectsById.TryGetValue(callable.OwningProject.Value, out var project)
+                || TryLogicalPath(project) is not { } path
+                || !componentsByPath.TryGetValue(path, out var component))
+            {
+                continue;
+            }
+
+            var eventType = ReadPayloadValue(observation, TypeArgumentKey);
+            if (eventType is null)
+            {
+                context.Accumulator.AddDiagnostic(
+                    new DiagnosticRecord(
+                        "missing-message-type-argument",
+                        $"MessageOperation on '{callable.Reference.Id.Value}' has no TEvent type argument.",
+                        callable.Reference.Id.Value));
+                continue;
+            }
+
+            var protocolOperationKey = StructuralLiteral.Create(LiteralRole.ProtocolName, eventType, "protocol-operation-key");
+            context.Accumulator.AddFact(
+                BoundaryOperation.Create(
+                    callable.Reference,
+                    component.Reference,
+                    BoundaryDirection.Outbound,
+                    BoundaryProtocol.Messaging,
+                    protocolOperationKey: protocolOperationKey));
+            factCount++;
+        }
+
+        return factCount;
     }
 
     private static bool IsCreateClient(Observation observation) =>

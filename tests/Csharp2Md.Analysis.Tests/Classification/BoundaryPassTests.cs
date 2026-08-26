@@ -278,6 +278,98 @@ public sealed class BoundaryPassTests
         Assert.Equal(1, BoundaryPass.HttpOutboundIdentity.Version);
     }
 
+    [Fact]
+    [Trait("Requirement", "EBC-17")]
+    public void Execute_PublishAsyncOnEventBus_CreatesOutboundMessagingBoundaryWithEventTypeKey()
+    {
+        var pipeline = ArrangeOrders();
+        var service = AddNamedType(pipeline, "OrderService", "global::Acme.Orders", OrdersProject);
+        var method = AddMethod(pipeline, "PlaceOrderAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        AddComponent(pipeline, [service.Reference, method.Reference]);
+        AddMessageOperation(pipeline, method.Reference, "PublishAsync", "global::Acme.Shared.Contracts.OrderPlaced", ordinal: 1);
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal(1, result.FactCount);
+        Assert.Equal(BoundaryDirection.Outbound, operation.Direction);
+        Assert.Equal(BoundaryProtocol.Messaging, operation.Protocol);
+        Assert.Equal(method.Reference, operation.Symbol);
+        Assert.NotNull(operation.ProtocolOperationKey);
+        Assert.Equal(LiteralRole.ProtocolName, operation.ProtocolOperationKey.Value.Role);
+        Assert.Equal("global::Acme.Shared.Contracts.OrderPlaced", operation.ProtocolOperationKey.Value.Value);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-17")]
+    public void Execute_PublishOnEventBus_CreatesOutboundMessagingBoundary()
+    {
+        var pipeline = ArrangeOrders();
+        var service = AddNamedType(pipeline, "OrderService", "global::Acme.Orders", OrdersProject);
+        var method = AddMethod(pipeline, "PlaceOrderAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        AddComponent(pipeline, [service.Reference, method.Reference]);
+        AddMessageOperation(pipeline, method.Reference, "Publish", "global::Acme.Shared.Contracts.PaymentProcessed", ordinal: 1);
+        var context = new ClassifierContext(pipeline);
+
+        new BoundaryPass().Execute(context, CancellationToken.None);
+
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal(BoundaryProtocol.Messaging, operation.Protocol);
+        Assert.Equal(BoundaryDirection.Outbound, operation.Direction);
+        Assert.Equal("global::Acme.Shared.Contracts.PaymentProcessed", operation.ProtocolOperationKey!.Value.Value);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-17")]
+    public void Execute_SubscribeMessageOperation_DoesNotCreateOutboundMessagingBoundary()
+    {
+        var pipeline = ArrangeOrders();
+        var service = AddNamedType(pipeline, "OrderService", "global::Acme.Orders", OrdersProject);
+        var method = AddMethod(pipeline, "PlaceOrderAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        AddComponent(pipeline, [service.Reference, method.Reference]);
+        AddMessageOperation(pipeline, method.Reference, "Subscribe", "global::Acme.Shared.Contracts.OrderPlaced", ordinal: 1);
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        Assert.Equal(0, result.FactCount);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>());
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-17")]
+    public void Execute_PublishAsyncWithoutTypeArgument_RecordsDiagnosticWithoutBoundary()
+    {
+        var pipeline = ArrangeOrders();
+        var service = AddNamedType(pipeline, "OrderService", "global::Acme.Orders", OrdersProject);
+        var method = AddMethod(pipeline, "PlaceOrderAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        AddComponent(pipeline, [service.Reference, method.Reference]);
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(
+                method.Reference,
+                ObservationKind.MessageOperation,
+                ordinal: 1,
+                MessageOperationPayload("PublishAsync", eventType: null)));
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        Assert.Equal(0, result.FactCount);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>());
+        var diagnostic = Assert.Single(pipeline.Accumulator.ToSnapshot().Diagnostics.ToArray());
+        Assert.Equal("missing-message-type-argument", diagnostic.Code);
+        Assert.Equal(method.Reference.Id.Value, diagnostic.IdentityOrKey);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-20")]
+    public void MessagingIdentity_IsMessagingClassifierVersion1()
+    {
+        Assert.Equal("csharp2md.classifier.messaging", BoundaryPass.MessagingIdentity.Id);
+        Assert.Equal(1, BoundaryPass.MessagingIdentity.Version);
+    }
+
     private static PipelineContext ArrangeOrders()
     {
         var pipeline = new PipelineContext(new SwallowingSession(), "alpha.sln");
@@ -369,6 +461,41 @@ public sealed class BoundaryPassTests
                 new PayloadEntry(
                     BoundaryPass.ClientNameKey,
                     StructuralLiteral.Create(LiteralRole.ClientName, clientName, BoundaryPass.ClientNameKey)));
+        }
+
+        return NormalizedPayload.Create(entries);
+    }
+
+    private static void AddMessageOperation(
+        PipelineContext pipeline,
+        FactReference owner,
+        string methodName,
+        string eventType,
+        int ordinal) =>
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(
+                owner,
+                ObservationKind.MessageOperation,
+                ordinal,
+                MessageOperationPayload(methodName, eventType)));
+
+    private static NormalizedPayload MessageOperationPayload(string methodName, string? eventType)
+    {
+        var entries = new List<PayloadEntry>
+        {
+            new(
+                BoundaryPass.MethodNameKey,
+                StructuralLiteral.Create(LiteralRole.ProtocolName, methodName, BoundaryPass.MethodNameKey)),
+            new(
+                BoundaryPass.TargetTypeKey,
+                StructuralLiteral.Create(LiteralRole.ProtocolName, BoundaryPass.EventBusTypeName, BoundaryPass.TargetTypeKey)),
+        };
+        if (eventType is not null)
+        {
+            entries.Add(
+                new PayloadEntry(
+                    BoundaryPass.TypeArgumentKey,
+                    StructuralLiteral.Create(LiteralRole.ProtocolName, eventType, BoundaryPass.TypeArgumentKey)));
         }
 
         return NormalizedPayload.Create(entries);
