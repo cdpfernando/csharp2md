@@ -18,11 +18,12 @@ internal sealed class ObservationExtractionStage : IPipelineStage
             }
 
             AlwaysWhenBindableWalker.ExtractInto(context, cancellationToken);
-            var observationCount = context.Accumulator.ToSnapshot().Observations.Length;
+            var relationCount = ContainsRelationEmitter.Emit(context, cancellationToken);
+            var snapshot = context.Accumulator.ToSnapshot();
             return ValueTask.FromResult(new StageResult(
                 0,
-                observationCount,
-                0,
+                snapshot.Observations.Length,
+                relationCount,
                 StructuralCorruption: false,
                 HasUnknownsOrCandidatesOrFrontiers: false));
         }

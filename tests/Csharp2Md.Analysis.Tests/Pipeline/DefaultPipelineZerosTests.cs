@@ -49,7 +49,7 @@ public sealed class DefaultPipelineZerosTests
         Assert.Equal("Observation Extraction", extraction.Name);
         Assert.Equal(0, extraction.FactCount);
         Assert.True(extraction.ObservationCount > 0, $"Observation Extraction observation count was {extraction.ObservationCount}.");
-        Assert.Equal(0, extraction.RelationCount);
+        Assert.True(extraction.RelationCount > 0, $"Observation Extraction relation count was {extraction.RelationCount}.");
 
         for (var index = 3; index < StubStages.DeclaredNames.Length; index++)
         {

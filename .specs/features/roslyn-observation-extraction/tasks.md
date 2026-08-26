@@ -1682,12 +1682,12 @@ other confirmed kind.
 
 **Done when**:
 
-- [ ] Fixture package-in-memory has `Project contains Document` and `Document contains Symbol`
-- [ ] Zero `Solution contains Project`; zero `invokes` / `belongs-to` / other confirmed kinds
-- [ ] `derived_from` is non-empty and evidence method is `Syntactic`
-- [ ] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
-- [ ] Test count recorded (no silent deletions)
-- [ ] `dotnet-skills:slopwatch` reports clean on this phase's changes
+- [x] Fixture package-in-memory has `Project contains Document` and `Document contains Symbol`
+- [x] Zero `Solution contains Project`; zero `invokes` / `belongs-to` / other confirmed kinds
+- [x] `derived_from` is non-empty and evidence method is `Syntactic`
+- [x] Gate check passes: `dotnet build csharp2md.slnx -c Release` then `dotnet format csharp2md.slnx --verify-no-changes` then the Full command
+- [x] Test count recorded (no silent deletions)
+- [x] `dotnet-skills:slopwatch` reports clean on this phase's changes
 
 **Tests**: unit
 **Gate**: build

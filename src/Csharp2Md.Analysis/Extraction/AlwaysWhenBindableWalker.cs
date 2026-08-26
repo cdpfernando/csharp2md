@@ -82,14 +82,14 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
         var batches = ImmutableArray.CreateBuilder<ImmutableArray<ObservationDraft>>();
         foreach (var compilation in bound.Compilations)
         {
-                IRegisteredContextDetector[] detectors =
-                [
-                    new AssignmentDetector(),
-                    new ConfigurationDetector(),
-                    new RouteDeclarationDetector(),
-                    new MessageOperationDetector(),
-                    new DataAccessDetector(),
-                ];
+            IRegisteredContextDetector[] detectors =
+            [
+                new AssignmentDetector(),
+                new ConfigurationDetector(),
+                new RouteDeclarationDetector(),
+                new MessageOperationDetector(),
+                new DataAccessDetector(),
+            ];
             var trees = compilation.SyntaxTrees.ToArray();
             var batch = ImmutableArray.CreateBuilder<ObservationDraft>();
             foreach (var tree in trees)

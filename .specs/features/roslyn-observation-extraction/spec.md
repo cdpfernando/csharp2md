@@ -257,10 +257,10 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | ROSE-14 | P1: Structural facts | Tasks (T33, T37) | Implemented |
 | ROSE-15 | P1: Structural facts | Tasks (T34) | Implemented |
 | ROSE-16 | P1: Structural facts | Tasks (T35) | Implemented |
-| ROSE-17 | P1: Structural facts | Tasks (T51) | Pending |
-| ROSE-18 | P1: Structural facts | Tasks (T51) | Pending |
-| ROSE-19 | P1: Structural facts | Tasks (T51) | Pending |
-| ROSE-20 | P1: Structural facts | Tasks (T51) | Pending |
+| ROSE-17 | P1: Structural facts | Tasks (T51) | Implemented |
+| ROSE-18 | P1: Structural facts | Tasks (T51) | Implemented |
+| ROSE-19 | P1: Structural facts | Tasks (T51) | Implemented |
+| ROSE-20 | P1: Structural facts | Tasks (T51) | Implemented |
 | ROSE-21 | P1: Structural facts | Tasks (T6) | Implemented |
 | ROSE-22 | P1: Semantic Roslyn binding | Tasks (T5, T25, T28) | Implemented |
 | ROSE-23 | P1: Semantic Roslyn binding | Tasks (T30) | Implemented |
