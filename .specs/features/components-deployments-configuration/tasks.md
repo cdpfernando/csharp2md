@@ -297,10 +297,10 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `Main` adds no new gRPC surface, contract or boundary operation that would shift 5A assertions
-- [ ] A header comment states that the file exists to make the project an application for the 5D grouping rule
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1211 pass; any count change is explained in the commit body
+- [x] `Main` adds no new gRPC surface, contract or boundary operation that would shift 5A assertions
+- [x] A header comment states that the file exists to make the project an application for the 5D grouping rule
+- [x] Gate check passes: build gate command
+- [x] Test count: 1211 pass; any count change is explained in the commit body
 
 **Tests**: none
 **Gate**: build
