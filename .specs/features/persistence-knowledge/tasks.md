@@ -635,18 +635,20 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] A non-constant SQL target yields `UnresolvedNode(operates-on, InsufficientEvidence)` and no object (PK-39)
-- [ ] An unreadable leading keyword yields `UnresolvedNode(accesses-data, NoCandidateFound)` (PK-40)
-- [ ] An entity type with no `Symbol` fact yields `UnresolvedNode(accesses-data, NoCandidateFound)` and no operation (PK-41)
-- [ ] A persistence-named type with no data access contributes nothing at all (PK-42)
-- [ ] `CoverageCounts` reports recognized and resolved occurrence counts and the unresolved owners' ids (PK-51, PK-52)
-- [ ] No percentage and no verdict is computed anywhere in the builder (PK-53)
-- [ ] Unit tests cover each unresolved cause and the count arithmetic
-- [ ] Gate check passes: full gate command
-- [ ] Test count: 828 + tests added so far pass (no silent deletions)
+- [x] A non-constant SQL target yields `UnresolvedNode(operates-on, InsufficientEvidence)` and no object (PK-39)
+- [x] An unreadable leading keyword yields `UnresolvedNode(accesses-data, NoCandidateFound)` (PK-40)
+- [x] An entity type with no `Symbol` fact yields `UnresolvedNode(accesses-data, NoCandidateFound)` and no operation (PK-41)
+- [x] A persistence-named type with no data access contributes nothing at all (PK-42)
+- [x] `CoverageCounts` reports recognized and resolved occurrence counts and the unresolved owners' ids (PK-51, PK-52)
+- [x] No percentage and no verdict is computed anywhere in the builder (PK-53)
+- [x] Unit tests cover each unresolved cause and the count arithmetic
+- [x] Gate check passes: full gate command
+- [x] Test count: 1118 pass — Domain 545, Analysis 382, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
+
+> Execution note (open for T21/T23): the ledger cannot tell PK-39 apart from PK-40 by payload alone — a raw-SQL call the reader refused emits `operation=unknown` with no `sql-*` entries whatever the reason, exactly like a plain `DbSet` member access or a `SaveChanges`. The causes are therefore derived from what the occurrence reached: an entity type with no `Symbol` fact is `accesses-data`/`NoCandidateFound` (PK-41); an occurrence that reached an object but could not name what it does to it is `operates-on`/`InsufficientEvidence` (PK-39, the fixture's interpolated-table case); one that reached no object at all is `accesses-data`/`NoCandidateFound` (PK-40, and a flush its callable never explains). A distinct cause per *statement* defect would need a new extraction marker.
 
 **Commit**: `feat(analysis): resolve unresolved persistence evidence and coverage`
 

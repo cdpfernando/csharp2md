@@ -3,6 +3,7 @@ using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
+using Csharp2Md.Domain.Relations;
 
 namespace Csharp2Md.Analysis.Classification.Persistence;
 
@@ -48,7 +49,73 @@ internal static class PersistenceModelBuilder
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
 
-        return new PersistenceModel(ResolveStores(context), [], new CoverageCounts(0, 0, []));
+        var log = new ResolutionLog();
+        var stores = ResolveStores(context, log);
+        var (unresolved, coverage) = ResolveUnresolved(context, log);
+        return new PersistenceModel(stores, unresolved, coverage);
+    }
+
+    /// <summary>
+    /// Everything recognized but not resolved, plus the run-coverage counts. An occurrence that
+    /// named an entity type the ledger holds no <see cref="Symbol"/> for has no CLR candidate
+    /// (PK-41); one that reached an object but could not say what it does to it is short of evidence
+    /// for <c>operates-on</c> (PK-39); one that reached no object at all - an unreadable statement or
+    /// a flush its callable never explains - has no candidate at all (PK-37, PK-40). Counts are raw:
+    /// no percentage and no verdict is computed here, since certification is workstream 8's (PK-53).
+    /// </summary>
+    private static (ImmutableArray<UnresolvedNode> Unresolved, CoverageCounts Coverage) ResolveUnresolved(
+        ClassifierContext context,
+        ResolutionLog log)
+    {
+        var nodes = new List<UnresolvedNode>();
+        var owners = new SortedSet<string>(StringComparer.Ordinal);
+        var recognized = 0;
+        var resolved = 0;
+        foreach (var access in context.ObservationsByKind(ObservationKind.DataAccess))
+        {
+            recognized++;
+            if (log.Resolved.Contains(access.Identity)
+                || (IsFlush(access) && log.ResolvingCallables.Contains(access.Identity.Owner.Id.Value)))
+            {
+                resolved++;
+                continue;
+            }
+
+            var (kind, cause) = log.MissingEntitySymbol.Contains(access.Identity)
+                ? (RelationKind.AccessesData, UnresolvedCause.NoCandidateFound)
+                : log.ReachedAnObject.Contains(access.Identity)
+                    ? (RelationKind.OperatesOn, UnresolvedCause.InsufficientEvidence)
+                    : (RelationKind.AccessesData, UnresolvedCause.NoCandidateFound);
+            nodes.Add(new UnresolvedNode(kind, access.Identity.Owner, cause, Chain([access.Identity])));
+            owners.Add(access.Identity.Owner.Id.Value);
+        }
+
+        return
+        (
+            [
+                .. nodes
+                    .OrderBy(static node => node.Source.Id.Value, StringComparer.Ordinal)
+                    .ThenBy(static node => node.Kind)
+                    .ThenBy(static node => node.Cause),
+            ],
+            new CoverageCounts(recognized, resolved, [.. owners])
+        );
+    }
+
+    /// <summary>What the object walk proved about each occurrence, so coverage can be counted once at the end.</summary>
+    private sealed class ResolutionLog
+    {
+        /// <summary>Occurrences that produced an operation on a target object.</summary>
+        public HashSet<ObservationIdentity> Resolved { get; } = [];
+
+        /// <summary>Occurrences that reached a target object, whether or not their kind was nameable.</summary>
+        public HashSet<ObservationIdentity> ReachedAnObject { get; } = [];
+
+        /// <summary>Occurrences naming an entity type no <see cref="Symbol"/> fact declares (PK-41).</summary>
+        public HashSet<ObservationIdentity> MissingEntitySymbol { get; } = [];
+
+        /// <summary>Callables that produced at least one operation, which is what explains their flush (PK-37).</summary>
+        public HashSet<string> ResolvingCallables { get; } = new(StringComparer.Ordinal);
     }
 
     /// <summary>
@@ -56,7 +123,7 @@ internal static class PersistenceModelBuilder
     /// <c>DbSet&lt;T&gt;</c> property or as a <c>context-type</c> payload entry (PK-10). A project
     /// naming no context contributes none (PK-13). Stores come out ordinal-sorted by context type.
     /// </summary>
-    private static ImmutableArray<StoreNode> ResolveStores(ClassifierContext context)
+    private static ImmutableArray<StoreNode> ResolveStores(ClassifierContext context, ResolutionLog log)
     {
         var symbols = context.FactsByType<Symbol>();
         var contextTypes = new SortedSet<string>(StringComparer.Ordinal);
@@ -91,7 +158,7 @@ internal static class PersistenceModelBuilder
                 contextType,
                 DataStoreTechnology.Relational,
                 ResolveStoreName(context, contextType, references),
-                ResolveObjects(context, contextType, symbols, entityMappings, typeSymbols, observationsBySymbol))),
+                ResolveObjects(context, contextType, symbols, entityMappings, typeSymbols, observationsBySymbol, log))),
         ];
     }
 
@@ -109,7 +176,8 @@ internal static class PersistenceModelBuilder
         ImmutableArray<Symbol> symbols,
         IReadOnlyDictionary<string, EntityMapping> entityMappings,
         IReadOnlyDictionary<string, FactReference> typeSymbols,
-        IReadOnlyDictionary<string, List<ObservationIdentity>> observationsBySymbol)
+        IReadOnlyDictionary<string, List<ObservationIdentity>> observationsBySymbol,
+        ResolutionLog log)
     {
         var drafts = new List<ObjectDraft>();
         foreach (var property in DbSetProperties(symbols))
@@ -142,7 +210,7 @@ internal static class PersistenceModelBuilder
 
         drafts.AddRange(ResolveSqlObjects(context, contextTypeFqn, symbols));
         ResolveFields(context, contextTypeFqn, drafts, symbols);
-        ResolveOperations(context, contextTypeFqn, drafts, symbols);
+        ResolveOperations(context, contextTypeFqn, drafts, symbols, typeSymbols, log);
 
         return
         [
@@ -240,7 +308,9 @@ internal static class PersistenceModelBuilder
         ClassifierContext context,
         string contextTypeFqn,
         List<ObjectDraft> drafts,
-        ImmutableArray<Symbol> symbols)
+        ImmutableArray<Symbol> symbols,
+        IReadOnlyDictionary<string, FactReference> typeSymbols,
+        ResolutionLog log)
     {
         var contextByEntity = ContextTypeByEntityType(symbols);
         var entityObjects = drafts
@@ -264,31 +334,62 @@ internal static class PersistenceModelBuilder
                 continue;
             }
 
+            var entityTypeFqn = PayloadReader.Value(access, EntityTypeKey);
+            if (entityTypeFqn is not null && !typeSymbols.ContainsKey(entityTypeFqn))
+            {
+                log.MissingEntitySymbol.Add(access.Identity);
+                continue;
+            }
+
             if (PayloadReader.Value(access, SqlTargetKey) is { } target)
             {
+                var reached = sqlObjects.TryGetValue(target, out var sqlDraft);
+                if (reached)
+                {
+                    log.ReachedAnObject.Add(access.Identity);
+                }
+
                 var statementKind = OperationKind(PayloadReader.Value(access, SqlOperationKey));
-                if (statementKind is not DataOperationKind.Unknown && sqlObjects.TryGetValue(target, out var sqlDraft))
+                if (statementKind is not DataOperationKind.Unknown && reached)
                 {
                     AddOperation(
-                        sqlDraft,
+                        sqlDraft!,
                         statementKind,
                         StatementClassifier,
                         access.Identity,
-                        PayloadReader.Multi(access, SqlColumnsKey));
+                        PayloadReader.Multi(access, SqlColumnsKey),
+                        log);
                 }
 
                 continue;
             }
 
-            var entityKind = OperationKind(PayloadReader.Value(access, OperationKey));
-            if (entityKind is DataOperationKind.Unknown || PayloadReader.Value(access, EntityTypeKey) is not { } entityTypeFqn)
+            if (entityTypeFqn is null)
             {
                 continue;
             }
 
-            foreach (var draft in entityObjects[entityTypeFqn])
+            var targets = entityObjects[entityTypeFqn].ToArray();
+            if (targets.Length > 0)
             {
-                AddOperation(draft, entityKind, EntityClassifier, access.Identity, ResolvedFieldNames(draft, PayloadReader.Multi(access, FieldNamesKey)));
+                log.ReachedAnObject.Add(access.Identity);
+            }
+
+            var entityKind = OperationKind(PayloadReader.Value(access, OperationKey));
+            if (entityKind is DataOperationKind.Unknown)
+            {
+                continue;
+            }
+
+            foreach (var draft in targets)
+            {
+                AddOperation(
+                    draft,
+                    entityKind,
+                    EntityClassifier,
+                    access.Identity,
+                    ResolvedFieldNames(draft, PayloadReader.Multi(access, FieldNamesKey)),
+                    log);
             }
         }
 
@@ -309,6 +410,7 @@ internal static class PersistenceModelBuilder
                     EntityClassifier,
                     assignment.Identity,
                     ResolvedFieldNames(draft, [propertyName]),
+                    log,
                     flush);
             }
         }
@@ -320,6 +422,7 @@ internal static class PersistenceModelBuilder
         ClassifierIdentity classifier,
         ObservationIdentity evidence,
         IEnumerable<string> fieldNames,
+        ResolutionLog log,
         ObservationIdentity? additionalEvidence = null)
     {
         if (!draft.Operations.TryGetValue(kind, out var operation))
@@ -330,6 +433,8 @@ internal static class PersistenceModelBuilder
 
         operation.Callables[evidence.Owner.Id.Value] = evidence.Owner;
         operation.Evidence.Add(evidence);
+        log.Resolved.Add(evidence);
+        log.ResolvingCallables.Add(evidence.Owner.Id.Value);
         if (additionalEvidence is { } extra)
         {
             operation.Evidence.Add(extra);

@@ -8,6 +8,7 @@ using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
+using Csharp2Md.Domain.Relations;
 
 namespace Csharp2Md.Analysis.Tests.Classification;
 
@@ -692,6 +693,113 @@ public sealed class PersistenceModelBuilderTests
         Assert.Contains(payOrder.Reference, operation.Callables);
         Assert.Contains(reprice.Reference, operation.Callables);
         Assert.Equal<string>(["Amount", "Status"], operation.FieldNames);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-39")]
+    public void Build_StatementTargetThatNeverReachedThePayload_IsUnresolvedForOperatesOnAndMintsNoObject()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var reader = AddMethod(pipeline, "SelectAllFrom", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(pipeline, reader, ordinal: 1, ("operation", "unknown"), ("entity-type", OrderFqn));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var unresolved = Assert.Single(model.Unresolved);
+        Assert.Equal(RelationKind.OperatesOn, unresolved.Kind);
+        Assert.Equal(UnresolvedCause.InsufficientEvidence, unresolved.Cause);
+        Assert.Equal(reader.Reference, unresolved.Source);
+        Assert.Equal<string>(["Orders"], Assert.Single(model.Stores).Objects.Select(dataObject => dataObject.TableName));
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-40")]
+    public void Build_StatementOnTheContextThatTheReaderRefused_IsUnresolvedForAccessesData()
+    {
+        var pipeline = Arrange();
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var caller = AddMethod(pipeline, "MergeOrders", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(pipeline, caller, ordinal: 1, ("operation", "unknown"), ("context-type", OrderDbContextFqn));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var unresolved = Assert.Single(model.Unresolved);
+        Assert.Equal(RelationKind.AccessesData, unresolved.Kind);
+        Assert.Equal(UnresolvedCause.NoCandidateFound, unresolved.Cause);
+        Assert.Equal(caller.Reference, unresolved.Source);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-41")]
+    public void Build_EntityTypeWithNoSymbolFact_IsUnresolvedForAccessesDataAndMintsNoOperation()
+    {
+        var pipeline = Arrange();
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var reader = AddMethod(pipeline, "GetOrder", "global::Acme.Orders.Data.OrderQueries");
+        AddDataAccess(pipeline, reader, ordinal: 1, ("operation", "read"), ("entity-type", OrderFqn));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        var unresolved = Assert.Single(model.Unresolved);
+        Assert.Equal(RelationKind.AccessesData, unresolved.Kind);
+        Assert.Equal(UnresolvedCause.NoCandidateFound, unresolved.Cause);
+        Assert.All(Assert.Single(model.Stores).Objects, dataObject => Assert.Empty(dataObject.Operations));
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-42")]
+    public void Build_PersistenceNamedTypeWithNoDataAccess_ContributesNothing()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        AddNamedType(pipeline, "global::Acme.Orders.Data.OrderRepository");
+        AddMethod(pipeline, "GetById", "global::Acme.Orders.Data.OrderRepository");
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        Assert.Empty(model.Unresolved);
+        var store = Assert.Single(model.Stores);
+        Assert.Equal<string>(["Orders"], store.Objects.Select(dataObject => dataObject.TableName));
+        Assert.All(store.Objects, dataObject => Assert.Empty(dataObject.Operations));
+        Assert.Equal(0, model.Coverage.RecognizedOccurrences);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-51")]
+    [Trait("Requirement", "PK-52")]
+    public void Build_MixedLedger_CountsEveryRecognizedOccurrenceAndNamesTheUnresolvedOwners()
+    {
+        var pipeline = Arrange();
+        AddNamedType(pipeline, OrderFqn);
+        AddDbSetProperty(pipeline, OrderDbContextFqn, "Orders", OrderFqn);
+        var reader = AddMethod(pipeline, "GetOrder", "global::Acme.Orders.Data.OrderQueries");
+        AddDataAccess(pipeline, reader, ordinal: 1, ("operation", "read"), ("entity-type", OrderFqn));
+        var writer = AddMethod(pipeline, "PayOrder", "global::Acme.Orders.Data.OrderWrites");
+        AddAssignment(pipeline, writer, ordinal: 1, ("entity-type", OrderFqn), ("field-name", "Status"));
+        AddDataAccess(pipeline, writer, ordinal: 2, ("operation", "unknown"), ("context-type", OrderDbContextFqn));
+        var stray = AddMethod(pipeline, "SelectAllFrom", "global::Acme.Orders.Data.OrderSqlQueries");
+        AddDataAccess(pipeline, stray, ordinal: 1, ("operation", "unknown"), ("entity-type", OrderFqn));
+
+        var model = PersistenceModelBuilder.Build(new ClassifierContext(pipeline), CancellationToken.None);
+
+        Assert.Equal(3, model.Coverage.RecognizedOccurrences);
+        Assert.Equal(2, model.Coverage.ResolvedOccurrences);
+        Assert.Equal<string>([stray.Reference.Id.Value], model.Coverage.UnresolvedOwnerIds);
+    }
+
+    [Fact]
+    [Trait("Requirement", "PK-53")]
+    public void CoverageCounts_ReportsRawCountsOnly_WithNoPercentageAndNoVerdict()
+    {
+        var members = typeof(CoverageCounts)
+            .GetProperties()
+            .Select(property => property.Name)
+            .OrderBy(name => name, StringComparer.Ordinal);
+
+        Assert.Equal<string>(["RecognizedOccurrences", "ResolvedOccurrences", "UnresolvedOwnerIds"], members);
     }
 
     private static PipelineContext Arrange()

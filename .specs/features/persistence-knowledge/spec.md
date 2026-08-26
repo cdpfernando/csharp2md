@@ -303,10 +303,10 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | PK-36 | P1: Data operations and access relations | - | Pending |
 | PK-37 | P1: Data operations and access relations | - | Pending |
 | PK-38 | P1: Data operations and access relations | - | Pending |
-| PK-39 | P1: Unresolved evidence and negative cases | - | Pending |
-| PK-40 | P1: Unresolved evidence and negative cases | - | Pending |
-| PK-41 | P1: Unresolved evidence and negative cases | - | Pending |
-| PK-42 | P1: Unresolved evidence and negative cases | - | Pending |
+| PK-39 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
+| PK-40 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
+| PK-41 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
+| PK-42 | P1: Unresolved evidence and negative cases | Phase 4 (T18) | Implementing |
 | PK-43 | P1: Unresolved evidence and negative cases | - | Pending |
 | PK-44 | P1: Unresolved evidence and negative cases | - | Pending |
 | PK-45 | P1: Determinism, security and invariants | - | Pending |
@@ -315,9 +315,9 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | PK-48 | P1: Determinism, security and invariants | - | Pending |
 | PK-49 | P1: Determinism, security and invariants | - | Pending |
 | PK-50 | P1: Determinism, security and invariants | - | Pending |
-| PK-51 | P2: Persistence run coverage | - | Pending |
-| PK-52 | P2: Persistence run coverage | - | Pending |
-| PK-53 | P2: Persistence run coverage | - | Pending |
+| PK-51 | P2: Persistence run coverage | Phase 4 (T18) | Implementing |
+| PK-52 | P2: Persistence run coverage | Phase 4 (T18) | Implementing |
+| PK-53 | P2: Persistence run coverage | Phase 4 (T18) | Implementing |
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
