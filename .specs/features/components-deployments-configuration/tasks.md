@@ -1146,12 +1146,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] The record carries the three counts and each unreached component's id
-- [ ] No percentage or recall figure appears in the payload
-- [ ] The record is emitted once per run, after the fact walk
-- [ ] Unit tests assert the counts for a hand-built model and the absence of `%`
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] The record carries the three counts and each unreached component's id
+- [x] No percentage or recall figure appears in the payload
+- [x] The record is emitted once per run, after the fact walk
+- [x] Unit tests assert the counts for a hand-built model and the absence of `%`
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: full

@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
@@ -97,7 +98,31 @@ internal static class TopologyEmitter
             unresolvedCount++;
         }
 
+        EmitCoverageDiagnostic(context, model, components);
         return new ClassifierPassResult(factCount, relationCount, 0, unresolvedCount);
+    }
+
+    private static void EmitCoverageDiagnostic(
+        ClassifierContext context,
+        TopologyModel model,
+        Dictionary<string, Component> components)
+    {
+        var identityOrKey = components.Count > 0
+            ? components.Values.OrderBy(static component => component.Reference.Id.Value, StringComparer.Ordinal).First().Reference.Id.Value
+            : context.FactsByType<Solution>().SingleOrDefault()?.Reference.Id.Value;
+        var unreachedIds = string.Join(
+            ", ",
+            model.Unreached
+                .Select(node => components.TryGetValue(node.ComponentName, out var component) ? component.Name : null)
+                .Where(static name => name is not null)
+                .Cast<string>()
+                .OrderBy(static name => name, StringComparer.Ordinal));
+        var message =
+            $"Projects grouped: {model.Coverage.ProjectsGrouped}; " +
+            $"applications found: {model.Coverage.ApplicationsFound}; " +
+            $"components with no deployment unit: {model.Coverage.ComponentsWithoutDeployment}; " +
+            $"unreached component ids: {unreachedIds}";
+        context.Accumulator.AddDiagnostic(new DiagnosticRecord("component-coverage", message, identityOrKey));
     }
 
     private static Symbol[] OwnersFor(ComponentGroup group, ClassifierContext context)

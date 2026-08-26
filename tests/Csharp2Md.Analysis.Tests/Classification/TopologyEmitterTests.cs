@@ -186,6 +186,63 @@ public sealed class TopologyEmitterTests
         Assert.Empty(snapshot.Facts.OfType<DeploymentUnit>());
     }
 
+    [Fact]
+    [Trait("Requirement", "CDC-56")]
+    [Trait("Requirement", "CDC-58")]
+    public void Emit_HandBuiltModel_PublishesComponentCoverageCountsWithoutPercent()
+    {
+        var pipeline = Arrange();
+        var app = AddProject(pipeline, "App/App.csproj");
+        var host = AddSymbol(pipeline, app, "Host");
+        AddObservation(pipeline, host, 1);
+        var model = Deployable(app, Chain(pipeline, host));
+        var context = Context(pipeline);
+
+        TopologyEmitter.Emit(model, context);
+
+        var snapshot = pipeline.Accumulator.ToSnapshot();
+        var diagnostic = Assert.Single(snapshot.Diagnostics, record => record.Code == "component-coverage");
+        var component = Assert.Single(snapshot.Facts.OfType<Component>());
+        Assert.Equal(component.Reference.Id.Value, diagnostic.IdentityOrKey);
+        Assert.Contains("Projects grouped: 1", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("applications found: 1", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("components with no deployment unit: 0", diagnostic.Message, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"\b\d+(\.\d+)?\s*%", diagnostic.Message);
+        Assert.DoesNotContain("percent", diagnostic.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotMatch(@"(?i)\b(pass|fail|passed|failed|verdict|recall)\b", diagnostic.Message);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-56")]
+    [Trait("Requirement", "CDC-58")]
+    public void Emit_UnreachedComponent_CoverageNamesTheUnreachedId()
+    {
+        var pipeline = Arrange();
+        var lib = AddProject(pipeline, "Lib/Lib.csproj");
+        var type = AddSymbol(pipeline, lib, "UnusedType");
+        var outputKind = AddObservation(pipeline, lib, 1, ("output-kind", "library"));
+        AddObservation(pipeline, type, 1);
+        var chain = EvidenceChain.Create([outputKind.Identity]);
+        var model = new TopologyModel(
+            [new ComponentGroup("Lib/Lib.csproj", GroupingEvidence.Unreached, [lib.Id])],
+            [],
+            [],
+            [new UnreachedComponent("Lib/Lib.csproj", chain)],
+            new TopologyCoverage(1, 0, 1));
+        var context = Context(pipeline);
+
+        TopologyEmitter.Emit(model, context);
+
+        var snapshot = pipeline.Accumulator.ToSnapshot();
+        var diagnostic = Assert.Single(snapshot.Diagnostics, record => record.Code == "component-coverage");
+        var component = Assert.Single(snapshot.Facts.OfType<Component>());
+        Assert.Contains("Projects grouped: 1", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("applications found: 0", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains("components with no deployment unit: 1", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains(component.Name, diagnostic.Message, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"\b\d+(\.\d+)?\s*%", diagnostic.Message);
+    }
+
     private static EvidenceMethod MinimumBelongsTo =>
         Csharp2Md.Domain.Registry.TaxonomyTables.Default.Relations
             .Single(relation => relation.Kind == RelationKind.BelongsTo)
