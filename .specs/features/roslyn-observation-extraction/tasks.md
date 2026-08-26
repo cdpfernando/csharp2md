@@ -1649,11 +1649,11 @@ is a negative. After this task the fixture has at least one positive of each of 
 
 **Done when**:
 
-- [ ] `_context.SaveChanges` is a `DataAccess` observation
-- [ ] `OrderRepository` produces no `DataAccess`
-- [ ] Reading observations by kind from the fixture shows all ten kinds at least once
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `_context.SaveChanges` is a `DataAccess` observation
+- [x] `OrderRepository` produces no `DataAccess`
+- [x] Reading observations by kind from the fixture shows all ten kinds at least once
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
