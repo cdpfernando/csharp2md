@@ -45,6 +45,7 @@ internal sealed class InventoryStage : IPipelineStage
         context.Accumulator.AddFact(factSet.Solution);
         var factCount = 1;
         var csharpDocuments = ImmutableArray.CreateBuilder<Document>();
+        var configurationDocuments = ImmutableArray.CreateBuilder<Document>();
         var targetFrameworks = new SortedSet<string>(StringComparer.Ordinal);
 
         foreach (var projectPath in existing)
@@ -85,6 +86,7 @@ internal sealed class InventoryStage : IPipelineStage
             }
 
             csharpDocuments.AddRange(inventoried.CSharpDocuments);
+            configurationDocuments.AddRange(inventoried.ConfigurationDocuments);
         }
 
         foreach (var absent in missing)
@@ -98,6 +100,13 @@ internal sealed class InventoryStage : IPipelineStage
 
         context.DeclaredTargetFrameworks = [.. targetFrameworks];
         context.CSharpDocuments = csharpDocuments.ToImmutable();
+        context.AuthorizedRoot = root;
+        context.ConfigurationDocuments =
+        [
+            .. configurationDocuments
+                .ToImmutable()
+                .OrderBy(static document => document.RelativePath, StringComparer.Ordinal),
+        ];
 
         return ValueTask.FromResult(new StageResult(
             factCount,

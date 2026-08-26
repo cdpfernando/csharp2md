@@ -519,12 +519,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `AuthorizedRoot` holds the same root the path guard uses, so no second derivation exists
-- [ ] `ConfigurationDocuments` accumulates across every analyzed project, ordered by relative path
-- [ ] The stage's fact count, diagnostics and abort behaviour are unchanged
-- [ ] Integration tests assert both fixture `appsettings*.json` files reach the context and that no `unsupported-document` diagnostic names them
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] `AuthorizedRoot` holds the same root the path guard uses, so no second derivation exists
+- [x] `ConfigurationDocuments` accumulates across every analyzed project, ordered by relative path
+- [x] The stage's fact count, diagnostics and abort behaviour are unchanged
+- [x] Integration tests assert both fixture `appsettings*.json` files reach the context and that no `unsupported-document` diagnostic names them
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: integration
 **Gate**: full

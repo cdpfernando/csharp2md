@@ -107,6 +107,56 @@ public sealed class InventoryStageTests
         }
     }
 
+    [Fact]
+    [Trait("Requirement", "CDC-25")]
+    [Trait("Requirement", "CDC-34")]
+    public async Task ExecuteAsync_AcmeOrders_PublishesTheAuthorizedRootUsedByThePathGuard()
+    {
+        var solutionPath = AcmeOrdersSolutionPath();
+        var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
+        var expectedRoot = AuthorizedRoot.Compute(solutionPath, ExistingAbsolutePaths(solutionPath, listed));
+        var context = new PipelineContext(new SwallowingSession(), solutionPath);
+
+        var result = await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+
+        Assert.False(result.AbortPublication);
+        AssertEqualPaths(expectedRoot, context.AuthorizedRoot);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-25")]
+    [Trait("Requirement", "CDC-34")]
+    public async Task ExecuteAsync_AcmeOrders_PublishesBothAppsettingsFilesWithoutUnsupportedDiagnostic()
+    {
+        var solutionPath = AcmeOrdersSolutionPath();
+        var context = new PipelineContext(new SwallowingSession(), solutionPath);
+
+        var result = await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+
+        Assert.False(result.AbortPublication);
+        Assert.True(result.FactCount > 0);
+        Assert.Equal(
+            [
+                "Acme.Orders/appsettings.Development.json",
+                "Acme.Orders/appsettings.json",
+            ],
+            context.ConfigurationDocuments.Select(document => document.RelativePath).ToArray());
+        var diagnostics = context.Accumulator.ToSnapshot().Diagnostics;
+        Assert.DoesNotContain(
+            diagnostics,
+            record => string.Equals(record.Code, "unsupported-document", StringComparison.Ordinal)
+                && string.Equals(record.IdentityOrKey, "Acme.Orders/appsettings.json", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            diagnostics,
+            record => string.Equals(record.Code, "unsupported-document", StringComparison.Ordinal)
+                && string.Equals(record.IdentityOrKey, "Acme.Orders/appsettings.Development.json", StringComparison.Ordinal));
+        Assert.Contains(
+            diagnostics,
+            record => string.Equals(record.Code, "unsupported-document", StringComparison.Ordinal)
+                && record.IdentityOrKey is not null
+                && record.IdentityOrKey.EndsWith(".csproj", StringComparison.Ordinal));
+    }
+
     private static string AcmeOrdersSolutionPath()
     {
         var path = Path.Combine(
@@ -117,6 +167,28 @@ public sealed class InventoryStageTests
             "Acme.Orders.slnx");
         Assert.True(File.Exists(path), $"Expected fixture at '{path}'.");
         return path;
+    }
+
+    private static IReadOnlyList<string> ExistingAbsolutePaths(string solutionPath, IEnumerable<string> listed)
+    {
+        var solutionDirectory = Path.GetDirectoryName(Path.GetFullPath(solutionPath))
+            ?? throw new InvalidOperationException($"'{solutionPath}' has no directory.");
+        return listed
+            .Select(path => Path.GetFullPath(Path.Combine(solutionDirectory, path)))
+            .Where(File.Exists)
+            .ToArray();
+    }
+
+    private static void AssertEqualPaths(string expected, string actual)
+    {
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        Assert.Equal(Normalize(expected), Normalize(actual), StringComparer.FromComparison(comparison));
+    }
+
+    private static string Normalize(string path)
+    {
+        var full = Path.GetFullPath(path);
+        return full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
     }
 
     private sealed class SwallowingSession : IStoreSession
