@@ -254,14 +254,14 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Identifies `ControllerBase` descendants via `BaseType` observations on declaring types
-- [ ] Creates `EntryPoint` for each callable action method on a `ControllerBase` descendant
-- [ ] Creates `EntryPoint` for `HandleAsync` on `IIntegrationEventHandler<T>` implementors
-- [ ] Skips non-callable symbols and non-controller/handler types
-- [ ] Records diagnostic for controller actions without route declarations
-- [ ] Classifier identity: `csharp2md.classifier.entrypoint` version 1
-- [ ] Unit tests with synthetic facts/observations
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Identifies `ControllerBase` descendants via `BaseType` observations on declaring types
+- [x] Creates `EntryPoint` for each callable action method on a `ControllerBase` descendant
+- [x] Creates `EntryPoint` for `HandleAsync` on `IIntegrationEventHandler<T>` implementors
+- [x] Skips non-callable symbols and non-controller/handler types
+- [x] Records diagnostic for controller actions without route declarations
+- [x] Classifier identity: `csharp2md.classifier.entrypoint` version 1
+- [x] Unit tests with synthetic facts/observations
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: unit
 **Gate**: full
