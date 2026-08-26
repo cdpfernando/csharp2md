@@ -251,51 +251,51 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| EBC-01 | P1: Project-as-component promotion | Phase 2 (T6, T8) | Implementing |
-| EBC-02 | P1: Project-as-component promotion | Phase 2 (T6, T8) | Implementing |
-| EBC-03 | P1: Project-as-component promotion | Phase 2 (T6) | Implementing |
-| EBC-04 | P1: Project-as-component promotion | Phase 2 (T6) | Implementing |
-| EBC-05 | P1: HTTP entry point classification | Phase 2 (T7, T8) | Implementing |
-| EBC-06 | P1: HTTP entry point classification | Phase 3 (T9) | Implementing |
-| EBC-07 | P1: HTTP entry point classification | Phase 4 (T14, T15) | Implementing |
-| EBC-08 | P1: HTTP entry point classification | Phase 2 (T7) | Implementing |
-| EBC-09 | P1: HTTP entry point classification | Phase 2 (T7) | Implementing |
-| EBC-10 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
-| EBC-11 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
-| EBC-12 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
-| EBC-13 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
-| EBC-14 | P1: Outbound HTTP boundary classification | Phase 4 (T14) | Implementing |
-| EBC-15 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
-| EBC-16 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
-| EBC-17 | P1: Messaging boundary classification | Phase 3 (T11) | Implementing |
-| EBC-18 | P1: Messaging boundary classification | Phase 3 (T12) | Implementing |
-| EBC-19 | P1: Messaging boundary classification | Phase 2 (T7) | Implementing |
-| EBC-20 | P1: Messaging boundary classification | Phase 3 (T12), Phase 4 (T14) | Implementing |
-| EBC-21 | P1: Messaging contract classification | Phase 4 (T13, T15) | Implementing |
-| EBC-22 | P1: Messaging contract classification | Phase 4 (T13) | Implementing |
-| EBC-23 | P1: Messaging contract classification | Phase 4 (T14, T15) | Implementing |
-| EBC-24 | P1: Messaging contract classification | Phase 4 (T13, T15) | Implementing |
-| EBC-25 | P1: Messaging contract classification | Phase 4 (T13) | Implementing |
-| EBC-26 | P1: Messaging contract classification | Phase 4 (T13) | Implementing |
-| EBC-27 | P1: Composable classification stage | Phase 1 (T2, T4, T5), Phase 5 (T20) | Implementing |
-| EBC-28 | P1: Composable classification stage | Phase 1 (T3), Phase 5 (T20) | Implementing |
-| EBC-29 | P1: Composable classification stage | Phase 1 (T4), Phase 5 (T20) | Implementing |
-| EBC-30 | P1: Composable classification stage | Phase 1 (T4), Phase 5 (T20) | Implementing |
-| EBC-31 | P1: Composable classification stage | Phase 1 (T4) | Implementing |
-| EBC-32 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T17) | Implementing |
-| EBC-33 | P1: Candidates, unresolved, and diagnostics | Phase 3 (T9) | Implementing |
-| EBC-34 | P1: Candidates, unresolved, and diagnostics | Phase 4 (T14) | Implementing |
-| EBC-35 | P1: Candidates, unresolved, and diagnostics | Phase 2 (T8), Phase 5 (T16) | Implementing |
-| EBC-36 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T16) | Implementing |
-| EBC-37 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T16, T19) | Implementing |
-| EBC-38 | P1: Candidates, unresolved, and diagnostics | Phase 1 (T1) | Implementing |
-| EBC-39 | P1: Determinism and invariants | Phase 5 (T17) | Implementing |
-| EBC-40 | P1: Determinism and invariants | Phase 5 (T17) | Implementing |
-| EBC-41 | P1: Determinism and invariants | Phase 5 (T17) | Implementing |
-| EBC-42 | P1: Determinism and invariants | Phase 5 (T18) | Implementing |
-| EBC-43 | P1: Determinism and invariants | Phase 5 (T18) | Implementing |
-| EBC-44 | P1: Determinism and invariants | Phase 5 (T18) | Implementing |
-| EBC-45 | P1: Determinism and invariants | Phase 5 (T18) | Implementing |
+| EBC-01 | P1: Project-as-component promotion | Phase 2 (T6, T8) | ✅ Verified |
+| EBC-02 | P1: Project-as-component promotion | Phase 2 (T6, T8) | ✅ Verified |
+| EBC-03 | P1: Project-as-component promotion | Phase 2 (T6) | ✅ Verified |
+| EBC-04 | P1: Project-as-component promotion | Phase 2 (T6) | ✅ Verified |
+| EBC-05 | P1: HTTP entry point classification | Phase 2 (T7, T8) | ✅ Verified |
+| EBC-06 | P1: HTTP entry point classification | Phase 3 (T9) | ✅ Verified |
+| EBC-07 | P1: HTTP entry point classification | Phase 4 (T14, T15) | ✅ Verified |
+| EBC-08 | P1: HTTP entry point classification | Phase 2 (T7) | ✅ Verified |
+| EBC-09 | P1: HTTP entry point classification | Phase 2 (T7) | ✅ Verified |
+| EBC-10 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | ✅ Verified |
+| EBC-11 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | ✅ Verified |
+| EBC-12 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | ✅ Verified |
+| EBC-13 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | ✅ Verified |
+| EBC-14 | P1: Outbound HTTP boundary classification | Phase 4 (T14) | ✅ Verified |
+| EBC-15 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | ✅ Verified |
+| EBC-16 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | ✅ Verified |
+| EBC-17 | P1: Messaging boundary classification | Phase 3 (T11) | ✅ Verified |
+| EBC-18 | P1: Messaging boundary classification | Phase 3 (T12) | ✅ Verified |
+| EBC-19 | P1: Messaging boundary classification | Phase 2 (T7) | ✅ Verified |
+| EBC-20 | P1: Messaging boundary classification | Phase 3 (T12), Phase 4 (T14) | ✅ Verified |
+| EBC-21 | P1: Messaging contract classification | Phase 4 (T13, T15) | ✅ Verified |
+| EBC-22 | P1: Messaging contract classification | Phase 4 (T13) | ✅ Verified |
+| EBC-23 | P1: Messaging contract classification | Phase 4 (T14, T15) | ✅ Verified |
+| EBC-24 | P1: Messaging contract classification | Phase 4 (T13, T15) | ✅ Verified |
+| EBC-25 | P1: Messaging contract classification | Phase 4 (T13) | ✅ Verified |
+| EBC-26 | P1: Messaging contract classification | Phase 4 (T13) | ✅ Verified |
+| EBC-27 | P1: Composable classification stage | Phase 1 (T2, T4, T5), Phase 5 (T20) | ✅ Verified |
+| EBC-28 | P1: Composable classification stage | Phase 1 (T3), Phase 5 (T20) | ✅ Verified |
+| EBC-29 | P1: Composable classification stage | Phase 1 (T4), Phase 5 (T20) | ✅ Verified |
+| EBC-30 | P1: Composable classification stage | Phase 1 (T4), Phase 5 (T20) | ✅ Verified |
+| EBC-31 | P1: Composable classification stage | Phase 1 (T4) | ✅ Verified |
+| EBC-32 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T17) | ✅ Verified |
+| EBC-33 | P1: Candidates, unresolved, and diagnostics | Phase 3 (T9) | ✅ Verified |
+| EBC-34 | P1: Candidates, unresolved, and diagnostics | Phase 4 (T14) | ✅ Verified |
+| EBC-35 | P1: Candidates, unresolved, and diagnostics | Phase 2 (T8), Phase 5 (T16) | ✅ Verified |
+| EBC-36 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T16) | ✅ Verified |
+| EBC-37 | P1: Candidates, unresolved, and diagnostics | Phase 5 (T16, T19) | ✅ Verified |
+| EBC-38 | P1: Candidates, unresolved, and diagnostics | Phase 1 (T1) | ✅ Verified |
+| EBC-39 | P1: Determinism and invariants | Phase 5 (T17) | ✅ Verified |
+| EBC-40 | P1: Determinism and invariants | Phase 5 (T17) | ✅ Verified |
+| EBC-41 | P1: Determinism and invariants | Phase 5 (T17) | ✅ Verified |
+| EBC-42 | P1: Determinism and invariants | Phase 5 (T18) | ✅ Verified |
+| EBC-43 | P1: Determinism and invariants | Phase 5 (T18) | ✅ Verified |
+| EBC-44 | P1: Determinism and invariants | Phase 5 (T18) | ✅ Verified |
+| EBC-45 | P1: Determinism and invariants | Phase 5 (T18) | ✅ Verified |
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
