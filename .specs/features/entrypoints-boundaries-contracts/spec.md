@@ -260,13 +260,13 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | EBC-07 | P1: HTTP entry point classification | Phase 4 (T14, T15) | In Tasks |
 | EBC-08 | P1: HTTP entry point classification | Phase 2 (T7) | Implementing |
 | EBC-09 | P1: HTTP entry point classification | Phase 2 (T7) | Implementing |
-| EBC-10 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | In Tasks |
-| EBC-11 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | In Tasks |
-| EBC-12 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | In Tasks |
-| EBC-13 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | In Tasks |
+| EBC-10 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
+| EBC-11 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
+| EBC-12 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
+| EBC-13 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
 | EBC-14 | P1: Outbound HTTP boundary classification | Phase 4 (T14) | In Tasks |
-| EBC-15 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | In Tasks |
-| EBC-16 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | In Tasks |
+| EBC-15 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
+| EBC-16 | P1: Outbound HTTP boundary classification | Phase 3 (T10) | Implementing |
 | EBC-17 | P1: Messaging boundary classification | Phase 3 (T11) | In Tasks |
 | EBC-18 | P1: Messaging boundary classification | Phase 3 (T12) | In Tasks |
 | EBC-19 | P1: Messaging boundary classification | Phase 2 (T7) | Implementing |

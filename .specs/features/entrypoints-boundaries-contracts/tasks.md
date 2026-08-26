@@ -334,15 +334,15 @@ T16 → T17 → T18 → T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Detects `CreateClient(name)` invocations from observation payloads
-- [ ] Extracts client name literal, HTTP method, route literal
-- [ ] Creates outbound `BoundaryOperation` with `destinationScope`, `httpMethod`, `route`
-- [ ] Creates candidate `ExternalSystem` with `ClientName` literal role
-- [ ] Creates `CandidateLink` of kind `Targets`
-- [ ] Handles multiple outbound calls per callable (distinct tuples)
-- [ ] Classifier identity: `csharp2md.classifier.http-outbound` version 1
-- [ ] Unit tests with synthetic observations for `PlaceOrderAsync`, `NotifyOrderPlacedAsync`, `RequestShippingAsync` patterns
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Detects `CreateClient(name)` invocations from observation payloads
+- [x] Extracts client name literal, HTTP method, route literal
+- [x] Creates outbound `BoundaryOperation` with `destinationScope`, `httpMethod`, `route`
+- [x] Creates candidate `ExternalSystem` with `ClientName` literal role
+- [x] Creates `CandidateLink` of kind `Targets`
+- [x] Handles multiple outbound calls per callable (distinct tuples)
+- [x] Classifier identity: `csharp2md.classifier.http-outbound` version 1
+- [x] Unit tests with synthetic observations for `PlaceOrderAsync`, `NotifyOrderPlacedAsync`, `RequestShippingAsync` patterns
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
 
 **Tests**: unit
 **Gate**: full

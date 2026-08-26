@@ -8,6 +8,7 @@ using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
+using Csharp2Md.Domain.Relations;
 
 namespace Csharp2Md.Analysis.Tests.Classification;
 
@@ -135,6 +136,148 @@ public sealed class BoundaryPassTests
         Assert.Equal(1, BoundaryPass.HttpInboundIdentity.Version);
     }
 
+    [Fact]
+    [Trait("Requirement", "EBC-10")]
+    [Trait("Requirement", "EBC-11")]
+    [Trait("Requirement", "EBC-12")]
+    [Trait("Requirement", "EBC-15")]
+    [Trait("Requirement", "EBC-16")]
+    public void Execute_PlaceOrderAsyncCreateClientAndPost_CreatesOutboundHttpBoundaryAndCandidateExternalSystem()
+    {
+        var pipeline = ArrangeOrders();
+        var service = AddNamedType(pipeline, "OrderService", "global::Acme.Orders", OrdersProject);
+        var method = AddMethod(pipeline, "PlaceOrderAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        AddComponent(pipeline, [service.Reference, method.Reference]);
+        AddCreateClient(pipeline, method.Reference, "PaymentService", ordinal: 1);
+        AddHttpInvocation(pipeline, method.Reference, "PostAsJsonAsync", "payments/authorize", ordinal: 2);
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal(BoundaryDirection.Outbound, operation.Direction);
+        Assert.Equal(BoundaryProtocol.Http, operation.Protocol);
+        Assert.Equal("PaymentService", operation.DestinationScope);
+        Assert.Equal("POST", operation.HttpMethod);
+        Assert.NotNull(operation.Route);
+        Assert.Equal(LiteralRole.Route, operation.Route.Value.Role);
+        Assert.Equal("payments/authorize", operation.Route.Value.Value);
+        Assert.Equal(method.Reference, operation.Symbol);
+        var external = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<ExternalSystem>().ToArray());
+        Assert.Equal(LiteralRole.ClientName, external.Name.Role);
+        Assert.Equal("PaymentService", external.Name.Value);
+        var link = Assert.Single(pipeline.Accumulator.ToSnapshot().Candidates.ToArray());
+        Assert.Equal(RelationKind.Targets, link.Kind);
+        Assert.Equal(operation.Reference, link.Source);
+        Assert.Equal(external.Reference, link.ProposedTarget);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().ConfirmedRelations);
+        Assert.Equal(2, result.FactCount);
+        Assert.Equal(1, result.CandidateCount);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-10")]
+    [Trait("Requirement", "EBC-11")]
+    public void Execute_NotifyOrderPlacedAsync_CreatesOutboundHttpBoundaryForNotificationService()
+    {
+        var pipeline = ArrangeOrders();
+        var service = AddNamedType(pipeline, "OrderService", "global::Acme.Orders", OrdersProject);
+        var method = AddMethod(pipeline, "NotifyOrderPlacedAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        AddComponent(pipeline, [service.Reference, method.Reference]);
+        AddCreateClient(pipeline, method.Reference, "NotificationService", ordinal: 1);
+        AddHttpInvocation(pipeline, method.Reference, "PostAsJsonAsync", "notifications/order-placed", ordinal: 2);
+        var context = new ClassifierContext(pipeline);
+
+        new BoundaryPass().Execute(context, CancellationToken.None);
+
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal("NotificationService", operation.DestinationScope);
+        Assert.Equal("POST", operation.HttpMethod);
+        Assert.Equal("notifications/order-placed", operation.Route!.Value.Value);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-10")]
+    [Trait("Requirement", "EBC-11")]
+    public void Execute_RequestShippingAsync_CreatesOutboundHttpBoundaryForShippingService()
+    {
+        var pipeline = ArrangeOrders();
+        var service = AddNamedType(pipeline, "OrderService", "global::Acme.Orders", OrdersProject);
+        var method = AddMethod(pipeline, "RequestShippingAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        AddComponent(pipeline, [service.Reference, method.Reference]);
+        AddCreateClient(pipeline, method.Reference, "ShippingService", ordinal: 1);
+        AddHttpInvocation(pipeline, method.Reference, "PostAsJsonAsync", "shipments", ordinal: 2);
+        var context = new ClassifierContext(pipeline);
+
+        new BoundaryPass().Execute(context, CancellationToken.None);
+
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal("ShippingService", operation.DestinationScope);
+        Assert.Equal("POST", operation.HttpMethod);
+        Assert.Equal("shipments", operation.Route!.Value.Value);
+        var external = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<ExternalSystem>().ToArray());
+        Assert.Equal("ShippingService", external.Name.Value);
+        Assert.Equal(LiteralRole.ClientName, external.Name.Role);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-13")]
+    public void Execute_MultipleOutboundHttpToDifferentClients_CreatesOneBoundaryPerDistinctTuple()
+    {
+        var pipeline = ArrangeOrders();
+        var service = AddNamedType(pipeline, "OrderService", "global::Acme.Orders", OrdersProject);
+        var method = AddMethod(pipeline, "PlaceOrderAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        AddComponent(pipeline, [service.Reference, method.Reference]);
+        AddCreateClient(pipeline, method.Reference, "PaymentService", ordinal: 1);
+        AddHttpInvocation(pipeline, method.Reference, "PostAsJsonAsync", "payments/authorize", ordinal: 2);
+        AddCreateClient(pipeline, method.Reference, "NotificationService", ordinal: 3);
+        AddHttpInvocation(pipeline, method.Reference, "PostAsJsonAsync", "notifications/order-placed", ordinal: 4);
+        var context = new ClassifierContext(pipeline);
+
+        new BoundaryPass().Execute(context, CancellationToken.None);
+
+        var operations = pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray();
+        Assert.Equal(2, operations.Length);
+        Assert.Contains(operations, operation => operation.DestinationScope == "PaymentService" && operation.Route!.Value.Value == "payments/authorize");
+        Assert.Contains(operations, operation => operation.DestinationScope == "NotificationService" && operation.Route!.Value.Value == "notifications/order-placed");
+        Assert.Equal(2, pipeline.Accumulator.ToSnapshot().Candidates.Length);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().ConfirmedRelations);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-34")]
+    public void Execute_NonConstantCreateClient_RecordsUnresolvedInsufficientEvidence()
+    {
+        var pipeline = ArrangeOrders();
+        var service = AddNamedType(pipeline, "OrderService", "global::Acme.Orders", OrdersProject);
+        var method = AddMethod(pipeline, "PlaceOrderAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        AddComponent(pipeline, [service.Reference, method.Reference]);
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(
+                method.Reference,
+                ObservationKind.Invocation,
+                ordinal: 1,
+                CreateClientPayload(clientName: null)));
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>());
+        var unresolved = Assert.Single(pipeline.Accumulator.ToSnapshot().Unresolved.ToArray());
+        Assert.Equal(UnresolvedCause.InsufficientEvidence, unresolved.Cause);
+        Assert.Equal(RelationKind.Targets, unresolved.Kind);
+        Assert.Equal(method.Reference, unresolved.Source);
+        Assert.Equal(1, result.UnresolvedCount);
+    }
+
+    [Fact]
+    [Trait("Requirement", "EBC-14")]
+    public void HttpOutboundIdentity_IsHttpOutboundClassifierVersion1()
+    {
+        Assert.Equal("csharp2md.classifier.http-outbound", BoundaryPass.HttpOutboundIdentity.Id);
+        Assert.Equal(1, BoundaryPass.HttpOutboundIdentity.Version);
+    }
+
     private static PipelineContext ArrangeOrders()
     {
         var pipeline = new PipelineContext(new SwallowingSession(), "alpha.sln");
@@ -183,6 +326,53 @@ public sealed class BoundaryPassTests
                 BoundaryPass.RouteKey,
                 StructuralLiteral.Create(LiteralRole.Route, template, BoundaryPass.RouteKey)),
         ]);
+
+    private static void AddCreateClient(PipelineContext pipeline, FactReference owner, string clientName, int ordinal) =>
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(owner, ObservationKind.Invocation, ordinal, CreateClientPayload(clientName)));
+
+    private static void AddHttpInvocation(
+        PipelineContext pipeline,
+        FactReference owner,
+        string methodName,
+        string route,
+        int ordinal) =>
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(
+                owner,
+                ObservationKind.Invocation,
+                ordinal,
+                NormalizedPayload.Create(
+                [
+                    new PayloadEntry(
+                        BoundaryPass.MethodNameKey,
+                        StructuralLiteral.Create(LiteralRole.ProtocolName, methodName, BoundaryPass.MethodNameKey)),
+                    new PayloadEntry(
+                        BoundaryPass.RouteKey,
+                        StructuralLiteral.Create(LiteralRole.Route, route, BoundaryPass.RouteKey)),
+                ])));
+
+    private static NormalizedPayload CreateClientPayload(string? clientName)
+    {
+        var entries = new List<PayloadEntry>
+        {
+            new(
+                BoundaryPass.MethodNameKey,
+                StructuralLiteral.Create(LiteralRole.ProtocolName, BoundaryPass.CreateClientMethodName, BoundaryPass.MethodNameKey)),
+            new(
+                BoundaryPass.TargetTypeKey,
+                StructuralLiteral.Create(LiteralRole.ProtocolName, BoundaryPass.HttpClientFactoryTypeName, BoundaryPass.TargetTypeKey)),
+        };
+        if (clientName is not null)
+        {
+            entries.Add(
+                new PayloadEntry(
+                    BoundaryPass.ClientNameKey,
+                    StructuralLiteral.Create(LiteralRole.ClientName, clientName, BoundaryPass.ClientNameKey)));
+        }
+
+        return NormalizedPayload.Create(entries);
+    }
 
     private static Observation CreateObservation(
         FactReference owner,
