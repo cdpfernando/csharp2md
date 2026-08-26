@@ -387,12 +387,12 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] `Value`, `Contains` and `Multi` behave identically to the existing private copies for single-valued entries
-- [ ] `Multi` splits on `|` and returns an empty array for a missing or blank entry
-- [ ] No file under `Classification/Passes/` is modified
-- [ ] Unit tests cover present, absent, blank and multi-valued entries
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count: 283 + new Analysis tests pass (no silent deletions)
+- [x] `Value`, `Contains` and `Multi` behave identically to the existing private copies for single-valued entries
+- [x] `Multi` splits on `|` and returns an empty array for a missing or blank entry
+- [x] No file under `Classification/Passes/` is modified
+- [x] Unit tests cover present, absent, blank and multi-valued entries
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count: 318 + 10 new Analysis tests = 328 pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
