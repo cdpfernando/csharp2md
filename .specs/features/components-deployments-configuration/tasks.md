@@ -270,10 +270,10 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `OutputType` is `Exe`; `TargetFramework`, `ImplicitUsings`, `Nullable`, the project reference and the package reference are unchanged
-- [ ] The fixture solution loads through `MsBuildWorkspaceFactory` without a new workspace diagnostic
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1211 pass; any count change is explained in the commit body
+- [x] `OutputType` is `Exe`; `TargetFramework`, `ImplicitUsings`, `Nullable`, the project reference and the package reference are unchanged
+- [x] The fixture solution loads through `MsBuildWorkspaceFactory` without a new workspace diagnostic
+- [x] Gate check passes: build gate command
+- [x] Test count: 1211 pass; any count change is explained in the commit body
 
 **Tests**: none
 **Gate**: build
