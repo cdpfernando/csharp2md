@@ -2,6 +2,8 @@ using System.Security.Cryptography;
 using Csharp2Md.Analysis;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage;
+using Csharp2Md.Storage.Mapping;
+using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Analysis.Tests.Pipeline;
 
@@ -18,7 +20,8 @@ public sealed class NoFilesystemWriteTests
     [Fact]
     [Trait("Requirement", "ENG-16")]
     [Trait("Requirement", "STOR-24")]
-    public async Task AnalyzeAsync_CompletedStubRun_DoesNotChangeTheWorkingTree()
+    [Trait("Requirement", "ROSE-64")]
+    public async Task AnalyzeAsync_FilledInMemoryRun_DoesNotChangeTheWorkingTree()
     {
         var solutionPath = Path.Combine(
             AnalysisTestPaths.RepoRoot,
@@ -42,6 +45,21 @@ public sealed class NoFilesystemWriteTests
         Assert.False(result.HasUnpublishedSolution);
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
         Assert.Equal(ArtifactRole.Manifest, publication.ArtifactsInPublicationOrder[^1].Role);
+
+        var artifacts = publication.ArtifactsInPublicationOrder;
+        var structuralFragment = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "facts/structural.json");
+        var structural = CanonicalJson.Read<StructuralFactsShard>(structuralFragment.Payload.AsSpan());
+        Assert.NotEmpty(structural.Solutions);
+        Assert.NotEmpty(structural.Projects);
+        Assert.NotEmpty(structural.Documents);
+        Assert.NotEmpty(structural.Symbols);
+
+        Assert.Contains(artifacts, fragment => fragment.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal));
+        var manifest = CanonicalJson.Read<ManifestEnvelope>(artifacts[^1].Payload.AsSpan());
+        Assert.Contains(manifest.Artifacts, entry => entry.CanonicalKey == "facts/structural" && entry.Count > 0);
+        Assert.Contains(
+            manifest.Artifacts,
+            entry => entry.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal) && entry.Count > 0);
     }
 
     private static string FileSetHash()

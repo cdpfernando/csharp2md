@@ -54,6 +54,42 @@ public sealed class AnalysisResultTests
         Assert.Equal("src/Acme.sln", outcome.LogicalRelativePath);
         Assert.Equal(@"C:\src\Acme.sln", outcome.SolutionPath);
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
+        Assert.Null(outcome.Detail);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-02")]
+    public void SolutionOutcome_OmittingDetail_LeavesItNull()
+    {
+        var outcome = new SolutionOutcome(
+            solutionPath: "alpha.sln",
+            logicalRelativePath: "alpha.sln",
+            status: PublicationStatus.Unpublished,
+            failingStage: "Inventory",
+            structuralCorruption: false,
+            hasUnknownsOrCandidatesOrFrontiers: false,
+            stages: []);
+
+        Assert.Null(outcome.Detail);
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-02")]
+    public void SolutionOutcome_Detail_IsReadableWhenNamed()
+    {
+        var outcome = new SolutionOutcome(
+            solutionPath: "alpha.sln",
+            logicalRelativePath: "alpha.sln",
+            status: PublicationStatus.Unpublished,
+            failingStage: "Inventory",
+            structuralCorruption: false,
+            hasUnknownsOrCandidatesOrFrontiers: false,
+            stages: [],
+            detail: "outside-root/secret.link");
+
+        Assert.Equal("outside-root/secret.link", outcome.Detail);
+        Assert.Equal(PublicationStatus.Unpublished, outcome.Status);
+        Assert.False(outcome.StructuralCorruption);
     }
 
     [Fact]

@@ -41,13 +41,13 @@ internal static class WireFactMapping
         IEnumerable<SymbolParameterSignature>? parameters = null;
         if (components.TryGetValue("parameters", out var parameterText) && parameterText.Length > 0)
         {
-            parameters = parameterText.Split(',').Select(ParseParameter);
+            parameters = SplitTopLevel(parameterText).Select(ParseParameter);
         }
 
         IEnumerable<string>? typeArguments = null;
         if (components.TryGetValue("type-arguments", out var typeArgumentText) && typeArgumentText.Length > 0)
         {
-            typeArguments = typeArgumentText.Split(',');
+            typeArguments = SplitTopLevel(typeArgumentText);
         }
 
         return CanonicalSymbolSignature.Create(
@@ -263,6 +263,35 @@ internal static class WireFactMapping
 
     public static ConfigurationBinding FromDto(ConfigurationBindingDto dto) =>
         ConfigurationBinding.Create(FromDto(dto.BoundFact), FromLiteral(dto.ConfigurationKey, "configurationKey"));
+
+    private static IEnumerable<string> SplitTopLevel(string text)
+    {
+        var start = 0;
+        var depth = 0;
+        for (var index = 0; index < text.Length; index++)
+        {
+            var current = text[index];
+            switch (current)
+            {
+                case '<':
+                    depth++;
+                    break;
+                case '>':
+                    if (depth > 0)
+                    {
+                        depth--;
+                    }
+
+                    break;
+                case ',' when depth == 0:
+                    yield return text[start..index];
+                    start = index + 1;
+                    break;
+            }
+        }
+
+        yield return text[start..];
+    }
 
     private static SymbolParameterSignature ParseParameter(string text)
     {

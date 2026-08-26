@@ -1,5 +1,6 @@
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Storage.Wire;
 
@@ -165,7 +166,7 @@ public static class DomainMapper
             [],
             new CoverageEnvelope(ZeroCoverage, ZeroCoverage, ZeroCoverage, ZeroCoverage),
             new RunCertificationEnvelope("not_evaluated"),
-            new DiagnosticsEnvelope([]),
+            new DiagnosticsEnvelope(MapDiagnostics(snapshot)),
             new MeasurementsEnvelope([]));
     }
 
@@ -221,6 +222,24 @@ public static class DomainMapper
             unresolvedArr,
             frontiersArr);
     }
+
+    private static ImmutableArray<DiagnosticRecordDto> MapDiagnostics(FactualSnapshot snapshot)
+    {
+        var named = Ordered(
+            snapshot.Diagnostics.Select(static record =>
+                new DiagnosticRecordDto(record.Code, record.Message, record.IdentityOrKey)),
+            static dto => $"{dto.Code}:{dto.IdentityOrKey}:{dto.Message}");
+        var secrets = Ordered(
+            snapshot.SuspectedSecrets.Select(ToSuspectedSecretDto),
+            static dto => $"{dto.IdentityOrKey}:{dto.Message}");
+        return named.AddRange(secrets);
+    }
+
+    private static DiagnosticRecordDto ToSuspectedSecretDto(SuspectedSecretEvidence evidence) =>
+        new(
+            "suspected-secret",
+            $"{evidence.Span.StartLine}:{evidence.Span.StartColumn}-{evidence.Span.EndLine}:{evidence.Span.EndColumn} {evidence.Excerpt.Value}",
+            evidence.Document.Value);
 
     private static ImmutableArray<T> Ordered<T>(IEnumerable<T> items, Func<T, string> identity) =>
         items.OrderBy(identity, StringComparer.Ordinal).ToImmutableArray();

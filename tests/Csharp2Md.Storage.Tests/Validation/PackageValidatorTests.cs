@@ -140,10 +140,12 @@ public sealed class PackageValidatorTests
 
     [Theory]
     [Trait("Requirement", "STOR-29")]
-    [InlineData("/opt/app")]
-    [InlineData("\\server\\share")]
-    [InlineData("C:/windows/system32")]
-    public void Validate_AbsoluteFilesystemPath_AbortsNamingTheField(string absolutePath)
+        [InlineData("/opt/app")]
+        [InlineData("/home/runner/work/repo")]
+        [InlineData("/Users/me/src")]
+        [InlineData("\\server\\share")]
+        [InlineData("C:/windows/system32")]
+        public void Validate_AbsoluteFilesystemPath_AbortsNamingTheField(string absolutePath)
     {
         var document = DomainMapper.ToWire(ComponentSnapshot(), Context);
         var renamed = document.Components[0] with { Name = absolutePath };
@@ -168,6 +170,28 @@ public sealed class PackageValidatorTests
         var report = PackageValidator.Validate(document);
 
         Assert.Equal(relativePath, report.Document.Documents[0].RelativePath);
+        Assert.True(report.Quarantine.IsEmpty);
+    }
+
+    [Theory]
+    [Trait("Requirement", "STOR-29")]
+    [InlineData("/Config")]
+    [InlineData("/_proto/")]
+    [InlineData("/api/v1/orders/{id}")]
+    [InlineData("/v1/charges")]
+    [InlineData("/")]
+    public void Validate_UrlOrRoutePath_DoesNotAbortAsAbsoluteFilesystemPath(string route)
+    {
+        var document = DomainMapper.ToWire(RouteObservationSnapshot(route), Context);
+
+        var report = PackageValidator.Validate(document);
+
+        var records = Assert.Single(report.Document.Observations.Values);
+        var observation = Assert.Single(records);
+        var entry = Assert.Single(observation.Identity.Payload);
+        Assert.Equal("route", entry.Key);
+        Assert.Equal(route, entry.Value.Value);
+        Assert.Equal(nameof(LiteralRole.Route), entry.Value.Role);
         Assert.True(report.Quarantine.IsEmpty);
     }
 
@@ -289,6 +313,27 @@ public sealed class PackageValidatorTests
                 new EvidenceLocator(DocumentId.Create("doc"), "src/Acme.Payments/Invoice.cs", new SourceSpan(1, 1, 1, 8)),
                 EvidenceMethod.Semantic,
                 new BindingDiagnostic("BIND001", "Bound successfully."),
+                DocumentHash.Create(new string('a', 64)),
+                new ExtractorVersion(1))],
+            [],
+            [],
+            [],
+            []);
+
+    private static FactualSnapshot RouteObservationSnapshot(string route) =>
+        new(
+            [],
+            [Observation.Create(
+                Solution.Create(AcmeSolution).Reference,
+                ObservationKind.RouteDeclaration,
+                NormalizedPayload.Create(
+                [
+                    new PayloadEntry("route", StructuralLiteral.Create(LiteralRole.Route, route, "route")),
+                ]),
+                1,
+                new EvidenceLocator(DocumentId.Create("doc"), "src/Acme.Payments/Invoice.cs", new SourceSpan(1, 1, 1, 8)),
+                EvidenceMethod.Semantic,
+                new BindingDiagnostic("bound", "bound"),
                 DocumentHash.Create(new string('a', 64)),
                 new ExtractorVersion(1))],
             [],

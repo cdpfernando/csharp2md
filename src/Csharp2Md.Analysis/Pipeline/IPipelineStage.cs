@@ -12,4 +12,5 @@ internal readonly record struct StageResult(
     int ObservationCount,
     int RelationCount,
     bool StructuralCorruption,
-    bool HasUnknownsOrCandidatesOrFrontiers);
+    bool HasUnknownsOrCandidatesOrFrontiers,
+    bool AbortPublication = false);

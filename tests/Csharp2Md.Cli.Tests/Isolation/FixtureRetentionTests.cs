@@ -20,4 +20,16 @@ public sealed class FixtureRetentionTests
             projectOrSolutionFiles.Length > 0,
             $"fixtures/SyntheticSolution at '{path}' contains no .slnx or .csproj file.");
     }
+
+    [Fact]
+    [Trait("Requirement", "ENG-50")]
+    public void Gitignore_ExcludesLocalEShopCorpora()
+    {
+        var gitignorePath = Path.Combine(CliTestPaths.RepoRoot, ".gitignore");
+        Assert.True(File.Exists(gitignorePath), $".gitignore was not found at '{gitignorePath}'.");
+
+        var gitignore = File.ReadAllText(gitignorePath);
+        Assert.Contains("fixtures/eShop/", gitignore, StringComparison.Ordinal);
+        Assert.Contains("fixtures/eShopOnContainers/", gitignore, StringComparison.Ordinal);
+    }
 }

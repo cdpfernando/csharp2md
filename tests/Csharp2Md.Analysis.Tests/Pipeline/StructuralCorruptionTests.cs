@@ -9,6 +9,7 @@ public sealed class StructuralCorruptionTests
 {
     [Fact]
     [Trait("Requirement", "ENG-24")]
+    [Trait("Requirement", "ROSE-59")]
     public async Task AnalyzeAsync_ValidationReportsStructuralCorruption_AbortsAndKeepsPriorPublication()
     {
         var store = new InMemoryTransactionalStore();
@@ -16,7 +17,7 @@ public sealed class StructuralCorruptionTests
         var sessionKey = Path.GetFullPath(solutionPath);
         var request = AnalysisRequest.Create([solutionPath]);
 
-        var first = await new AnalysisEngine(store).AnalyzeAsync(request, CancellationToken.None);
+        var first = await new AnalysisEngine(store, StubStages.CreateDefault()).AnalyzeAsync(request, CancellationToken.None);
 
         var firstOutcome = Assert.Single(first.Solutions);
         Assert.Equal(PublicationStatus.Committed, firstOutcome.Status);
@@ -68,6 +69,7 @@ public sealed class StructuralCorruptionTests
 
     [Fact]
     [Trait("Requirement", "STOR-31")]
+    [Trait("Requirement", "ROSE-59")]
     public async Task AnalyzeAsync_PublicationRejected_MarksUnpublishedKeepsPriorBytes()
     {
         var inner = new InMemoryTransactionalStore();
@@ -75,7 +77,7 @@ public sealed class StructuralCorruptionTests
         var sessionKey = Path.GetFullPath(solutionPath);
         var request = AnalysisRequest.Create([solutionPath]);
 
-        var first = await new AnalysisEngine(new RejectingCommitStore(inner, rejectCommit: false))
+        var first = await new AnalysisEngine(new RejectingCommitStore(inner, rejectCommit: false), StubStages.CreateDefault())
             .AnalyzeAsync(request, CancellationToken.None);
         Assert.Equal(PublicationStatus.Committed, Assert.Single(first.Solutions).Status);
         Assert.True(inner.TryGetPublication(sessionKey, out var prior));
@@ -84,12 +86,13 @@ public sealed class StructuralCorruptionTests
             .ToArray();
 
         var rejecting = new RejectingCommitStore(inner, rejectCommit: true);
-        var second = await new AnalysisEngine(rejecting).AnalyzeAsync(request, CancellationToken.None);
+        var second = await new AnalysisEngine(rejecting, StubStages.CreateDefault()).AnalyzeAsync(request, CancellationToken.None);
 
         var outcome = Assert.Single(second.Solutions);
         Assert.Equal(PublicationStatus.Unpublished, outcome.Status);
         Assert.True(outcome.StructuralCorruption);
         Assert.Null(outcome.FailingStage);
+        Assert.Equal("schema: facts/structural.json", outcome.Detail);
         Assert.True(second.HasUnpublishedSolution);
         Assert.Equal(1, rejecting.AbortCount);
 

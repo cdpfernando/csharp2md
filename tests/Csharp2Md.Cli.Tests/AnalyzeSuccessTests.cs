@@ -5,6 +5,7 @@ public sealed class AnalyzeSuccessTests
     [Fact]
     [Trait("Requirement", "ENG-41")]
     [Trait("Requirement", "ENG-44")]
+    [Trait("Requirement", "ROSE-02")]
     public async Task Analyze_WithExistingSolution_Exits0WithSummaryOnStdout()
     {
         var solutionPath = Path.Combine(

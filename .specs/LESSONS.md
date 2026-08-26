@@ -32,6 +32,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: ENG-16 (pipeline)
 - last seen: 2026-08-25T15:35:37Z
 
+### L-004 - When an AC requires observations from bindable occurrences after compile errors, run extraction on that tree and assert a bound observation, not only a diagnostic and a kept compilation.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `extraction` · harmful: 0
+- features: roslyn-observation-extraction
+- evidence: ROSE-23 (extraction)
+- last seen: 2026-08-26T03:25:39Z
+
+### L-005 - When an AC requires commit abort on identity collision, assert Unpublished plus a named identity and return the accumulator corruption flag as the stage result the orchestrator reads.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `pipeline` · harmful: 0
+- features: roslyn-observation-extraction
+- evidence: ROSE-21 (pipeline)
+- last seen: 2026-08-26T03:26:08Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

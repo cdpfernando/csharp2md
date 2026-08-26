@@ -20,7 +20,8 @@ public sealed class PersistenceManifestTests
 
     [Fact]
     [Trait("Requirement", "STOR-50")]
-    public async Task AnalyzeAsync_DefaultPipeline_PublishesSchemaValidEmptyPackage()
+    [Trait("Requirement", "ROSE-58")]
+    public async Task AnalyzeAsync_DefaultPipeline_PublishesSchemaValidFilledPackage()
     {
         var publication = await PublishDefaultPipeline();
         var artifacts = publication.ArtifactsInPublicationOrder;
@@ -30,16 +31,31 @@ public sealed class PersistenceManifestTests
         Assert.All(artifacts[..^1], fragment => Assert.Equal(ArtifactRole.Payload, fragment.Role));
 
         var payloadKeys = artifacts[..^1].Select(fragment => fragment.CanonicalKey).ToArray();
-        Assert.DoesNotContain(payloadKeys, key => key.StartsWith("facts/", StringComparison.Ordinal));
-        Assert.DoesNotContain(payloadKeys, key => key.StartsWith("observations/", StringComparison.Ordinal));
-        Assert.DoesNotContain(payloadKeys, key => key.StartsWith("relations/", StringComparison.Ordinal));
+        var structuralFragment = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "facts/structural.json");
+        var structural = CanonicalJson.Read<StructuralFactsShard>(structuralFragment.Payload.AsSpan());
+        Assert.NotEmpty(structural.Solutions);
+        Assert.NotEmpty(structural.Projects);
+        Assert.NotEmpty(structural.Documents);
+        Assert.NotEmpty(structural.Symbols);
+        Assert.Contains(payloadKeys, key => key.StartsWith("observations/", StringComparison.Ordinal));
+        var containsFragment = Assert.Single(
+            artifacts,
+            fragment => fragment.CanonicalKey == "relations/confirmed/contains.json");
+        var contains = CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(containsFragment.Payload.AsSpan());
+        Assert.NotEmpty(contains);
 
         var registry = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "contracts/taxonomy-registry.json");
         var expectedRegistry = DomainMapper.ToWire(FactualSnapshot.Empty, new ManifestContext("s", "s")).TaxonomyRegistryCopy;
         Assert.True(registry.Payload.AsSpan().SequenceEqual(expectedRegistry.AsSpan()));
 
         var manifest = CanonicalJson.Read<ManifestEnvelope>(artifacts[^1].Payload.AsSpan());
-        Assert.All(manifest.Artifacts, entry => Assert.Equal(0, entry.Count));
+        Assert.Contains(manifest.Artifacts, entry => entry.CanonicalKey == "facts/structural" && entry.Count > 0);
+        Assert.Contains(
+            manifest.Artifacts,
+            entry => entry.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal) && entry.Count > 0);
+        Assert.Contains(
+            manifest.Artifacts,
+            entry => entry.CanonicalKey == "relations/confirmed/contains" && entry.Count > 0);
         Assert.Equal(publication.SolutionKey, manifest.SolutionKey);
 
         var coverage = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "coverage.json");

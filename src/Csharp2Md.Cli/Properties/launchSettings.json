@@ -5,6 +5,11 @@
       "commandName": "Project",
       "workingDirectory": "../../",
       "commandLineArgs": "analyze --solution fixtures/SyntheticSolution/Acme.Orders/Acme.Orders.slnx --output artifacts/analyze-out"
+    },
+    "csharp2md (eShopOnContainers)": {
+      "commandName": "Project",
+      "workingDirectory": "../../",
+      "commandLineArgs": "analyze --solution D:/workspace/reverser/eShopOnContainers/eShopOnContainers/src/eShopOnContainers-ServicesAndWebApps.sln --output artifacts/analyze-out"
     }
   }
 }

@@ -21,6 +21,7 @@ public sealed class AnalysisPublicSurfaceTests
         "CommittedPublication",
         "FactualSnapshot",
         "PublicationRejectedException",
+        "DiagnosticRecord",
     ];
 
     private static readonly string[] ForbiddenSurfaceTokens =
@@ -81,6 +82,19 @@ public sealed class AnalysisPublicSurfaceTests
         Assert.True(
             offending.Length == 0,
             $"Public Analysis type(s) that look like a pass, classifier, adapter, extractor or stage: {FormatNames(offending)}.");
+    }
+
+    [Fact]
+    [Trait("Requirement", "ROSE-31")]
+    public void PublicSurface_DoesNotExportInventoryStageSemanticAnalysisStageOrObservationExtractor()
+    {
+        var names = PublicSurfaceTypes().Select(type => type.Name).ToHashSet(StringComparer.Ordinal);
+
+        Assert.DoesNotContain("InventoryStage", names);
+        Assert.DoesNotContain("SemanticAnalysisStage", names);
+        Assert.DoesNotContain("ObservationExtractor", names);
+        Assert.DoesNotContain("BoundSolution", names);
+        Assert.Contains("DiagnosticRecord", names);
     }
 
     private static IEnumerable<Type> PublicSurfaceTypes() =>

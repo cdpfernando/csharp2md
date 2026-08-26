@@ -1,5 +1,7 @@
 using Csharp2Md.Analysis;
+using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
+using Csharp2Md.Analysis.Semantics;
 using Csharp2Md.Storage;
 
 namespace Csharp2Md.Analysis.Tests.Pipeline;
@@ -7,9 +9,11 @@ namespace Csharp2Md.Analysis.Tests.Pipeline;
 public sealed class DefaultPipelineZerosTests
 {
     [Fact]
+    [Trait("Requirement", "ROSE-13")]
+    [Trait("Requirement", "ROSE-59")]
+    [Trait("Requirement", "ROSE-60")]
     [Trait("Requirement", "ENG-15")]
-    [Trait("Requirement", "STOR-50")]
-    public async Task AnalyzeAsync_DefaultStubs_ReportZeroCountsAndCommittedStatus()
+    public async Task AnalyzeAsync_DefaultPipeline_InventorySemanticAndExtractionAreNonZeroAndLaterStubsStayZero()
     {
         var solutionPath = Path.Combine(
             AnalysisTestPaths.RepoRoot,
@@ -27,15 +31,41 @@ public sealed class DefaultPipelineZerosTests
         var outcome = Assert.Single(result.Solutions);
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
         Assert.False(result.HasUnpublishedSolution);
+        Assert.True(outcome.HasUnknownsOrCandidatesOrFrontiers);
         Assert.Equal(8, outcome.Stages.Length);
 
-        for (var index = 0; index < StubStages.DeclaredNames.Length; index++)
-        {
-            var report = outcome.Stages[index];
-            Assert.Equal(StubStages.DeclaredNames[index], report.Name);
-            Assert.Equal(0, report.FactCount);
-            Assert.Equal(0, report.ObservationCount);
-            Assert.Equal(0, report.RelationCount);
-        }
+        var inventory = outcome.Stages[0];
+        Assert.Equal("Inventory", inventory.Name);
+        Assert.True(inventory.FactCount > 0, $"Inventory fact count was {inventory.FactCount}.");
+        Assert.Equal(0, inventory.ObservationCount);
+        Assert.Equal(0, inventory.RelationCount);
+
+        var semantic = outcome.Stages[1];
+        Assert.Equal("Semantic Analysis", semantic.Name);
+        Assert.True(semantic.FactCount > 0, $"Semantic Analysis fact count was {semantic.FactCount}.");
+        Assert.Equal(0, semantic.ObservationCount);
+        Assert.Equal(0, semantic.RelationCount);
+
+        var extraction = outcome.Stages[2];
+        Assert.Equal("Observation Extraction", extraction.Name);
+        Assert.Equal(0, extraction.FactCount);
+        Assert.True(extraction.ObservationCount > 0, $"Observation Extraction observation count was {extraction.ObservationCount}.");
+        Assert.True(extraction.RelationCount > 0, $"Observation Extraction relation count was {extraction.RelationCount}.");
+
+        var persistence = outcome.Stages[5];
+        Assert.Equal("Persistence", persistence.Name);
+
+        AssertZeroProduction(outcome.Stages[3], "Classification and Promotion");
+        AssertZeroProduction(outcome.Stages[4], "Validation and Coverage");
+        AssertZeroProduction(outcome.Stages[6], "Retrieval Projection");
+        AssertZeroProduction(outcome.Stages[7], "Batch Composition");
+    }
+
+    private static void AssertZeroProduction(StageReport report, string name)
+    {
+        Assert.Equal(name, report.Name);
+        Assert.Equal(0, report.FactCount);
+        Assert.Equal(0, report.ObservationCount);
+        Assert.Equal(0, report.RelationCount);
     }
 }

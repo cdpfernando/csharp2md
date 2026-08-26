@@ -32,6 +32,33 @@ public sealed class AnalyzeExitCodeTests
     }
 
     [Fact]
+    [Trait("Requirement", "ROSE-02")]
+    public async Task Analyze_WhenUnpublishedWithDetail_WritesDetailToStderr()
+    {
+        var solutionPath = ExistingFixturePath();
+        IAnalysisEngine engine = new FakeAnalysisEngine(new AnalysisResult(
+        [
+            new SolutionOutcome(
+                solutionPath,
+                solutionPath.Replace('\\', '/'),
+                PublicationStatus.Unpublished,
+                failingStage: "Inventory",
+                structuralCorruption: false,
+                hasUnknownsOrCandidatesOrFrontiers: false,
+                stages: [],
+                detail: "link.cs"),
+        ]));
+
+        var (exitCode, _, stderr) = await CliInvoke.RunAsync(
+            ["analyze", "--solution", solutionPath, "--output", CliTestPaths.UniqueOutputPath()],
+            engine);
+
+        Assert.Equal(2, exitCode);
+        Assert.Contains("link.cs", stderr, StringComparison.Ordinal);
+        Assert.Contains("csharp2md:", stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Trait("Requirement", "ENG-43")]
     [Trait("Requirement", "STOR-54")]
     public async Task Analyze_WhenOnlyUnknownsAreReported_Exits0()
@@ -142,11 +169,14 @@ public sealed class AnalyzeExitCodeTests
         var solutionPath = ExistingFixturePath();
         IAnalysisEngine engine = new AnalysisEngine(new RejectingTransactionalStore());
 
-        var (exitCode, _, _) = await CliInvoke.RunAsync(
+        var (exitCode, _, stderr) = await CliInvoke.RunAsync(
             ["analyze", "--solution", solutionPath, "--output", CliTestPaths.UniqueOutputPath()],
             engine);
 
         Assert.Equal(2, exitCode);
+        Assert.Contains("unpublished", stderr, StringComparison.Ordinal);
+        Assert.Contains("structural corruption", stderr, StringComparison.Ordinal);
+        Assert.Contains("schema: facts/structural.json", stderr, StringComparison.Ordinal);
     }
 
     private static string ExistingFixturePath()

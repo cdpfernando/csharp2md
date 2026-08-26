@@ -1,4 +1,5 @@
 using Csharp2Md.Analysis;
+using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage;
 
@@ -8,11 +9,12 @@ public sealed class CommitOnceTests
 {
     [Fact]
     [Trait("Requirement", "ENG-22")]
+    [Trait("Requirement", "ROSE-59")]
     public async Task AnalyzeAsync_SuccessfulSolution_CommitsTheSessionExactlyOnce()
     {
         var inner = new InMemoryTransactionalStore();
         var store = new CountingStore(inner);
-        var engine = new AnalysisEngine(store);
+        var engine = new AnalysisEngine(store, StubStages.CreateDefault());
         var solutionPath = "alpha.sln";
 
         var result = await engine.AnalyzeAsync(AnalysisRequest.Create([solutionPath]), CancellationToken.None);

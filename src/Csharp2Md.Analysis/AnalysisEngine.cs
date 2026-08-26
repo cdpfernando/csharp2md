@@ -1,5 +1,6 @@
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Identity;
 
 namespace Csharp2Md.Analysis;
 
@@ -9,7 +10,7 @@ public sealed class AnalysisEngine : IAnalysisEngine
     private readonly PipelineOrchestrator _orchestrator;
 
     public AnalysisEngine(ITransactionalStore store)
-        : this(store, StubStages.CreateDefault())
+        : this(store, PipelineStages.CreateDefault())
     {
     }
 
@@ -23,6 +24,7 @@ public sealed class AnalysisEngine : IAnalysisEngine
     public async Task<AnalysisResult> AnalyzeAsync(AnalysisRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        RejectDuplicateSolutionIdentities(request.SolutionPaths);
 
         var outcomes = ImmutableArray.CreateBuilder<SolutionOutcome>(request.SolutionPaths.Length);
         foreach (var path in request.SolutionPaths)
@@ -41,42 +43,52 @@ public sealed class AnalysisEngine : IAnalysisEngine
         var canonical = Path.GetFullPath(path);
         var session = _store.Open(canonical);
         var context = new PipelineContext(session, path);
-        var run = await _orchestrator.RunAsync(context, cancellationToken).ConfigureAwait(false);
-        if (run.Status is not PipelineCompletion.Succeeded)
-        {
-            session.Abort();
-            return CreateOutcome(
-                canonical,
-                path,
-                PublicationStatus.Unpublished,
-                run.FailedStageName,
-                context.Reports,
-                run);
-        }
-
         try
         {
-            session.Commit();
-        }
-        catch (PublicationRejectedException)
-        {
-            session.Abort();
+            var run = await _orchestrator.RunAsync(context, cancellationToken).ConfigureAwait(false);
+            if (run.Status is not PipelineCompletion.Succeeded)
+            {
+                session.Abort();
+                return CreateOutcome(
+                    canonical,
+                    path,
+                    PublicationStatus.Unpublished,
+                    run.FailedStageName,
+                    context.Reports,
+                    run,
+                    context.Detail);
+            }
+
+            try
+            {
+                session.Commit();
+            }
+            catch (PublicationRejectedException exception)
+            {
+                session.Abort();
+                return CreateOutcome(
+                    canonical,
+                    path,
+                    PublicationStatus.Unpublished,
+                    failingStage: null,
+                    context.Reports,
+                    run with { StructuralCorruption = true },
+                    exception.Message);
+            }
+
             return CreateOutcome(
                 canonical,
                 path,
-                PublicationStatus.Unpublished,
+                PublicationStatus.Committed,
                 failingStage: null,
                 context.Reports,
-                run with { StructuralCorruption = true });
+                run,
+                context.Detail);
         }
-
-        return CreateOutcome(
-            canonical,
-            path,
-            PublicationStatus.Committed,
-            failingStage: null,
-            context.Reports,
-            run);
+        finally
+        {
+            context.BoundSolution?.Dispose();
+        }
     }
 
     private static SolutionOutcome CreateOutcome(
@@ -85,7 +97,8 @@ public sealed class AnalysisEngine : IAnalysisEngine
         PublicationStatus status,
         string? failingStage,
         ImmutableArray<StageReport> stages,
-        PipelineRunResult run) =>
+        PipelineRunResult run,
+        string? detail) =>
         new(
             solutionPath: canonical,
             logicalRelativePath: path.Replace('\\', '/'),
@@ -93,5 +106,22 @@ public sealed class AnalysisEngine : IAnalysisEngine
             failingStage,
             run.StructuralCorruption,
             run.HasUnknownsOrCandidatesOrFrontiers,
-            stages);
+            stages,
+            detail);
+
+    private static void RejectDuplicateSolutionIdentities(ImmutableArray<string> paths)
+    {
+        var firstPathByIdentity = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var path in paths)
+        {
+            var identity = SolutionId.Create(WorkspaceIdentity.Create("default"), Path.GetFileName(path)).Value;
+            if (firstPathByIdentity.TryGetValue(identity, out var firstPath))
+            {
+                throw new ArgumentException(
+                    $"The requested solutions '{firstPath}' and '{path}' produce the same solution identity.");
+            }
+
+            firstPathByIdentity.Add(identity, path);
+        }
+    }
 }

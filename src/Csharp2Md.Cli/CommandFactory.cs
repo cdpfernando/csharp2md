@@ -59,7 +59,16 @@ internal static class CommandFactory
                 analysisEngine = new AnalysisEngine(new FilesystemTransactionalStore(outputPath));
             }
 
-            var result = await analysisEngine.AnalyzeAsync(request, cancellationToken).ConfigureAwait(false);
+            AnalysisResult result;
+            try
+            {
+                result = await analysisEngine.AnalyzeAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+            catch (ArgumentException exception)
+            {
+                return Invalid(parseResult, exception.Message);
+            }
+
             var stdout = parseResult.InvocationConfiguration.Output;
             var error = parseResult.InvocationConfiguration.Error;
 
@@ -99,6 +108,11 @@ internal static class CommandFactory
             if (outcome.StructuralCorruption)
             {
                 detail += " (structural corruption)";
+            }
+
+            if (outcome.Detail is { Length: > 0 } named)
+            {
+                detail += $" {named}";
             }
 
             error.WriteLine($"csharp2md:{detail} {outcome.LogicalRelativePath}");

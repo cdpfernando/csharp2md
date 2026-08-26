@@ -14,4 +14,9 @@
     <ProjectReference Include="..\Csharp2Md.Domain\Csharp2Md.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
+  </ItemGroup>
+
 </Project>

@@ -43,9 +43,15 @@ internal sealed class PipelineOrchestrator
                 var result = await stage.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
                 context.Record(new StageReport(stage.Name, result.FactCount, result.ObservationCount, result.RelationCount));
                 hasUnknownsOrCandidatesOrFrontiers |= result.HasUnknownsOrCandidatesOrFrontiers;
-                if (result.StructuralCorruption)
+                if (result.StructuralCorruption || context.Accumulator.StructuralCorruption)
                 {
+                    context.Detail ??= context.Accumulator.CollidingIdentity;
                     return PipelineRunResult.Corrupted(hasUnknownsOrCandidatesOrFrontiers);
+                }
+
+                if (result.AbortPublication)
+                {
+                    return PipelineRunResult.Aborted(hasUnknownsOrCandidatesOrFrontiers);
                 }
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
@@ -75,6 +81,9 @@ internal readonly record struct PipelineRunResult(
 
     public static PipelineRunResult Corrupted(bool hasUnknownsOrCandidatesOrFrontiers) =>
         new(PipelineCompletion.StructuralCorruption, null, true, hasUnknownsOrCandidatesOrFrontiers);
+
+    public static PipelineRunResult Aborted(bool hasUnknownsOrCandidatesOrFrontiers) =>
+        new(PipelineCompletion.Aborted, null, false, hasUnknownsOrCandidatesOrFrontiers);
 }
 
 internal enum PipelineCompletion
@@ -83,4 +92,5 @@ internal enum PipelineCompletion
     Cancelled,
     Failed,
     StructuralCorruption,
+    Aborted,
 }

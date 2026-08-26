@@ -1,4 +1,5 @@
 using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Relations;
 
@@ -26,13 +27,19 @@ public sealed record FactualSnapshot
 
     public ImmutableArray<OpenFrontier> Frontiers { get; }
 
+    public ImmutableArray<DiagnosticRecord> Diagnostics { get; }
+
+    public ImmutableArray<SuspectedSecretEvidence> SuspectedSecrets { get; }
+
     public FactualSnapshot(
         ImmutableArray<IFact> facts,
         ImmutableArray<Observation> observations,
         ImmutableArray<ConfirmedRelation> confirmedRelations,
         ImmutableArray<CandidateLink> candidates,
         ImmutableArray<UnresolvedRecord> unresolved,
-        ImmutableArray<OpenFrontier> frontiers)
+        ImmutableArray<OpenFrontier> frontiers,
+        ImmutableArray<DiagnosticRecord> diagnostics = default,
+        ImmutableArray<SuspectedSecretEvidence> suspectedSecrets = default)
     {
         Facts = facts;
         Observations = observations;
@@ -40,6 +47,10 @@ public sealed record FactualSnapshot
         Candidates = candidates;
         Unresolved = unresolved;
         Frontiers = frontiers;
+        Diagnostics = diagnostics.IsDefault ? ImmutableArray<DiagnosticRecord>.Empty : diagnostics;
+        SuspectedSecrets = suspectedSecrets.IsDefault
+            ? ImmutableArray<SuspectedSecretEvidence>.Empty
+            : suspectedSecrets;
     }
 
     public FactualSnapshot Merge(FactualSnapshot other)
@@ -52,6 +63,8 @@ public sealed record FactualSnapshot
             ConfirmedRelations.AddRange(other.ConfirmedRelations),
             Candidates.AddRange(other.Candidates),
             Unresolved.AddRange(other.Unresolved),
-            Frontiers.AddRange(other.Frontiers));
+            Frontiers.AddRange(other.Frontiers),
+            Diagnostics.AddRange(other.Diagnostics),
+            SuspectedSecrets.AddRange(other.SuspectedSecrets));
     }
 }
