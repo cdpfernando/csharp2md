@@ -435,10 +435,10 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] One key path is identical to a key in `appsettings.json` and one is new
-- [ ] No credential, password, token or connection string appears in the new file; the existing `appsettings.json` password stays the single secret probe
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1211 pass; any count change is explained in the commit body
+- [x] One key path is identical to a key in `appsettings.json` and one is new
+- [x] No credential, password, token or connection string appears in the new file; the existing `appsettings.json` password stays the single secret probe
+- [x] Gate check passes: build gate command
+- [x] Test count: 1211 pass; any count change is explained in the commit body
 
 **Tests**: none
 **Gate**: build
