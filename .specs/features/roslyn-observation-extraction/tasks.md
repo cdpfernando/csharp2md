@@ -1442,11 +1442,11 @@ not visited. No Roslyn type is public.
 
 **Done when**:
 
-- [ ] Production default engine reports Observation Extraction count > 0 on `Acme.Orders.slnx`
-- [ ] A planted `.json` document produces no C# observations
-- [ ] The bound lease is disposed after the stage (test double records Dispose)
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] Production default engine reports Observation Extraction count > 0 on `Acme.Orders.slnx`
+- [x] A planted `.json` document produces no C# observations
+- [x] The bound lease is disposed after the stage (test double records Dispose)
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

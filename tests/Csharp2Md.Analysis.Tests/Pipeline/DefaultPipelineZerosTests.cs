@@ -1,5 +1,7 @@
 using Csharp2Md.Analysis;
+using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
+using Csharp2Md.Analysis.Semantics;
 using Csharp2Md.Storage;
 
 namespace Csharp2Md.Analysis.Tests.Pipeline;
@@ -10,7 +12,7 @@ public sealed class DefaultPipelineZerosTests
     [Trait("Requirement", "ROSE-13")]
     [Trait("Requirement", "ROSE-59")]
     [Trait("Requirement", "ENG-15")]
-    public async Task AnalyzeAsync_DefaultPipeline_InventoryAndSemanticAnalysisAreNonZeroAndLaterStagesStayZero()
+    public async Task AnalyzeAsync_DefaultPipeline_InventorySemanticAndExtractionAreNonZeroAndLaterStubsStayZero()
     {
         var solutionPath = Path.Combine(
             AnalysisTestPaths.RepoRoot,
@@ -43,7 +45,13 @@ public sealed class DefaultPipelineZerosTests
         Assert.Equal(0, semantic.ObservationCount);
         Assert.Equal(0, semantic.RelationCount);
 
-        for (var index = 2; index < StubStages.DeclaredNames.Length; index++)
+        var extraction = outcome.Stages[2];
+        Assert.Equal("Observation Extraction", extraction.Name);
+        Assert.Equal(0, extraction.FactCount);
+        Assert.True(extraction.ObservationCount > 0, $"Observation Extraction observation count was {extraction.ObservationCount}.");
+        Assert.Equal(0, extraction.RelationCount);
+
+        for (var index = 3; index < StubStages.DeclaredNames.Length; index++)
         {
             var report = outcome.Stages[index];
             Assert.Equal(StubStages.DeclaredNames[index], report.Name);

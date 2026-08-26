@@ -18,6 +18,8 @@ internal sealed class BoundSolution : IAsyncDisposable, IDisposable
 
     internal ImmutableArray<Compilation> Compilations { get; }
 
+    internal bool IsDisposed => Volatile.Read(ref _disposed) != 0;
+
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)

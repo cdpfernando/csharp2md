@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Extraction;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Semantics;
@@ -43,5 +44,7 @@ public sealed class PipelineStagesTests
         Assert.IsType<SemanticAnalysisStage>(semantic);
         Assert.IsNotType<SemanticAnalysisStub>(semantic);
         Assert.IsType<InventoryStage>(PipelineStages.CreateDefault()[0]);
+        Assert.IsType<ObservationExtractionStage>(PipelineStages.CreateDefault()[2]);
+        Assert.IsNotType<ObservationExtractionStub>(PipelineStages.CreateDefault()[2]);
     }
 }
