@@ -1234,12 +1234,12 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Exactly one component and one deployment unit exist
-- [ ] A symbol declared in `Acme.Shared.Contracts` has a `belongs-to` relation targeting the `Acme.Payments` component
-- [ ] No component named for `Acme.Shared.Contracts` exists in this solution
-- [ ] The same project's shared grouping in `Acme.Orders.slnx` is unaffected, asserted by referencing T37's expectations
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] Exactly one component and one deployment unit exist
+- [x] A symbol declared in `Acme.Shared.Contracts` has a `belongs-to` relation targeting the `Acme.Payments` component
+- [x] No component named for `Acme.Shared.Contracts` exists in this solution
+- [x] The same project's shared grouping in `Acme.Orders.slnx` is unaffected, asserted by referencing T37's expectations
+- [x] Gate check passes: full gate command
+- [x] Test count: Domain 549, Analysis 580 (no silent deletions)
 
 **Tests**: integration
 **Gate**: full
