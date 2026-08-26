@@ -186,11 +186,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] `CLLF-` and `CDC-` join the allowlist; the STOR format and range checks are otherwise untouched
-- [ ] The decoy test still flags `STOR-9`
-- [ ] `EveryCarriedRequirementTrait_IsAWellFormedInRangeStorId` passes
-- [ ] Gate check passes: build gate command
-- [ ] Test count: Storage 171 pass (no silent deletions)
+- [x] `CLLF-` and `CDC-` join the allowlist; the STOR format and range checks are otherwise untouched
+- [x] The decoy test still flags `STOR-9`
+- [x] `EveryCarriedRequirementTrait_IsAWellFormedInRangeStorId` passes
+- [x] Gate check passes: build gate command
+- [x] Test count: Storage 171 pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: build
