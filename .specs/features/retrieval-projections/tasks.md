@@ -193,11 +193,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] `ArtifactSlot` and `ArtifactCitation` records defined per the design
-- [ ] `From(WireDocument)` produces slots only for content that will be published, omitting empty shards
-- [ ] Tests assert the slot set for a filled document and for `FactualSnapshot.Empty`
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1350+ tests pass (no silent deletions)
+- [x] `ArtifactSlot` and `ArtifactCitation` records defined per the design
+- [x] `From(WireDocument)` produces slots only for content that will be published, omitting empty shards
+- [x] Tests assert the slot set for a filled document and for `FactualSnapshot.Empty`
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1350+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
