@@ -339,11 +339,11 @@ T8 → T9 → T10
 - Skill: `dotnet-test:test-anti-patterns`
 
 **Done when**:
-- [ ] `AnalysisPublicSurfaceTests` passes without allowlist changes (confirming all new classifier types are `internal`)
-- [ ] `PortLedgerTests` passes — no new `Storage → Domain` dependency introduced by 5B
-- [ ] Fixture integration test asserts `ReceiverShapes.ViaField`, `ReceiverShapes.ViaProperty`, `ReceiverShapes.ViaPatternVariable`, `ReceiverShapes..ctor` each produce exactly one confirmed `Invokes` to `PaymentClient.Authorize` (CLLF-15/16) — add to `InvokesPassFixtureTests.cs` if not yet present from T5
-- [ ] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
-- [ ] Test count: ≥ 4 new or updated integration tests; 0 allowlist changes required
+- [x] `AnalysisPublicSurfaceTests` passes without allowlist changes (confirming all new classifier types are `internal`)
+- [x] `PortLedgerTests` passes — no new `Storage → Domain` dependency introduced by 5B
+- [x] Fixture integration test asserts `ReceiverShapes.ViaField`, `ReceiverShapes.ViaProperty`, `ReceiverShapes.ViaPatternVariable`, `ReceiverShapes..ctor` each produce exactly one confirmed `Invokes` to `PaymentClient.Authorize` (CLLF-15/16) — add to `InvokesPassFixtureTests.cs` if not yet present from T5
+- [x] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
+- [x] Test count: ≥ 4 new or updated integration tests; 0 allowlist changes required
 
 **Tests**: unit + integration
 **Gate**: full (Analysis)

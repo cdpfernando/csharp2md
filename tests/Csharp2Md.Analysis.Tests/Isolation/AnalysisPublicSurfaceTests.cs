@@ -97,6 +97,18 @@ public sealed class AnalysisPublicSurfaceTests
         Assert.Contains("DiagnosticRecord", names);
     }
 
+    [Fact]
+    [Trait("Requirement", "CLLF-01")]
+    public void PublicSurface_DoesNotExportInvokesPassOrExecutesPass()
+    {
+        var names = PublicSurfaceTypes().Select(type => type.Name).ToHashSet(StringComparer.Ordinal);
+
+        Assert.DoesNotContain("InvokesPass", names);
+        Assert.DoesNotContain("ExecutesPass", names);
+        Assert.DoesNotContain("ClassifierContext", names);
+        Assert.DoesNotContain("IClassifierPass", names);
+    }
+
     private static IEnumerable<Type> PublicSurfaceTypes() =>
         typeof(AssemblyMarker).Assembly
             .GetExportedTypes()

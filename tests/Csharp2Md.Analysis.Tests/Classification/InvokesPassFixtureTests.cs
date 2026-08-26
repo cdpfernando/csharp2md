@@ -1,10 +1,6 @@
 using Csharp2Md.Analysis;
-using Csharp2Md.Analysis.Classification;
-using Csharp2Md.Analysis.Classification.Passes;
-using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage;
-using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Analysis.Tests.Classification;
@@ -28,25 +24,43 @@ public sealed class InvokesPassFixtureTests
                 && !relation.Target.Id.Contains("AuthorizeViaPaymentClientAsync", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [Theory]
     [Trait("Requirement", "CLLF-15")]
+    [InlineData("ViaField")]
+    [InlineData("ViaProperty")]
+    [InlineData("ViaPatternVariable")]
+    [InlineData(".ctor")]
+    public async Task AnalyzeAsync_AcmeOrders_ReceiverShapeInvokesPaymentClientAuthorizeExactlyOnce(string ownerMember)
+    {
+        var (_, publication) = await AnalyzeAcmeOrdersWithInvokesAsync();
+        var invokes = ReceiverShapeAuthorizeInvokes(publication, ownerMember);
+
+        var relation = Assert.Single(invokes);
+        Assert.Equal("invokes", relation.Kind);
+        Assert.Contains("ReceiverShapes", relation.Source.Id, StringComparison.Ordinal);
+        Assert.Contains(ownerMember, relation.Source.Id, StringComparison.Ordinal);
+        Assert.Contains("PaymentClient", relation.Target.Id, StringComparison.Ordinal);
+        Assert.Contains("Authorize", relation.Target.Id, StringComparison.Ordinal);
+        Assert.DoesNotContain("AuthorizeViaPaymentClientAsync", relation.Target.Id, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Trait("Requirement", "CLLF-16")]
-    public async Task AnalyzeAsync_AcmeOrders_ReceiverShapesEachInvokePaymentClientAuthorizeOnce()
+    public async Task AnalyzeAsync_AcmeOrders_ReceiverShapesDoNotDuplicateInvokesToPaymentClientAuthorize()
     {
         var (_, publication) = await AnalyzeAcmeOrdersWithInvokesAsync();
         var invokes = ReadInvokes(publication)
-            .Where(relation =>
-                relation.Kind == "invokes"
-                && relation.Source.Id.Contains("ReceiverShapes", StringComparison.Ordinal)
-                && relation.Target.Id.Contains("PaymentClient", StringComparison.Ordinal)
-                && relation.Target.Id.Contains("Authorize", StringComparison.Ordinal))
+            .Where(IsReceiverShapeAuthorizeInvoke)
             .ToArray();
 
+        Assert.Equal(4, invokes.Length);
+        Assert.Equal(
+            invokes.Length,
+            invokes.Select(relation => relation.Source.Id + "\u001f" + relation.Target.Id).Distinct(StringComparer.Ordinal).Count());
         Assert.Contains(invokes, relation => relation.Source.Id.Contains("ViaField", StringComparison.Ordinal));
         Assert.Contains(invokes, relation => relation.Source.Id.Contains("ViaProperty", StringComparison.Ordinal));
         Assert.Contains(invokes, relation => relation.Source.Id.Contains("ViaPatternVariable", StringComparison.Ordinal));
         Assert.Contains(invokes, relation => relation.Source.Id.Contains(".ctor", StringComparison.Ordinal));
-        Assert.Equal(invokes.Length, invokes.Select(relation => relation.Source.Id + "\u001f" + relation.Target.Id).Distinct(StringComparer.Ordinal).Count());
     }
 
     [Fact]
@@ -84,18 +98,7 @@ public sealed class InvokesPassFixtureTests
         Assert.True(File.Exists(solutionPath), $"Expected fixture at '{solutionPath}'.");
 
         var store = new InMemoryTransactionalStore();
-        var stages = PipelineStages.CreateDefault().SetItem(
-            3,
-            new ClassificationAndPromotionStage(
-            [
-                new ComponentPass(),
-                new EntryPointPass(),
-                new BoundaryPass(),
-                new ContractPass(),
-                new RelationPass(),
-                new InvokesPass(),
-            ]));
-        var result = await new AnalysisEngine(store, stages).AnalyzeAsync(
+        var result = await new AnalysisEngine(store).AnalyzeAsync(
             AnalysisRequest.Create([solutionPath]),
             CancellationToken.None);
 
@@ -112,4 +115,19 @@ public sealed class InvokesPassFixtureTests
         Assert.True(fragment is not null, "Expected relations/confirmed/invokes.json in the publication.");
         return CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(fragment!.Payload.AsSpan());
     }
+
+    private static ConfirmedRelationDto[] ReceiverShapeAuthorizeInvokes(
+        CommittedPublication publication,
+        string ownerMember) =>
+        ReadInvokes(publication)
+            .Where(IsReceiverShapeAuthorizeInvoke)
+            .Where(relation => relation.Source.Id.Contains(ownerMember, StringComparison.Ordinal))
+            .ToArray();
+
+    private static bool IsReceiverShapeAuthorizeInvoke(ConfirmedRelationDto relation) =>
+        relation.Kind == "invokes"
+        && relation.Source.Id.Contains("ReceiverShapes", StringComparison.Ordinal)
+        && relation.Target.Id.Contains("PaymentClient", StringComparison.Ordinal)
+        && relation.Target.Id.Contains("Authorize", StringComparison.Ordinal)
+        && !relation.Target.Id.Contains("AuthorizeViaPaymentClientAsync", StringComparison.Ordinal);
 }
