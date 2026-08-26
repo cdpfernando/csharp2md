@@ -241,70 +241,72 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| ROSE-01 | P1: Authorized inventory | Tasks (T14) | Implemented |
-| ROSE-02 | P1: Authorized inventory | Tasks (T4, T16, T23, T24) | Implemented |
-| ROSE-03 | P1: Authorized inventory | Tasks (T15, T17) | Implemented |
-| ROSE-04 | P1: Authorized inventory | Tasks (T19) | Implemented |
-| ROSE-05 | P1: Authorized inventory | Tasks (T20, T43) | Implemented |
-| ROSE-06 | P1: Authorized inventory | Tasks (T20) | Implemented |
-| ROSE-07 | P1: Authorized inventory | Tasks (T16, T23) | Implemented |
-| ROSE-08 | P1: Authorized inventory | Tasks (T18) | Implemented |
-| ROSE-09 | P1: Authorized inventory | Tasks (T17) | Implemented |
-| ROSE-10 | P1: Authorized inventory | Tasks (T17) | Implemented |
-| ROSE-11 | P1: Authorized inventory | Tasks (T21) | Implemented |
-| ROSE-12 | P1: Authorized inventory | Tasks (T29) | Implemented |
-| ROSE-13 | P1: Structural facts | Tasks (T17, T22) | Implemented |
-| ROSE-14 | P1: Structural facts | Tasks (T33, T37) | Implemented |
-| ROSE-15 | P1: Structural facts | Tasks (T34) | Implemented |
-| ROSE-16 | P1: Structural facts | Tasks (T35) | Implemented |
-| ROSE-17 | P1: Structural facts | Tasks (T51) | Implemented |
-| ROSE-18 | P1: Structural facts | Tasks (T51) | Implemented |
-| ROSE-19 | P1: Structural facts | Tasks (T51) | Implemented |
-| ROSE-20 | P1: Structural facts | Tasks (T51) | Implemented |
-| ROSE-21 | P1: Structural facts | Tasks (T6) | Implemented |
-| ROSE-22 | P1: Semantic Roslyn binding | Tasks (T5, T25, T28) | Implemented |
-| ROSE-23 | P1: Semantic Roslyn binding | Tasks (T30) | Implemented |
-| ROSE-24 | P1: Semantic Roslyn binding | Tasks (T25, T31) | Implemented |
-| ROSE-25 | P1: Semantic Roslyn binding | Tasks (T31) | Implemented |
-| ROSE-26 | P1: Semantic Roslyn binding | Tasks (T7, T8, T25) | Implemented |
-| ROSE-27 | P1: Semantic Roslyn binding | Tasks (T8, T9) | Implemented |
-| ROSE-28 | P1: Semantic Roslyn binding | Tasks (T10) | Implemented |
-| ROSE-29 | P1: Semantic Roslyn binding | Tasks (T26, T27) | Implemented |
-| ROSE-30 | P1: Semantic Roslyn binding | Tasks (T26, T27) | Implemented |
-| ROSE-31 | P1: Semantic Roslyn binding | Tasks (T32, T36, T43) | Implemented |
-| ROSE-32 | P1: Observation ledger | Tasks (T39) | Implemented |
-| ROSE-33 | P1: Observation ledger | Tasks (T39) | Implemented |
-| ROSE-34 | P1: Observation ledger | Tasks (T39) | Implemented |
-| ROSE-35 | P1: Observation ledger | Tasks (T39) | Implemented |
-| ROSE-36 | P1: Observation ledger | Tasks (T39) | Implemented |
-| ROSE-37 | P1: Observation ledger | Tasks (T46) | Implemented |
-| ROSE-38 | P1: Observation ledger | Tasks (T47) | Implemented |
-| ROSE-39 | P1: Observation ledger | Tasks (T48) | Implemented |
-| ROSE-40 | P1: Observation ledger | Tasks (T49) | Implemented |
-| ROSE-41 | P1: Observation ledger | Tasks (T50) | Implemented |
-| ROSE-42 | P1: Observation ledger | Tasks (T46, T49, T50) | Implemented |
-| ROSE-43 | P1: Observation ledger | Tasks (T38, T44) | Implemented |
-| ROSE-44 | P1: Observation ledger | Tasks (T6, T38, T44) | Implemented |
-| ROSE-45 | P1: Observation ledger | Tasks (T40) | Implemented |
-| ROSE-46 | P1: Observation ledger | Tasks (T38, T39, T41) | Implemented |
-| ROSE-47 | P1: Observation ledger | Tasks (T39, T47) | Implemented |
-| ROSE-48 | P1: Observation ledger | Tasks (T36, T43) | Implemented |
-| ROSE-49 | P1: Observation ledger | Tasks (T45, T50) | Implemented |
-| ROSE-50 | P1: Source fidelity, secrets, and determinism | Tasks (T41) | Implemented |
-| ROSE-51 | P1: Source fidelity, secrets, and determinism | Tasks (T41) | Implemented |
-| ROSE-52 | P1: Source fidelity, secrets, and determinism | Tasks (T57) | Implemented |
-| ROSE-53 | P1: Source fidelity, secrets, and determinism | Tasks (T19, T58) | Implemented |
-| ROSE-54 | P1: Source fidelity, secrets, and determinism | Tasks (T38, T44, T59) | Implemented |
-| ROSE-55 | P1: Source fidelity, secrets, and determinism | Tasks (T13, T42, T47, T61) | Implemented |
-| ROSE-56 | P1: Source fidelity, secrets, and determinism | Tasks (T1, T60) | Implemented |
-| ROSE-57 | P1: Source fidelity, secrets, and determinism | Tasks (T54) | Implemented |
-| ROSE-58 | P1: Commit the extracted graph | Tasks (T2, T3, T52) | Implemented |
-| ROSE-59 | P1: Commit the extracted graph | Tasks (T11, T12, T22, T37, T43, T53) | Implemented |
-| ROSE-60 | P1: Commit the extracted graph | Tasks (T53) | Implemented |
-| ROSE-61 | P1: Commit the extracted graph | Tasks (T56) | Implemented |
-| ROSE-62 | P1: Commit the extracted graph | Tasks (T56) | Implemented |
-| ROSE-63 | P1: Commit the extracted graph | Tasks (T23, T62) | Implemented |
-| ROSE-64 | P1: Commit the extracted graph | Tasks (T55, T63) | Implemented |
+| ROSE-01 | P1: Authorized inventory | Execute (T14) | Verified |
+| ROSE-02 | P1: Authorized inventory | Execute (T4, T16, T23, T24) | Verified |
+| ROSE-03 | P1: Authorized inventory | Execute (T15, T17) | Verified |
+| ROSE-04 | P1: Authorized inventory | Execute (T19) | Verified |
+| ROSE-05 | P1: Authorized inventory | Execute (T20, T43) | Verified |
+| ROSE-06 | P1: Authorized inventory | Execute (T20) | Verified |
+| ROSE-07 | P1: Authorized inventory | Execute (T16, T23) | Verified |
+| ROSE-08 | P1: Authorized inventory | Execute (T18) | Verified |
+| ROSE-09 | P1: Authorized inventory | Execute (T17) | Verified |
+| ROSE-10 | P1: Authorized inventory | Execute (T17) | Verified |
+| ROSE-11 | P1: Authorized inventory | Execute (T21) | Verified |
+| ROSE-12 | P1: Authorized inventory | Execute (T29) | Verified |
+| ROSE-13 | P1: Structural facts | Execute (T17, T22) | Verified |
+| ROSE-14 | P1: Structural facts | Execute (T33, T37) | Verified |
+| ROSE-15 | P1: Structural facts | Execute (T34) | Verified |
+| ROSE-16 | P1: Structural facts | Execute (T35) | Verified |
+| ROSE-17 | P1: Structural facts | Execute (T51) | Verified |
+| ROSE-18 | P1: Structural facts | Execute (T51) | Verified |
+| ROSE-19 | P1: Structural facts | Execute (T51) | Verified |
+| ROSE-20 | P1: Structural facts | Execute (T51) | Verified |
+| ROSE-21 | P1: Structural facts | Execute (T6) | Verified |
+| ROSE-22 | P1: Semantic Roslyn binding | Execute (T5, T25, T28) | Verified |
+| ROSE-23 | P1: Semantic Roslyn binding | Execute (T30) | Verified |
+| ROSE-24 | P1: Semantic Roslyn binding | Execute (T25, T31) | Verified |
+| ROSE-25 | P1: Semantic Roslyn binding | Execute (T31) | Verified |
+| ROSE-26 | P1: Semantic Roslyn binding | Execute (T7, T8, T25) | Verified |
+| ROSE-27 | P1: Semantic Roslyn binding | Execute (T8, T9) | Verified |
+| ROSE-28 | P1: Semantic Roslyn binding | Execute (T10) | Verified |
+| ROSE-29 | P1: Semantic Roslyn binding | Execute (T26, T27) | Verified |
+| ROSE-30 | P1: Semantic Roslyn binding | Execute (T26, T27) | Verified |
+| ROSE-31 | P1: Semantic Roslyn binding | Execute (T32, T36, T43) | Verified |
+| ROSE-32 | P1: Observation ledger | Execute (T39) | Verified |
+| ROSE-33 | P1: Observation ledger | Execute (T39) | Verified |
+| ROSE-34 | P1: Observation ledger | Execute (T39) | Verified |
+| ROSE-35 | P1: Observation ledger | Execute (T39) | Verified |
+| ROSE-36 | P1: Observation ledger | Execute (T39) | Verified |
+| ROSE-37 | P1: Observation ledger | Execute (T46) | Verified |
+| ROSE-38 | P1: Observation ledger | Execute (T47) | Verified |
+| ROSE-39 | P1: Observation ledger | Execute (T48) | Verified |
+| ROSE-40 | P1: Observation ledger | Execute (T49) | Verified |
+| ROSE-41 | P1: Observation ledger | Execute (T50) | Verified |
+| ROSE-42 | P1: Observation ledger | Execute (T46, T49, T50) | Verified |
+| ROSE-43 | P1: Observation ledger | Execute (T38, T44) | Verified |
+| ROSE-44 | P1: Observation ledger | Execute (T6, T38, T44) | Verified |
+| ROSE-45 | P1: Observation ledger | Execute (T40) | Verified |
+| ROSE-46 | P1: Observation ledger | Execute (T38, T39, T41) | Verified |
+| ROSE-47 | P1: Observation ledger | Execute (T39, T47) | Verified |
+| ROSE-48 | P1: Observation ledger | Execute (T36, T43) | Verified |
+| ROSE-49 | P1: Observation ledger | Execute (T45, T50) | Verified |
+| ROSE-50 | P1: Source fidelity, secrets, and determinism | Execute (T41) | Verified |
+| ROSE-51 | P1: Source fidelity, secrets, and determinism | Execute (T41) | Verified |
+| ROSE-52 | P1: Source fidelity, secrets, and determinism | Execute (T57) | Verified |
+| ROSE-53 | P1: Source fidelity, secrets, and determinism | Execute (T19, T58) | Verified |
+| ROSE-54 | P1: Source fidelity, secrets, and determinism | Execute (T38, T44, T59) | Verified |
+| ROSE-55 | P1: Source fidelity, secrets, and determinism | Execute (T13, T42, T47, T61) | Verified |
+| ROSE-56 | P1: Source fidelity, secrets, and determinism | Execute (T1, T60) | Verified |
+| ROSE-57 | P1: Source fidelity, secrets, and determinism | Execute (T54) | Verified |
+| ROSE-58 | P1: Commit the extracted graph | Execute (T2, T3, T52) | Verified |
+| ROSE-59 | P1: Commit the extracted graph | Execute (T11, T12, T22, T37, T43, T53) | Verified |
+| ROSE-60 | P1: Commit the extracted graph | Execute (T53) | Verified |
+| ROSE-61 | P1: Commit the extracted graph | Execute (T56) | Verified |
+| ROSE-62 | P1: Commit the extracted graph | Execute (T56) | Verified |
+| ROSE-63 | P1: Commit the extracted graph | Execute (T23, T62) | Verified |
+| ROSE-64 | P1: Commit the extracted graph | Execute (T55, T63) | Verified |
+
+**Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
 **Coverage:** 64 total, 64 mapped to tasks, 0 unmapped
 
@@ -314,9 +316,9 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 
 How we know the feature is successful:
 
-- [ ] `analyze --solution fixtures/SyntheticSolution/Acme.Orders/Acme.Orders.slnx --output <dir>` writes a package with non-zero structural facts, non-zero observations, and only `contains` confirmed relations
-- [ ] All ten observation kinds appear at least once from the versioned fixture
-- [ ] A symlink escape unpublished that solution and leaves any previous package byte-identical
-- [ ] Analyzer and generator assemblies are absent from the compilation
-- [ ] Two clone paths produce identical identities and canonical payload bytes
-- [ ] After the Verifier, `LocalCorpus` analyze tests run when `fixtures/eShop` or `fixtures/eShopOnContainers` exist, and are skipped when they do not
+- [x] `analyze --solution fixtures/SyntheticSolution/Acme.Orders/Acme.Orders.slnx --output <dir>` writes a package with non-zero structural facts, non-zero observations, and only `contains` confirmed relations
+- [x] All ten observation kinds appear at least once from the versioned fixture
+- [x] A symlink escape unpublished that solution and leaves any previous package byte-identical
+- [x] Analyzer and generator assemblies are absent from the compilation
+- [x] Two clone paths produce identical identities and canonical payload bytes
+- [x] After the Verifier, `LocalCorpus` analyze tests run when `fixtures/eShop` or `fixtures/eShopOnContainers` exist, and are skipped when they do not

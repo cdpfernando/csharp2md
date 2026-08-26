@@ -10,7 +10,7 @@ Workstream 2, [`engine-bootstrap`](features/engine-bootstrap/spec.md), is comple
 
 Workstream 3, [`factual-storage`](features/factual-storage/spec.md), is complete, verified and on `feat/factual-storage` (`4c4948b`). Verifier report: `.specs/features/factual-storage/validation.md` (PASS, 801 tests).
 
-Workstream 4, [`roslyn-observation-extraction`](features/roslyn-observation-extraction/spec.md), is in Execute: `tasks.md` approved; phases 1–3 (T1–T18) dispatched to sequential batch workers.
+Workstream 4, [`roslyn-observation-extraction`](features/roslyn-observation-extraction/spec.md), is complete, verified and on `feat/roslyn-observation-extraction` (`65fa91a`). Verifier report: `.specs/features/roslyn-observation-extraction/validation.md` (PASS, 930 tests). Next: classifier workstreams 5A–5D, created only when explicitly started.
 
 Normative documentation:
 
@@ -149,10 +149,10 @@ Normative documentation:
 ## Handoff
 
 - **Feature**: `roslyn-observation-extraction` — `.specs/features/roslyn-observation-extraction/`
-- **Phase / Task**: Execute. Batch 1 (Phase 1, T1–T6) dispatched; Batches 2–3 (Phases 2–3, T7–T18) wait on Batch 1.
-- **Completed**: Workstream 3 `factual-storage` on `master` (`a48c82a`). Spec, design, and tasks for workstream 4 are approved.
-- **In-progress** (file:line): Phase 1 T1 — `src/Csharp2Md.Analysis/Storage/DiagnosticRecord.cs`
-- **Next step**: Batch worker 1 completes T1–T6 with one atomic commit each; orchestrator then dispatches Phase 2.
-- **Blockers**: none.
-- **Uncommitted files**: feature specs under `.specs/features/roslyn-observation-extraction/`, `.specs/STATE.md`, plus unrelated noise (skill copies, fixtures, research). Workers must not commit that noise.
+- **Phase / Task**: Execute complete. Verifier PASS (iteration 1 after ROSE-21/ROSE-23 fixes).
+- **Completed**: T1–T63 on `feat/roslyn-observation-extraction`. T63 `bcd94c5`. Post-T63: `52ada04` ROSE-21 abort-on-collision; `65fa91a` ROSE-23 bound observations after compile errors. Gate: Domain 544, Analysis 213, Storage 143, Projection 3, Cli 27 (930, `Category!=LocalCorpus`).
+- **In-progress** (file:line): none.
+- **Next step**: Do not start a classifier workstream (5A–5D) unprompted. Create a feature only when the user explicitly starts one.
+- **Blockers**: none. `fixtures/eShop` and `fixtures/eShopOnContainers` were absent; LocalCorpus skipped. Discrimination sensor remains skipped. Carry-forward: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run the five test projects separately.
+- **Uncommitted files**: unrelated `.gitignore` / `AGENTS.md` / `CLAUDE.md` / roadmap / `docs/architecture/README.md` / `FixtureRetentionTests.cs`.
 - **Branch**: `feat/roslyn-observation-extraction`

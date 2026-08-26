@@ -25,7 +25,7 @@ changes and reports clean before the phase is considered complete. This is in ad
 **Spec**: `.specs/features/roslyn-observation-extraction/spec.md`
 **Context**: `.specs/features/roslyn-observation-extraction/context.md`
 **Design**: `.specs/features/roslyn-observation-extraction/design.md`
-**Status**: Approved — Execute in progress (phases 1–3)
+**Status**: Approved — Execute complete (T1–T63; verifier PASS)
 
 **Scope of this task list**: the whole feature. All 64 requirements `ROSE-01` through `ROSE-64` are broken
 down here; nothing is deferred to a later pass. The approved design is the implementation contract.

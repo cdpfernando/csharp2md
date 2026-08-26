@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 4,
+  "next_id": 6,
   "lessons": [
     {
       "id": "L-001",
@@ -58,6 +58,42 @@
       ],
       "created": "2026-08-25T15:35:37Z",
       "last_seen": "2026-08-25T15:35:37Z"
+    },
+    {
+      "id": "L-004",
+      "key": "ac_gap::when an ac requires observations from bindable occurrences after compile errors run extraction on that tree and assert a bound observation not only a diagnostic and a kept compilation",
+      "text": "When an AC requires observations from bindable occurrences after compile errors, run extraction on that tree and assert a bound observation, not only a diagnostic and a kept compilation.",
+      "signal": "ac_gap",
+      "scope": "extraction",
+      "status": "candidate",
+      "features": [
+        "roslyn-observation-extraction"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "ROSE-23 (extraction)"
+      ],
+      "created": "2026-08-26T03:25:39Z",
+      "last_seen": "2026-08-26T03:25:39Z"
+    },
+    {
+      "id": "L-005",
+      "key": "ac_gap::when an ac requires commit abort on identity collision assert unpublished plus a named identity and return the accumulator corruption flag as the stage result the orchestrator reads",
+      "text": "When an AC requires commit abort on identity collision, assert Unpublished plus a named identity and return the accumulator corruption flag as the stage result the orchestrator reads.",
+      "signal": "ac_gap",
+      "scope": "pipeline",
+      "status": "candidate",
+      "features": [
+        "roslyn-observation-extraction"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "ROSE-21 (pipeline)"
+      ],
+      "created": "2026-08-26T03:26:08Z",
+      "last_seen": "2026-08-26T03:26:08Z"
     }
   ]
 }
