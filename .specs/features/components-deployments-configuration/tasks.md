@@ -581,16 +581,16 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Key paths are colon-joined; array elements use their index as a segment
-- [ ] `resolution` is `dynamic` for `${VAR}`, `$VAR` and `%VAR%`, `literal` for any other non-empty value, `unknown` for empty or null
-- [ ] `address` is present only when the value is a well-formed absolute URI and is not a suspected secret
-- [ ] A secret-bearing value produces `SuspectedSecretEvidence` with a redacted excerpt and never reaches a payload entry
-- [ ] Malformed JSON produces a `malformed-configuration-document` diagnostic, no observations, and no abort
-- [ ] Ordinals are 1..N over ordinal-sorted key paths, so no two observations share an `owner:kind:ordinal` key
-- [ ] A path that escapes the authorized root is rejected through the existing guard
-- [ ] Unit tests cover each branch above against hand-written JSON, including the fixture's three `Services` shapes
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] Key paths are colon-joined; array elements use their index as a segment
+- [x] `resolution` is `dynamic` for `${VAR}`, `$VAR` and `%VAR%`, `literal` for any other non-empty value, `unknown` for empty or null
+- [x] `address` is present only when the value is a well-formed absolute URI and is not a suspected secret
+- [x] A secret-bearing value produces `SuspectedSecretEvidence` with a redacted excerpt and never reaches a payload entry
+- [x] Malformed JSON produces a `malformed-configuration-document` diagnostic, no observations, and no abort
+- [x] Ordinals are 1..N over ordinal-sorted key paths, so no two observations share an `owner:kind:ordinal` key
+- [x] A path that escapes the authorized root is rejected through the existing guard
+- [x] Unit tests cover each branch above against hand-written JSON, including the fixture's three `Services` shapes
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions
 
 **Tests**: unit
 **Gate**: full
