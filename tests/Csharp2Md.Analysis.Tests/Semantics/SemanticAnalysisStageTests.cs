@@ -182,7 +182,9 @@ public sealed class SemanticAnalysisStageTests
                     context.BoundSolution.Compilations,
                     compilation => compilation.SyntaxTrees.Any(syntaxTree =>
                         syntaxTree.FilePath.Contains("Broken.cs", StringComparison.OrdinalIgnoreCase)));
-                Assert.Empty(context.Accumulator.ToSnapshot().Facts.OfType<Csharp2Md.Domain.Facts.Symbol>());
+                Assert.Contains(
+                    context.Accumulator.ToSnapshot().Facts.OfType<Csharp2Md.Domain.Facts.Symbol>(),
+                    symbol => symbol.Signature.Value.Contains("metadata=Good", StringComparison.Ordinal));
             }
             finally
             {

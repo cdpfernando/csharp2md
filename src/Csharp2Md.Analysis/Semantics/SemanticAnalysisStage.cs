@@ -113,6 +113,7 @@ internal sealed class SemanticAnalysisStage : IPipelineStage
             context.BoundSolution = new BoundSolution(leases.ToImmutable(), compilations.ToImmutable());
             attached = true;
             context.AnalysisVariants = variants.ToImmutable();
+            SymbolFactEmitter.Emit(context.BoundSolution, context.Accumulator, context.SolutionPath, cancellationToken);
             return new StageResult(
                 0,
                 0,

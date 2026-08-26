@@ -1153,10 +1153,10 @@ multi-TFM does not duplicate symbols. Consult Context7 for `ISymbol` members use
 
 **Done when**:
 
-- [ ] `OrderService.PlaceOrderAsync` is present as a Symbol on the fixture package-in-memory
-- [ ] Re-emitting the same symbol from a second TFM does not add a second fact identity
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
-- [ ] Test count recorded (no silent deletions)
+- [x] `OrderService.PlaceOrderAsync` is present as a Symbol on the fixture package-in-memory
+- [x] Re-emitting the same symbol from a second TFM does not add a second fact identity
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj`
+- [x] Test count recorded (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
