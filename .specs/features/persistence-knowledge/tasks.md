@@ -855,14 +855,14 @@ T23 → T24 → T25 → T26
 
 **Done when**:
 
-- [ ] No canonical payload contains the `OrderSqlQueries.ConnectionString` value (PK-48)
-- [ ] No canonical payload contains the `appsettings.json` `OrdersDb` value (PK-48) — asserted separately, so neither check covers for the other
-- [ ] Any suspected secret appears only as redacted evidence with document, span and hash
-- [ ] No `Microsoft.CodeAnalysis` type is reachable through the persistence classifier's surface (PK-49)
-- [ ] `Csharp2Md.Cli` still declares no project reference to `Csharp2Md.Domain` (PK-49)
-- [ ] The in-memory adapter produces persistence facts and writes no file (PK-50)
-- [ ] Gate check passes: build gate command
-- [ ] Test count: 1019 + tests added so far pass (no silent deletions)
+- [x] No canonical payload contains the `OrderSqlQueries.ConnectionString` value (PK-48)
+- [x] No canonical payload contains the `appsettings.json` `OrdersDb` value (PK-48) — asserted separately, so neither check covers for the other
+- [x] Any suspected secret appears only as redacted evidence with document, span and hash
+- [x] No `Microsoft.CodeAnalysis` type is reachable through the persistence classifier's surface (PK-49)
+- [x] `Csharp2Md.Cli` still declares no project reference to `Csharp2Md.Domain` (PK-49)
+- [x] The in-memory adapter produces persistence facts and writes no file (PK-50)
+- [x] Gate check passes: build gate command
+- [x] Test count: 1153 pass — Domain 545, Analysis 417, Storage 161, Cli 27, Projection 3 (no silent deletions)
 
 **Tests**: integration
 **Gate**: build

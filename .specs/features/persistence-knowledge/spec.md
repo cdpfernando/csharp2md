@@ -312,9 +312,9 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | PK-45 | P1: Determinism, security and invariants | Phase 6 (T24) | Implementing |
 | PK-46 | P1: Determinism, security and invariants | Phase 6 (T24) | Implementing |
 | PK-47 | P1: Determinism, security and invariants | Phase 6 (T24) | Implementing |
-| PK-48 | P1: Determinism, security and invariants | - | Pending |
-| PK-49 | P1: Determinism, security and invariants | - | Pending |
-| PK-50 | P1: Determinism, security and invariants | - | Pending |
+| PK-48 | P1: Determinism, security and invariants | Phase 6 (T25) | Implementing |
+| PK-49 | P1: Determinism, security and invariants | Phase 6 (T25) | Implementing |
+| PK-50 | P1: Determinism, security and invariants | Phase 6 (T25) | Implementing |
 | PK-51 | P2: Persistence run coverage | Phase 4 (T18), Phase 6 (T23) | Implementing |
 | PK-52 | P2: Persistence run coverage | Phase 4 (T18) | Implementing |
 | PK-53 | P2: Persistence run coverage | Phase 4 (T18) | Implementing |
