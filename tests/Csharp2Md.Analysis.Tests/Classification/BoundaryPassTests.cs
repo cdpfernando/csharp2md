@@ -493,6 +493,55 @@ public sealed class BoundaryPassTests
         Assert.Equal("global::Acme.Shared.Contracts.OrderPlaced", operation.ProtocolOperationKey!.Value.Value);
     }
 
+    [Fact]
+    [Trait("Requirement", "CDC-14")]
+    public void Execute_OutboundHttpInPrivatelyUsedLibrary_ResolvesApplicationComponent()
+    {
+        var pipeline = ArrangeOrders();
+        pipeline.Accumulator.AddFact(Project.Create(ContractsProject));
+        var service = AddNamedType(pipeline, "PaymentClient", "global::Acme.Shared.Contracts", ContractsProject);
+        var method = AddMethod(pipeline, "AuthorizeAsync", "global::Acme.Shared.Contracts.PaymentClient", ContractsProject);
+        var component = Component.Create(AcmeSolution, "Acme.Orders/Acme.Orders.csproj", [service.Reference, method.Reference]);
+        pipeline.Accumulator.AddFact(component);
+        AddCreateClient(pipeline, method.Reference, "PaymentService", ordinal: 1);
+        AddHttpInvocation(pipeline, method.Reference, "PostAsJsonAsync", "payments/authorize", ordinal: 2);
+        var context = new ClassifierContext(pipeline);
+
+        new BoundaryPass().Execute(context, CancellationToken.None);
+
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal(BoundaryDirection.Outbound, operation.Direction);
+        Assert.Equal(BoundaryProtocol.Http, operation.Protocol);
+        Assert.Equal(component.Reference, operation.OwningComponent);
+        Assert.Equal("Acme.Orders/Acme.Orders.csproj", component.Name);
+        Assert.NotEqual("Acme.Shared.Contracts/Acme.Shared.Contracts.csproj", component.Name);
+        Assert.Equal(method.Reference, operation.Symbol);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CDC-14")]
+    public void Execute_OutboundMessagingInPrivatelyUsedLibrary_ResolvesApplicationComponent()
+    {
+        var pipeline = ArrangeOrders();
+        pipeline.Accumulator.AddFact(Project.Create(ContractsProject));
+        var service = AddNamedType(pipeline, "OrderPublisher", "global::Acme.Shared.Contracts", ContractsProject);
+        var method = AddMethod(pipeline, "PublishOrderPlacedAsync", "global::Acme.Shared.Contracts.OrderPublisher", ContractsProject);
+        var component = Component.Create(AcmeSolution, "Acme.Orders/Acme.Orders.csproj", [service.Reference, method.Reference]);
+        pipeline.Accumulator.AddFact(component);
+        AddMessageOperation(pipeline, method.Reference, "PublishAsync", "global::Acme.Shared.Contracts.OrderPlaced", ordinal: 1);
+        var context = new ClassifierContext(pipeline);
+
+        new BoundaryPass().Execute(context, CancellationToken.None);
+
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal(BoundaryDirection.Outbound, operation.Direction);
+        Assert.Equal(BoundaryProtocol.Messaging, operation.Protocol);
+        Assert.Equal(component.Reference, operation.OwningComponent);
+        Assert.Equal("Acme.Orders/Acme.Orders.csproj", component.Name);
+        Assert.NotEqual("Acme.Shared.Contracts/Acme.Shared.Contracts.csproj", component.Name);
+        Assert.Equal(method.Reference, operation.Symbol);
+    }
+
     private static PipelineContext ArrangeOrders()
     {
         var pipeline = new PipelineContext(new SwallowingSession(), "alpha.sln");
@@ -506,6 +555,9 @@ public sealed class BoundaryPassTests
 
     private static ProjectId OrdersProject =>
         ProjectId.Create(AcmeSolution, "Acme.Orders/Acme.Orders.csproj");
+
+    private static ProjectId ContractsProject =>
+        ProjectId.Create(AcmeSolution, "Acme.Shared.Contracts/Acme.Shared.Contracts.csproj");
 
     private static Symbol AddNamedType(PipelineContext pipeline, string metadata, string container, ProjectId project)
     {

@@ -852,11 +852,11 @@ T39 → T40 → T41 → T42
 
 **Done when**:
 
-- [ ] Both path lookups and the local `TryLogicalPath` helper are removed; the `componentsById` lookups at lines 63 and 300 are unchanged
-- [ ] An outbound HTTP operation and a messaging operation declared in a privately-used library both still resolve their component
-- [ ] Every existing `BoundaryPassTests` and `BoundaryIntegrationTests` assertion still holds, with a new test covering the private-use case
-- [ ] Gate check passes: full gate command
-- [ ] Test count reported; no silent deletions
+- [x] Both path lookups and the local `TryLogicalPath` helper are removed; the `componentsById` lookups at lines 63 and 300 are unchanged
+- [x] An outbound HTTP operation and a messaging operation declared in a privately-used library both still resolve their component
+- [x] Every existing `BoundaryPassTests` and `BoundaryIntegrationTests` assertion still holds, with a new test covering the private-use case
+- [x] Gate check passes: full gate command
+- [x] Test count reported; no silent deletions (Domain 549 + Analysis 535 = 1084 pass)
 
 **Tests**: unit
 **Gate**: full
