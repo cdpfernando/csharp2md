@@ -287,12 +287,12 @@ T8 → T9 → T10
 - Skill: NONE
 
 **Done when**:
-- [ ] `InvokesPass` appears in the `ClassificationAndPromotionStage` pass list after `RelationPass`
-- [ ] `ExecutesPass` appears after `InvokesPass`
-- [ ] `PipelineStagesTests` (existing) updated to assert the correct total pass count
-- [ ] `StageSubstitutionTests` (existing) still pass — wiring test verifies substitution still works
-- [ ] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
-- [ ] Test count: existing tests adjusted; no new tests required (integration tests in T5/T6 cover this)
+- [x] `InvokesPass` appears in the `ClassificationAndPromotionStage` pass list after `RelationPass`
+- [x] `ExecutesPass` appears after `InvokesPass`
+- [x] `PipelineStagesTests` (existing) updated to assert the correct total pass count
+- [x] `StageSubstitutionTests` (existing) still pass — wiring test verifies substitution still works
+- [x] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
+- [x] Test count: existing tests adjusted; no new tests required (integration tests in T5/T6 cover this)
 
 **Tests**: unit
 **Gate**: quick (Analysis)
