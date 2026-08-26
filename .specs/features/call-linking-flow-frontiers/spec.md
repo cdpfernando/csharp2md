@@ -172,7 +172,7 @@ Every ambiguity is resolved or recorded here — nothing is left silently unclea
 | --- | --- | --- | --- |
 | CLLF-01 | P1: Confirmed call edges | Design | Implementing |
 | CLLF-02 | P1: Confirmed call edges | Design | Implementing |
-| CLLF-03 | P1: Confirmed call edges | Design | Pending |
+| CLLF-03 | P1: Confirmed call edges | Design | Implementing |
 | CLLF-04 | P1: Confirmed call edges | Design | Implementing |
 | CLLF-05 | P1: Confirmed call edges | Design | Implementing |
 | CLLF-06 | P1: Confirmed call edges | Design | Implementing |

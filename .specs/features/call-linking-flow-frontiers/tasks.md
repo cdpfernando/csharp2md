@@ -259,14 +259,14 @@ T8 → T9 → T10
 - Skill: `dotnet-skills:csharp-coding-standards`
 
 **Done when**:
-- [ ] `ExecutesPass` implements `IClassifierPass`; classifier identity `csharp2md.classifier.executes` v1
-- [ ] For each `EntryPoint` whose `Symbol` reference resolves in the snapshot: `ConfirmedRelation(Executes, entryPoint.Reference, symbol.Reference, EvidenceMethod.Semantic, targetFact: symbol)` emitted
-- [ ] For each `EntryPoint` whose `Symbol` reference is absent: `DiagnosticRecord` naming both IDs; no `Executes` relation
-- [ ] One-to-one: each `EntryPoint` produces exactly one `Executes` or one diagnostic
-- [ ] Unit tests in `tests/Csharp2Md.Analysis.Tests/Classification/ExecutesPassTests.cs`: `EntryPointWithKnownSymbol_ProducesExecutesRelation`, `EntryPointWithMissingSymbol_ProducesDiagnosticNotRelation`, `MultipleEntryPoints_EachProducesOneExecutes`
-- [ ] Integration test: load `Acme.Orders.slnx` through full pipeline; assert each controller action `EntryPoint` produces an `Executes` relation to its callable
-- [ ] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
-- [ ] Test count: ≥ 5 new tests
+- [x] `ExecutesPass` implements `IClassifierPass`; classifier identity `csharp2md.classifier.executes` v1
+- [x] For each `EntryPoint` whose `Symbol` reference resolves in the snapshot: `ConfirmedRelation(Executes, entryPoint.Reference, symbol.Reference, EvidenceMethod.Semantic, targetFact: symbol)` emitted
+- [x] For each `EntryPoint` whose `Symbol` reference is absent: `DiagnosticRecord` naming both IDs; no `Executes` relation
+- [x] One-to-one: each `EntryPoint` produces exactly one `Executes` or one diagnostic
+- [x] Unit tests in `tests/Csharp2Md.Analysis.Tests/Classification/ExecutesPassTests.cs`: `EntryPointWithKnownSymbol_ProducesExecutesRelation`, `EntryPointWithMissingSymbol_ProducesDiagnosticNotRelation`, `MultipleEntryPoints_EachProducesOneExecutes`
+- [x] Integration test: load `Acme.Orders.slnx` through full pipeline; assert each controller action `EntryPoint` produces an `Executes` relation to its callable
+- [x] `dotnet test tests/Csharp2Md.Analysis.Tests --filter "Category!=LocalCorpus"` passes
+- [x] Test count: ≥ 5 new tests
 
 **Tests**: unit + integration
 **Gate**: full (Analysis)
