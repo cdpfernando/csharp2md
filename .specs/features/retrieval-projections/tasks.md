@@ -627,11 +627,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Exactly one artifact per inventoried document, with no absolute path in any key
-- [ ] Two documents in different projects sharing a relative path produce distinct keys
-- [ ] Non-UTF-8 bytes pass through unchanged
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1442+ tests pass (no silent deletions)
+- [x] Exactly one artifact per inventoried document, with no absolute path in any key
+- [x] Two documents in different projects sharing a relative path produce distinct keys
+- [x] Non-UTF-8 bytes pass through unchanged
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1442+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

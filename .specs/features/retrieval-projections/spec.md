@@ -303,7 +303,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-05 | P1: Projector seam and atomic publication | Design | implemented |
 | RP-06 | P1: Projector seam and atomic publication | Design | implemented |
 | RP-07 | P1: Source projection and secret redaction | Design | implemented |
-| RP-08 | P1: Source projection and secret redaction | Design | Pending |
+| RP-08 | P1: Source projection and secret redaction | Design | implemented |
 | RP-09 | P1: Source projection and secret redaction | Design | Pending |
 | RP-10 | P1: Source projection and secret redaction | Design | Pending |
 | RP-11 | P1: Source projection and secret redaction | Design | Pending |
