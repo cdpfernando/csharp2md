@@ -323,11 +323,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] `ReadPayload()` returns the stored array for eager fragments and invokes the provider for deferred ones
-- [ ] A test asserts a deferred fragment's provider is invoked exactly once across two `ReadPayload()` calls, or that the second call is rejected — whichever the implementation chooses, asserted explicitly
-- [ ] `IsDeferred` is observable on the returned publication
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1376+ tests pass (no silent deletions)
+- [x] `ReadPayload()` returns the stored array for eager fragments and invokes the provider for deferred ones
+- [x] A test asserts a deferred fragment's provider is invoked exactly once across two `ReadPayload()` calls, or that the second call is rejected — whichever the implementation chooses, asserted explicitly
+- [x] `IsDeferred` is observable on the returned publication
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1376+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: build

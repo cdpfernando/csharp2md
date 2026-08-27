@@ -352,7 +352,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-54 | P2: Bounded artifacts and shard shape | - | Pending |
 | RP-55 | P2: Bounded artifacts and shard shape | - | Pending |
 | RP-56 | P2: Bounded artifacts and shard shape | - | Pending |
-| RP-57 | P1: Projector seam and atomic publication | Design | Pending |
+| RP-57 | P1: Projector seam and atomic publication | Design | implemented |
 
 **ID format:** `RP-[NUMBER]`
 
