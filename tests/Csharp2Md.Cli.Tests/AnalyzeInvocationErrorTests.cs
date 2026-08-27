@@ -99,7 +99,7 @@ public sealed class AnalyzeInvocationErrorTests
 
     private sealed class OpenMustNotBeCalledStore : ITransactionalStore
     {
-        public IStoreSession Open(string solutionKey) =>
+        public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader) =>
             throw new InvalidOperationException($"Open must not be called, but was called with '{solutionKey}'.");
     }
 }

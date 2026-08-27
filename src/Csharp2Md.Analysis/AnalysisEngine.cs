@@ -41,7 +41,7 @@ public sealed class AnalysisEngine : IAnalysisEngine
     private async Task<SolutionOutcome> AnalyzeSolutionAsync(string path, CancellationToken cancellationToken)
     {
         var canonical = Path.GetFullPath(path);
-        var session = _store.Open(canonical);
+        var session = _store.Open(canonical, EmptySourceDocumentReader.Instance);
         var context = new PipelineContext(session, path);
         try
         {

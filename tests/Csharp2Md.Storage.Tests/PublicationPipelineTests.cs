@@ -80,12 +80,12 @@ public sealed class PublicationPipelineTests
     private static (ImmutableArray<StagedFragment> Memory, ImmutableArray<StagedFragment> Filesystem) PublishBoth(
         FactualSnapshot snapshot)
     {
-        var memorySession = new InMemoryTransactionalStore().Open(SolutionKey);
+        var memorySession = new InMemoryTransactionalStore().Open(SolutionKey, EmptySourceDocumentReader.Instance);
         memorySession.Stage(snapshot);
         var memory = memorySession.Commit().ArtifactsInPublicationOrder;
 
         using var output = TempOutputRoot.Create();
-        var filesystemSession = new FilesystemTransactionalStore(output.DirectoryPath).Open(SolutionKey);
+        var filesystemSession = new FilesystemTransactionalStore(output.DirectoryPath).Open(SolutionKey, EmptySourceDocumentReader.Instance);
         filesystemSession.Stage(snapshot);
         var filesystem = filesystemSession.Commit().ArtifactsInPublicationOrder;
         return (memory, filesystem);

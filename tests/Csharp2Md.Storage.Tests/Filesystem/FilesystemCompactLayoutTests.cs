@@ -29,7 +29,7 @@ public sealed class FilesystemCompactLayoutTests
         using var output = TempOutputRoot.Create();
         var snapshot = MultiFamilySnapshot();
         var store = new FilesystemTransactionalStore(output.DirectoryPath);
-        var session = store.Open(SolutionKey);
+        var session = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         session.Stage(snapshot);
         session.Commit();
 

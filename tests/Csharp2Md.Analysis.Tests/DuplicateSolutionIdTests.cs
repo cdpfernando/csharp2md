@@ -61,7 +61,7 @@ public sealed class DuplicateSolutionIdTests
     {
         public int OpenCount { get; private set; }
 
-        public IStoreSession Open(string solutionKey)
+        public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader)
         {
             OpenCount++;
             Assert.Fail($"Open must not be called for a duplicate SolutionId, but was called with '{solutionKey}'.");
@@ -75,10 +75,10 @@ public sealed class DuplicateSolutionIdTests
 
         public int OpenCount { get; private set; }
 
-        public IStoreSession Open(string solutionKey)
+        public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader)
         {
             OpenCount++;
-            return _inner.Open(solutionKey);
+            return _inner.Open(solutionKey, sourceReader);
         }
     }
 }

@@ -21,7 +21,7 @@ public sealed class FilesystemEmptyCommitTests
         Assert.False(File.Exists(output.DirectoryPath));
 
         ITransactionalStore store = new FilesystemTransactionalStore(output.DirectoryPath);
-        var session = store.Open(SolutionKey);
+        var session = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         session.Stage(FactualSnapshot.Empty);
         var publication = session.Commit();
 
@@ -53,7 +53,7 @@ public sealed class FilesystemEmptyCommitTests
     {
         using var output = TempOutputRoot.Create();
         var store = new FilesystemTransactionalStore(output.DirectoryPath);
-        var session = store.Open(SolutionKey);
+        var session = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         session.Stage(FactualSnapshot.Empty);
         var publication = session.Commit();
 

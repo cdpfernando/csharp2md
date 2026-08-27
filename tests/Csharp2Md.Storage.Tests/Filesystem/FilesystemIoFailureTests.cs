@@ -16,7 +16,7 @@ public sealed class FilesystemIoFailureTests
         var store = new FilesystemTransactionalStore(output.DirectoryPath);
         var child = FilesystemTestPaths.ChildDirectory(output.DirectoryPath, SolutionKey);
 
-        var first = store.Open(SolutionKey);
+        var first = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         first.Stage(FactualSnapshot.Empty);
         first.Commit();
         var prior = FilesystemTestPaths.SnapshotFiles(child);
@@ -25,7 +25,7 @@ public sealed class FilesystemIoFailureTests
         var stagingPath = child + ".staging";
         File.WriteAllText(stagingPath, "blocked");
 
-        var second = store.Open(SolutionKey);
+        var second = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         second.Stage(FactualSnapshot.Empty);
         var exception = Assert.Throws<PublicationRejectedException>(second.Commit);
 

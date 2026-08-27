@@ -13,10 +13,29 @@ public sealed class TransactionalStorePortTests
         Assert.NotNull(open);
         Assert.Equal(typeof(IStoreSession), open.ReturnType);
 
-        var parameter = Assert.Single(open.GetParameters());
-        Assert.Equal(typeof(string), parameter.ParameterType);
-        Assert.Equal("solutionKey", parameter.Name);
+        var parameters = open.GetParameters();
+        Assert.Equal(2, parameters.Length);
+        Assert.Equal(typeof(string), parameters[0].ParameterType);
+        Assert.Equal("solutionKey", parameters[0].Name);
+        Assert.Equal(typeof(ISourceDocumentReader), parameters[1].ParameterType);
+        Assert.Equal("sourceReader", parameters[1].Name);
     }
+
+    [Fact]
+    [Trait("Requirement", "RP-05")]
+    public void ITransactionalStoreAndIStoreSession_HaveNoProjectorMember()
+    {
+        Assert.DoesNotContain(
+            typeof(ITransactionalStore).GetMembers(),
+            member => LooksLikeProjectorMember(member.Name));
+        Assert.DoesNotContain(
+            typeof(IStoreSession).GetMembers(),
+            member => LooksLikeProjectorMember(member.Name));
+    }
+
+    private static bool LooksLikeProjectorMember(string name) =>
+        name.Contains("Projector", StringComparison.Ordinal)
+        || name.Equals("Project", StringComparison.Ordinal);
 
     [Fact]
     [Trait("Requirement", "ENG-20")]

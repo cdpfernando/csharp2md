@@ -345,11 +345,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] `Open` takes the reader; no projector member is added to the port
-- [ ] `WriteStaging` streams each deferred fragment and does not accumulate payloads
-- [ ] A test with a counting reader asserts each document is requested at most once during one commit
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1381+ tests pass (no silent deletions)
+- [x] `Open` takes the reader; no projector member is added to the port
+- [x] `WriteStaging` streams each deferred fragment and does not accumulate payloads
+- [x] A test with a counting reader asserts each document is requested at most once during one commit
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1381+ tests pass (no silent deletions)
 
 **Tests**: integration
 **Gate**: build
