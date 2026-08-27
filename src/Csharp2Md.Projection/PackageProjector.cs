@@ -1,5 +1,6 @@
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Projection.Catalogs;
+using Csharp2Md.Projection.Postings;
 using Csharp2Md.Projection.Source;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Mapping;
@@ -12,6 +13,8 @@ public sealed class PackageProjector : IPackageProjector
     {
         ArgumentNullException.ThrowIfNull(view);
         ArgumentNullException.ThrowIfNull(source);
-        return SourceProjector.Project(view, source).AddRange(CatalogProjector.Project(view));
+        return SourceProjector.Project(view, source)
+            .AddRange(CatalogProjector.Project(view))
+            .AddRange(PostingProjector.Project(view));
     }
 }

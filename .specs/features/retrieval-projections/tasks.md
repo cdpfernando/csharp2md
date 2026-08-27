@@ -843,10 +843,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Entries carry artifact key and ordinal only, with no relation payload or evidence chain
-- [ ] A self-relation appears in both the outgoing and the incoming posting for that fact
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1504+ tests pass (no silent deletions)
+- [x] Entries carry artifact key and ordinal only, with no relation payload or evidence chain
+- [x] A self-relation appears in both the outgoing and the incoming posting for that fact
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1504+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

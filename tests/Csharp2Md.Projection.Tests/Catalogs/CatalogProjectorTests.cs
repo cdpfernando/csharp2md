@@ -461,9 +461,12 @@ public sealed class CatalogProjectorTests
             });
 
         var composed = new PackageProjector().Project(view, new EmptySourceReader());
+        var catalogs = composed
+            .Where(static fragment => fragment.CanonicalKey.StartsWith("catalogs/", StringComparison.Ordinal))
+            .ToArray();
 
-        Assert.Equal("catalogs/data-stores-objects-and-fields.json", composed[^2].CanonicalKey);
-        Assert.Equal("catalogs/unknowns.json", composed[^1].CanonicalKey);
+        Assert.Equal("catalogs/data-stores-objects-and-fields.json", catalogs[^2].CanonicalKey);
+        Assert.Equal("catalogs/unknowns.json", catalogs[^1].CanonicalKey);
     }
 }
 
