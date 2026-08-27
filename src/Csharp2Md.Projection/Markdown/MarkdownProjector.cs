@@ -35,6 +35,41 @@ internal static class MarkdownProjector
             view.Document.BoundaryOperations.Select(static dto => PageSubject.From(dto)),
             catalogs,
             postings);
+        AddFamily(
+            fragments,
+            view,
+            "component",
+            view.Document.Components.Select(static dto => PageSubject.From(dto)),
+            catalogs,
+            postings);
+        AddFamily(
+            fragments,
+            view,
+            "deployment-unit",
+            view.Document.DeploymentUnits.Select(static dto => PageSubject.From(dto)),
+            catalogs,
+            postings);
+        AddFamily(
+            fragments,
+            view,
+            "contract",
+            view.Document.Contracts.Select(static dto => PageSubject.From(dto)),
+            catalogs,
+            postings);
+        AddFamily(
+            fragments,
+            view,
+            "data-store",
+            view.Document.DataStores.Select(static dto => PageSubject.From(dto)),
+            catalogs,
+            postings);
+        AddFamily(
+            fragments,
+            view,
+            "data-object",
+            view.Document.DataObjects.Select(static dto => PageSubject.From(dto)),
+            catalogs,
+            postings);
         return fragments.ToImmutable();
     }
 
@@ -246,5 +281,20 @@ internal static class MarkdownProjector
 
             return new(dto.Identity.Id, dto.Identity.FactType, dto.Symbol.Id, facets.ToImmutable());
         }
+
+        public static PageSubject From(ComponentDto dto) =>
+            new(dto.Identity.Id, dto.Identity.FactType, null, []);
+
+        public static PageSubject From(DeploymentUnitDto dto) =>
+            new(dto.Identity.Id, dto.Identity.FactType, null, []);
+
+        public static PageSubject From(ContractDto dto) =>
+            new(dto.Identity.Id, dto.Identity.FactType, null, []);
+
+        public static PageSubject From(DataStoreDto dto) =>
+            new(dto.Identity.Id, dto.Identity.FactType, null, [("technology", dto.Technology)]);
+
+        public static PageSubject From(DataObjectDto dto) =>
+            new(dto.Identity.Id, dto.Identity.FactType, null, [("form", dto.Form), ("mapping_state", dto.MappingState)]);
     }
 }

@@ -156,7 +156,7 @@ public sealed class MarkdownProjectorTests
     [Trait("Requirement", "RP-31")]
     public void Project_NoEntryPointsOrBoundaryOperations_OmitsMarkdownPages()
     {
-        var view = CatalogProjectionFactory.ViewOf(CatalogProjectionFactory.CreateComponent("Orders.Api"));
+        var view = CatalogProjectionFactory.ViewOf(CatalogProjectionFactory.CreateSolutionFact());
 
         var fragments = MarkdownProjector.Project(view);
 

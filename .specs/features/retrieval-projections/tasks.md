@@ -970,10 +970,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Every reproduced value cites the canonical key and ordinal it came from
-- [ ] A test parses each page and asserts the cited artifact at the cited ordinal holds that value
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1547+ tests pass (no silent deletions)
+- [x] Every reproduced value cites the canonical key and ordinal it came from
+- [x] A test parses each page and asserts the cited artifact at the cited ordinal holds that value
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1547+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

@@ -13,6 +13,7 @@ using Csharp2Md.Projection.Markdown;
 using Csharp2Md.Projection.Postings;
 using Csharp2Md.Projection.Source;
 using Csharp2Md.Projection.Tests.Catalogs;
+using Csharp2Md.Projection.Tests.Postings;
 using Csharp2Md.Projection.Tests.Source;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
@@ -72,7 +73,7 @@ internal static class MarkdownProjectionFactory
         var fragment = Assert.Single(
             fragments,
             candidate => candidate.CanonicalKey.StartsWith("markdown/", StringComparison.Ordinal)
-                && TextOf(candidate).Contains(factId, StringComparison.Ordinal));
+                && TextOf(candidate).Contains("Fact id: [" + factId + "]", StringComparison.Ordinal));
         return TextOf(fragment);
     }
 
@@ -106,5 +107,49 @@ internal static class MarkdownProjectionFactory
         }
 
         return keys;
+    }
+
+    internal static ConfirmedRelation IncludedIn(Component component, DeploymentUnit unit, int occurrenceOrdinal = 1) =>
+        ConfirmedRelation.Create(
+            RelationKind.IncludedIn,
+            component.Reference,
+            unit.Reference,
+            EmptyFacets(),
+            Evidence(component.Reference, occurrenceOrdinal),
+            ClassifierIdentity.Create("csharp2md.projection.included-in", 1),
+            [AnalysisVariantId.Create("net10.0", "Release", [], "ci")],
+            EvidenceMethod.Configured);
+
+    internal static string CitedPayload(PublishedPackageView view, MarkdownCitation citation)
+    {
+        if (citation.ArtifactKey.StartsWith("source/", StringComparison.Ordinal))
+        {
+            return citation.ArtifactKey;
+        }
+
+        if (citation.ArtifactKey.StartsWith("catalogs/", StringComparison.Ordinal))
+        {
+            var entries = CatalogProjectionFactory.ReadCatalog(CatalogProjector.Project(view), citation.ArtifactKey);
+            Assert.InRange(citation.Ordinal, 0, entries.Length - 1);
+            return System.Text.Json.Nodes.JsonNode.Parse(CanonicalJson.Write(entries[citation.Ordinal]).AsSpan())!.ToJsonString();
+        }
+
+        if (citation.ArtifactKey.StartsWith("postings/", StringComparison.Ordinal))
+        {
+            var groups = PostingProjectionFactory.ReadPosting(PostingProjector.Project(view), citation.ArtifactKey);
+            Assert.InRange(citation.Ordinal, 0, groups.Length - 1);
+            return System.Text.Json.Nodes.JsonNode.Parse(CanonicalJson.Write(groups[citation.Ordinal]).AsSpan())!.ToJsonString();
+        }
+
+        if (citation.ArtifactKey.StartsWith("relations/confirmed/", StringComparison.Ordinal)
+            && citation.ArtifactKey.EndsWith(".json", StringComparison.Ordinal))
+        {
+            var kind = citation.ArtifactKey["relations/confirmed/".Length..^".json".Length];
+            Assert.True(view.Document.ConfirmedRelations.TryGetValue(kind, out var records));
+            Assert.InRange(citation.Ordinal, 0, records.Length - 1);
+            return System.Text.Json.Nodes.JsonNode.Parse(CanonicalJson.Write(records[citation.Ordinal]).AsSpan())!.ToJsonString();
+        }
+
+        return CatalogProjectionFactory.CitedElement(view, new ArtifactCitation(citation.ArtifactKey, citation.Ordinal)).ToJsonString();
     }
 }
