@@ -768,12 +768,12 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] A batch failure returns a non-zero exit code and writes a `csharp2md:` diagnostic naming the reason
-- [ ] A fully committed batch still returns 0
-- [ ] A batch with an unpublished solution still returns 2
-- [ ] No new CLI option exists, asserted against the parsed root command
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A batch failure returns a non-zero exit code and writes a `csharp2md:` diagnostic naming the reason
+- [x] A fully committed batch still returns 0
+- [x] A batch with an unpublished solution still returns 2
+- [x] No new CLI option exists, asserted against the parsed root command
+- [x] Gate check passes: build gate
+- [x] Test count reported; Cli 33 pass; total 1714 (previous 1710)
 
 **Tests**: unit
 **Gate**: build
