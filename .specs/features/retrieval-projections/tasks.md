@@ -215,11 +215,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Both lookups return the key and zero-based ordinal within that artifact
-- [ ] A test resolves every fact in a filled document and asserts the cited artifact indexed at the cited ordinal yields that fact
-- [ ] Both lookups return false for an unknown id rather than throwing
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1356+ tests pass (no silent deletions)
+- [x] Both lookups return the key and zero-based ordinal within that artifact
+- [x] A test resolves every fact in a filled document and asserts the cited artifact indexed at the cited ordinal yields that fact
+- [x] Both lookups return false for an unknown id rather than throwing
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1356+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
