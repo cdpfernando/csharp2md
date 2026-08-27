@@ -649,11 +649,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] The marker length is constant regardless of the span's original length
-- [ ] Overlapping spans merge into one, so no marker is nested inside another
-- [ ] A span covering the whole document yields an artifact consisting solely of the marker
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1450+ tests pass (no silent deletions)
+- [x] The marker length is constant regardless of the span's original length
+- [x] Overlapping spans merge into one, so no marker is nested inside another
+- [x] A span covering the whole document yields an artifact consisting solely of the marker
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1450+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

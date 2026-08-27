@@ -26,24 +26,28 @@ internal static class SourceProjector
         foreach (var document in documents)
         {
             var key = ArtifactKey(document);
-            var identity = DocumentId.Create(document.Identity.Id);
             fragments.Add(StagedFragment.Deferred(
                 ArtifactRole.Payload,
                 key,
-                () => Read(source, identity)));
+                () => Materialize(source, document, view.Document.Diagnostics)));
         }
 
         return fragments.ToImmutable();
     }
 
-    private static ImmutableArray<byte> Read(ISourceDocumentReader source, DocumentId identity)
+    private static ImmutableArray<byte> Materialize(
+        ISourceDocumentReader source,
+        DocumentDto document,
+        DiagnosticsEnvelope diagnostics)
     {
+        var identity = DocumentId.Create(document.Identity.Id);
         if (!source.TryRead(identity, out var bytes) || bytes.IsDefault)
         {
             return [];
         }
 
-        return bytes;
+        var spans = SecretRedactor.SpansFor(document.Identity.Id, diagnostics);
+        return SecretRedactor.Redact(bytes, spans);
     }
 
     private static string ArtifactKey(DocumentDto document)
