@@ -886,11 +886,11 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] `Acme.Orders` analyzed alone produces a package byte-identical to the same package inside an `Acme.Orders` plus `Acme.Shipping` batch
-- [ ] No per-solution package gains a fact, observation, confirmed relation, candidate or quarantine record from composition
-- [ ] A single-solution batch publishes `batch-manifest.json` with one entry and no cross-solution relation, shared-contract or correlation-candidate artifact
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] `Acme.Orders` analyzed alone produces a package byte-identical to the same package inside an `Acme.Orders` plus `Acme.Shipping` batch
+- [x] No per-solution package gains a fact, observation, confirmed relation, candidate or quarantine record from composition
+- [x] A single-solution batch publishes `batch-manifest.json` with one entry and no cross-solution relation, shared-contract or correlation-candidate artifact
+- [x] Gate check passes: build gate
+- [x] Test count reported; Analysis 660 pass; total 1720 (previous 1718)
 
 **Tests**: integration
 **Gate**: build
