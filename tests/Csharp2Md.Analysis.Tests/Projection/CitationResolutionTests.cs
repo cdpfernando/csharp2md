@@ -288,7 +288,8 @@ public sealed class CitationResolutionTests : IClassFixture<CitationResolutionTe
                 .GetResult();
             Status = Assert.Single(result.Solutions).Status;
             var canonical = Path.GetFullPath(solutionPath);
-            var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)))[..32];
+            var identity = SolutionCoordinate.For(canonical).Identity.Value;
+            var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(identity)))[..32];
             var child = Path.Combine(DirectoryPath, "s-" + hex);
             Files = Directory.Exists(child)
                 ? Directory.EnumerateFiles(child, "*", SearchOption.AllDirectories)

@@ -105,7 +105,8 @@ public sealed class PipelineCancellationTests
 
     private static string ChildName(string solutionKey)
     {
-        var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(solutionKey)))[..32];
+        var identity = SolutionCoordinate.For(solutionKey).Identity.Value;
+        var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(identity)))[..32];
         return "s-" + hex;
     }
 

@@ -248,11 +248,11 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] The same solution file reached through two different parent directories produces one directory name
-- [ ] `FilesystemTestPaths` and the four tests that recompute the hash (`PipelineCancellationTests`, `CitationResolutionTests`, `SourceSecretAbsenceTests`, `SourceIntegrityTests`) derive the name from the identity, not from a copy of the path rule
-- [ ] `.lock` and `.staging` follow the same stem, asserted directly
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The same solution file reached through two different parent directories produces one directory name
+- [x] `FilesystemTestPaths` and the four tests that recompute the hash (`PipelineCancellationTests`, `CitationResolutionTests`, `SourceSecretAbsenceTests`, `SourceIntegrityTests`) derive the name from the identity, not from a copy of the path rule
+- [x] `.lock` and `.staging` follow the same stem, asserted directly
+- [x] Gate check passes: build gate
+- [x] Test count reported; total 1627 (Domain 555, Analysis 642, Storage 249, Cli 29, Projection 152)
 
 **Tests**: unit + integration
 **Gate**: build

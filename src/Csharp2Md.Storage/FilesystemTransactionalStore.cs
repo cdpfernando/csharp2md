@@ -32,16 +32,24 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
     public IStoreSession Open(SolutionCoordinate coordinate, ISourceDocumentReader sourceReader)
     {
         ArgumentNullException.ThrowIfNull(sourceReader);
-        return Open(coordinate.Identity.Value, sourceReader);
+        return Open(coordinate, sourceReader, coordinate.Identity.Value);
     }
 
     public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader)
     {
         ArgumentException.ThrowIfNullOrEmpty(solutionKey);
         ArgumentNullException.ThrowIfNull(sourceReader);
+        return Open(SolutionCoordinate.For(solutionKey), sourceReader, solutionKey);
+    }
+
+    private IStoreSession Open(
+        SolutionCoordinate coordinate,
+        ISourceDocumentReader sourceReader,
+        string solutionKey)
+    {
         EnsureWritableRoot();
 
-        var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(solutionKey)))[..32];
+        var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(coordinate.Identity.Value)))[..32];
         var childPath = Path.Combine(_outputRoot, "s-" + hex);
         var lockPath = childPath + ".lock";
         var stagingPath = childPath + ".staging";

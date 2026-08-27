@@ -159,10 +159,10 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | MSC-01 | P1: Deterministic batch output | Design | Pending |
-| MSC-02 | P1: Deterministic batch output | Design | Implementing |
+| MSC-02 | P1: Deterministic batch output | Design | Verified |
 | MSC-03 | P1: Deterministic batch output | Design | Pending |
 | MSC-04 | P1: Deterministic batch output | Design | Pending |
-| MSC-05 | P1: Deterministic batch output | Design | Pending |
+| MSC-05 | P1: Deterministic batch output | Design | Implementing |
 | MSC-06 | P1: Deterministic batch output | Design | Pending |
 | MSC-07 | P1: Deterministic batch output | Design | Pending |
 | MSC-08 | P1: Deterministic batch output | Design | Pending |
