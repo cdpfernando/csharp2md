@@ -316,10 +316,10 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-18 | P1: Bounded catalogs | Design | implemented |
 | RP-19 | P1: Bounded catalogs | Design | implemented |
 | RP-20 | P1: Bounded catalogs | Design | implemented |
-| RP-21 | P1: Bounded catalogs | Design | Pending |
-| RP-22 | P1: Bounded catalogs | Design | Pending |
+| RP-21 | P1: Bounded catalogs | Design | implemented |
+| RP-22 | P1: Bounded catalogs | Design | implemented |
 | RP-23 | P1: Bounded catalogs | Design | implemented |
-| RP-24 | P1: Bounded catalogs | Design | Pending |
+| RP-24 | P1: Bounded catalogs | Design | implemented |
 | RP-25 | P1: Compact postings | Design | Pending |
 | RP-26 | P1: Compact postings | Design | implemented |
 | RP-27 | P1: Compact postings | Design | implemented |

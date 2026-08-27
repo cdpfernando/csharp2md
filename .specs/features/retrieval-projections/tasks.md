@@ -821,11 +821,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] A family with no facts produces no catalog artifact, asserted against an empty document
-- [ ] Entries are ordered by ordinal comparison of the fact id
-- [ ] A test asserts every catalog entry value is present in the artifact it cites
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1497+ tests pass (no silent deletions)
+- [x] A family with no facts produces no catalog artifact, asserted against an empty document
+- [x] Entries are ordered by ordinal comparison of the fact id
+- [x] A test asserts every catalog entry value is present in the artifact it cites
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1497+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

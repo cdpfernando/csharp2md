@@ -45,7 +45,7 @@ internal static class CatalogProjector
         IEnumerable<FactReferenceDto> identities)
     {
         var entries = new List<CatalogEntryDto>();
-        foreach (var identity in identities)
+        foreach (var identity in identities.OrderBy(static dto => dto.Id, StringComparer.Ordinal))
         {
             if (!view.TryLocate(identity.Id, out var citation))
             {

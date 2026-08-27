@@ -9,6 +9,7 @@ using Csharp2Md.Domain.Registry;
 using Csharp2Md.Domain.Relations;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
+using System.Text.Json.Nodes;
 
 namespace Csharp2Md.Projection.Tests.Catalogs;
 
@@ -181,4 +182,77 @@ internal static class CatalogProjectionFactory
 
     private static ImmutableArray<string> Concat(params IEnumerable<string>[] sequences) =>
         [.. sequences.SelectMany(static sequence => sequence)];
+
+    internal static void AssertEntryValuesPresentInCitedArtifact(PublishedPackageView view, CatalogEntryDto entry)
+    {
+        var cited = CitedElement(view, new ArtifactCitation(entry.ArtifactKey, entry.Ordinal)).ToJsonString();
+        var node = JsonNode.Parse(CanonicalJson.Write(entry).AsSpan()) as JsonObject;
+        Assert.NotNull(node);
+        foreach (var property in node)
+        {
+            if (property.Key is "artifact_key" or "ordinal")
+            {
+                continue;
+            }
+
+            if (property.Value is JsonValue jsonValue
+                && jsonValue.TryGetValue<string>(out var text)
+                && text.Length > 0)
+            {
+                Assert.Contains(text, cited, StringComparison.Ordinal);
+            }
+        }
+    }
+
+    internal static JsonNode CitedElement(PublishedPackageView view, ArtifactCitation citation)
+    {
+        var bytes = ArtifactBytes(view, citation.ArtifactKey);
+        var node = JsonNode.Parse(bytes.AsSpan());
+        Assert.NotNull(node);
+        switch (node)
+        {
+            case JsonArray array:
+                Assert.InRange(citation.Ordinal, 0, array.Count - 1);
+                return array[citation.Ordinal]!;
+            case JsonObject obj:
+                var items = new List<JsonNode?>();
+                foreach (var property in obj)
+                {
+                    if (property.Value is JsonArray family)
+                    {
+                        items.AddRange(family);
+                    }
+                }
+
+                Assert.InRange(citation.Ordinal, 0, items.Count - 1);
+                return items[citation.Ordinal]!;
+            default:
+                return node;
+        }
+    }
+
+    private static ImmutableArray<byte> ArtifactBytes(PublishedPackageView view, string artifactKey)
+    {
+        var document = view.Document;
+        return artifactKey switch
+        {
+            "facts/architecture.json" => CanonicalJson.Write(
+                new ArchitectureFactsShard(
+                    document.Components,
+                    document.DeploymentUnits,
+                    document.EntryPoints,
+                    document.BoundaryOperations,
+                    document.ExternalSystems)),
+            "facts/contract.json" => CanonicalJson.Write(
+                new ContractFactsShard(document.Contracts, document.ContractBindings, document.ContractRevisions)),
+            "facts/persistence.json" => CanonicalJson.Write(
+                new PersistenceFactsShard(
+                    document.DataStores,
+                    document.DataObjects,
+                    document.DataFields,
+                    document.DataOperations)),
+            "relations/unresolved.json" => CanonicalJson.Write(document.Unresolved),
+            _ => throw new InvalidOperationException($"Unexpected catalog citation '{artifactKey}'."),
+        };
+    }
 }
