@@ -474,12 +474,12 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] A contract identity present in two solutions produces one entry, not two
-- [ ] The entry carries, per owning solution, the solution identity, artifact key and ordinal
-- [ ] Owning solutions inside an entry are ordered by solution identity, ordinal ascending
-- [ ] A contract identity present in only one solution produces no entry
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A contract identity present in two solutions produces one entry, not two
+- [x] The entry carries, per owning solution, the solution identity, artifact key and ordinal
+- [x] Owning solutions inside an entry are ordered by solution identity, ordinal ascending
+- [x] A contract identity present in only one solution produces no entry
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Projection 167 pass; total 1667 (previous 1663)
 
 **Tests**: unit
 **Gate**: quick

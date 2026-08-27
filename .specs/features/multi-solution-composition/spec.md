@@ -178,13 +178,13 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-18 | P2: Proven cross-solution correlations | Design | Verified |
 | MSC-19 | P2: Proven cross-solution correlations | Design | Verified |
 | MSC-20 | P2: Proven cross-solution correlations | Design | Verified |
-| MSC-21 | P2: Proven cross-solution correlations | Design | Pending |
+| MSC-21 | P2: Proven cross-solution correlations | Design | Verified |
 | MSC-22 | P2: Proven cross-solution correlations | Design | Pending |
 | MSC-23 | P2: Proven cross-solution correlations | Design | Pending |
 | MSC-24 | P2: Proven cross-solution correlations | Design | Pending |
 | MSC-25 | P2: Proven cross-solution correlations | Design | Verified |
 | MSC-26 | P2: Proven cross-solution correlations | Design | Pending |
-| MSC-27 | P2: Proven cross-solution correlations | Design | Pending |
+| MSC-27 | P2: Proven cross-solution correlations | Design | Verified |
 | MSC-28 | P2: Proven cross-solution correlations | Design | Pending |
 | MSC-29 | P2: Proven cross-solution correlations | Design | Pending |
 | MSC-30 | P3: Grouped global catalogs | Design | Pending |
@@ -194,7 +194,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-34 | P3: Grouped global catalogs | Design | Pending |
 | MSC-35 | Edge cases | Design | Pending |
 | MSC-36 | Edge cases | Design | Pending |
-| MSC-37 | Edge cases | Design | Pending |
+| MSC-37 | Edge cases | Design | Verified |
 | MSC-38 | Edge cases | Design | Verified |
 | MSC-39 | Edge cases | Design | Verified |
 | MSC-40 | Edge cases | Design | Pending |
