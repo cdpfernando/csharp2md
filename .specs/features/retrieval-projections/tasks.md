@@ -389,10 +389,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Every solution's session receives a reader covering that solution's documents only
-- [ ] A multi-solution test asserts one solution's reader never exposes another's documents
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1390+ tests pass (no silent deletions)
+- [x] Every solution's session receives a reader covering that solution's documents only
+- [x] A multi-solution test asserts one solution's reader never exposes another's documents
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1390+ tests pass (no silent deletions)
 
 **Tests**: integration
 **Gate**: build
