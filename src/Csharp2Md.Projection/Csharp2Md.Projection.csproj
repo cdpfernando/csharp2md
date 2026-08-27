@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Csharp2Md.Storage\Csharp2Md.Storage.csproj" />
+    <ProjectReference Include="..\Csharp2Md.Domain\Csharp2Md.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Csharp2Md.Projection.Tests" />
   </ItemGroup>
 

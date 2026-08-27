@@ -1,6 +1,5 @@
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Mapping;
-using Csharp2Md.Storage.Validation;
 
 namespace Csharp2Md.Storage;
 
@@ -8,16 +7,23 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
 {
     private readonly Dictionary<string, CommittedPublication> _publications = new(StringComparer.Ordinal);
     private readonly HashSet<string> _activeKeys = new(StringComparer.Ordinal);
+    private readonly IPackageProjector? _projector;
 
-    public IStoreSession Open(string solutionKey)
+    public InMemoryTransactionalStore(IPackageProjector? projector = null)
+    {
+        _projector = projector;
+    }
+
+    public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader)
     {
         ArgumentException.ThrowIfNullOrEmpty(solutionKey);
+        ArgumentNullException.ThrowIfNull(sourceReader);
         if (!_activeKeys.Add(solutionKey))
         {
             throw new PublicationRejectedException("lock", solutionKey);
         }
 
-        return new Session(this, solutionKey);
+        return new Session(this, solutionKey, sourceReader, _projector);
     }
 
     public bool TryGetPublication(string solutionKey, out CommittedPublication publication) =>
@@ -28,17 +34,26 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
     private void Publish(CommittedPublication publication) =>
         _publications[publication.SolutionKey] = publication;
 
-    private sealed class Session : IStoreSession
+    private sealed class Session : IStoreSession, IDeferredFragmentStaging
     {
         private readonly InMemoryTransactionalStore _store;
         private readonly string _solutionKey;
+        private readonly ISourceDocumentReader _sourceReader;
+        private readonly IPackageProjector? _projector;
+        private readonly List<StagedFragment> _deferred = [];
         private FactualSnapshot _staged = FactualSnapshot.Empty;
         private bool _committed;
 
-        public Session(InMemoryTransactionalStore store, string solutionKey)
+        public Session(
+            InMemoryTransactionalStore store,
+            string solutionKey,
+            ISourceDocumentReader sourceReader,
+            IPackageProjector? projector)
         {
             _store = store;
             _solutionKey = solutionKey;
+            _sourceReader = sourceReader;
+            _projector = projector;
         }
 
         public void Stage(FactualSnapshot snapshot)
@@ -48,13 +63,28 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
             _staged = _staged.Merge(snapshot);
         }
 
+        public void StageDeferred(StagedFragment fragment)
+        {
+            ArgumentNullException.ThrowIfNull(fragment);
+            EnsureActive();
+            _deferred.Add(fragment);
+        }
+
         public CommittedPublication Commit()
         {
             EnsureActive();
+            _ = _sourceReader.Documents;
 
-            var document = DomainMapper.ToWire(_staged, new ManifestContext(_solutionKey, SolutionFileName(_solutionKey)));
-            var report = PackageValidator.Validate(document);
-            var artifacts = PackagePublisher.ToPublicationOrder(report.Document);
+            var artifacts = PublicationPipeline.Publish(
+                _staged,
+                new ManifestContext(_solutionKey, SolutionFileName(_solutionKey)),
+                _projector,
+                _sourceReader);
+            artifacts = artifacts.AddRange(_deferred);
+            foreach (var fragment in _deferred)
+            {
+                _ = fragment.ReadPayload();
+            }
 
             _committed = true;
             _store.Release(_solutionKey);

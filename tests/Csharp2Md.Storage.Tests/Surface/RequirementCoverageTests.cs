@@ -146,7 +146,8 @@ public sealed class RequirementCoverageTests
                 || value.StartsWith("EBC-", StringComparison.Ordinal)
                 || value.StartsWith("PK-", StringComparison.Ordinal)
                 || value.StartsWith("CLLF-", StringComparison.Ordinal)
-                || value.StartsWith("CDC-", StringComparison.Ordinal))
+                || value.StartsWith("CDC-", StringComparison.Ordinal)
+                || value.StartsWith("RP-", StringComparison.Ordinal))
             {
                 continue;
             }

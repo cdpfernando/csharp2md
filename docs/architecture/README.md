@@ -1,6 +1,6 @@
 # Target architecture
 
-Esta pasta é a fonte normativa da arquitetura que substituirá a implementação atual do csharp2md. O código existente permanece legado até a execução do roadmap; não use seus contratos como definição do produto futuro.
+Esta pasta é a fonte normativa da arquitetura que o csharp2md está a substituir. Workstreams 1 a 5D estão no `master`; falta a camada de recuperação, a composição multi-solução e a certificação.
 
 Leia na ordem:
 
@@ -10,5 +10,6 @@ Leia na ordem:
 4. [Quality and security](quality-and-security.md)
 5. [Active decisions](../../.specs/STATE.md)
 6. [Roadmap](../../architecture-knowledge-engine-roadmap.md)
+7. [Legacy port ledger](legacy-port-ledger.md)
 
-O glossário canônico está em [CONTEXT.md](../../CONTEXT.md). Specs de execução serão criadas depois, uma por workstream; a primeira spec ainda não existe.
+O glossário canônico está em [CONTEXT.md](../../CONTEXT.md). As specs de execução vivem em [`.specs/features/`](../../.specs/features/); as sete primeiras estão fechadas e verificadas. A spec em curso é [`retrieval-projections`](../../.specs/features/retrieval-projections/spec.md).

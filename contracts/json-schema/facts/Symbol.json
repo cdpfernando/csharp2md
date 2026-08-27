@@ -36,6 +36,54 @@
         ]
       }
     },
+    "declaration_locator": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "document": {
+          "type": "string"
+        },
+        "relative_path": {
+          "type": "string"
+        },
+        "span": {
+          "type": "object",
+          "properties": {
+            "start_line": {
+              "type": "integer"
+            },
+            "start_column": {
+              "type": "integer"
+            },
+            "end_line": {
+              "type": "integer"
+            },
+            "end_column": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "start_line",
+            "start_column",
+            "end_line",
+            "end_column"
+          ],
+          "additionalProperties": false
+        },
+        "hash": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "document",
+        "relative_path",
+        "span",
+        "hash"
+      ],
+      "additionalProperties": false
+    },
     "content_sha256": {
       "type": "string"
     }
@@ -45,6 +93,7 @@
     "owning_project",
     "canonical_symbol_signature",
     "facets",
+    "declaration_locator",
     "content_sha256"
   ],
   "additionalProperties": false

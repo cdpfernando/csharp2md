@@ -108,7 +108,7 @@ public sealed class StageSubstitutionTests
 
 internal sealed class SessionStore : ITransactionalStore
 {
-    public IStoreSession Open(string solutionKey) => new Session(solutionKey);
+    public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader) => new Session(solutionKey);
 
     private sealed class Session : IStoreSession
     {

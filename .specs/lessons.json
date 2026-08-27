@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 12,
+  "next_id": 17,
   "lessons": [
     {
       "id": "L-001",
@@ -202,6 +202,96 @@
       ],
       "created": "2026-08-26T21:45:54Z",
       "last_seen": "2026-08-26T21:45:54Z"
+    },
+    {
+      "id": "L-012",
+      "key": "spec_precision_gap::when an ac requires a runtime sequence after x before y assert that order through commit observables not only indexof on the pipeline source",
+      "text": "When an AC requires a runtime sequence after X before Y, assert that order through Commit observables, not only IndexOf on the pipeline source.",
+      "signal": "spec_precision_gap",
+      "scope": "publication",
+      "status": "candidate",
+      "features": [
+        "retrieval-projections"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "RP-02 ProjectorPublicationTests.cs:81-89 (publication)"
+      ],
+      "created": "2026-08-27T03:31:59Z",
+      "last_seen": "2026-08-27T03:31:59Z"
+    },
+    {
+      "id": "L-013",
+      "key": "spec_precision_gap::when an ac says exactly one artifact under a prefix either keep companion metadata out of that prefix or name the companion in the spec",
+      "text": "When an AC says exactly one artifact under a prefix, either keep companion metadata out of that prefix or name the companion in the spec.",
+      "signal": "spec_precision_gap",
+      "scope": "source-projection",
+      "status": "candidate",
+      "features": [
+        "retrieval-projections"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "RP-07 RedactionEnvelopeTests.cs:26-35 (source-projection)"
+      ],
+      "created": "2026-08-27T03:31:59Z",
+      "last_seen": "2026-08-27T03:31:59Z"
+    },
+    {
+      "id": "L-014",
+      "key": "spec_precision_gap::when an ac names a published shard file assert the hash by reading that file not only the in memory dto that feeds it",
+      "text": "When an AC names a published shard file, assert the hash by reading that file, not only the in-memory DTO that feeds it.",
+      "signal": "spec_precision_gap",
+      "scope": "source-projection",
+      "status": "candidate",
+      "features": [
+        "retrieval-projections"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "RP-11 SourceIntegrityTests.cs:29 (source-projection)"
+      ],
+      "created": "2026-08-27T03:31:59Z",
+      "last_seen": "2026-08-27T03:31:59Z"
+    },
+    {
+      "id": "L-015",
+      "key": "spec_precision_gap::when an independent test says slice a published source artifact assert against that artifact not the original clone file",
+      "text": "When an Independent Test says slice a published source artifact, assert against that artifact, not the original clone file.",
+      "signal": "spec_precision_gap",
+      "scope": "locators",
+      "status": "candidate",
+      "features": [
+        "retrieval-projections"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "RP-15 Independent Test SymbolFactEmitterTests.cs:309-320 (locators)"
+      ],
+      "created": "2026-08-27T03:31:59Z",
+      "last_seen": "2026-08-27T03:31:59Z"
+    },
+    {
+      "id": "L-016",
+      "key": "spec_precision_gap::when projection validation must cover markdown pages and source locators drive commit on the published citation form not only a json stand in",
+      "text": "When projection validation must cover Markdown pages and source locators, drive Commit on the published citation form, not only a JSON stand-in.",
+      "signal": "spec_precision_gap",
+      "scope": "projection-validation",
+      "status": "candidate",
+      "features": [
+        "retrieval-projections"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "RP-41/RP-44/RP-45 Independent Test (projection-validation)"
+      ],
+      "created": "2026-08-27T03:32:00Z",
+      "last_seen": "2026-08-27T03:32:00Z"
     }
   ]
 }

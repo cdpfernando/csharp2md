@@ -16,12 +16,12 @@ public sealed class FilesystemAbortStagingTests
         var store = new FilesystemTransactionalStore(output.DirectoryPath);
         var child = FilesystemTestPaths.ChildDirectory(output.DirectoryPath, SolutionKey);
 
-        var first = store.Open(SolutionKey);
+        var first = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         first.Stage(FactualSnapshot.Empty);
         first.Commit();
         var prior = FilesystemTestPaths.SnapshotFiles(child);
 
-        var second = store.Open(SolutionKey);
+        var second = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         second.Stage(FactualSnapshot.Empty);
         var staging = child + ".staging";
         Directory.CreateDirectory(Path.Combine(staging, "facts"));

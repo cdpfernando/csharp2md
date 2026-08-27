@@ -90,7 +90,7 @@ public sealed class InvokesRecordRoundTripTests
     private static FactualSnapshot CommitAndRead(string outputRoot, FactualSnapshot snapshot)
     {
         var store = new FilesystemTransactionalStore(outputRoot);
-        var session = store.Open(SolutionKey);
+        var session = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         session.Stage(snapshot);
         session.Commit();
         return FactualPackageReader.Read(FilesystemTestPaths.ChildDirectory(outputRoot, SolutionKey)).Snapshot;

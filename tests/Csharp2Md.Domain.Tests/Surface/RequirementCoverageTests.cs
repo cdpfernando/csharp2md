@@ -148,7 +148,8 @@ public sealed class RequirementCoverageTests
     {
         foreach (var (typeName, methodName, value) in traits)
         {
-            if (value.StartsWith("ENG-", StringComparison.Ordinal))
+            if (value.StartsWith("ENG-", StringComparison.Ordinal) ||
+                value.StartsWith("RP-", StringComparison.Ordinal))
             {
                 continue;
             }

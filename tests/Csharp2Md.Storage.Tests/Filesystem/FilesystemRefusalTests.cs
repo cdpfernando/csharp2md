@@ -18,7 +18,7 @@ public sealed class FilesystemRefusalTests
         var lockPath = FilesystemTestPaths.ChildDirectory(output.DirectoryPath, SolutionKey) + ".lock";
 
         var store = new FilesystemTransactionalStore(output.DirectoryPath);
-        var exception = Assert.Throws<PublicationRejectedException>(() => store.Open(SolutionKey));
+        var exception = Assert.Throws<PublicationRejectedException>(() => store.Open(SolutionKey, EmptySourceDocumentReader.Instance));
 
         Assert.Equal("not-a-package", exception.Gate);
         Assert.Contains(output.DirectoryPath, exception.Detail, StringComparison.Ordinal);
@@ -41,7 +41,7 @@ public sealed class FilesystemRefusalTests
         var rootBefore = Directory.GetFileSystemEntries(output.DirectoryPath);
 
         var store = new FilesystemTransactionalStore(output.DirectoryPath);
-        var exception = Assert.Throws<PublicationRejectedException>(() => store.Open(SolutionKey));
+        var exception = Assert.Throws<PublicationRejectedException>(() => store.Open(SolutionKey, EmptySourceDocumentReader.Instance));
 
         Assert.Equal("not-a-package", exception.Gate);
         Assert.Contains(child, exception.Detail, StringComparison.Ordinal);

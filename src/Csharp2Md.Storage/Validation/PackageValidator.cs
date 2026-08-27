@@ -1,8 +1,10 @@
 using System.Collections.Frozen;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
@@ -25,7 +27,7 @@ public static class PackageValidator
         .Select(descriptor => descriptor.WireName)
         .ToFrozenSet(StringComparer.Ordinal);
 
-    private static readonly FrozenSet<string> UnixFilesystemRoots = FrozenSet.ToFrozenSet(
+    internal static readonly FrozenSet<string> UnixFilesystemRoots = FrozenSet.ToFrozenSet(
         [
             "home",
             "usr",
@@ -197,7 +199,7 @@ public static class PackageValidator
 
         foreach (var dto in document.Documents)
         {
-            EnsureContentHash(dto, dto.Identity.Id, dto.ContentSha256);
+            EnsureDocumentContentHash(dto);
         }
 
         foreach (var dto in document.Symbols)
@@ -302,6 +304,24 @@ public static class PackageValidator
         }
     }
 
+    private static void EnsureDocumentContentHash(DocumentDto dto)
+    {
+        var payload = CanonicalJson.PayloadContentSha256(dto);
+        if (string.Equals(dto.ContentSha256, payload, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        try
+        {
+            _ = DocumentHash.Create(dto.ContentSha256);
+        }
+        catch (ArgumentException exception)
+        {
+            throw new PublicationRejectedException("content-hash", dto.Identity.Id, exception);
+        }
+    }
+
     private static void EnsureContentHash<T>(T dto, string identity, string actual)
     {
         if (!string.Equals(actual, CanonicalJson.PayloadContentSha256(dto), StringComparison.Ordinal))
@@ -383,7 +403,68 @@ public static class PackageValidator
         }
     }
 
-    private static bool IsAbsoluteFilesystemPath(string text)
+    internal static void EnsureNoAbsolutePaths(string artifactKey, ReadOnlySpan<byte> payload)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(artifactKey);
+
+        JsonNode? node;
+        try
+        {
+            node = JsonNode.Parse(payload);
+        }
+        catch (JsonException)
+        {
+            EnsureNoAbsolutePathTokens(Encoding.UTF8.GetString(payload), artifactKey);
+            return;
+        }
+
+        try
+        {
+            try
+        {
+            ScanNode(node, artifactKey);
+        }
+        catch (PublicationRejectedException exception) when (exception.Gate == "absolute-path")
+        {
+            throw new PublicationRejectedException("absolute-path", artifactKey);
+        }
+        }
+        catch (PublicationRejectedException exception) when (exception.Gate == "absolute-path")
+        {
+            throw new PublicationRejectedException("absolute-path", artifactKey);
+        }
+    }
+
+    internal static void EnsureNoAbsolutePathTokens(string text, string artifactKey)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        ArgumentException.ThrowIfNullOrWhiteSpace(artifactKey);
+
+        var start = 0;
+        for (var index = 0; index <= text.Length; index++)
+        {
+            if (index < text.Length && !IsPathTokenSeparator(text[index]))
+            {
+                continue;
+            }
+
+            if (index > start)
+            {
+                var token = text[start..index].Trim('"', '\'', '`', '<', '>', '[', ']', '(', ')', ',');
+                if (IsAbsoluteFilesystemPath(token))
+                {
+                    throw new PublicationRejectedException("absolute-path", artifactKey);
+                }
+            }
+
+            start = index + 1;
+        }
+    }
+
+    private static bool IsPathTokenSeparator(char value) =>
+        char.IsWhiteSpace(value) || value is '"' or '\'' or '`' or '(' or ')' or '[' or ']' or '<' or '>' or ',';
+
+    internal static bool IsAbsoluteFilesystemPath(string text)
     {
         if (text.Length == 0)
         {

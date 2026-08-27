@@ -21,13 +21,13 @@ public sealed class FilesystemAtomicReplaceTests
         var store = new FilesystemTransactionalStore(output.DirectoryPath);
         var child = FilesystemTestPaths.ChildDirectory(output.DirectoryPath, SolutionKey);
 
-        var first = store.Open(SolutionKey);
+        var first = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         first.Stage(CandidateSnapshot());
         first.Commit();
         Assert.True(File.Exists(Path.Combine(child, "relations", "candidates.json")));
         Assert.False(File.Exists(Path.Combine(child, "facts", "structural.json")));
 
-        var second = store.Open(SolutionKey);
+        var second = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         second.Stage(SolutionSnapshot());
         second.Commit();
 
@@ -48,14 +48,14 @@ public sealed class FilesystemAtomicReplaceTests
         var store = new FilesystemTransactionalStore(output.DirectoryPath);
         var child = FilesystemTestPaths.ChildDirectory(output.DirectoryPath, SolutionKey);
 
-        var first = store.Open(SolutionKey);
+        var first = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         first.Stage(CandidateSnapshot());
         first.Commit();
         var prior = FilesystemTestPaths.SnapshotFiles(child);
         Assert.Contains("relations/candidates.json", prior.Keys);
         Assert.Contains("manifest.json", prior.Keys);
 
-        var colliding = store.Open(SolutionKey);
+        var colliding = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         colliding.Stage(SolutionSnapshot());
         colliding.Stage(SolutionSnapshot());
         var exception = Assert.Throws<PublicationRejectedException>(colliding.Commit);
@@ -74,12 +74,12 @@ public sealed class FilesystemAtomicReplaceTests
         var store = new FilesystemTransactionalStore(output.DirectoryPath);
         var child = FilesystemTestPaths.ChildDirectory(output.DirectoryPath, SolutionKey);
 
-        var first = store.Open(SolutionKey);
+        var first = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         first.Stage(CandidateSnapshot());
         first.Commit();
         var prior = FilesystemTestPaths.SnapshotFiles(child);
 
-        var second = store.Open(SolutionKey);
+        var second = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         second.Stage(SolutionSnapshot());
         second.Abort();
 

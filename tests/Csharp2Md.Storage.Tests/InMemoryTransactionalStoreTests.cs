@@ -19,8 +19,8 @@ public sealed class InMemoryTransactionalStoreTests
     public void Open_IsolatesSessionsBySolutionKey()
     {
         var store = new InMemoryTransactionalStore();
-        var sessionA = store.Open("solution-a");
-        var sessionB = store.Open("solution-b");
+        var sessionA = store.Open("solution-a", EmptySourceDocumentReader.Instance);
+        var sessionB = store.Open("solution-b", EmptySourceDocumentReader.Instance);
 
         sessionA.Stage(SolutionSnapshot());
         sessionB.Stage(CandidateSnapshot());
@@ -46,12 +46,12 @@ public sealed class InMemoryTransactionalStoreTests
     public void Open_AfterAbort_StartsANewSessionEmpty()
     {
         var store = new InMemoryTransactionalStore();
-        var first = store.Open("solution-a");
+        var first = store.Open("solution-a", EmptySourceDocumentReader.Instance);
         first.Stage(FactualSnapshot.Empty);
         first.Abort();
         Assert.False(store.TryGetPublication("solution-a", out _));
 
-        var second = store.Open("solution-a");
+        var second = store.Open("solution-a", EmptySourceDocumentReader.Instance);
         second.Stage(FactualSnapshot.Empty);
         var publication = second.Commit();
 
@@ -104,7 +104,7 @@ public sealed class InMemoryTransactionalStoreTests
     [Trait("Requirement", "STOR-16")]
     public void Commit_PublishesManifestLast()
     {
-        var session = new InMemoryTransactionalStore().Open("solution-a");
+        var session = new InMemoryTransactionalStore().Open("solution-a", EmptySourceDocumentReader.Instance);
         session.Stage(FactualSnapshot.Empty);
 
         var artifacts = session.Commit().ArtifactsInPublicationOrder;
@@ -141,7 +141,7 @@ public sealed class InMemoryTransactionalStoreTests
     [Trait("Requirement", "STOR-60")]
     public void Commit_SecondCallOnTheSameSession_IsRejected()
     {
-        var session = new InMemoryTransactionalStore().Open("solution-a");
+        var session = new InMemoryTransactionalStore().Open("solution-a", EmptySourceDocumentReader.Instance);
         session.Stage(FactualSnapshot.Empty);
         var first = session.Commit();
 
@@ -155,7 +155,7 @@ public sealed class InMemoryTransactionalStoreTests
     [Trait("Requirement", "STOR-61")]
     public void Stage_AfterCommit_IsRejected()
     {
-        var session = new InMemoryTransactionalStore().Open("solution-a");
+        var session = new InMemoryTransactionalStore().Open("solution-a", EmptySourceDocumentReader.Instance);
         session.Stage(FactualSnapshot.Empty);
         session.Commit();
 
@@ -169,18 +169,18 @@ public sealed class InMemoryTransactionalStoreTests
     public void Open_OverlappingSameKey_IsRejectedUntilCommitOrAbort()
     {
         var store = new InMemoryTransactionalStore();
-        var first = store.Open("solution-a");
+        var first = store.Open("solution-a", EmptySourceDocumentReader.Instance);
 
-        var locked = Assert.Throws<PublicationRejectedException>(() => store.Open("solution-a"));
+        var locked = Assert.Throws<PublicationRejectedException>(() => store.Open("solution-a", EmptySourceDocumentReader.Instance));
         Assert.Equal("lock", locked.Gate);
         Assert.Contains("solution-a", locked.Detail, StringComparison.Ordinal);
 
         first.Abort();
-        var afterAbort = store.Open("solution-a");
+        var afterAbort = store.Open("solution-a", EmptySourceDocumentReader.Instance);
         afterAbort.Stage(FactualSnapshot.Empty);
         afterAbort.Commit();
 
-        var afterCommit = store.Open("solution-a");
+        var afterCommit = store.Open("solution-a", EmptySourceDocumentReader.Instance);
         afterCommit.Abort();
         Assert.True(store.TryGetPublication("solution-a", out var stored));
         Assert.Equal("solution-a", stored.SolutionKey);
@@ -191,11 +191,11 @@ public sealed class InMemoryTransactionalStoreTests
     public void AbortThenCommitOfNewSession_DoesNotPublishTheAbortedSession()
     {
         var store = new InMemoryTransactionalStore();
-        var first = store.Open("solution-a");
+        var first = store.Open("solution-a", EmptySourceDocumentReader.Instance);
         first.Stage(FactualSnapshot.Empty);
         first.Abort();
 
-        var second = store.Open("solution-a");
+        var second = store.Open("solution-a", EmptySourceDocumentReader.Instance);
         second.Stage(FactualSnapshot.Empty);
         var publication = second.Commit();
 
@@ -210,11 +210,11 @@ public sealed class InMemoryTransactionalStoreTests
     public void CommitThenAbortSecondSession_LeavesPriorPublicationUnchanged()
     {
         var store = new InMemoryTransactionalStore();
-        var first = store.Open("solution-a");
+        var first = store.Open("solution-a", EmptySourceDocumentReader.Instance);
         first.Stage(FactualSnapshot.Empty);
         var prior = first.Commit();
 
-        var second = store.Open("solution-a");
+        var second = store.Open("solution-a", EmptySourceDocumentReader.Instance);
         second.Stage(FactualSnapshot.Empty);
         second.Abort();
 
@@ -234,7 +234,7 @@ public sealed class InMemoryTransactionalStoreTests
     public void FirstRunAbort_LeavesNoPublication()
     {
         var store = new InMemoryTransactionalStore();
-        var session = store.Open("solution-a");
+        var session = store.Open("solution-a", EmptySourceDocumentReader.Instance);
         session.Stage(FactualSnapshot.Empty);
         session.Abort();
 
@@ -246,11 +246,11 @@ public sealed class InMemoryTransactionalStoreTests
     public void LaterSuccessfulCommit_ReplacesThePublicationForTheKey()
     {
         var store = new InMemoryTransactionalStore();
-        var first = store.Open("solution-a");
+        var first = store.Open("solution-a", EmptySourceDocumentReader.Instance);
         first.Stage(FactualSnapshot.Empty);
         first.Commit();
 
-        var second = store.Open("solution-a");
+        var second = store.Open("solution-a", EmptySourceDocumentReader.Instance);
         second.Stage(CandidateSnapshot());
         var replacement = second.Commit();
 
@@ -267,7 +267,7 @@ public sealed class InMemoryTransactionalStoreTests
     [Trait("Requirement", "STOR-50")]
     public void Commit_EmptySnapshot_OmitsFamilyShardsIncludesRegistryAndManifestLast()
     {
-        var session = new InMemoryTransactionalStore().Open("solution-a");
+        var session = new InMemoryTransactionalStore().Open("solution-a", EmptySourceDocumentReader.Instance);
         session.Stage(FactualSnapshot.Empty);
         var artifacts = session.Commit().ArtifactsInPublicationOrder;
 
@@ -291,14 +291,16 @@ public sealed class InMemoryTransactionalStoreTests
         var manifest = CanonicalJson.Read<ManifestEnvelope>(artifacts[^1].Payload.AsSpan());
         Assert.Equal("solution-a", manifest.SolutionKey);
         Assert.Equal("solution-a", manifest.SolutionFileName);
-        Assert.All(manifest.Artifacts, entry => Assert.Equal(0, entry.Count));
+        Assert.DoesNotContain(
+            manifest.Artifacts,
+            entry => entry.Count == 0 && IsOmittedFamily(entry.CanonicalKey));
     }
 
     [Fact]
     [Trait("Requirement", "STOR-33")]
     public void Commit_CandidateOnlySnapshot_SucceedsWithCandidatesShard()
     {
-        var session = new InMemoryTransactionalStore().Open("solution-a");
+        var session = new InMemoryTransactionalStore().Open("solution-a", EmptySourceDocumentReader.Instance);
         session.Stage(CandidateSnapshot());
         var publication = session.Commit();
 
@@ -326,7 +328,7 @@ public sealed class InMemoryTransactionalStoreTests
         {
             Assert.Empty(Directory.GetFileSystemEntries(probe));
 
-            var session = new InMemoryTransactionalStore().Open("solution-a");
+            var session = new InMemoryTransactionalStore().Open("solution-a", EmptySourceDocumentReader.Instance);
             session.Stage(FactualSnapshot.Empty);
             session.Commit();
 
@@ -340,7 +342,7 @@ public sealed class InMemoryTransactionalStoreTests
 
     private static ImmutableArray<StagedFragment> CommitInOrder(params FactualSnapshot[] snapshots)
     {
-        var session = new InMemoryTransactionalStore().Open("solution-a");
+        var session = new InMemoryTransactionalStore().Open("solution-a", EmptySourceDocumentReader.Instance);
         foreach (var snapshot in snapshots)
         {
             session.Stage(snapshot);
@@ -425,4 +427,9 @@ public sealed class InMemoryTransactionalStoreTests
         return segments.Contains("obj", StringComparer.OrdinalIgnoreCase)
             || segments.Contains("bin", StringComparer.OrdinalIgnoreCase);
     }
+
+    private static bool IsOmittedFamily(string canonicalKey) =>
+        canonicalKey.StartsWith("facts/", StringComparison.Ordinal)
+        || canonicalKey.StartsWith("observations/", StringComparison.Ordinal)
+        || canonicalKey.StartsWith("relations/", StringComparison.Ordinal);
 }

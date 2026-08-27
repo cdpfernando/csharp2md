@@ -15,18 +15,18 @@ public sealed class FilesystemLockTests
         using var output = TempOutputRoot.Create();
         var storeA = new FilesystemTransactionalStore(output.DirectoryPath);
         var storeB = new FilesystemTransactionalStore(output.DirectoryPath);
-        var first = storeA.Open(SolutionKey);
+        var first = storeA.Open(SolutionKey, EmptySourceDocumentReader.Instance);
 
-        var locked = Assert.Throws<PublicationRejectedException>(() => storeB.Open(SolutionKey));
+        var locked = Assert.Throws<PublicationRejectedException>(() => storeB.Open(SolutionKey, EmptySourceDocumentReader.Instance));
         Assert.Equal("lock", locked.Gate);
         Assert.Contains(output.DirectoryPath, locked.Detail, StringComparison.Ordinal);
 
         first.Abort();
-        var afterAbort = storeB.Open(SolutionKey);
+        var afterAbort = storeB.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         afterAbort.Stage(FactualSnapshot.Empty);
         afterAbort.Commit();
 
-        var afterCommit = storeA.Open(SolutionKey);
+        var afterCommit = storeA.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         afterCommit.Abort();
 
         var child = FilesystemTestPaths.ChildDirectory(output.DirectoryPath, SolutionKey);
@@ -41,13 +41,13 @@ public sealed class FilesystemLockTests
         using var output = TempOutputRoot.Create();
         var storeA = new FilesystemTransactionalStore(output.DirectoryPath);
         var storeB = new FilesystemTransactionalStore(output.DirectoryPath);
-        var first = storeA.Open(SolutionKey);
+        var first = storeA.Open(SolutionKey, EmptySourceDocumentReader.Instance);
 
-        var locked = Assert.Throws<PublicationRejectedException>(() => storeB.Open(SolutionKey));
+        var locked = Assert.Throws<PublicationRejectedException>(() => storeB.Open(SolutionKey, EmptySourceDocumentReader.Instance));
         Assert.Equal("lock", locked.Gate);
 
         first.Abort();
-        var recovered = storeB.Open(SolutionKey);
+        var recovered = storeB.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         recovered.Abort();
         Assert.False(File.Exists(FilesystemTestPaths.ChildDirectory(output.DirectoryPath, SolutionKey) + ".lock"));
     }

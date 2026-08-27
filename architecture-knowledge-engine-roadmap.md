@@ -4,12 +4,12 @@
 
 This roadmap replaces every prior csharp2md/LLMWiki implementation queue. It defines ordering only; it does not create a feature spec or authorize implementation by itself.
 
-The target architecture is documented in [`docs/architecture/`](docs/architecture/README.md). Existing code and schemas remain legacy until their owning workstream replaces them.
+The target architecture is documented in [`docs/architecture/`](docs/architecture/README.md). Workstreams 1 through 5D are complete on `master`. What remains is the retrieval layer, multi-solution composition and certification.
 
 ## Delivery rules
 
 - Each row becomes its own `.specs/features/<feature>/` only when explicitly started through `tlc-spec-driven`.
-- The first feature, `knowledge-taxonomy-contract`, has not been created yet.
+- Workstreams 1 through 5D are complete; the feature in progress is `retrieval-projections`.
 - A feature reads the normative architecture, active `.specs/STATE.md`, its own spec and only its declared contract dependencies.
 - No feature preserves the old CLI, IDs, schemas, relation kinds or output layout.
 - The replacement may be functionally broken between checkpoints, but every integrated checkpoint must compile and validate its implemented invariants.
@@ -38,15 +38,15 @@ The four classifier workstreams may proceed in parallel after the observation co
 
 | Order | Feature | State | Outcome |
 | ---: | --- | --- | --- |
-| 1 | `knowledge-taxonomy-contract` | Planned; spec not created | Domain types, facets, relation matrix, IDs, proof states, registry and version axes |
-| 2 | `engine-bootstrap` | Blocked by 1 | New assemblies and compilable pipeline skeleton; legacy pipeline, CLI contracts and taxonomic code removed |
-| 3 | `factual-storage` | Blocked by 2 | Observation/fact wire contracts, schemas, transactional staging/commit, validation and compact storage primitives |
-| 4 | `roslyn-observation-extraction` | Blocked by 3 | Inventory, structural facts, source fidelity, Roslyn binding and the immutable observation ledger |
-| 5A | `entrypoints-boundaries-contracts` | Blocked by 4 | Entry points, HTTP/gRPC/messaging/CLI/jobs/functions, contracts and revisions |
-| 5B | `call-linking-flow-frontiers` | Blocked by 4 | Confirmed calls, in-process dispatch, polymorphism, candidates and open frontiers |
-| 5C | `persistence-knowledge` | Blocked by 4 | Data stores, objects, fields, operations, EF/SQL mappings and persistence coverage |
-| 5D | `components-deployments-configuration` | Blocked by 4 | Components, deployment units, DI/options/clients/configuration and secure overrides |
-| 6 | `retrieval-projections` | Blocked by 5A–5D | Directly navigable catalogs, postings, source locators, Markdown and retrieval scenarios |
+| 1 | `knowledge-taxonomy-contract` | Complete on `master` | Domain types, facets, relation matrix, IDs, proof states, registry and version axes |
+| 2 | `engine-bootstrap` | Complete on `master` (PR #7) | New assemblies and compilable pipeline skeleton; legacy pipeline, CLI contracts and taxonomic code removed |
+| 3 | `factual-storage` | Complete on `master` | Observation/fact wire contracts, schemas, transactional staging/commit, validation and compact storage primitives |
+| 4 | `roslyn-observation-extraction` | Complete on `master` | Inventory, structural facts, source fidelity, Roslyn binding and the immutable observation ledger |
+| 5A | `entrypoints-boundaries-contracts` | Complete on `master` (PR #10) | Entry points, HTTP/gRPC/messaging/CLI/jobs/functions, contracts and revisions |
+| 5B | `call-linking-flow-frontiers` | Complete on `master` (PR #11) | Confirmed calls, in-process dispatch, polymorphism, candidates and open frontiers |
+| 5C | `persistence-knowledge` | Complete on `master` (PR #12) | Data stores, objects, fields, operations, EF/SQL mappings and persistence coverage |
+| 5D | `components-deployments-configuration` | Complete on `master` (PR #14) | Components, deployment units, DI/options/clients/configuration and secure overrides |
+| 6 | `retrieval-projections` | In progress | Directly navigable catalogs, postings, source locators, Markdown and retrieval scenarios |
 | 7 | `multi-solution-composition` | Blocked by 6 | `1..N` isolated solution outputs, batch manifest and proven global correlations |
 | 8 | `generator-cli-projections-certification` | Blocked by 7 | Final analyze/validate/compose CLI, corpora, coverage gates, performance and migration completion |
 

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Csharp2Md.Storage.Wire;
 
 public sealed record SolutionDto(
@@ -21,4 +23,6 @@ public sealed record SymbolDto(
     string OwningProject,
     string CanonicalSymbolSignature,
     ImmutableArray<string> Facets,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    DeclarationLocatorDto? DeclarationLocator,
     string ContentSha256);

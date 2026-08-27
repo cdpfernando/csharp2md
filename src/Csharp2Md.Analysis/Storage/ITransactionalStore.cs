@@ -2,7 +2,7 @@ namespace Csharp2Md.Analysis.Storage;
 
 public interface ITransactionalStore
 {
-    IStoreSession Open(string solutionKey);
+    IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader);
 }
 
 public interface IStoreSession

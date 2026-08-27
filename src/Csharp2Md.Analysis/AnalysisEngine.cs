@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Identity;
@@ -41,8 +42,9 @@ public sealed class AnalysisEngine : IAnalysisEngine
     private async Task<SolutionOutcome> AnalyzeSolutionAsync(string path, CancellationToken cancellationToken)
     {
         var canonical = Path.GetFullPath(path);
-        var session = _store.Open(canonical);
-        var context = new PipelineContext(session, path);
+        var reader = new FilesystemSourceDocumentReader();
+        var session = _store.Open(canonical, reader);
+        var context = new PipelineContext(session, path) { SourceDocumentReader = reader };
         try
         {
             var run = await _orchestrator.RunAsync(context, cancellationToken).ConfigureAwait(false);

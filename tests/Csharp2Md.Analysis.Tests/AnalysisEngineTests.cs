@@ -17,7 +17,7 @@ public sealed class AnalysisEngineTests
 
     private sealed class FakeTransactionalStore : ITransactionalStore
     {
-        public IStoreSession Open(string solutionKey) =>
+        public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader) =>
             throw new NotImplementedException();
     }
 }

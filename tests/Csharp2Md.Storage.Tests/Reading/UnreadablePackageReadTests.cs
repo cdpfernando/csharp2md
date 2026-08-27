@@ -75,7 +75,7 @@ public sealed class UnreadablePackageReadTests
     private static string CommitEmpty(string outputRoot)
     {
         var store = new FilesystemTransactionalStore(outputRoot);
-        var session = store.Open(SolutionKey);
+        var session = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         session.Stage(FactualSnapshot.Empty);
         session.Commit();
         return FilesystemTestPaths.ChildDirectory(outputRoot, SolutionKey);

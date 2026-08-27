@@ -3,23 +3,36 @@ using System.Security.Cryptography;
 using System.Text;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Mapping;
-using Csharp2Md.Storage.Validation;
 
 namespace Csharp2Md.Storage;
 
 public sealed class FilesystemTransactionalStore : ITransactionalStore
 {
     private readonly string _outputRoot;
+    private readonly IPackageProjector? _projector;
+    private readonly FilesystemRetryPolicy _retry;
 
-    public FilesystemTransactionalStore(string outputRoot)
+    public FilesystemTransactionalStore(string outputRoot, IPackageProjector? projector = null)
+        : this(outputRoot, projector, FilesystemRetryPolicy.Default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(outputRoot);
-        _outputRoot = Path.GetFullPath(outputRoot);
     }
 
-    public IStoreSession Open(string solutionKey)
+    internal FilesystemTransactionalStore(
+        string outputRoot,
+        IPackageProjector? projector,
+        FilesystemRetryPolicy retry)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(outputRoot);
+        ArgumentOutOfRangeException.ThrowIfLessThan(retry.MaxAttempts, 1);
+        _outputRoot = Path.GetFullPath(outputRoot);
+        _projector = projector;
+        _retry = retry;
+    }
+
+    public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader)
     {
         ArgumentException.ThrowIfNullOrEmpty(solutionKey);
+        ArgumentNullException.ThrowIfNull(sourceReader);
         EnsureWritableRoot();
 
         var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(solutionKey)))[..32];
@@ -49,7 +62,16 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
                 throw new PublicationRejectedException("not-a-package", childPath);
             }
 
-            return new Session(solutionKey, hex, childPath, stagingPath, lockPath, lockStream);
+            return new Session(
+                solutionKey,
+                hex,
+                childPath,
+                stagingPath,
+                lockPath,
+                lockStream,
+                sourceReader,
+                _projector,
+                _retry);
         }
         catch
         {
@@ -91,7 +113,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         }
     }
 
-    private sealed class Session : IStoreSession
+    private sealed class Session : IStoreSession, IDeferredFragmentStaging
     {
         private readonly string _solutionKey;
         private readonly string _hex;
@@ -99,6 +121,10 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         private readonly string _stagingPath;
         private readonly string _lockPath;
         private readonly FileStream _lockStream;
+        private readonly ISourceDocumentReader _sourceReader;
+        private readonly IPackageProjector? _projector;
+        private readonly FilesystemRetryPolicy _retry;
+        private readonly List<StagedFragment> _deferred = [];
         private FactualSnapshot _staged = FactualSnapshot.Empty;
         private bool _committed;
         private bool _released;
@@ -109,7 +135,10 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             string childPath,
             string stagingPath,
             string lockPath,
-            FileStream lockStream)
+            FileStream lockStream,
+            ISourceDocumentReader sourceReader,
+            IPackageProjector? projector,
+            FilesystemRetryPolicy retry)
         {
             _solutionKey = solutionKey;
             _hex = hex;
@@ -117,6 +146,9 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             _stagingPath = stagingPath;
             _lockPath = lockPath;
             _lockStream = lockStream;
+            _sourceReader = sourceReader;
+            _projector = projector;
+            _retry = retry;
         }
 
         public void Stage(FactualSnapshot snapshot)
@@ -126,17 +158,26 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             _staged = _staged.Merge(snapshot);
         }
 
+        public void StageDeferred(StagedFragment fragment)
+        {
+            ArgumentNullException.ThrowIfNull(fragment);
+            EnsureActive();
+            _deferred.Add(fragment);
+        }
+
         public CommittedPublication Commit()
         {
             EnsureActive();
+            _ = _sourceReader.Documents;
 
             try
             {
-                var document = DomainMapper.ToWire(
+                var artifacts = PublicationPipeline.Publish(
                     _staged,
-                    new ManifestContext(_hex, Path.GetFileName(_solutionKey)));
-                var report = PackageValidator.Validate(document);
-                var artifacts = PackagePublisher.ToPublicationOrder(report.Document);
+                    new ManifestContext(_hex, Path.GetFileName(_solutionKey)),
+                    _projector,
+                    _sourceReader);
+                artifacts = artifacts.AddRange(_deferred);
                 WriteStaging(artifacts);
                 SwapStagingIntoChild();
                 _committed = true;
@@ -177,71 +218,41 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
                 var directory = Path.GetDirectoryName(destination);
                 ArgumentException.ThrowIfNullOrEmpty(directory);
                 Directory.CreateDirectory(directory);
-                File.WriteAllBytes(destination, [.. fragment.Payload]);
+                using var stream = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None);
+                stream.Write(fragment.ReadPayload().AsSpan());
             }
         }
 
         private void SwapStagingIntoChild()
         {
             var bakPath = _childPath + ".bak";
-            if (Directory.Exists(bakPath))
-            {
-                Directory.Delete(bakPath, recursive: true);
-            }
+            FilesystemIo.DeleteDirectory(bakPath, _retry);
 
             var replaced = false;
             if (Directory.Exists(_childPath))
             {
-                MoveDirectory(_childPath, bakPath);
+                FilesystemIo.MoveDirectory(_childPath, bakPath, _retry);
                 replaced = true;
             }
 
             try
             {
-                MoveDirectory(_stagingPath, _childPath);
+                FilesystemIo.MoveDirectory(_stagingPath, _childPath, _retry);
             }
             catch
             {
                 if (replaced && Directory.Exists(bakPath) && !Directory.Exists(_childPath))
                 {
-                    MoveDirectory(bakPath, _childPath);
+                    FilesystemIo.MoveDirectory(bakPath, _childPath, _retry);
                 }
 
                 throw;
             }
 
-            if (Directory.Exists(bakPath))
-            {
-                Directory.Delete(bakPath, recursive: true);
-            }
+            FilesystemIo.DeleteDirectory(bakPath, _retry);
         }
 
-        private static void MoveDirectory(string source, string destination)
-        {
-            const int maxAttempts = 8;
-            for (var attempt = 1; ; attempt++)
-            {
-                try
-                {
-                    Directory.Move(source, destination);
-                    return;
-                }
-                catch (Exception exception) when (
-                    attempt < maxAttempts
-                    && exception is IOException or UnauthorizedAccessException)
-                {
-                    Thread.Sleep(15 * attempt);
-                }
-            }
-        }
-
-        private void DeleteStagingDirectory()
-        {
-            if (Directory.Exists(_stagingPath))
-            {
-                Directory.Delete(_stagingPath, recursive: true);
-            }
-        }
+        private void DeleteStagingDirectory() => FilesystemIo.DeleteDirectory(_stagingPath, _retry);
 
         private void ReleaseLock()
         {

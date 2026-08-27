@@ -79,9 +79,9 @@ public sealed class AnalyzeMultiSolutionTests
             _rejectCanonical = rejectCanonical;
         }
 
-        public IStoreSession Open(string solutionKey)
+        public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader)
         {
-            var session = _inner.Open(solutionKey);
+            var session = _inner.Open(solutionKey, sourceReader);
             if (string.Equals(solutionKey, _rejectCanonical, StringComparison.OrdinalIgnoreCase))
             {
                 return new RejectingSession(session);

@@ -46,7 +46,7 @@ internal sealed class CountingStore : ITransactionalStore
 
     public int AbortCount { get; private set; }
 
-    public IStoreSession Open(string solutionKey) => new Session(_inner.Open(solutionKey), this);
+    public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader) => new Session(_inner.Open(solutionKey, sourceReader), this);
 
     private sealed class Session : IStoreSession
     {

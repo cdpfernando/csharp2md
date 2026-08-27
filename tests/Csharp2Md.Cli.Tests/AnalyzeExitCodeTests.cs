@@ -206,7 +206,7 @@ public sealed class AnalyzeExitCodeTests
 
     private sealed class RejectingTransactionalStore : ITransactionalStore
     {
-        public IStoreSession Open(string solutionKey) => new Session();
+        public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader) => new Session();
 
         private sealed class Session : IStoreSession
         {

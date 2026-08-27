@@ -56,7 +56,7 @@ public sealed class PipelineCancellationTests
             const string solutionPath = "alpha.sln";
             var canonical = Path.GetFullPath(solutionPath);
             var store = new FilesystemTransactionalStore(outputPath);
-            var seed = store.Open(canonical);
+            var seed = store.Open(canonical, EmptySourceDocumentReader.Instance);
             seed.Stage(FactualSnapshot.Empty);
             seed.Commit();
             var child = Path.Combine(outputPath, ChildName(canonical));

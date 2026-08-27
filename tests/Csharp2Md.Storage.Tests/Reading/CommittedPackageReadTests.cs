@@ -157,7 +157,7 @@ public sealed class CommittedPackageReadTests
     private static string Commit(string outputRoot, FactualSnapshot snapshot)
     {
         var store = new FilesystemTransactionalStore(outputRoot);
-        var session = store.Open(SolutionKey);
+        var session = store.Open(SolutionKey, EmptySourceDocumentReader.Instance);
         session.Stage(snapshot);
         session.Commit();
         return FilesystemTestPaths.ChildDirectory(outputRoot, SolutionKey);

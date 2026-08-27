@@ -47,4 +47,66 @@ public sealed class StagedFragmentTests
         Assert.Equal(typeof(ImmutableArray<StagedFragment>), property.PropertyType);
         Assert.Equal(ordered, publication.ArtifactsInPublicationOrder);
     }
+
+    [Fact]
+    [Trait("Requirement", "RP-57")]
+    public void ReadPayload_EagerFragment_ReturnsTheStoredArray()
+    {
+        ImmutableArray<byte> payload = [1, 2, 3];
+        var fragment = new StagedFragment(ArtifactRole.Payload, "facts/a.json", payload);
+
+        Assert.False(fragment.IsDeferred);
+        Assert.True(fragment.ReadPayload().AsSpan().SequenceEqual(payload.AsSpan()));
+        Assert.True(fragment.ReadPayload().AsSpan().SequenceEqual(payload.AsSpan()));
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-57")]
+    public void ReadPayload_DeferredFragment_InvokesTheProviderOnceThenRejectsASecondCall()
+    {
+        var invokes = 0;
+        ImmutableArray<byte> bytes = [9, 8];
+        var fragment = StagedFragment.Deferred(
+            ArtifactRole.Payload,
+            "source/a.cs",
+            () =>
+            {
+                invokes++;
+                return bytes;
+            });
+
+        Assert.True(fragment.IsDeferred);
+        Assert.True(fragment.Payload.IsDefaultOrEmpty);
+        Assert.True(fragment.ReadPayload().AsSpan().SequenceEqual(bytes.AsSpan()));
+        Assert.Equal(1, invokes);
+
+        Assert.Throws<InvalidOperationException>(() => fragment.ReadPayload());
+        Assert.Equal(1, invokes);
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-57")]
+    public void CommittedPublication_DeferredFragment_IsDeferredWithEmptyPayload()
+    {
+        var fragment = StagedFragment.Deferred(ArtifactRole.Payload, "source/a.cs", static () => [1]);
+        var publication = new CommittedPublication("sol", [fragment]);
+
+        var returned = Assert.Single(publication.ArtifactsInPublicationOrder);
+        Assert.True(returned.IsDeferred);
+        Assert.True(returned.Payload.IsDefaultOrEmpty);
+        Assert.Equal("source/a.cs", returned.CanonicalKey);
+        Assert.Equal(ArtifactRole.Payload, returned.Role);
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-57")]
+    public void ReadPayload_DeferredFragment_DoesNotCopyBytesIntoPayload()
+    {
+        ImmutableArray<byte> bytes = [4, 5, 6];
+        var fragment = StagedFragment.Deferred(ArtifactRole.Payload, "source/a.cs", () => bytes);
+
+        Assert.True(fragment.ReadPayload().AsSpan().SequenceEqual(bytes.AsSpan()));
+        Assert.True(fragment.IsDeferred);
+        Assert.True(fragment.Payload.IsDefaultOrEmpty);
+    }
 }

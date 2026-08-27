@@ -1,6 +1,7 @@
 using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
+using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Registry;
 
 namespace Csharp2Md.Domain.Tests.Facts;
@@ -134,6 +135,42 @@ public sealed class StructuralFactsTests
 
         Assert.Equal(facets, symbol.Facets);
         Assert.Null(typeof(IFact).Assembly.GetTypes().FirstOrDefault(type => type.Name == "Callable"));
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-13")]
+    public void Symbol_Create_OmittingLocator_LeavesDeclarationLocatorAbsent()
+    {
+        var symbol = Symbol.Create(RunSignature, AcmeProject, SymbolFacetSet.Create([]));
+
+        Assert.Null(symbol.DeclarationLocator);
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-13")]
+    public void Symbol_Create_WithAndWithoutLocator_ProducesTheSameFactId()
+    {
+        var locator = new DeclarationLocator(
+            DocumentId.Create("src/Acme.Payments/Invoice.cs"),
+            "src/Acme.Payments/Invoice.cs",
+            new SourceSpan(10, 1, 24, 2),
+            DocumentHash.Create(new string('a', 64)));
+
+        var withoutLocator = Symbol.Create(RunSignature, AcmeProject, SymbolFacetSet.Create([]));
+        var withLocator = Symbol.Create(RunSignature, AcmeProject, SymbolFacetSet.Create([]), locator);
+
+        Assert.Equal(locator, withLocator.DeclarationLocator);
+        Assert.Equal(withoutLocator.Reference.Id.Value, withLocator.Reference.Id.Value);
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-13")]
+    public void Symbol_Create_SuppliedUninitializedLocator_IsRejectedNamingDeclarationLocator()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => Symbol.Create(RunSignature, AcmeProject, SymbolFacetSet.Create([]), default(DeclarationLocator)));
+
+        Assert.Equal("declarationLocator", exception.ParamName);
     }
 
     [Fact]

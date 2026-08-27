@@ -31,6 +31,8 @@ internal sealed class PipelineContext
 
     public ImmutableArray<AnalysisVariantId> AnalysisVariants { get; set; } = [];
 
+    public ISourceDocumentReader? SourceDocumentReader { get; set; }
+
     public PipelineContext(IStoreSession session, string solutionPath)
     {
         ArgumentNullException.ThrowIfNull(session);
