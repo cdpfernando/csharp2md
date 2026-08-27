@@ -778,10 +778,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Stores, objects and fields appear in one catalog, each labelled by its fact type
-- [ ] Every entry resolves against its cited artifact and ordinal
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1483+ tests pass (no silent deletions)
+- [x] Stores, objects and fields appear in one catalog, each labelled by its fact type
+- [x] Every entry resolves against its cited artifact and ordinal
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1483+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

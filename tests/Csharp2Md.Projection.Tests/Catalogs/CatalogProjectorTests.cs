@@ -272,6 +272,139 @@ public sealed class CatalogProjectorTests
             ],
             composed.Select(fragment => fragment.CanonicalKey));
     }
+
+    [Fact]
+    [Trait("Requirement", "RP-18")]
+    public void Project_StoresObjectsAndFields_AppearInOneCatalog()
+    {
+        var store = CatalogProjectionFactory.CreateStore("OrdersDb");
+        var dataObject = CatalogProjectionFactory.CreateObject(store, "order_headers");
+        var field = CatalogProjectionFactory.CreateField(dataObject, "order_status");
+        var view = CatalogProjectionFactory.ViewOf(store, dataObject, field);
+
+        var fragments = CatalogProjector.Project(view);
+        var entries = CatalogProjectionFactory.ReadCatalog(fragments, "catalogs/data-stores-objects-and-fields.json");
+
+        Assert.Single(fragments);
+        Assert.Equal(3, entries.Length);
+        Assert.Contains(entries, entry => entry.FactId == store.Reference.Id.Value);
+        Assert.Contains(entries, entry => entry.FactId == dataObject.Reference.Id.Value);
+        Assert.Contains(entries, entry => entry.FactId == field.Reference.Id.Value);
+        Assert.DoesNotContain(fragments, fragment => fragment.CanonicalKey.Equals("catalogs/data-stores.json", StringComparison.Ordinal));
+        Assert.DoesNotContain(fragments, fragment => fragment.CanonicalKey.Equals("catalogs/data-objects.json", StringComparison.Ordinal));
+        Assert.DoesNotContain(fragments, fragment => fragment.CanonicalKey.Equals("catalogs/data-fields.json", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-18")]
+    public void Project_StoresObjectsAndFields_EachEntryIsLabelledByFactType()
+    {
+        var store = CatalogProjectionFactory.CreateStore("OrdersDb");
+        var dataObject = CatalogProjectionFactory.CreateObject(store, "order_headers");
+        var field = CatalogProjectionFactory.CreateField(dataObject, "order_status");
+        var view = CatalogProjectionFactory.ViewOf(store, dataObject, field);
+
+        var entries = CatalogProjectionFactory.ReadCatalog(
+            CatalogProjector.Project(view),
+            "catalogs/data-stores-objects-and-fields.json");
+
+        Assert.Equal("DataStore", Assert.Single(entries, entry => entry.FactId == store.Reference.Id.Value).FactType);
+        Assert.Equal("DataObject", Assert.Single(entries, entry => entry.FactId == dataObject.Reference.Id.Value).FactType);
+        Assert.Equal("DataField", Assert.Single(entries, entry => entry.FactId == field.Reference.Id.Value).FactType);
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-18")]
+    [Trait("Requirement", "RP-20")]
+    public void Project_StoresObjectsAndFields_EveryEntryResolves()
+    {
+        var store = CatalogProjectionFactory.CreateStore("OrdersDb");
+        var dataObject = CatalogProjectionFactory.CreateObject(store, "order_headers");
+        var field = CatalogProjectionFactory.CreateField(dataObject, "order_status");
+        var view = CatalogProjectionFactory.ViewOf(store, dataObject, field);
+
+        var entries = CatalogProjectionFactory.ReadCatalog(
+            CatalogProjector.Project(view),
+            "catalogs/data-stores-objects-and-fields.json");
+
+        CatalogProjectionFactory.AssertEveryEntryResolves(view, entries);
+        Assert.All(entries, entry =>
+        {
+            Assert.False(string.IsNullOrEmpty(entry.FactId));
+            Assert.False(string.IsNullOrEmpty(entry.ArtifactKey));
+            Assert.True(entry.Ordinal >= 0, entry.FactId);
+        });
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-18")]
+    public void Project_DataOperation_IsOmittedFromStoresObjectsAndFieldsCatalog()
+    {
+        var store = CatalogProjectionFactory.CreateStore("OrdersDb");
+        var dataObject = CatalogProjectionFactory.CreateObject(store, "order_headers");
+        var field = CatalogProjectionFactory.CreateField(dataObject, "order_status");
+        var operation = CatalogProjectionFactory.CreateOperation(dataObject);
+        var view = CatalogProjectionFactory.ViewOf(store, dataObject, field, operation);
+
+        var entries = CatalogProjectionFactory.ReadCatalog(
+            CatalogProjector.Project(view),
+            "catalogs/data-stores-objects-and-fields.json");
+
+        Assert.DoesNotContain(entries, entry => entry.FactId == operation.Reference.Id.Value);
+        Assert.Equal(3, entries.Length);
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-19")]
+    [Trait("Requirement", "RP-20")]
+    public void Project_PersistenceCatalog_CitationsMatchTryLocate()
+    {
+        var store = CatalogProjectionFactory.CreateStore("OrdersDb");
+        var dataObject = CatalogProjectionFactory.CreateObject(store, "order_headers");
+        var field = CatalogProjectionFactory.CreateField(dataObject, "order_status");
+        var view = CatalogProjectionFactory.ViewOf(store, dataObject, field);
+
+        var entries = CatalogProjectionFactory.ReadCatalog(
+            CatalogProjector.Project(view),
+            "catalogs/data-stores-objects-and-fields.json");
+
+        foreach (var entry in entries)
+        {
+            Assert.True(view.TryLocate(entry.FactId, out var citation));
+            Assert.Equal(citation, new ArtifactCitation(entry.ArtifactKey, entry.Ordinal));
+            Assert.Equal(entry.FactId, CatalogProjectionFactory.FactIdAt(view, citation));
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-18")]
+    public void PackageProjector_PlacesPersistenceCatalogAfterContracts()
+    {
+        var store = CatalogProjectionFactory.CreateStore("OrdersDb");
+        var dataObject = CatalogProjectionFactory.CreateObject(store, "order_headers");
+        var field = CatalogProjectionFactory.CreateField(dataObject, "order_status");
+        var view = CatalogProjectionFactory.ViewOf(
+            CatalogProjectionFactory.CreateEntryPoint("Run", "Orders.Api"),
+            CatalogProjectionFactory.CreateInboundOperation("Charge", "Payments.Api", "POST /charge"),
+            CatalogProjectionFactory.CreateComponent("Orders.Api"),
+            CatalogProjectionFactory.CreateDeploymentUnit("Orders.Container"),
+            CatalogProjectionFactory.CreateContract("orders.v1.OrderPlaced"),
+            store,
+            dataObject,
+            field);
+
+        var composed = new PackageProjector().Project(view, new EmptySourceReader());
+
+        Assert.Equal(
+            [
+                "catalogs/entry-points.json",
+                "catalogs/boundary-operations.json",
+                "catalogs/components-and-deployment-units.json",
+                "catalogs/contracts.json",
+                "catalogs/data-stores-objects-and-fields.json",
+            ],
+            composed.Select(fragment => fragment.CanonicalKey));
+    }
 }
 
 internal sealed class EmptySourceReader : ISourceDocumentReader

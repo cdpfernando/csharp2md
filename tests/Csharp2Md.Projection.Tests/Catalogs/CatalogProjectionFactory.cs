@@ -60,6 +60,28 @@ internal static class CatalogProjectionFactory
     internal static Contract CreateContract(string schemaKey) =>
         Contract.Create(StructuralLiteral.Create(LiteralRole.SchemaName, schemaKey, "proof"));
 
+    internal static DataStore CreateStore(string name) =>
+        DataStore.Create(
+            DataStoreTechnology.Relational,
+            StructuralLiteral.Create(LiteralRole.SchemaName, name, "name"));
+
+    internal static DataObject CreateObject(DataStore store, string table) =>
+        DataObject.Create(
+            store.Reference,
+            DataObjectForm.Table,
+            StructuralLiteral.Create(LiteralRole.SchemaName, "dbo", "schemaName"),
+            StructuralLiteral.Create(LiteralRole.TableName, table, "tableName"),
+            MappingStateKind.ExplicitConfirmation);
+
+    internal static DataField CreateField(DataObject dataObject, string name) =>
+        DataField.Create(
+            dataObject.Reference,
+            StructuralLiteral.Create(LiteralRole.FieldName, name, "fieldName"),
+            MappingStateKind.ExplicitConfirmation);
+
+    internal static DataOperation CreateOperation(DataObject dataObject) =>
+        DataOperation.Create(dataObject.Reference, DataOperationKind.Read, MappingStateKind.ExplicitConfirmation);
+
     internal static ImmutableArray<CatalogEntryDto> ReadCatalog(ImmutableArray<StagedFragment> fragments, string key)
     {
         var fragment = Assert.Single(fragments, candidate => string.Equals(candidate.CanonicalKey, key, StringComparison.Ordinal));
