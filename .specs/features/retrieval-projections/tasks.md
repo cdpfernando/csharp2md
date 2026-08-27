@@ -497,11 +497,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Commit once with a working projector, then again with a throwing one; assert every file's bytes are unchanged
-- [ ] Assert no staging or `.bak` directory survives the failed attempt
-- [ ] Assert `PublicationRejectedException` carries a `projection` reason
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1414+ tests pass (no silent deletions)
+- [x] Commit once with a working projector, then again with a throwing one; assert every file's bytes are unchanged
+- [x] Assert no staging or `.bak` directory survives the failed attempt
+- [x] Assert `PublicationRejectedException` carries a `projection` reason
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1414+ tests pass (no silent deletions)
 
 **Tests**: integration
 **Gate**: full
