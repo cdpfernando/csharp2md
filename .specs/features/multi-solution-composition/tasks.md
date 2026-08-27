@@ -220,11 +220,11 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] Both overloads present; the `string` overload is proven to delegate, not duplicate, the identity rule
-- [ ] All 89 existing `Open(` call sites compile without edits
-- [ ] Behaviour is unchanged this task: the directory is still derived exactly as before
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Both overloads present; the `string` overload is proven to delegate, not duplicate, the identity rule
+- [x] All 89 existing `Open(` call sites compile without edits
+- [x] Behaviour is unchanged this task: the directory is still derived exactly as before
+- [x] Gate check passes: build gate
+- [x] Test count reported; total 1625 (Domain 555, Analysis 642, Storage 247, Cli 29, Projection 152)
 
 **Tests**: unit
 **Gate**: build

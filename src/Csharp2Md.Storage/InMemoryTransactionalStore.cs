@@ -14,6 +14,12 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
         _projector = projector;
     }
 
+    public IStoreSession Open(SolutionCoordinate coordinate, ISourceDocumentReader sourceReader)
+    {
+        ArgumentNullException.ThrowIfNull(sourceReader);
+        return Open(coordinate.Identity.Value, sourceReader);
+    }
+
     public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader)
     {
         ArgumentException.ThrowIfNullOrEmpty(solutionKey);

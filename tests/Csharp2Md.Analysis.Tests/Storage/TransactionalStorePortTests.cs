@@ -6,19 +6,46 @@ public sealed class TransactionalStorePortTests
 {
     [Fact]
     [Trait("Requirement", "ENG-20")]
-    public void ITransactionalStore_Open_TakesSolutionKeyAndReturnsSession()
+    [Trait("Requirement", "MSC-02")]
+    public void ITransactionalStore_Open_TakesSolutionCoordinateAndAStringOverload()
     {
-        var open = typeof(ITransactionalStore).GetMethod(nameof(ITransactionalStore.Open));
+        var coordinateOpen = typeof(ITransactionalStore).GetMethod(
+            nameof(ITransactionalStore.Open),
+            [typeof(SolutionCoordinate), typeof(ISourceDocumentReader)]);
+        var stringOpen = typeof(ITransactionalStore).GetMethod(
+            nameof(ITransactionalStore.Open),
+            [typeof(string), typeof(ISourceDocumentReader)]);
 
-        Assert.NotNull(open);
-        Assert.Equal(typeof(IStoreSession), open.ReturnType);
+        Assert.NotNull(coordinateOpen);
+        Assert.NotNull(stringOpen);
+        Assert.Equal(typeof(IStoreSession), coordinateOpen.ReturnType);
+        Assert.Equal(typeof(IStoreSession), stringOpen.ReturnType);
 
-        var parameters = open.GetParameters();
-        Assert.Equal(2, parameters.Length);
-        Assert.Equal(typeof(string), parameters[0].ParameterType);
-        Assert.Equal("solutionKey", parameters[0].Name);
-        Assert.Equal(typeof(ISourceDocumentReader), parameters[1].ParameterType);
-        Assert.Equal("sourceReader", parameters[1].Name);
+        var coordinateParameters = coordinateOpen.GetParameters();
+        Assert.Equal(typeof(SolutionCoordinate), coordinateParameters[0].ParameterType);
+        Assert.Equal("coordinate", coordinateParameters[0].Name);
+        Assert.Equal(typeof(ISourceDocumentReader), coordinateParameters[1].ParameterType);
+        Assert.Equal("sourceReader", coordinateParameters[1].Name);
+
+        var stringParameters = stringOpen.GetParameters();
+        Assert.Equal(typeof(string), stringParameters[0].ParameterType);
+        Assert.Equal("solutionKey", stringParameters[0].Name);
+        Assert.Equal(typeof(ISourceDocumentReader), stringParameters[1].ParameterType);
+        Assert.Equal("sourceReader", stringParameters[1].Name);
+    }
+
+    [Fact]
+    [Trait("Requirement", "MSC-02")]
+    public void Open_StringOverload_DelegatesThroughSolutionCoordinateFor()
+    {
+        var store = new RecordingCoordinateStore();
+        var path = Path.Combine(Path.GetTempPath(), "clone-a", "Acme.Orders.slnx");
+        ITransactionalStore boxed = store;
+
+        boxed.Open(path, EmptySourceDocumentReader.Instance);
+
+        Assert.Equal(SolutionCoordinate.For(path), store.LastCoordinate);
+        Assert.Equal(Path.GetFileName(path), store.LastCoordinate.SolutionFileName);
     }
 
     [Fact]
@@ -79,5 +106,29 @@ public sealed class TransactionalStorePortTests
         Assert.True(
             merged is null,
             $"Staging and commit must be distinct operations, but '{merged?.Name}' combines them.");
+    }
+
+    private sealed class RecordingCoordinateStore : ITransactionalStore
+    {
+        public SolutionCoordinate LastCoordinate { get; private set; }
+
+        public IStoreSession Open(SolutionCoordinate coordinate, ISourceDocumentReader sourceReader)
+        {
+            LastCoordinate = coordinate;
+            return new IdleSession();
+        }
+    }
+
+    private sealed class IdleSession : IStoreSession
+    {
+        public void Stage(FactualSnapshot snapshot)
+        {
+        }
+
+        public CommittedPublication Commit() => new("idle", []);
+
+        public void Abort()
+        {
+        }
     }
 }

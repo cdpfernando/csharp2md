@@ -29,6 +29,12 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         _retry = retry;
     }
 
+    public IStoreSession Open(SolutionCoordinate coordinate, ISourceDocumentReader sourceReader)
+    {
+        ArgumentNullException.ThrowIfNull(sourceReader);
+        return Open(coordinate.Identity.Value, sourceReader);
+    }
+
     public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader)
     {
         ArgumentException.ThrowIfNullOrEmpty(solutionKey);
