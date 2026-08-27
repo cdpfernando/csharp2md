@@ -173,11 +173,11 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-13 | P1: Deterministic batch output | Design | Pending |
 | MSC-14 | P1: Deterministic batch output | Design | Pending |
 | MSC-15 | P1: Deterministic batch output | Design | Pending |
-| MSC-16 | P2: Proven cross-solution correlations | Design | Pending |
-| MSC-17 | P2: Proven cross-solution correlations | Design | Pending |
-| MSC-18 | P2: Proven cross-solution correlations | Design | Pending |
-| MSC-19 | P2: Proven cross-solution correlations | Design | Pending |
-| MSC-20 | P2: Proven cross-solution correlations | Design | Pending |
+| MSC-16 | P2: Proven cross-solution correlations | Design | Implementing |
+| MSC-17 | P2: Proven cross-solution correlations | Design | Implementing |
+| MSC-18 | P2: Proven cross-solution correlations | Design | Verified |
+| MSC-19 | P2: Proven cross-solution correlations | Design | Verified |
+| MSC-20 | P2: Proven cross-solution correlations | Design | Verified |
 | MSC-21 | P2: Proven cross-solution correlations | Design | Pending |
 | MSC-22 | P2: Proven cross-solution correlations | Design | Pending |
 | MSC-23 | P2: Proven cross-solution correlations | Design | Pending |
@@ -195,7 +195,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-35 | Edge cases | Design | Pending |
 | MSC-36 | Edge cases | Design | Pending |
 | MSC-37 | Edge cases | Design | Pending |
-| MSC-38 | Edge cases | Design | Pending |
+| MSC-38 | Edge cases | Design | Verified |
 | MSC-39 | Edge cases | Design | Verified |
 | MSC-40 | Edge cases | Design | Pending |
 

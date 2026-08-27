@@ -444,13 +444,13 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] A matched pair produces one entry of kind `targets` carrying both fact identities, both solution identities, both artifact keys and ordinals, and the matched key
-- [ ] One outbound matching inbound operations in two other solutions produces two entries
-- [ ] An outbound and an inbound operation in the same solution produce no entry
-- [ ] An outbound operation matching nothing produces neither an entry nor a candidate
-- [ ] Direction and protocol literals come from `FacetAxes.WireValue`, asserted by a test that would fail on a hard-coded string
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A matched pair produces one entry of kind `targets` carrying both fact identities, both solution identities, both artifact keys and ordinals, and the matched key
+- [x] One outbound matching inbound operations in two other solutions produces two entries
+- [x] An outbound and an inbound operation in the same solution produce no entry
+- [x] An outbound operation matching nothing produces neither an entry nor a candidate
+- [x] Direction and protocol literals come from `FacetAxes.WireValue`, asserted by a test that would fail on a hard-coded string
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Projection 163 pass; total 1663 (previous 1658)
 
 **Tests**: unit
 **Gate**: quick
