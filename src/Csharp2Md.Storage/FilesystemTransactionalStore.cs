@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Mapping;
+using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage;
 
@@ -66,7 +67,136 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             throw new ArgumentException("Batch publication requires at least one solution record.", nameof(solutions));
         }
 
-        _contributions.Clear();
+        EnsureWritableRoot();
+        var lockPath = _outputRoot + ".lock";
+        FileStream lockStream;
+        try
+        {
+            lockStream = new FileStream(
+                lockPath,
+                FileMode.OpenOrCreate,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 1);
+        }
+        catch (IOException)
+        {
+            throw new PublicationRejectedException("lock", _outputRoot);
+        }
+
+        try
+        {
+            var (fragments, envelope) = BatchPublication.Prepare(solutions, _contributions, _composer);
+            WriteRootArtifacts(envelope, fragments);
+            _contributions.Clear();
+        }
+        catch (PublicationRejectedException)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            throw new PublicationRejectedException("io", exception.Message, exception);
+        }
+        finally
+        {
+            lockStream.Dispose();
+            TryDeleteFile(lockPath);
+        }
+    }
+
+    private void WriteRootArtifacts(BatchManifestEnvelope envelope, ImmutableArray<StagedFragment> fragments)
+    {
+        var compositionStaging = Path.Combine(_outputRoot, "composition.staging");
+        var compositionDir = Path.Combine(_outputRoot, "composition");
+        var manifestStaging = Path.Combine(_outputRoot, "batch-manifest.json.staging");
+        var manifestPath = Path.Combine(_outputRoot, "batch-manifest.json");
+
+        try
+        {
+            FilesystemIo.DeleteDirectory(compositionStaging, _retry);
+            TryDeleteFile(manifestStaging);
+
+            if (!fragments.IsDefaultOrEmpty)
+            {
+                Directory.CreateDirectory(compositionStaging);
+                foreach (var fragment in fragments)
+                {
+                    var relative = fragment.CanonicalKey.StartsWith("composition/", StringComparison.Ordinal)
+                        ? fragment.CanonicalKey["composition/".Length..]
+                        : fragment.CanonicalKey;
+                    var destination = Path.Combine(
+                        compositionStaging,
+                        relative.Replace('/', Path.DirectorySeparatorChar));
+                    var directory = Path.GetDirectoryName(destination);
+                    ArgumentException.ThrowIfNullOrEmpty(directory);
+                    Directory.CreateDirectory(directory);
+                    using var stream = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None);
+                    stream.Write(fragment.ReadPayload().AsSpan());
+                }
+            }
+
+            var manifestBytes = CanonicalJson.Write(envelope);
+            using (var stream = new FileStream(manifestStaging, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                stream.Write(manifestBytes.AsSpan());
+            }
+
+            ReplaceComposition(compositionStaging, compositionDir, fragments.IsDefaultOrEmpty);
+            ReplaceFile(manifestStaging, manifestPath);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            FilesystemIo.DeleteDirectory(compositionStaging, _retry);
+            TryDeleteFile(manifestStaging);
+            throw new PublicationRejectedException("io", exception.Message, exception);
+        }
+    }
+
+    private void ReplaceComposition(string stagingPath, string destination, bool empty)
+    {
+        if (empty)
+        {
+            FilesystemIo.DeleteDirectory(stagingPath, _retry);
+            FilesystemIo.DeleteDirectory(destination, _retry);
+            return;
+        }
+
+        var bakPath = destination + ".bak";
+        FilesystemIo.DeleteDirectory(bakPath, _retry);
+
+        var replaced = false;
+        if (Directory.Exists(destination))
+        {
+            FilesystemIo.MoveDirectory(destination, bakPath, _retry);
+            replaced = true;
+        }
+
+        try
+        {
+            FilesystemIo.MoveDirectory(stagingPath, destination, _retry);
+        }
+        catch
+        {
+            if (replaced && Directory.Exists(bakPath) && !Directory.Exists(destination))
+            {
+                FilesystemIo.MoveDirectory(bakPath, destination, _retry);
+            }
+
+            throw;
+        }
+
+        FilesystemIo.DeleteDirectory(bakPath, _retry);
+    }
+
+    private static void ReplaceFile(string stagingPath, string destination)
+    {
+        if (File.Exists(destination))
+        {
+            File.Delete(destination);
+        }
+
+        File.Move(stagingPath, destination);
     }
 
     private IStoreSession Open(

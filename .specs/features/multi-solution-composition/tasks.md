@@ -679,15 +679,15 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] `batch-manifest.json` and `composition/` appear at the output root after a successful batch
-- [ ] An earlier run's `batch-manifest.json` is replaced, not merged
-- [ ] A package directory no requested solution maps to is left byte-identical and is not referenced
-- [ ] A validation or I/O failure leaves every committed package directory byte-identical and no batch manifest on disk
-- [ ] A concurrently held root lock raises `PublicationRejectedException` with reason `lock`
-- [ ] A missing output root is created rather than rejected
-- [ ] The accumulator is empty after the call
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] `batch-manifest.json` and `composition/` appear at the output root after a successful batch
+- [x] An earlier run's `batch-manifest.json` is replaced, not merged
+- [x] A package directory no requested solution maps to is left byte-identical and is not referenced
+- [x] A validation or I/O failure leaves every committed package directory byte-identical and no batch manifest on disk
+- [x] A concurrently held root lock raises `PublicationRejectedException` with reason `lock`
+- [x] A missing output root is created rather than rejected
+- [x] The accumulator is empty after the call
+- [x] Gate check passes: build gate
+- [x] Test count reported; Storage 285 pass; total 1703 (previous 1695)
 
 **Tests**: unit + integration
 **Gate**: build

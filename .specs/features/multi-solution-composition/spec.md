@@ -158,7 +158,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| MSC-01 | P1: Deterministic batch output | Design | Pending |
+| MSC-01 | P1: Deterministic batch output | Design | Implementing |
 | MSC-02 | P1: Deterministic batch output | Design | Verified |
 | MSC-03 | P1: Deterministic batch output | Design | Implementing |
 | MSC-04 | P1: Deterministic batch output | Design | Verified |
@@ -170,8 +170,8 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-10 | P1: Deterministic batch output | Design | Implementing |
 | MSC-11 | P1: Deterministic batch output | Design | Verified |
 | MSC-12 | P1: Deterministic batch output | Design | Verified |
-| MSC-13 | P1: Deterministic batch output | Design | Pending |
-| MSC-14 | P1: Deterministic batch output | Design | Pending |
+| MSC-13 | P1: Deterministic batch output | Design | Verified |
+| MSC-14 | P1: Deterministic batch output | Design | Verified |
 | MSC-15 | P1: Deterministic batch output | Design | Implementing |
 | MSC-16 | P2: Proven cross-solution correlations | Design | Implementing |
 | MSC-17 | P2: Proven cross-solution correlations | Design | Verified |
@@ -197,7 +197,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-37 | Edge cases | Design | Verified |
 | MSC-38 | Edge cases | Design | Verified |
 | MSC-39 | Edge cases | Design | Verified |
-| MSC-40 | Edge cases | Design | Pending |
+| MSC-40 | Edge cases | Design | Verified |
 
 **ID mapping:** MSC-01..15 are P1 acceptance criteria 1..15 in order; MSC-16..29 are P2 acceptance criteria 1..14 in order; MSC-30..34 are P3 acceptance criteria 1..5 in order; MSC-35..40 are the Edge Cases in order.
 
