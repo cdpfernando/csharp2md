@@ -191,7 +191,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-31 | P3: Grouped global catalogs | Design | Verified |
 | MSC-32 | P3: Grouped global catalogs | Design | Verified |
 | MSC-33 | P3: Grouped global catalogs | Design | Verified |
-| MSC-34 | P3: Grouped global catalogs | Design | Pending |
+| MSC-34 | P3: Grouped global catalogs | Design | Verified |
 | MSC-35 | Edge cases | Design | Pending |
 | MSC-36 | Edge cases | Design | Pending |
 | MSC-37 | Edge cases | Design | Verified |

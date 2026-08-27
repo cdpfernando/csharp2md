@@ -562,10 +562,10 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] Output shape is identical to the component catalog, asserted against the same grouping helper
-- [ ] Two solutions naming the same external system yield one group with `shared_identity` set to `not-proven`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Output shape is identical to the component catalog, asserted against the same grouping helper
+- [x] Two solutions naming the same external system yield one group with `shared_identity` set to `not-proven`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Projection 179 pass; total 1679 (previous 1677)
 
 **Tests**: unit
 **Gate**: quick
