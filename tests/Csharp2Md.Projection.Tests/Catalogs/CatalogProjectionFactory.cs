@@ -55,6 +55,11 @@ internal static class CatalogProjectionFactory
             BoundaryDirection.Inbound,
             protocolOperationKey: StructuralLiteral.Create(LiteralRole.ProtocolName, key, "protocolOperationKey"));
 
+    internal static DeploymentUnit CreateDeploymentUnit(string name) => DeploymentUnit.Create(Solution, name);
+
+    internal static Contract CreateContract(string schemaKey) =>
+        Contract.Create(StructuralLiteral.Create(LiteralRole.SchemaName, schemaKey, "proof"));
+
     internal static ImmutableArray<CatalogEntryDto> ReadCatalog(ImmutableArray<StagedFragment> fragments, string key)
     {
         var fragment = Assert.Single(fragments, candidate => string.Equals(candidate.CanonicalKey, key, StringComparison.Ordinal));

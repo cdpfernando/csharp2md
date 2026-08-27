@@ -757,10 +757,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Components and deployment units share one catalog, per the spec's wording
-- [ ] Every entry resolves against its cited artifact and ordinal
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1477+ tests pass (no silent deletions)
+- [x] Components and deployment units share one catalog, per the spec's wording
+- [x] Every entry resolves against its cited artifact and ordinal
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1477+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
