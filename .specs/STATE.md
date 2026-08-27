@@ -2,7 +2,7 @@
 
 ## Status
 
-The architectural replacement is underway. Workstreams 1 through 6 are on `feat/retrieval-projections` (5D and earlier also on `master`); multi-solution composition and certification remain.
+The architectural replacement is underway. Workstreams 1 through 6 are on `feat/retrieval-projections` (5D and earlier also on `master`); workstream 7 is on `feature/multi-solution-composition`. Certification remains.
 
 Workstream 1, [`knowledge-taxonomy-contract`](features/knowledge-taxonomy-contract/spec.md), is complete, verified and on `master`.
 
@@ -21,6 +21,8 @@ Workstream 5C, [`persistence-knowledge`](features/persistence-knowledge/spec.md)
 Workstream 5D, [`components-deployments-configuration`](features/components-deployments-configuration/spec.md), is complete, verified and on `master` via PR #14 (`792d9cb`). Verifier report: `.specs/features/components-deployments-configuration/validation.md` (PASS, 1342 tests, 58/58 ACs).
 
 Workstream 6, [`retrieval-projections`](features/retrieval-projections/spec.md), is complete and verified on `feat/retrieval-projections` (`97150bd`). Verifier report: `.specs/features/retrieval-projections/validation.md` (PASS, 1613 tests, 57/57 ACs, 5 spec-precision gaps).
+
+Workstream 7, [`multi-solution-composition`](features/multi-solution-composition/spec.md), is complete and verified on `feature/multi-solution-composition` (`d1eaae6`). Verifier report: `.specs/features/multi-solution-composition/validation.md` (PASS, 1723 tests, 40/40 ACs, 2 spec-precision gaps). F1 `7c2c7dc` closed MSC-39 after the first Verifier FAIL.
 
 Normative documentation:
 
@@ -203,13 +205,13 @@ Normative documentation:
 
 ## Handoff
 
-- **Feature**: 6 `retrieval-projections` — Execute complete, Verifier PASS. Report: `.specs/features/retrieval-projections/validation.md`.
-- **Phase / Task**: T1–T49 done (`ea4a1ad` … `5f4061d`). Verifier report committed as `97150bd`.
-- **Completed**: 57/57 ACs matched; 1613 tests passing (Domain 555, Analysis 634 excluding LocalCorpus, Storage 243, Cli 29, Projection 152). Five spec-precision gaps distilled as L-012–L-016. LocalCorpus skipped (no eShop clones). Discrimination sensor skipped (standing skip).
+- **Feature**: 7 `multi-solution-composition` — Execute complete, Verifier PASS (iteration 2). Report: `.specs/features/multi-solution-composition/validation.md`.
+- **Phase / Task**: T1–T28 done (`f4360d3` … `228fb8e`). F1 MSC-39 `7c2c7dc`. Verifier report committed as `d1eaae6`.
+- **Completed**: 40/40 ACs matched; 1723 tests passing (Domain 555, Analysis 662 excluding LocalCorpus, Storage 289, Cli 33, Projection 184). Two spec-precision gaps distilled as L-018–L-019; MSC-39 ac_gap as L-017. LocalCorpus skipped (`fixtures/eShop` absent; `eShopOnContainers` dir present but `eShopOnContainers-ServicesAndWebApps.sln` missing). Discrimination sensor skipped (standing skip).
 - **In-progress** (file:line): none.
-- **Next step**: Workstream 7 `multi-solution-composition` is unblocked. Start it only through `tlc-spec-driven` Specify when explicitly requested. Do not treat this Handoff as authorization to create that spec.
-- **Measured gate** (`97150bd`, 2026-08-27): `validate_state.py retrieval-projections` clean. 1613 passed, 0 failed.
+- **Next step**: Workstream 8 certification is unblocked. Start it only through `tlc-spec-driven` Specify when explicitly requested. Do not treat this Handoff as authorization to create that spec.
+- **Measured gate** (`d1eaae6`, 2026-08-27): `validate_state.py multi-solution-composition` clean. 1723 passed, 0 failed.
 - **Blockers**: none.
-- **Carry-forward**: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run each test project separately. Discrimination sensor remains skipped. `TreatWarningsAsErrors` is on. Spec-precision carry-forward: RP-02 order asserted partly via source `IndexOf`; RP-15 Independent Test slices the fixture file not published `source/`; RP-41/44/45 value/span checks use JSON stand-ins.
+- **Carry-forward**: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run each test project separately. Discrimination sensor remains skipped. `TreatWarningsAsErrors` is on. Spec-precision: MSC-27 multi-entry shared-contract order is via ShardWriter FactId, not a two-id list assertion; MSC-32 Independent Test `ordering-api` pair is synthetic contributions, not the Orders/Shipping fixture. LocalCorpus skip also applies when the clone directory exists but the expected `.sln` path is missing.
 - **Uncommitted files**: none after this snapshot commit.
-- **Branch**: `feat/retrieval-projections`.
+- **Branch**: `feature/multi-solution-composition`.

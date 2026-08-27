@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 17,
+  "next_id": 20,
   "lessons": [
     {
       "id": "L-001",
@@ -292,6 +292,60 @@
       ],
       "created": "2026-08-27T03:32:00Z",
       "last_seen": "2026-08-27T03:32:00Z"
+    },
+    {
+      "id": "L-017",
+      "key": "ac_gap::when a spec edge case treats a contribution as unpublished because its package directory is missing assert that batch manifest json status not only that the accumulator stayed empty at commit time",
+      "text": "When a spec edge case treats a contribution as unpublished because its package directory is missing, assert that batch-manifest.json status, not only that the accumulator stayed empty at commit time.",
+      "signal": "ac_gap",
+      "scope": "batch-publication",
+      "status": "candidate",
+      "features": [
+        "multi-solution-composition"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "MSC-39 (batch-publication)"
+      ],
+      "created": "2026-08-27T12:20:19Z",
+      "last_seen": "2026-08-27T12:20:19Z"
+    },
+    {
+      "id": "L-018",
+      "key": "spec_precision_gap::when an ac requires ordering a list of entries by identity assert that order with at least two distinct identities not only owner order inside a single entry",
+      "text": "When an AC requires ordering a list of entries by identity, assert that order with at least two distinct identities, not only owner order inside a single entry.",
+      "signal": "spec_precision_gap",
+      "scope": "composition",
+      "status": "candidate",
+      "features": [
+        "multi-solution-composition"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "MSC-27 (composition)"
+      ],
+      "created": "2026-08-27T12:20:29Z",
+      "last_seen": "2026-08-27T12:20:29Z"
+    },
+    {
+      "id": "L-019",
+      "key": "spec_precision_gap::when an independent test names a fixture scenario cover that fixture a synthetic unit grouping is not the same evidence",
+      "text": "When an Independent Test names a fixture scenario, cover that fixture; a synthetic unit grouping is not the same evidence.",
+      "signal": "spec_precision_gap",
+      "scope": "composition",
+      "status": "candidate",
+      "features": [
+        "multi-solution-composition"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "MSC-32 Independent Test (composition)"
+      ],
+      "created": "2026-08-27T12:20:39Z",
+      "last_seen": "2026-08-27T12:20:39Z"
     }
   ]
 }

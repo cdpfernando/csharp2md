@@ -110,6 +110,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: RP-41/RP-44/RP-45 Independent Test (projection-validation)
 - last seen: 2026-08-27T03:32:00Z
 
+### L-017 - When a spec edge case treats a contribution as unpublished because its package directory is missing, assert that batch-manifest.json status, not only that the accumulator stayed empty at commit time.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `batch-publication` · harmful: 0
+- features: multi-solution-composition
+- evidence: MSC-39 (batch-publication)
+- last seen: 2026-08-27T12:20:19Z
+
+### L-018 - When an AC requires ordering a list of entries by identity, assert that order with at least two distinct identities, not only owner order inside a single entry.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `composition` · harmful: 0
+- features: multi-solution-composition
+- evidence: MSC-27 (composition)
+- last seen: 2026-08-27T12:20:29Z
+
+### L-019 - When an Independent Test names a fixture scenario, cover that fixture; a synthetic unit grouping is not the same evidence.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `composition` · harmful: 0
+- features: multi-solution-composition
+- evidence: MSC-32 Independent Test (composition)
+- last seen: 2026-08-27T12:20:39Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
