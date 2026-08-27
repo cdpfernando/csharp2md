@@ -75,7 +75,7 @@ internal static class CommandFactory
 
             WriteDiagnostics(result, error);
             stdout.WriteLine(FormatSummary(result));
-            return result.HasUnpublishedSolution ? 2 : 0;
+            return result.HasUnpublishedSolution || result.HasBatchPublicationFailure ? 2 : 0;
         });
 
         rootCommand.Subcommands.Add(analyze);
@@ -117,6 +117,15 @@ internal static class CommandFactory
             }
 
             error.WriteLine($"csharp2md:{detail} {outcome.LogicalRelativePath}");
+        }
+
+        if (result.HasBatchPublicationFailure)
+        {
+            var reason = result.BatchPublicationGate ?? "batch";
+            var message = result.BatchPublicationDetail is { Length: > 0 } named
+                ? $"{reason}: {named}"
+                : reason;
+            error.WriteLine($"csharp2md: {message}");
         }
     }
 

@@ -289,7 +289,7 @@ public sealed class InMemoryTransactionalStoreTests
         Assert.True(registry.Payload.AsSpan().SequenceEqual(expectedRegistry.AsSpan()));
 
         var manifest = CanonicalJson.Read<ManifestEnvelope>(artifacts[^1].Payload.AsSpan());
-        Assert.Equal("solution-a", manifest.SolutionKey);
+        Assert.Equal(SolutionCoordinate.For("solution-a").Identity.Value, manifest.SolutionKey);
         Assert.Equal("solution-a", manifest.SolutionFileName);
         Assert.DoesNotContain(
             manifest.Artifacts,

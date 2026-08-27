@@ -4,13 +4,24 @@ public sealed record AnalysisResult
 {
     public ImmutableArray<SolutionOutcome> Solutions { get; }
 
+    public string? BatchPublicationGate { get; }
+
+    public string? BatchPublicationDetail { get; }
+
     public bool HasUnpublishedSolution =>
         !Solutions.IsDefaultOrEmpty
         && Solutions.Any(static outcome => outcome.Status == PublicationStatus.Unpublished);
 
-    public AnalysisResult(ImmutableArray<SolutionOutcome> solutions)
+    public bool HasBatchPublicationFailure => BatchPublicationGate is { Length: > 0 };
+
+    public AnalysisResult(
+        ImmutableArray<SolutionOutcome> solutions,
+        string? batchPublicationGate = null,
+        string? batchPublicationDetail = null)
     {
         Solutions = solutions;
+        BatchPublicationGate = batchPublicationGate;
+        BatchPublicationDetail = batchPublicationDetail;
     }
 }
 

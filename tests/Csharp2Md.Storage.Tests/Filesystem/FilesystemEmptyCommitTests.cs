@@ -45,6 +45,22 @@ public sealed class FilesystemEmptyCommitTests
     }
 
     [Fact]
+    [Trait("Requirement", "MSC-02")]
+    public void Open_StringPath_StillDerivesTheChildDirectoryFromTheAbsolutePath()
+    {
+        using var output = TempOutputRoot.Create();
+        var path = Path.Combine(output.DirectoryPath, "Acme.Orders.slnx");
+        var store = new FilesystemTransactionalStore(output.DirectoryPath);
+        var session = store.Open(path, EmptySourceDocumentReader.Instance);
+        session.Stage(FactualSnapshot.Empty);
+        session.Commit();
+
+        var child = FilesystemTestPaths.ChildDirectory(output.DirectoryPath, path);
+        Assert.True(Directory.Exists(child));
+        Assert.Equal("s-" + FilesystemTestPaths.SolutionHex(path), Path.GetFileName(child));
+    }
+
+    [Fact]
     [Trait("Requirement", "STOR-05")]
     [Trait("Requirement", "STOR-06")]
     [Trait("Requirement", "STOR-16")]
@@ -90,7 +106,7 @@ public sealed class FilesystemEmptyCommitTests
         Assert.False(File.Exists(child + ".lock"));
 
         var manifest = CanonicalJson.Read<ManifestEnvelope>(onDisk["manifest.json"]);
-        Assert.Equal(FilesystemTestPaths.SolutionHex(SolutionKey), manifest.SolutionKey);
+        Assert.Equal(SolutionCoordinate.For(SolutionKey).Identity.Value, manifest.SolutionKey);
         Assert.Equal("Acme Payments.sln", manifest.SolutionFileName);
         Assert.DoesNotContain(
             manifest.Artifacts,

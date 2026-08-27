@@ -62,7 +62,7 @@ public sealed class ProjectorPublicationTests
 
         Assert.NotNull(projector.View);
         var context = new ManifestContext(
-            FilesystemTestPaths.SolutionHex(SolutionKey),
+            SolutionCoordinate.For(SolutionKey).Identity.Value,
             Path.GetFileName(SolutionKey));
         var expected = PackageValidator.Validate(DomainMapper.ToWire(FactualSnapshot.Empty, context)).Document;
         Assert.Equal(expected.Manifest.SolutionKey, projector.View.Document.Manifest.SolutionKey);

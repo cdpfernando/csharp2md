@@ -64,6 +64,59 @@ public sealed class NoAbsolutePathTests
         }
     }
 
+    [Fact]
+    [Trait("Requirement", "MSC-07")]
+    public async Task AnalyzeAsync_FilesystemCommittedBytes_ContainNoAbsoluteFilesystemPath()
+    {
+        var solutionPath = Path.Combine(
+            AnalysisTestPaths.RepoRoot,
+            "fixtures",
+            "SyntheticSolution",
+            "Acme.Orders",
+            "Acme.Orders.slnx");
+        Assert.True(File.Exists(solutionPath), $"Expected fixture at '{solutionPath}'.");
+
+        var cloneRoot = Path.GetFullPath(AnalysisTestPaths.RepoRoot);
+        var outputPath = Path.Combine(Path.GetTempPath(), "csharp2md-msc07-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(outputPath);
+        try
+        {
+            var store = new FilesystemTransactionalStore(outputPath);
+            var result = await new AnalysisEngine(store).AnalyzeAsync(
+                AnalysisRequest.Create([solutionPath]),
+                CancellationToken.None);
+
+            Assert.Equal(PublicationStatus.Committed, Assert.Single(result.Solutions).Status);
+            var child = Assert.Single(Directory.GetDirectories(outputPath));
+            var files = Directory.EnumerateFiles(child, "*", SearchOption.AllDirectories).ToArray();
+            Assert.NotEmpty(files);
+
+            foreach (var file in files)
+            {
+                var relative = Path.GetRelativePath(child, file).Replace('\\', '/');
+                var bytes = File.ReadAllBytes(file);
+                var text = Encoding.UTF8.GetString(bytes);
+                AssertNoClonePath(text, cloneRoot, relative);
+                Assert.DoesNotContain("\\\\", text, StringComparison.Ordinal);
+                if (!relative.EndsWith(".json", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var node = JsonNode.Parse(bytes);
+                Assert.NotNull(node);
+                ScanNode(node, relative);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(outputPath))
+            {
+                Directory.Delete(outputPath, recursive: true);
+            }
+        }
+    }
+
     private static void AssertNoClonePath(string text, string cloneRoot, string canonicalKey)
     {
         var slash = cloneRoot.Replace('\\', '/');

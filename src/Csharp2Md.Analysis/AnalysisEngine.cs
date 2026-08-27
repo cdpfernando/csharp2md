@@ -1,7 +1,6 @@
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
-using Csharp2Md.Domain.Identity;
 
 namespace Csharp2Md.Analysis;
 
@@ -36,7 +35,16 @@ public sealed class AnalysisEngine : IAnalysisEngine
         outcomes.Sort(static (left, right) =>
             string.Compare(left.LogicalRelativePath, right.LogicalRelativePath, StringComparison.Ordinal));
 
-        return new AnalysisResult(outcomes.ToImmutable());
+        var published = outcomes.ToImmutable();
+        try
+        {
+            _store.PublishBatch(ToBatchRecords(published));
+            return new AnalysisResult(published);
+        }
+        catch (PublicationRejectedException exception)
+        {
+            return new AnalysisResult(published, exception.Gate, exception.Detail);
+        }
     }
 
     private async Task<SolutionOutcome> AnalyzeSolutionAsync(string path, CancellationToken cancellationToken)
@@ -111,12 +119,28 @@ public sealed class AnalysisEngine : IAnalysisEngine
             stages,
             detail);
 
+    private static ImmutableArray<BatchSolutionRecord> ToBatchRecords(ImmutableArray<SolutionOutcome> outcomes)
+    {
+        var records = ImmutableArray.CreateBuilder<BatchSolutionRecord>(outcomes.Length);
+        foreach (var outcome in outcomes)
+        {
+            var coordinate = SolutionCoordinate.For(outcome.SolutionPath);
+            records.Add(new BatchSolutionRecord(
+                coordinate.Identity,
+                coordinate.SolutionFileName,
+                outcome.Status,
+                outcome.FailingStage));
+        }
+
+        return records.ToImmutable();
+    }
+
     private static void RejectDuplicateSolutionIdentities(ImmutableArray<string> paths)
     {
         var firstPathByIdentity = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var path in paths)
         {
-            var identity = SolutionId.Create(WorkspaceIdentity.Create("default"), Path.GetFileName(path)).Value;
+            var identity = SolutionCoordinate.For(path).Identity.Value;
             if (firstPathByIdentity.TryGetValue(identity, out var firstPath))
             {
                 throw new ArgumentException(

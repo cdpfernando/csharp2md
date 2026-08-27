@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Csharp2Md.Cli.Tests" />
+    <InternalsVisibleTo Include="Csharp2Md.Analysis.Tests" />
   </ItemGroup>
 
   <ItemGroup>

@@ -145,7 +145,8 @@ public sealed class SourceIntegrityTests
 
     private static string ChildDirectory(string outputRoot, string solutionKey)
     {
-        var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(solutionKey)))[..32];
+        var identity = SolutionCoordinate.For(solutionKey).Identity.Value;
+        var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(identity)))[..32];
         return Path.Combine(outputRoot, "s-" + hex);
     }
 

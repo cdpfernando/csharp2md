@@ -38,6 +38,26 @@ variants; `ConfigIndexer`/`ServiceNameResolver` (T8/T9) index config across
 **all** discovered service roots, so its location doesn't restrict which
 service's calls can resolve against it.
 
+## Extended for multi-solution composition (`Acme.Shipping`)
+
+The original three services have no **positive** cross-solution pair: the only
+`HandleAsync` for `OrderPlaced` lives in `Acme.Orders`, and `Acme.Payments`
+exposes gRPC only. **`Acme.Shipping`** is a restorable fourth solution added so
+a two-solution batch can prove messaging and HTTP correlation end to end:
+
+- handles `OrderPlaced` through local `IIntegrationEventHandler.HandleAsync`
+  (inbound messaging whose protocol operation key equals the one `Acme.Orders`
+  publishes)
+- exposes `POST shipments`, closing the `ShippingService` client call
+  `Acme.Orders/OrderService.cs` already makes (`PostAsJsonAsync("shipments", ...)`)
+- project-references `Acme.Shared.Contracts` like Orders does
+- restores and builds without new NuGet dependencies (local `HttpPostAttribute`
+  / `ControllerBase` stand-ins, same pattern as Orders' `HttpGet`)
+
+`Acme.Shipping.slnx` includes Shipping and Shared.Contracts only — not Payments
+or Broken. **`Acme.Payments` stays untouched** so its deliberate unrestored
+state still serves P1-08.
+
 **Closed in T26 (was a known gap vs. spec.md's P2 Independent Test):** that
 narrative names a "simulated gRPC call," but T2's approved Done-when only
 specified Payments *exposing* a gRPC service (server-side), so no gRPC client

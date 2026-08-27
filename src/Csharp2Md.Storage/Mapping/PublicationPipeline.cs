@@ -3,13 +3,21 @@ using Csharp2Md.Storage.Validation;
 
 namespace Csharp2Md.Storage.Mapping;
 
+internal sealed record PublicationOutcome(
+    ImmutableArray<StagedFragment> Fragments,
+    SolutionContribution? Contribution);
+
 internal static class PublicationPipeline
 {
-    internal static ImmutableArray<StagedFragment> Publish(
+    internal static PublicationOutcome Publish(
         FactualSnapshot snapshot,
         ManifestContext context,
+        SolutionCoordinate coordinate,
+        string packageDirectory,
         IPackageProjector? projector,
-        ISourceDocumentReader source)
+        IBatchComposer? composer,
+        ISourceDocumentReader source,
+        Func<WireDocument, PublishedPackageView>? createView = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(context);
@@ -18,25 +26,38 @@ internal static class PublicationPipeline
         var document = DomainMapper.ToWire(snapshot, context);
         var report = PackageValidator.Validate(document);
         var projections = ImmutableArray<StagedFragment>.Empty;
-        if (projector is not null)
+        SolutionContribution? contribution = null;
+        if (projector is not null || composer is not null)
         {
-            var view = PublishedPackageView.From(report.Document);
-            try
+            var view = createView is null
+                ? PublishedPackageView.From(report.Document)
+                : createView(report.Document);
+            if (projector is not null)
             {
-                projections = projector.Project(view, source);
-            }
-            catch (PublicationRejectedException)
-            {
-                throw;
-            }
-            catch (Exception exception)
-            {
-                throw new PublicationRejectedException("projection", exception.Message, exception);
+                try
+                {
+                    projections = projector.Project(view, source);
+                }
+                catch (PublicationRejectedException)
+                {
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    throw new PublicationRejectedException("projection", exception.Message, exception);
+                }
+
+                ProjectionValidator.Validate(view, projections);
             }
 
-            ProjectionValidator.Validate(view, projections);
+            if (composer is not null)
+            {
+                contribution = composer.Contribute(view, coordinate, packageDirectory);
+            }
         }
 
-        return PackagePublisher.ToPublicationOrder(report.Document, projections);
+        return new PublicationOutcome(
+            PackagePublisher.ToPublicationOrder(report.Document, projections),
+            contribution);
     }
 }
