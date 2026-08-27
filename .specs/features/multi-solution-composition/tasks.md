@@ -797,13 +797,13 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] The solution restores and builds without new NuGet dependencies
-- [ ] An integration test proves it classifies an inbound messaging operation whose protocol operation key equals the one `Acme.Orders` publishes
-- [ ] The same test proves it classifies an inbound HTTP operation whose key equals `POST shipments`
-- [ ] `Acme.Payments` is byte-unchanged, so its deliberate unrestored state still serves the existing tests
-- [ ] `fixtures/SyntheticSolution/README.md` records the new solution and why it exists
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The solution restores and builds without new NuGet dependencies
+- [x] An integration test proves it classifies an inbound messaging operation whose protocol operation key equals the one `Acme.Orders` publishes
+- [x] The same test proves it classifies an inbound HTTP operation whose key equals `POST shipments`
+- [x] `Acme.Payments` is byte-unchanged, so its deliberate unrestored state still serves the existing tests
+- [x] `fixtures/SyntheticSolution/README.md` records the new solution and why it exists
+- [x] Gate check passes: build gate
+- [x] Test count reported; Analysis 655 pass; total 1715 (previous 1714)
 
 **Tests**: integration
 **Gate**: build
