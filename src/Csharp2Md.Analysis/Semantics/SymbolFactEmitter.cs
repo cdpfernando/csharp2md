@@ -1,12 +1,15 @@
+using Csharp2Md.Analysis.Extraction;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
+using Csharp2Md.Domain.Literals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 using DomainDocument = Csharp2Md.Domain.Facts.Document;
+using DomainDocumentId = Csharp2Md.Domain.Literals.DocumentId;
 using DomainProjectId = Csharp2Md.Domain.Identity.ProjectId;
 
 namespace Csharp2Md.Analysis.Semantics;
@@ -42,7 +45,14 @@ internal static class SymbolFactEmitter
                 {
                     foreach (var (symbol, metadataName) in DeclaredSymbols(model, node, cancellationToken))
                     {
-                        var fact = TryCreate(symbol, projectId.Value, metadataName);
+                        var fact = TryCreate(
+                            symbol,
+                            projectId.Value,
+                            metadataName,
+                            node,
+                            documents,
+                            root,
+                            cancellationToken);
                         if (fact is not null)
                         {
                             accumulator.AddFact(fact);
@@ -158,10 +168,81 @@ internal static class SymbolFactEmitter
             TypeArguments(symbol));
     }
 
-    private static Symbol? TryCreate(ISymbol symbol, DomainProjectId projectId, string metadataName)
+    private static Symbol? TryCreate(
+        ISymbol symbol,
+        DomainProjectId projectId,
+        string metadataName,
+        SyntaxNode node,
+        IReadOnlyList<DomainDocument> documents,
+        string authorizedRoot,
+        CancellationToken cancellationToken)
     {
         var signature = TrySignature(symbol, metadataName);
-        return signature is null ? null : Symbol.Create(signature.Value, projectId, Facets(symbol));
+        return signature is null
+            ? null
+            : Symbol.Create(
+                signature.Value,
+                projectId,
+                Facets(symbol),
+                TryLocator(symbol, node, documents, authorizedRoot, cancellationToken));
+    }
+
+    private static DeclarationLocator? TryLocator(
+        ISymbol symbol,
+        SyntaxNode node,
+        IReadOnlyList<DomainDocument> documents,
+        string authorizedRoot,
+        CancellationToken cancellationToken)
+    {
+        var candidates = new List<(DomainDocument Document, SourceSpan Span)>();
+        var references = symbol.DeclaringSyntaxReferences;
+        if (references.Length == 0)
+        {
+            AddLocatorCandidate(node, documents, authorizedRoot, candidates);
+        }
+        else
+        {
+            foreach (var reference in references)
+            {
+                AddLocatorCandidate(reference.GetSyntax(cancellationToken), documents, authorizedRoot, candidates);
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            return null;
+        }
+
+        var winning = candidates
+            .OrderBy(candidate => candidate.Document.Reference.Id.Value, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Span.StartLine)
+            .ThenBy(candidate => candidate.Span.StartColumn)
+            .First();
+
+        var absolute = Path.GetFullPath(Path.Combine(
+            authorizedRoot,
+            winning.Document.RelativePath.Replace('/', Path.DirectorySeparatorChar)));
+        return new DeclarationLocator(
+            DomainDocumentId.Create(winning.Document.Reference.Id.Value),
+            winning.Document.RelativePath,
+            winning.Span,
+            ObservationMaterializer.HashFileBytes(absolute));
+    }
+
+    private static void AddLocatorCandidate(
+        SyntaxNode node,
+        IReadOnlyList<DomainDocument> documents,
+        string authorizedRoot,
+        List<(DomainDocument Document, SourceSpan Span)> candidates)
+    {
+        var document = FindDocument(node.SyntaxTree.FilePath, documents, authorizedRoot);
+        if (document is null)
+        {
+            return;
+        }
+
+        var evidence = ObservationMaterializer.CreateLocator(document, node);
+        candidates.Add((document, evidence.Span));
     }
 
     private static SymbolFacetSet Facets(ISymbol symbol)
@@ -244,6 +325,46 @@ internal static class SymbolFactEmitter
         IReadOnlyList<DomainDocument> documents,
         string authorizedRoot)
     {
+        var document = FindDocument(treePath, documents, authorizedRoot);
+        if (document is not null)
+        {
+            return document.OwningProject;
+        }
+
+        if (string.IsNullOrEmpty(treePath))
+        {
+            return null;
+        }
+
+        var relative = Path.GetRelativePath(authorizedRoot, treePath).Replace('\\', '/');
+        DomainProjectId? best = null;
+        var bestLength = -1;
+        foreach (var candidate in documents)
+        {
+            var separator = candidate.RelativePath.LastIndexOf('/');
+            var directory = separator < 0 ? string.Empty : candidate.RelativePath[..separator];
+            if (directory.Length == 0)
+            {
+                continue;
+            }
+
+            if ((relative.Equals(directory, StringComparison.OrdinalIgnoreCase)
+                    || relative.StartsWith(directory + "/", StringComparison.OrdinalIgnoreCase))
+                && directory.Length > bestLength)
+            {
+                best = candidate.OwningProject;
+                bestLength = directory.Length;
+            }
+        }
+
+        return best;
+    }
+
+    private static DomainDocument? FindDocument(
+        string? treePath,
+        IReadOnlyList<DomainDocument> documents,
+        string authorizedRoot)
+    {
         if (string.IsNullOrEmpty(treePath))
         {
             return null;
@@ -254,7 +375,7 @@ internal static class SymbolFactEmitter
         {
             if (string.Equals(document.RelativePath, relative, StringComparison.OrdinalIgnoreCase))
             {
-                return document.OwningProject;
+                return document;
             }
         }
 

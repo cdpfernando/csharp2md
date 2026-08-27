@@ -563,11 +563,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] The span covers the whole declaration; a test slices the fixture file at that span and asserts the slice parses as a complete member
-- [ ] A partial type declared in two documents yields the ordinally first locator, asserted from both document orders
-- [ ] A declaration in a document with no `Document` fact yields no locator
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1430+ tests pass (no silent deletions)
+- [x] The span covers the whole declaration; a test slices the fixture file at that span and asserts the slice parses as a complete member
+- [x] A partial type declared in two documents yields the ordinally first locator, asserted from both document orders
+- [x] A declaration in a document with no `Document` fact yields no locator
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1430+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: build
