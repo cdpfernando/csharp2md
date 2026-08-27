@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Mapping;
 
@@ -7,12 +9,17 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
 {
     private readonly Dictionary<string, CommittedPublication> _publications = new(StringComparer.Ordinal);
     private readonly HashSet<string> _activeKeys = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, SolutionContribution> _contributions = new(StringComparer.Ordinal);
     private readonly IPackageProjector? _projector;
+    private readonly IBatchComposer? _composer;
 
-    public InMemoryTransactionalStore(IPackageProjector? projector = null)
+    public InMemoryTransactionalStore(IPackageProjector? projector = null, IBatchComposer? composer = null)
     {
         _projector = projector;
+        _composer = composer;
     }
+
+    internal IReadOnlyDictionary<string, SolutionContribution> AccumulatedContributions => _contributions;
 
     public IStoreSession Open(SolutionCoordinate coordinate, ISourceDocumentReader sourceReader)
     {
@@ -33,6 +40,8 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
         {
             throw new ArgumentException("Batch publication requires at least one solution record.", nameof(solutions));
         }
+
+        _contributions.Clear();
     }
 
     public bool TryGetPublication(string solutionKey, out CommittedPublication publication)
@@ -52,7 +61,7 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
             throw new PublicationRejectedException("lock", identity);
         }
 
-        return new Session(this, coordinate, solutionKey, sourceReader, _projector);
+        return new Session(this, coordinate, solutionKey, sourceReader, _projector, _composer);
     }
 
     private void Release(string identity) => _activeKeys.Remove(identity);
@@ -67,6 +76,7 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
         private readonly string _solutionKey;
         private readonly ISourceDocumentReader _sourceReader;
         private readonly IPackageProjector? _projector;
+        private readonly IBatchComposer? _composer;
         private readonly List<StagedFragment> _deferred = [];
         private FactualSnapshot _staged = FactualSnapshot.Empty;
         private bool _committed;
@@ -76,13 +86,15 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
             SolutionCoordinate coordinate,
             string solutionKey,
             ISourceDocumentReader sourceReader,
-            IPackageProjector? projector)
+            IPackageProjector? projector,
+            IBatchComposer? composer)
         {
             _store = store;
             _coordinate = coordinate;
             _solutionKey = solutionKey;
             _sourceReader = sourceReader;
             _projector = projector;
+            _composer = composer;
         }
 
         public void Stage(FactualSnapshot snapshot)
@@ -104,12 +116,15 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
             EnsureActive();
             _ = _sourceReader.Documents;
 
-            var artifacts = PublicationPipeline.Publish(
+            var outcome = PublicationPipeline.Publish(
                 _staged,
                 new ManifestContext(_coordinate.Identity.Value, _coordinate.SolutionFileName),
+                _coordinate,
+                PackageDirectoryName(_coordinate),
                 _projector,
+                _composer,
                 _sourceReader);
-            artifacts = artifacts.AddRange(_deferred);
+            var artifacts = outcome.Fragments.AddRange(_deferred);
             foreach (var fragment in _deferred)
             {
                 _ = fragment.ReadPayload();
@@ -120,6 +135,11 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
             _store.Release(identity);
             var publication = new CommittedPublication(_solutionKey, artifacts);
             _store.Publish(identity, publication);
+            if (outcome.Contribution is not null)
+            {
+                _store._contributions[outcome.Contribution.SolutionIdentity] = outcome.Contribution;
+            }
+
             return publication;
         }
 
@@ -136,5 +156,11 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
                 throw new PublicationRejectedException("session-state", _solutionKey);
             }
         }
+    }
+
+    private static string PackageDirectoryName(SolutionCoordinate coordinate)
+    {
+        var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(coordinate.Identity.Value)))[..32];
+        return "s-" + hex;
     }
 }

@@ -415,12 +415,12 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] A solution whose staging or replacement fails leaves no contribution in the accumulator
-- [ ] An aborted session leaves no contribution in the accumulator
-- [ ] Two sequential batches on one store instance do not share contributions
-- [ ] The view is built once per commit, not twice, asserted by a counting double
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A solution whose staging or replacement fails leaves no contribution in the accumulator
+- [x] An aborted session leaves no contribution in the accumulator
+- [x] Two sequential batches on one store instance do not share contributions
+- [x] The view is built once per commit, not twice, asserted by a counting double
+- [x] Gate check passes: build gate
+- [x] Test count reported; total 1658 (Domain 555, Analysis 650, Storage 266, Cli 29, Projection 158)
 
 **Tests**: unit + integration
 **Gate**: build

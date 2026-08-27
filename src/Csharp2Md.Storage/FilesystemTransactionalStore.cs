@@ -10,10 +10,15 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
 {
     private readonly string _outputRoot;
     private readonly IPackageProjector? _projector;
+    private readonly IBatchComposer? _composer;
     private readonly FilesystemRetryPolicy _retry;
+    private readonly Dictionary<string, SolutionContribution> _contributions = new(StringComparer.Ordinal);
 
-    public FilesystemTransactionalStore(string outputRoot, IPackageProjector? projector = null)
-        : this(outputRoot, projector, FilesystemRetryPolicy.Default)
+    public FilesystemTransactionalStore(
+        string outputRoot,
+        IPackageProjector? projector = null,
+        IBatchComposer? composer = null)
+        : this(outputRoot, projector, composer, FilesystemRetryPolicy.Default)
     {
     }
 
@@ -21,13 +26,25 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         string outputRoot,
         IPackageProjector? projector,
         FilesystemRetryPolicy retry)
+        : this(outputRoot, projector, composer: null, retry)
+    {
+    }
+
+    internal FilesystemTransactionalStore(
+        string outputRoot,
+        IPackageProjector? projector,
+        IBatchComposer? composer,
+        FilesystemRetryPolicy retry)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(outputRoot);
         ArgumentOutOfRangeException.ThrowIfLessThan(retry.MaxAttempts, 1);
         _outputRoot = Path.GetFullPath(outputRoot);
         _projector = projector;
+        _composer = composer;
         _retry = retry;
     }
+
+    internal IReadOnlyDictionary<string, SolutionContribution> AccumulatedContributions => _contributions;
 
     public IStoreSession Open(SolutionCoordinate coordinate, ISourceDocumentReader sourceReader)
     {
@@ -48,6 +65,8 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         {
             throw new ArgumentException("Batch publication requires at least one solution record.", nameof(solutions));
         }
+
+        _contributions.Clear();
     }
 
     private IStoreSession Open(
@@ -85,6 +104,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             }
 
             return new Session(
+                this,
                 solutionKey,
                 coordinate,
                 childPath,
@@ -93,6 +113,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
                 lockStream,
                 sourceReader,
                 _projector,
+                _composer,
                 _retry);
         }
         catch
@@ -137,6 +158,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
 
     private sealed class Session : IStoreSession, IDeferredFragmentStaging
     {
+        private readonly FilesystemTransactionalStore _store;
         private readonly string _solutionKey;
         private readonly SolutionCoordinate _coordinate;
         private readonly string _childPath;
@@ -145,6 +167,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         private readonly FileStream _lockStream;
         private readonly ISourceDocumentReader _sourceReader;
         private readonly IPackageProjector? _projector;
+        private readonly IBatchComposer? _composer;
         private readonly FilesystemRetryPolicy _retry;
         private readonly List<StagedFragment> _deferred = [];
         private FactualSnapshot _staged = FactualSnapshot.Empty;
@@ -152,6 +175,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         private bool _released;
 
         public Session(
+            FilesystemTransactionalStore store,
             string solutionKey,
             SolutionCoordinate coordinate,
             string childPath,
@@ -160,8 +184,10 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             FileStream lockStream,
             ISourceDocumentReader sourceReader,
             IPackageProjector? projector,
+            IBatchComposer? composer,
             FilesystemRetryPolicy retry)
         {
+            _store = store;
             _solutionKey = solutionKey;
             _coordinate = coordinate;
             _childPath = childPath;
@@ -170,6 +196,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             _lockStream = lockStream;
             _sourceReader = sourceReader;
             _projector = projector;
+            _composer = composer;
             _retry = retry;
         }
 
@@ -194,14 +221,22 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
 
             try
             {
-                var artifacts = PublicationPipeline.Publish(
+                var outcome = PublicationPipeline.Publish(
                     _staged,
                     new ManifestContext(_coordinate.Identity.Value, _coordinate.SolutionFileName),
+                    _coordinate,
+                    Path.GetFileName(_childPath),
                     _projector,
+                    _composer,
                     _sourceReader);
-                artifacts = artifacts.AddRange(_deferred);
+                var artifacts = outcome.Fragments.AddRange(_deferred);
                 WriteStaging(artifacts);
                 SwapStagingIntoChild();
+                if (outcome.Contribution is not null)
+                {
+                    _store._contributions[outcome.Contribution.SolutionIdentity] = outcome.Contribution;
+                }
+
                 _committed = true;
                 return new CommittedPublication(_solutionKey, artifacts);
             }
