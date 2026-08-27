@@ -711,11 +711,11 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] One test runs the same batch through both stores and asserts byte-identical manifest and composition fragments
-- [ ] The accumulator is empty after the call
-- [ ] A validation failure surfaces the same reason code as the filesystem store
-- [ ] Gate check passes: full gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] One test runs the same batch through both stores and asserts byte-identical manifest and composition fragments
+- [x] The accumulator is empty after the call
+- [x] A validation failure surfaces the same reason code as the filesystem store
+- [x] Gate check passes: full gate
+- [x] Test count reported; Storage 288 pass; total 1706 (previous 1703)
 
 **Tests**: unit
 **Gate**: full

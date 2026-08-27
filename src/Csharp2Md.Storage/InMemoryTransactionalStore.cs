@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Mapping;
+using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage;
 
@@ -20,6 +21,8 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
     }
 
     internal IReadOnlyDictionary<string, SolutionContribution> AccumulatedContributions => _contributions;
+
+    internal PublishedBatch? LastPublishedBatch { get; private set; }
 
     public IStoreSession Open(SolutionCoordinate coordinate, ISourceDocumentReader sourceReader)
     {
@@ -41,6 +44,8 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
             throw new ArgumentException("Batch publication requires at least one solution record.", nameof(solutions));
         }
 
+        var (fragments, envelope) = BatchPublication.Prepare(solutions, _contributions, _composer);
+        LastPublishedBatch = new PublishedBatch(CanonicalJson.Write(envelope), fragments);
         _contributions.Clear();
     }
 
@@ -164,3 +169,7 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
         return "s-" + hex;
     }
 }
+
+internal sealed record PublishedBatch(
+    ImmutableArray<byte> Manifest,
+    ImmutableArray<StagedFragment> Composition);
