@@ -323,7 +323,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-25 | P1: Compact postings | Design | Pending |
 | RP-26 | P1: Compact postings | Design | implemented |
 | RP-27 | P1: Compact postings | Design | implemented |
-| RP-28 | P1: Compact postings | Design | Pending |
+| RP-28 | P1: Compact postings | Design | implemented |
 | RP-29 | P1: Compact postings | Design | Pending |
 | RP-30 | P1: Compact postings | Design | Pending |
 | RP-31 | P1: Markdown pages for architecture identities | Design | Pending |

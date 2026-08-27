@@ -26,16 +26,18 @@ internal static class CatalogProjectionFactory
     internal static PublishedPackageView ViewOf(
         ImmutableArray<IFact> facts,
         ImmutableArray<ConfirmedRelation> relations = default,
-        ImmutableArray<UnresolvedRecord> unresolved = default) =>
+        ImmutableArray<UnresolvedRecord> unresolved = default,
+        ImmutableArray<CandidateLink> candidates = default,
+        ImmutableArray<OpenFrontier> frontiers = default) =>
         PublishedPackageView.From(
             DomainMapper.ToWire(
                 new FactualSnapshot(
                     facts,
                     [],
                     relations.IsDefault ? [] : relations,
-                    [],
+                    candidates.IsDefault ? [] : candidates,
                     unresolved.IsDefault ? [] : unresolved,
-                    []),
+                    frontiers.IsDefault ? [] : frontiers),
                 Context));
 
     internal static PublishedPackageView ViewOf(params IFact[] facts) =>

@@ -864,10 +864,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Only confirmed `invokes` relations contribute; a test asserts a candidate invocation appears in neither
-- [ ] The callers posting for a known callee lists exactly the callers present in `relations/confirmed/invokes.json`
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1511+ tests pass (no silent deletions)
+- [x] Only confirmed `invokes` relations contribute; a test asserts a candidate invocation appears in neither
+- [x] The callers posting for a known callee lists exactly the callers present in `relations/confirmed/invokes.json`
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1511+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
