@@ -11,6 +11,7 @@ namespace Csharp2Md.Storage.Tests.Filesystem;
 public sealed class FilesystemPublishBatchTests
 {
     private const string Orders = @"C:\src\Acme.Orders.slnx";
+    private const string Payments = @"C:\src\Acme.Payments.slnx";
 
     [Fact]
     [Trait("Requirement", "MSC-01")]
@@ -158,6 +159,44 @@ public sealed class FilesystemPublishBatchTests
 
         Assert.True(Directory.Exists(output.DirectoryPath));
         Assert.True(File.Exists(Path.Combine(output.DirectoryPath, "batch-manifest.json")));
+    }
+
+    [Fact]
+    [Trait("Requirement", "MSC-39")]
+    public void PublishBatch_ContributionPresentButPackageDirectoryMissing_PublishesTheSolutionAsUnpublished()
+    {
+        using var output = TempOutputRoot.Create();
+        var store = new FilesystemTransactionalStore(output.DirectoryPath, composer: new CatalogComposer());
+        var missing = Commit(store, Orders);
+        var sibling = Commit(store, Payments);
+        var siblingDir = FilesystemTestPaths.ChildDirectory(output.DirectoryPath, Payments);
+        var priorSibling = FilesystemTestPaths.SnapshotFiles(siblingDir);
+        var missingDir = FilesystemTestPaths.ChildDirectory(output.DirectoryPath, Orders);
+        Directory.Delete(missingDir, recursive: true);
+        Assert.False(Directory.Exists(missingDir));
+
+        store.PublishBatch([missing, sibling]);
+
+        var envelope = CanonicalJson.Read<BatchManifestEnvelope>(
+            File.ReadAllBytes(Path.Combine(output.DirectoryPath, "batch-manifest.json")));
+        var unpublished = Assert.Single(
+            envelope.Solutions,
+            entry => string.Equals(entry.Identity, missing.Identity.Value, StringComparison.Ordinal));
+        Assert.Equal("unpublished", unpublished.Status);
+        Assert.False(envelope.Complete);
+        Assert.Equal("solution-unpublished", envelope.IncompleteScopeReason);
+        Assert.Null(unpublished.FailingStage);
+        var committed = Assert.Single(
+            envelope.Solutions,
+            entry => string.Equals(entry.Identity, sibling.Identity.Value, StringComparison.Ordinal));
+        Assert.Equal("committed", committed.Status);
+        AssertEqualSnapshots(priorSibling, FilesystemTestPaths.SnapshotFiles(siblingDir));
+        var composition = File.ReadAllText(Path.Combine(
+            output.DirectoryPath,
+            "composition",
+            "components-and-deployment-units.json"));
+        Assert.DoesNotContain(missing.Identity.Value, composition, StringComparison.Ordinal);
+        Assert.Contains(sibling.Identity.Value, composition, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -86,7 +86,11 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
 
         try
         {
-            var (fragments, envelope) = BatchPublication.Prepare(solutions, _contributions, _composer);
+            var (fragments, envelope) = BatchPublication.Prepare(
+                solutions,
+                _contributions,
+                _composer,
+                PackagePresent);
             WriteRootArtifacts(envelope, fragments);
             _contributions.Clear();
         }
@@ -253,6 +257,12 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             throw;
         }
     }
+
+    private bool PackagePresent(string identity) =>
+        File.Exists(Path.Combine(
+            _outputRoot,
+            BatchManifestBuilder.PackageDirectoryName(identity),
+            PackagePublisher.ManifestKey));
 
     private void EnsureWritableRoot()
     {

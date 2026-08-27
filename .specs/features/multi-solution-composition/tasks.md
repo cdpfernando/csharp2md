@@ -929,6 +929,28 @@ T24 -> T28
 
 ---
 
+### F1: Treat a missing package directory as unpublished
+
+**What**: In filesystem `PublishBatch`, if a selected contribution’s package directory is absent from the output root, rewrite that solution’s batch-manifest entry to `unpublished` with `complete: false` and `incomplete_scope_reason: solution-unpublished`, and do not compose from that contribution.
+**Where**: `src/Csharp2Md.Storage/FilesystemTransactionalStore.cs`, `src/Csharp2Md.Storage/Mapping/BatchPublication.cs`, `tests/Csharp2Md.Storage.Tests/Filesystem/FilesystemPublishBatchTests.cs`
+**Depends on**: T20, T28
+**Requirement**: MSC-39
+
+**Done when**:
+
+- [x] A committed contribution whose `s-*` directory is gone is published as `unpublished`
+- [x] The batch manifest declares `complete: false` and `incomplete_scope_reason: solution-unpublished`
+- [x] A sibling committed package remains byte-identical and composition does not cite the missing package
+- [x] Gate check passes: build gate
+- [x] Test count reported; total 1723 (Domain 555, Analysis 662, Storage 289, Cli 33, Projection 184)
+
+**Tests**: unit + integration
+**Gate**: build
+
+**Commit**: `fix(storage): treat a missing package directory as unpublished in the batch manifest`
+
+---
+
 ## Phase Execution Map
 
 ```
@@ -1098,5 +1120,5 @@ All 40 requirement IDs map to at least one task.
 | MSC-16 | T12, T24, T25 | MSC-36 | T17 |
 | MSC-17 | T12, T18 | MSC-37 | T13 |
 | MSC-18 | T12 | MSC-38 | T12 |
-| MSC-19 | T12 | MSC-39 | T11 |
+| MSC-19 | T12 | MSC-39 | T11, F1 |
 | MSC-20 | T12 | MSC-40 | T20 |
