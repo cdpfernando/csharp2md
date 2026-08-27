@@ -78,7 +78,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
 
             return new Session(
                 solutionKey,
-                hex,
+                coordinate,
                 childPath,
                 stagingPath,
                 lockPath,
@@ -130,7 +130,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
     private sealed class Session : IStoreSession, IDeferredFragmentStaging
     {
         private readonly string _solutionKey;
-        private readonly string _hex;
+        private readonly SolutionCoordinate _coordinate;
         private readonly string _childPath;
         private readonly string _stagingPath;
         private readonly string _lockPath;
@@ -145,7 +145,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
 
         public Session(
             string solutionKey,
-            string hex,
+            SolutionCoordinate coordinate,
             string childPath,
             string stagingPath,
             string lockPath,
@@ -155,7 +155,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             FilesystemRetryPolicy retry)
         {
             _solutionKey = solutionKey;
-            _hex = hex;
+            _coordinate = coordinate;
             _childPath = childPath;
             _stagingPath = stagingPath;
             _lockPath = lockPath;
@@ -188,7 +188,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             {
                 var artifacts = PublicationPipeline.Publish(
                     _staged,
-                    new ManifestContext(_hex, Path.GetFileName(_solutionKey)),
+                    new ManifestContext(_coordinate.Identity.Value, _coordinate.SolutionFileName),
                     _projector,
                     _sourceReader);
                 artifacts = artifacts.AddRange(_deferred);

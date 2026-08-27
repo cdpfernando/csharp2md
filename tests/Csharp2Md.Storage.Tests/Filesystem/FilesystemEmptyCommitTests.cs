@@ -106,7 +106,7 @@ public sealed class FilesystemEmptyCommitTests
         Assert.False(File.Exists(child + ".lock"));
 
         var manifest = CanonicalJson.Read<ManifestEnvelope>(onDisk["manifest.json"]);
-        Assert.Equal(FilesystemTestPaths.SolutionHex(SolutionKey), manifest.SolutionKey);
+        Assert.Equal(SolutionCoordinate.For(SolutionKey).Identity.Value, manifest.SolutionKey);
         Assert.Equal("Acme Payments.sln", manifest.SolutionFileName);
         Assert.DoesNotContain(
             manifest.Artifacts,

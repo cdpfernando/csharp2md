@@ -276,11 +276,11 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] One test runs the same snapshot through both stores and asserts an identical `solution_key`
-- [ ] No published artifact contains an absolute path, asserted by scanning the committed bytes of a fixture run
-- [ ] The 57 `TryGetPublication` call sites resolve through the identity
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] One test runs the same snapshot through both stores and asserts an identical `solution_key`
+- [x] No published artifact contains an absolute path, asserted by scanning the committed bytes of a fixture run
+- [x] The 57 `TryGetPublication` call sites resolve through the identity
+- [x] Gate check passes: build gate
+- [x] Test count reported; total 1629 (Domain 555, Analysis 643, Storage 250, Cli 29, Projection 152)
 
 **Tests**: unit
 **Gate**: build

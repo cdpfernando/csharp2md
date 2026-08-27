@@ -56,7 +56,7 @@ public sealed class PersistenceManifestTests
         Assert.Contains(
             manifest.Artifacts,
             entry => entry.CanonicalKey == "relations/confirmed/contains" && entry.Count > 0);
-        Assert.Equal(publication.SolutionKey, manifest.SolutionKey);
+        Assert.Equal(SolutionCoordinate.For(publication.SolutionKey).Identity.Value, manifest.SolutionKey);
 
         var coverage = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "coverage.json");
         CanonicalJson.Read<CoverageEnvelope>(coverage.Payload.AsSpan());

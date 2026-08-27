@@ -17,32 +17,45 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
     public IStoreSession Open(SolutionCoordinate coordinate, ISourceDocumentReader sourceReader)
     {
         ArgumentNullException.ThrowIfNull(sourceReader);
-        return Open(coordinate.Identity.Value, sourceReader);
+        return Open(coordinate, sourceReader, coordinate.Identity.Value);
     }
 
     public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader)
     {
         ArgumentException.ThrowIfNullOrEmpty(solutionKey);
         ArgumentNullException.ThrowIfNull(sourceReader);
-        if (!_activeKeys.Add(solutionKey))
-        {
-            throw new PublicationRejectedException("lock", solutionKey);
-        }
-
-        return new Session(this, solutionKey, sourceReader, _projector);
+        return Open(SolutionCoordinate.For(solutionKey), sourceReader, solutionKey);
     }
 
-    public bool TryGetPublication(string solutionKey, out CommittedPublication publication) =>
-        _publications.TryGetValue(solutionKey, out publication!);
+    public bool TryGetPublication(string solutionKey, out CommittedPublication publication)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(solutionKey);
+        return _publications.TryGetValue(SolutionCoordinate.For(solutionKey).Identity.Value, out publication!);
+    }
 
-    private void Release(string solutionKey) => _activeKeys.Remove(solutionKey);
+    private IStoreSession Open(
+        SolutionCoordinate coordinate,
+        ISourceDocumentReader sourceReader,
+        string solutionKey)
+    {
+        var identity = coordinate.Identity.Value;
+        if (!_activeKeys.Add(identity))
+        {
+            throw new PublicationRejectedException("lock", identity);
+        }
 
-    private void Publish(CommittedPublication publication) =>
-        _publications[publication.SolutionKey] = publication;
+        return new Session(this, coordinate, solutionKey, sourceReader, _projector);
+    }
+
+    private void Release(string identity) => _activeKeys.Remove(identity);
+
+    private void Publish(string identity, CommittedPublication publication) =>
+        _publications[identity] = publication;
 
     private sealed class Session : IStoreSession, IDeferredFragmentStaging
     {
         private readonly InMemoryTransactionalStore _store;
+        private readonly SolutionCoordinate _coordinate;
         private readonly string _solutionKey;
         private readonly ISourceDocumentReader _sourceReader;
         private readonly IPackageProjector? _projector;
@@ -52,11 +65,13 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
 
         public Session(
             InMemoryTransactionalStore store,
+            SolutionCoordinate coordinate,
             string solutionKey,
             ISourceDocumentReader sourceReader,
             IPackageProjector? projector)
         {
             _store = store;
+            _coordinate = coordinate;
             _solutionKey = solutionKey;
             _sourceReader = sourceReader;
             _projector = projector;
@@ -83,7 +98,7 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
 
             var artifacts = PublicationPipeline.Publish(
                 _staged,
-                new ManifestContext(_solutionKey, SolutionFileName(_solutionKey)),
+                new ManifestContext(_coordinate.Identity.Value, _coordinate.SolutionFileName),
                 _projector,
                 _sourceReader);
             artifacts = artifacts.AddRange(_deferred);
@@ -93,16 +108,17 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
             }
 
             _committed = true;
-            _store.Release(_solutionKey);
+            var identity = _coordinate.Identity.Value;
+            _store.Release(identity);
             var publication = new CommittedPublication(_solutionKey, artifacts);
-            _store.Publish(publication);
+            _store.Publish(identity, publication);
             return publication;
         }
 
         public void Abort()
         {
             _staged = FactualSnapshot.Empty;
-            _store.Release(_solutionKey);
+            _store.Release(_coordinate.Identity.Value);
         }
 
         private void EnsureActive()
@@ -112,11 +128,5 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
                 throw new PublicationRejectedException("session-state", _solutionKey);
             }
         }
-    }
-
-    private static string SolutionFileName(string solutionKey)
-    {
-        var separator = solutionKey.LastIndexOfAny(['/', '\\']);
-        return separator < 0 ? solutionKey : solutionKey[(separator + 1)..];
     }
 }
