@@ -63,6 +63,47 @@ internal static class PostingProjectionFactory
             source,
             target);
 
+    internal static ConfirmedRelation UsesContract(
+        IFact operation,
+        IFact contract,
+        string facetPayloadRole,
+        int occurrenceOrdinal = 1) =>
+        ConfirmedRelation.Create(
+            RelationKind.UsesContract,
+            operation.Reference,
+            contract.Reference,
+            PayloadRoleFacets(facetPayloadRole),
+            Evidence(operation.Reference, occurrenceOrdinal),
+            ClassifierIdentity.Create("csharp2md.projection.uses-contract", 1),
+            [AnalysisVariantId.Create("net10.0", "Release", [], "ci")],
+            EvidenceMethod.Semantic);
+
+    internal static ConfirmedRelation AccessesData(Symbol source, DataOperation operation, int occurrenceOrdinal = 1) =>
+        ConfirmedRelation.Create(
+            RelationKind.AccessesData,
+            source.Reference,
+            operation.Reference,
+            EmptyFacets(),
+            Evidence(source.Reference, occurrenceOrdinal),
+            ClassifierIdentity.Create("csharp2md.projection.accesses-data", 1),
+            [AnalysisVariantId.Create("net10.0", "Release", [], "ci")],
+            EvidenceMethod.Semantic,
+            source,
+            operation);
+
+    internal static ConfirmedRelation OperatesOn(DataOperation operation, IFact target, int occurrenceOrdinal = 1) =>
+        ConfirmedRelation.Create(
+            RelationKind.OperatesOn,
+            operation.Reference,
+            target.Reference,
+            EmptyFacets(),
+            Evidence(operation.Reference, occurrenceOrdinal),
+            ClassifierIdentity.Create("csharp2md.projection.operates-on", 1),
+            [AnalysisVariantId.Create("net10.0", "Release", [], "ci")],
+            EvidenceMethod.Semantic,
+            sourceFact: operation,
+            targetFact: target);
+
     internal static FacetBinding EmptyFacets() => FacetBinding.Create(TaxonomyTables.Default.FacetAxes, [], []);
 
     internal static FacetBinding PayloadRoleFacets(string payloadRole)

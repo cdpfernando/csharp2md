@@ -320,7 +320,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-22 | P1: Bounded catalogs | Design | implemented |
 | RP-23 | P1: Bounded catalogs | Design | implemented |
 | RP-24 | P1: Bounded catalogs | Design | implemented |
-| RP-25 | P1: Compact postings | Design | Pending |
+| RP-25 | P1: Compact postings | Design | implemented |
 | RP-26 | P1: Compact postings | Design | implemented |
 | RP-27 | P1: Compact postings | Design | implemented |
 | RP-28 | P1: Compact postings | Design | implemented |

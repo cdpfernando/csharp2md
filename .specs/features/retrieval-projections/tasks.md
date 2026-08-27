@@ -885,11 +885,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Producer and consumer roles derive from the contract binding's payload role, not from a name
-- [ ] Reader and writer roles derive from the data operation's kind
-- [ ] Every cited ordinal resolves to the claimed relation
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1519+ tests pass (no silent deletions)
+- [x] Producer and consumer roles derive from the contract binding's payload role, not from a name
+- [x] Reader and writer roles derive from the data operation's kind
+- [x] Every cited ordinal resolves to the claimed relation
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1519+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
