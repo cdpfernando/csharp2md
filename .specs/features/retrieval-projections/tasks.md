@@ -410,11 +410,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] `Csharp2Md.Projection.csproj` references Storage and Domain, and nothing else
-- [ ] `PackageProjector` implements the port and returns an empty fragment array
-- [ ] A test asserts the reference set by XML inspection, matching the existing isolation-test pattern
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1394+ tests pass (no silent deletions)
+- [x] `Csharp2Md.Projection.csproj` references Storage and Domain, and nothing else
+- [x] `PackageProjector` implements the port and returns an empty fragment array
+- [x] A test asserts the reference set by XML inspection, matching the existing isolation-test pattern
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1394+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: build

@@ -10,9 +10,18 @@ public sealed class ProjectionIsolationTests
         AssertNoProjectReference("Csharp2Md.Analysis");
 
     [Fact]
+    [Trait("Requirement", "RP-01")]
     [Trait("Requirement", "ENG-04")]
-    public void ProjectionCsproj_DeclaresNoProjectReferenceToStorage() =>
-        AssertNoProjectReference("Csharp2Md.Storage");
+    public void ProjectionCsproj_ProjectReferencesEqualStorageAndDomain()
+    {
+        var names = ReadProjectReferenceIncludes(ProjectionCsprojPath())
+            .Select(include => Path.GetFileNameWithoutExtension(
+                include.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(["Csharp2Md.Domain", "Csharp2Md.Storage"], names);
+    }
 
     [Fact]
     [Trait("Requirement", "ENG-04")]
@@ -21,11 +30,7 @@ public sealed class ProjectionIsolationTests
 
     private static void AssertNoProjectReference(string forbiddenProject)
     {
-        var csprojPath = Path.Combine(
-            ProjectionTestPaths.RepoRoot,
-            "src",
-            "Csharp2Md.Projection",
-            "Csharp2Md.Projection.csproj");
+        var csprojPath = ProjectionCsprojPath();
 
         Assert.True(File.Exists(csprojPath), $"Projection project file was not found at '{csprojPath}'.");
 
@@ -36,6 +41,13 @@ public sealed class ProjectionIsolationTests
             offending is null,
             $"Csharp2Md.Projection must not declare a project reference to {forbiddenProject}, but found '{offending}'.");
     }
+
+    private static string ProjectionCsprojPath() =>
+        Path.Combine(
+            ProjectionTestPaths.RepoRoot,
+            "src",
+            "Csharp2Md.Projection",
+            "Csharp2Md.Projection.csproj");
 
     private static IReadOnlyList<string> ReadProjectReferenceIncludes(string csprojPath)
     {

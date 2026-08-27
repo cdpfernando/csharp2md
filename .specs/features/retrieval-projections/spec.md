@@ -296,7 +296,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| RP-01 | P1: Projector seam and atomic publication | Design | Pending |
+| RP-01 | P1: Projector seam and atomic publication | Design | implemented |
 | RP-02 | P1: Projector seam and atomic publication | Design | implemented |
 | RP-03 | P1: Projector seam and atomic publication | Design | implemented |
 | RP-04 | P1: Projector seam and atomic publication | Design | Pending |
