@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Csharp2Md.Domain.Registry;
 using Csharp2Md.Storage;
 
 namespace Csharp2Md.Storage.Tests.Schema;
@@ -7,6 +9,7 @@ public sealed class EmbeddedRegistryDriftTests
     [Fact]
     [Trait("Requirement", "STOR-05")]
     [Trait("Requirement", "STOR-09")]
+    [Trait("Requirement", "RP-17")]
     public void EmbeddedRegistry_MatchesCommittedFile_ByteForByte()
     {
         var resourceName = DiscoverEmbeddedRegistryName();
@@ -17,6 +20,27 @@ public sealed class EmbeddedRegistryDriftTests
         Assert.True(
             committed.AsSpan().SequenceEqual(embedded),
             DescribeMismatch(resourceName, committedPath, committed, embedded));
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-17")]
+    public void CommittedRegistry_SymbolIdentityComponentsAreExactlyProjectAndSignature()
+    {
+        using var document = JsonDocument.Parse(File.ReadAllBytes(CommittedRegistryPath()));
+        var components = ReadSymbolIdentityComponents(document.RootElement);
+
+        Assert.Equal(["project", "signature"], components);
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-17")]
+    public void DomainSymbolDescriptor_IdentityComponentsRemainProjectAndSignature()
+    {
+        var symbol = Assert.Single(
+            TaxonomyTables.Default.FactTypes,
+            descriptor => string.Equals(descriptor.Name, "Symbol", StringComparison.Ordinal));
+
+        Assert.Equal(["project", "signature"], symbol.IdentityComponents.ToArray());
     }
 
     [Fact]
@@ -64,5 +88,20 @@ public sealed class EmbeddedRegistryDriftTests
         byte[] actual)
     {
         return $"Embedded registry '{resourceName}' differs from '{committedPath}' ({expected.Length} vs {actual.Length} bytes).";
+    }
+
+    private static string[] ReadSymbolIdentityComponents(JsonElement root)
+    {
+        foreach (var factType in root.GetProperty("fact_types").EnumerateArray())
+        {
+            if (!string.Equals(factType.GetProperty("name").GetString(), "Symbol", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            return [.. factType.GetProperty("identity_components").EnumerateArray().Select(element => element.GetString()!)];
+        }
+
+        throw new InvalidOperationException("The committed registry has no Symbol fact type.");
     }
 }

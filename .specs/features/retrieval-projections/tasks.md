@@ -606,10 +606,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] The committed registry bytes equal the projected registry bytes
-- [ ] A test asserts `Symbol`'s registry entry still names exactly `project` and `signature` as identity components
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1436+ tests pass (no silent deletions)
+- [x] The committed registry bytes equal the projected registry bytes
+- [x] A test asserts `Symbol`'s registry entry still names exactly `project` and `signature` as identity components
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1436+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
