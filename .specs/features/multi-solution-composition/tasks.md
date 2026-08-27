@@ -739,12 +739,12 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] Every requested solution yields a record, committed or not
-- [ ] An unpublished solution's record carries its failing stage and its package directory is left unmodified
-- [ ] A batch with every solution unpublished still publishes a manifest and no composition artifact
-- [ ] A `PublicationRejectedException` from `PublishBatch` is captured on `AnalysisResult` rather than escaping the engine
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every requested solution yields a record, committed or not
+- [x] An unpublished solution's record carries its failing stage and its package directory is left unmodified
+- [x] A batch with every solution unpublished still publishes a manifest and no composition artifact
+- [x] A `PublicationRejectedException` from `PublishBatch` is captured on `AnalysisResult` rather than escaping the engine
+- [x] Gate check passes: build gate
+- [x] Test count reported; Analysis 654 pass; total 1710 (previous 1706)
 
 **Tests**: integration
 **Gate**: build
