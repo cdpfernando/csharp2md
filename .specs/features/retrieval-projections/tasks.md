@@ -1101,11 +1101,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Two runs at the same path produce identical projection bytes
-- [ ] Two clones at different absolute paths produce identical projection bytes
-- [ ] Shuffled document order produces identical projection bytes
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1586+ tests pass (no silent deletions)
+- [x] Two runs at the same path produce identical projection bytes
+- [x] Two clones at different absolute paths produce identical projection bytes
+- [x] Shuffled document order produces identical projection bytes
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1586+ tests pass (no silent deletions)
 
 **Tests**: integration
 **Gate**: build

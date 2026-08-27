@@ -342,7 +342,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-44 | P1: Projection validation | Design | implemented |
 | RP-45 | P1: Projection validation | Design | implemented |
 | RP-46 | P1: Determinism, security and assembly isolation | Design | implemented |
-| RP-47 | P1: Determinism, security and assembly isolation | Design | Pending |
+| RP-47 | P1: Determinism, security and assembly isolation | Design | implemented |
 | RP-48 | P1: Determinism, security and assembly isolation | Design | implemented |
 | RP-49 | P1: Determinism, security and assembly isolation | Design | Pending |
 | RP-50 | P1: Determinism, security and assembly isolation | Design | Pending |
