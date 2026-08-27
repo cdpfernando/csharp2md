@@ -196,7 +196,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-36 | Edge cases | Design | Verified |
 | MSC-37 | Edge cases | Design | Verified |
 | MSC-38 | Edge cases | Design | Verified |
-| MSC-39 | Edge cases | Design | Implementing |
+| MSC-39 | Edge cases | Design | Verified |
 | MSC-40 | Edge cases | Design | Verified |
 
 **ID mapping:** MSC-01..15 are P1 acceptance criteria 1..15 in order; MSC-16..29 are P2 acceptance criteria 1..14 in order; MSC-30..34 are P3 acceptance criteria 1..5 in order; MSC-35..40 are the Edge Cases in order.
