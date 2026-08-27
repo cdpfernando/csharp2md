@@ -165,11 +165,11 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] No `WorkspaceIdentity.Create` call remains in `AnalysisEngine.cs`
-- [ ] Two solutions with the same file name from different directories are still rejected before any analysis starts, with a message naming both requested paths
-- [ ] Existing `DuplicateSolutionIdTests` pass unchanged
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] No `WorkspaceIdentity.Create` call remains in `AnalysisEngine.cs`
+- [x] Two solutions with the same file name from different directories are still rejected before any analysis starts, with a message naming both requested paths
+- [x] Existing `DuplicateSolutionIdTests` pass unchanged
+- [x] Gate check passes: build gate
+- [x] Test count reported; total 1623 (Domain 555, Analysis 641, Storage 246, Cli 29, Projection 152)
 
 **Tests**: unit
 **Gate**: build

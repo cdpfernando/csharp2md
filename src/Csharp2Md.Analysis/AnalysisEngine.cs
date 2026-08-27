@@ -1,7 +1,6 @@
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
-using Csharp2Md.Domain.Identity;
 
 namespace Csharp2Md.Analysis;
 
@@ -116,7 +115,7 @@ public sealed class AnalysisEngine : IAnalysisEngine
         var firstPathByIdentity = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var path in paths)
         {
-            var identity = SolutionId.Create(WorkspaceIdentity.Create("default"), Path.GetFileName(path)).Value;
+            var identity = SolutionCoordinate.For(path).Identity.Value;
             if (firstPathByIdentity.TryGetValue(identity, out var firstPath))
             {
                 throw new ArgumentException(

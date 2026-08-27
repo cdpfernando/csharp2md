@@ -169,7 +169,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-09 | P1: Deterministic batch output | Design | Pending |
 | MSC-10 | P1: Deterministic batch output | Design | Pending |
 | MSC-11 | P1: Deterministic batch output | Design | Pending |
-| MSC-12 | P1: Deterministic batch output | Design | Pending |
+| MSC-12 | P1: Deterministic batch output | Design | Verified |
 | MSC-13 | P1: Deterministic batch output | Design | Pending |
 | MSC-14 | P1: Deterministic batch output | Design | Pending |
 | MSC-15 | P1: Deterministic batch output | Design | Pending |
