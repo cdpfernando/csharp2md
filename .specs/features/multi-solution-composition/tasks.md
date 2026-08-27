@@ -304,10 +304,10 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] A reflection test walks the closure of every property type reachable from `SolutionContribution` and asserts none is `WireDocument`, `PublishedPackageView`, `ObservationDto`, `SymbolDto`, `ConfirmedRelation`, `CandidateLink` or a byte sequence
-- [ ] The forbidden-type list is declared explicitly in the test, so adding a member of a new forbidden type fails
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A reflection test walks the closure of every property type reachable from `SolutionContribution` and asserts none is `WireDocument`, `PublishedPackageView`, `ObservationDto`, `SymbolDto`, `ConfirmedRelation`, `CandidateLink` or a byte sequence
+- [x] The forbidden-type list is declared explicitly in the test, so adding a member of a new forbidden type fails
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; total 1633 (Domain 555, Analysis 643, Storage 254, Cli 29, Projection 152)
 
 **Tests**: unit
 **Gate**: quick
