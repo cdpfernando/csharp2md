@@ -532,13 +532,13 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] Every component and deployment unit from every contribution appears with its fact identity, owning solution identity, artifact key and ordinal
-- [ ] Groups are ordered by canonical name; entries inside a group by solution identity, ordinal ascending
-- [ ] A name carried by two solutions yields one group with `shared_identity` set to `not-proven`
-- [ ] A name carried by one solution yields a group without a shared-identity claim
-- [ ] No two identities are ever merged into one, asserted by counting entries against the input
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every component and deployment unit from every contribution appears with its fact identity, owning solution identity, artifact key and ordinal
+- [x] Groups are ordered by canonical name; entries inside a group by solution identity, ordinal ascending
+- [x] A name carried by two solutions yields one group with `shared_identity` set to `not-proven`
+- [x] A name carried by one solution yields a group without a shared-identity claim
+- [x] No two identities are ever merged into one, asserted by counting entries against the input
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Projection 177 pass; total 1677 (previous 1672)
 
 **Tests**: unit
 **Gate**: quick
