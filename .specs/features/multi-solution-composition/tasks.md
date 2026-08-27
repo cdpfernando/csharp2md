@@ -649,13 +649,13 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] Each solution entry carries identity, file name, package directory and status
-- [ ] An unpublished entry also carries its failing stage
-- [ ] Solutions are ordered by identity, artifacts by canonical key, ordinal ascending
-- [ ] A batch with any unpublished solution emits `complete: false` and `incomplete_scope_reason: solution-unpublished`
-- [ ] A fully committed batch emits `complete: true` and no `incomplete_scope_reason` key
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Each solution entry carries identity, file name, package directory and status
+- [x] An unpublished entry also carries its failing stage
+- [x] Solutions are ordered by identity, artifacts by canonical key, ordinal ascending
+- [x] A batch with any unpublished solution emits `complete: false` and `incomplete_scope_reason: solution-unpublished`
+- [x] A fully committed batch emits `complete: true` and no `incomplete_scope_reason` key
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; Storage 277 pass; total 1695 (previous 1690)
 
 **Tests**: unit
 **Gate**: quick

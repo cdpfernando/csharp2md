@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Csharp2Md.Storage.Wire;
 
@@ -15,6 +16,27 @@ public sealed record ManifestEntry(
     string Role,
     int Count,
     string Path);
+
+public sealed record BatchManifestEnvelope(
+    int SchemaVersion,
+    bool Complete,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? IncompleteScopeReason,
+    ImmutableArray<BatchManifestSolutionEntry> Solutions,
+    ImmutableArray<BatchManifestArtifactEntry> Artifacts);
+
+public sealed record BatchManifestSolutionEntry(
+    string Identity,
+    string SolutionFileName,
+    string PackageDirectory,
+    string Status,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? FailingStage);
+
+public sealed record BatchManifestArtifactEntry(
+    string CanonicalKey,
+    string Role,
+    int Count);
 
 public sealed record CoverageMetricDto(
     int Numerator,
