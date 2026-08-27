@@ -585,10 +585,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] A symbol with a locator round-trips to Domain and back with an equal locator
-- [ ] A symbol without a locator round-trips to an absent locator, not a default-valued one
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1434+ tests pass (no silent deletions)
+- [x] A symbol with a locator round-trips to Domain and back with an equal locator
+- [x] A symbol without a locator round-trips to an absent locator, not a default-valued one
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1434+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

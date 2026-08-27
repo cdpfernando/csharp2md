@@ -96,6 +96,7 @@ internal static class WireFactMapping
                 fact.OwningProject.Value,
                 fact.Signature.Value,
                 [.. fact.Facets.Facets.Select(FacetAxes.WireValue)],
+                fact.DeclarationLocator is { } locator ? ToDto(locator) : null,
                 string.Empty),
             static (dto, hash) => dto with { ContentSha256 = hash });
 
@@ -204,7 +205,22 @@ internal static class WireFactMapping
         Symbol.Create(
             SignatureFromValue(dto.CanonicalSymbolSignature),
             ProjectIdFromValue(dto.OwningProject),
-            SymbolFacetSet.Create(dto.Facets.Select(ParseWire<SymbolFacet>)));
+            SymbolFacetSet.Create(dto.Facets.Select(ParseWire<SymbolFacet>)),
+            dto.DeclarationLocator is { } locator ? FromDto(locator) : null);
+
+    private static DeclarationLocatorDto ToDto(DeclarationLocator locator) =>
+        new(
+            locator.Document.Value,
+            locator.RelativePath,
+            new SourceSpanDto(locator.Span.StartLine, locator.Span.StartColumn, locator.Span.EndLine, locator.Span.EndColumn),
+            locator.Hash.Value);
+
+    private static DeclarationLocator FromDto(DeclarationLocatorDto dto) =>
+        new(
+            DocumentId.Create(dto.Document),
+            dto.RelativePath,
+            new SourceSpan(dto.Span.StartLine, dto.Span.StartColumn, dto.Span.EndLine, dto.Span.EndColumn),
+            DocumentHash.Create(dto.Hash));
 
     public static Component FromDto(ComponentDto dto) =>
         Component.Create(SolutionIdFromValue(dto.Solution), dto.Name, dto.Owners.Select(FromDto));

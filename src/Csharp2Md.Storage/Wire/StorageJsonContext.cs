@@ -14,6 +14,7 @@ namespace Csharp2Md.Storage.Wire;
 [JsonSerializable(typeof(ObservationIdentityDto))]
 [JsonSerializable(typeof(SourceSpanDto))]
 [JsonSerializable(typeof(EvidenceLocatorDto))]
+[JsonSerializable(typeof(DeclarationLocatorDto))]
 [JsonSerializable(typeof(BindingDiagnosticDto))]
 [JsonSerializable(typeof(FacetBindingEntryDto))]
 [JsonSerializable(typeof(ProofAgentIdentityDto))]
