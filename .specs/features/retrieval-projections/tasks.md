@@ -432,10 +432,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] A projector returning one fragment produces that fragment on disk and a matching manifest entry
-- [ ] The projector receives the post-validation document, not the pre-validation one
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1398+ tests pass (no silent deletions)
+- [x] A projector returning one fragment produces that fragment on disk and a matching manifest entry
+- [x] The projector receives the post-validation document, not the pre-validation one
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1398+ tests pass (no silent deletions)
 
 **Tests**: integration
 **Gate**: full

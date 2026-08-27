@@ -8,7 +8,9 @@ internal static class PackagePublisher
     internal const string RegistryKey = "contracts/taxonomy-registry.json";
     internal const string ManifestKey = "manifest.json";
 
-    internal static ImmutableArray<StagedFragment> ToPublicationOrder(WireDocument document)
+    internal static ImmutableArray<StagedFragment> ToPublicationOrder(
+        WireDocument document,
+        ImmutableArray<StagedFragment> projections = default)
     {
         ArgumentNullException.ThrowIfNull(document);
 
@@ -20,6 +22,11 @@ internal static class PackagePublisher
         }
 
         var fragments = payloads.ToImmutable();
+        if (!projections.IsDefaultOrEmpty)
+        {
+            fragments = fragments.AddRange(projections);
+        }
+
         var context = new ManifestContext(document.Manifest.SolutionKey, document.Manifest.SolutionFileName);
         var manifest = ManifestBuilder.From(context, fragments, view);
         return fragments.Add(new StagedFragment(ArtifactRole.Manifest, ManifestKey, CanonicalJson.Write(manifest)));

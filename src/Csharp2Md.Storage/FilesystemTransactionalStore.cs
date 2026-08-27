@@ -9,11 +9,13 @@ namespace Csharp2Md.Storage;
 public sealed class FilesystemTransactionalStore : ITransactionalStore
 {
     private readonly string _outputRoot;
+    private readonly IPackageProjector? _projector;
 
-    public FilesystemTransactionalStore(string outputRoot)
+    public FilesystemTransactionalStore(string outputRoot, IPackageProjector? projector = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(outputRoot);
         _outputRoot = Path.GetFullPath(outputRoot);
+        _projector = projector;
     }
 
     public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader)
@@ -49,7 +51,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
                 throw new PublicationRejectedException("not-a-package", childPath);
             }
 
-            return new Session(solutionKey, hex, childPath, stagingPath, lockPath, lockStream, sourceReader);
+            return new Session(solutionKey, hex, childPath, stagingPath, lockPath, lockStream, sourceReader, _projector);
         }
         catch
         {
@@ -100,6 +102,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         private readonly string _lockPath;
         private readonly FileStream _lockStream;
         private readonly ISourceDocumentReader _sourceReader;
+        private readonly IPackageProjector? _projector;
         private readonly List<StagedFragment> _deferred = [];
         private FactualSnapshot _staged = FactualSnapshot.Empty;
         private bool _committed;
@@ -112,7 +115,8 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             string stagingPath,
             string lockPath,
             FileStream lockStream,
-            ISourceDocumentReader sourceReader)
+            ISourceDocumentReader sourceReader,
+            IPackageProjector? projector)
         {
             _solutionKey = solutionKey;
             _hex = hex;
@@ -121,6 +125,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
             _lockPath = lockPath;
             _lockStream = lockStream;
             _sourceReader = sourceReader;
+            _projector = projector;
         }
 
         public void Stage(FactualSnapshot snapshot)
@@ -144,9 +149,11 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
 
             try
             {
-            var artifacts = PublicationPipeline.Publish(
-                _staged,
-                new ManifestContext(_hex, Path.GetFileName(_solutionKey)));
+                var artifacts = PublicationPipeline.Publish(
+                    _staged,
+                    new ManifestContext(_hex, Path.GetFileName(_solutionKey)),
+                    _projector,
+                    _sourceReader);
                 artifacts = artifacts.AddRange(_deferred);
                 WriteStaging(artifacts);
                 SwapStagingIntoChild();

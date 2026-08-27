@@ -7,6 +7,12 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
 {
     private readonly Dictionary<string, CommittedPublication> _publications = new(StringComparer.Ordinal);
     private readonly HashSet<string> _activeKeys = new(StringComparer.Ordinal);
+    private readonly IPackageProjector? _projector;
+
+    public InMemoryTransactionalStore(IPackageProjector? projector = null)
+    {
+        _projector = projector;
+    }
 
     public IStoreSession Open(string solutionKey, ISourceDocumentReader sourceReader)
     {
@@ -17,7 +23,7 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
             throw new PublicationRejectedException("lock", solutionKey);
         }
 
-        return new Session(this, solutionKey, sourceReader);
+        return new Session(this, solutionKey, sourceReader, _projector);
     }
 
     public bool TryGetPublication(string solutionKey, out CommittedPublication publication) =>
@@ -33,15 +39,21 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
         private readonly InMemoryTransactionalStore _store;
         private readonly string _solutionKey;
         private readonly ISourceDocumentReader _sourceReader;
+        private readonly IPackageProjector? _projector;
         private readonly List<StagedFragment> _deferred = [];
         private FactualSnapshot _staged = FactualSnapshot.Empty;
         private bool _committed;
 
-        public Session(InMemoryTransactionalStore store, string solutionKey, ISourceDocumentReader sourceReader)
+        public Session(
+            InMemoryTransactionalStore store,
+            string solutionKey,
+            ISourceDocumentReader sourceReader,
+            IPackageProjector? projector)
         {
             _store = store;
             _solutionKey = solutionKey;
             _sourceReader = sourceReader;
+            _projector = projector;
         }
 
         public void Stage(FactualSnapshot snapshot)
@@ -65,7 +77,9 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
 
             var artifacts = PublicationPipeline.Publish(
                 _staged,
-                new ManifestContext(_solutionKey, SolutionFileName(_solutionKey)));
+                new ManifestContext(_solutionKey, SolutionFileName(_solutionKey)),
+                _projector,
+                _sourceReader);
             artifacts = artifacts.AddRange(_deferred);
             foreach (var fragment in _deferred)
             {
