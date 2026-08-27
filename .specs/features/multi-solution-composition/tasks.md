@@ -503,12 +503,12 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] A match produces a candidate carrying both identities, both solution identities, the matched key and the outbound destination scope
-- [ ] No HTTP pairing ever reaches the cross-solution relations artifact, asserted directly
-- [ ] An outbound operation with a null HTTP method or a null route produces no candidate
-- [ ] An inbound operation whose key is a bare template with no method produces no candidate, asserted as deliberate with a comment citing MSC-22
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A match produces a candidate carrying both identities, both solution identities, the matched key and the outbound destination scope
+- [x] No HTTP pairing ever reaches the cross-solution relations artifact, asserted directly
+- [x] An outbound operation with a null HTTP method or a null route produces no candidate
+- [x] An inbound operation whose key is a bare template with no method produces no candidate, asserted as deliberate with a comment citing MSC-22
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Projection 172 pass; total 1672 (previous 1667)
 
 **Tests**: unit
 **Gate**: quick
