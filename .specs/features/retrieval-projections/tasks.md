@@ -991,11 +991,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] No page names an identity absent from the facts
-- [ ] No page exists for a callable, symbol, observation or individual relation
-- [ ] Two projections of the same document produce byte-identical pages
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1554+ tests pass (no silent deletions)
+- [x] No page names an identity absent from the facts
+- [x] No page exists for a callable, symbol, observation or individual relation
+- [x] Two projections of the same document produce byte-identical pages
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1554+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
