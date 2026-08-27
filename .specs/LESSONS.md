@@ -80,6 +80,36 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: P2 Independent Test CDC-56/CDC-57
 - last seen: 2026-08-26T21:45:54Z
 
+### L-012 - When an AC requires a runtime sequence after X before Y, assert that order through Commit observables, not only IndexOf on the pipeline source.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `publication` · harmful: 0
+- features: retrieval-projections
+- evidence: RP-02 ProjectorPublicationTests.cs:81-89 (publication)
+- last seen: 2026-08-27T03:31:59Z
+
+### L-013 - When an AC says exactly one artifact under a prefix, either keep companion metadata out of that prefix or name the companion in the spec.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `source-projection` · harmful: 0
+- features: retrieval-projections
+- evidence: RP-07 RedactionEnvelopeTests.cs:26-35 (source-projection)
+- last seen: 2026-08-27T03:31:59Z
+
+### L-014 - When an AC names a published shard file, assert the hash by reading that file, not only the in-memory DTO that feeds it.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `source-projection` · harmful: 0
+- features: retrieval-projections
+- evidence: RP-11 SourceIntegrityTests.cs:29 (source-projection)
+- last seen: 2026-08-27T03:31:59Z
+
+### L-015 - When an Independent Test says slice a published source artifact, assert against that artifact, not the original clone file.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `locators` · harmful: 0
+- features: retrieval-projections
+- evidence: RP-15 Independent Test SymbolFactEmitterTests.cs:309-320 (locators)
+- last seen: 2026-08-27T03:31:59Z
+
+### L-016 - When projection validation must cover Markdown pages and source locators, drive Commit on the published citation form, not only a JSON stand-in.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `projection-validation` · harmful: 0
+- features: retrieval-projections
+- evidence: RP-41/RP-44/RP-45 Independent Test (projection-validation)
+- last seen: 2026-08-27T03:32:00Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

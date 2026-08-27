@@ -296,63 +296,63 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| RP-01 | P1: Projector seam and atomic publication | Design | implemented |
-| RP-02 | P1: Projector seam and atomic publication | Design | implemented |
-| RP-03 | P1: Projector seam and atomic publication | Design | implemented |
-| RP-04 | P1: Projector seam and atomic publication | Design | implemented |
-| RP-05 | P1: Projector seam and atomic publication | Design | implemented |
-| RP-06 | P1: Projector seam and atomic publication | Design | implemented |
-| RP-07 | P1: Source projection and secret redaction | Design | implemented |
-| RP-08 | P1: Source projection and secret redaction | Design | implemented |
-| RP-09 | P1: Source projection and secret redaction | Design | implemented |
-| RP-10 | P1: Source projection and secret redaction | Design | implemented |
-| RP-11 | P1: Source projection and secret redaction | Design | implemented |
-| RP-12 | P1: Source projection and secret redaction | Design | implemented |
-| RP-13 | P1: Callable declaration locators | Design | implemented |
-| RP-14 | P1: Callable declaration locators | Design | implemented |
-| RP-15 | P1: Callable declaration locators | Design | implemented |
-| RP-16 | P1: Callable declaration locators | Design | implemented |
-| RP-17 | P1: Callable declaration locators | Design | implemented |
-| RP-18 | P1: Bounded catalogs | Design | implemented |
-| RP-19 | P1: Bounded catalogs | Design | implemented |
-| RP-20 | P1: Bounded catalogs | Design | implemented |
-| RP-21 | P1: Bounded catalogs | Design | implemented |
-| RP-22 | P1: Bounded catalogs | Design | implemented |
-| RP-23 | P1: Bounded catalogs | Design | implemented |
-| RP-24 | P1: Bounded catalogs | Design | implemented |
-| RP-25 | P1: Compact postings | Design | implemented |
-| RP-26 | P1: Compact postings | Design | implemented |
-| RP-27 | P1: Compact postings | Design | implemented |
-| RP-28 | P1: Compact postings | Design | implemented |
-| RP-29 | P1: Compact postings | Design | implemented |
-| RP-30 | P1: Compact postings | Design | implemented |
-| RP-31 | P1: Markdown pages for architecture identities | Design | implemented |
-| RP-32 | P1: Markdown pages for architecture identities | Design | implemented |
-| RP-33 | P1: Markdown pages for architecture identities | Design | implemented |
-| RP-34 | P1: Markdown pages for architecture identities | Design | implemented |
-| RP-35 | P1: Markdown pages for architecture identities | Design | implemented |
-| RP-36 | P1: Markdown pages for architecture identities | Design | implemented |
-| RP-37 | P1: Retrieval guide and generated AGENTS.md | Design | implemented |
-| RP-38 | P1: Retrieval guide and generated AGENTS.md | Design | implemented |
-| RP-39 | P1: Retrieval guide and generated AGENTS.md | Design | implemented |
-| RP-40 | P1: Retrieval guide and generated AGENTS.md | Design | implemented |
-| RP-41 | P1: Projection validation | Design | implemented |
-| RP-42 | P1: Projection validation | Design | implemented |
-| RP-43 | P1: Projection validation | Design | implemented |
-| RP-44 | P1: Projection validation | Design | implemented |
-| RP-45 | P1: Projection validation | Design | implemented |
-| RP-46 | P1: Determinism, security and assembly isolation | Design | implemented |
-| RP-47 | P1: Determinism, security and assembly isolation | Design | implemented |
-| RP-48 | P1: Determinism, security and assembly isolation | Design | implemented |
-| RP-49 | P1: Determinism, security and assembly isolation | Design | implemented |
-| RP-50 | P1: Determinism, security and assembly isolation | Design | implemented |
-| RP-51 | P1: Determinism, security and assembly isolation | Design | implemented |
-| RP-52 | P2: Bounded artifacts and shard shape | - | implemented |
-| RP-53 | P2: Bounded artifacts and shard shape | - | implemented |
-| RP-54 | P2: Bounded artifacts and shard shape | - | implemented |
-| RP-55 | P2: Bounded artifacts and shard shape | - | implemented |
-| RP-56 | P2: Bounded artifacts and shard shape | - | implemented |
-| RP-57 | P1: Projector seam and atomic publication | Design | implemented |
+| RP-01 | P1: Projector seam and atomic publication | Design | Verified |
+| RP-02 | P1: Projector seam and atomic publication | Design | Verified |
+| RP-03 | P1: Projector seam and atomic publication | Design | Verified |
+| RP-04 | P1: Projector seam and atomic publication | Design | Verified |
+| RP-05 | P1: Projector seam and atomic publication | Design | Verified |
+| RP-06 | P1: Projector seam and atomic publication | Design | Verified |
+| RP-07 | P1: Source projection and secret redaction | Design | Verified |
+| RP-08 | P1: Source projection and secret redaction | Design | Verified |
+| RP-09 | P1: Source projection and secret redaction | Design | Verified |
+| RP-10 | P1: Source projection and secret redaction | Design | Verified |
+| RP-11 | P1: Source projection and secret redaction | Design | Verified |
+| RP-12 | P1: Source projection and secret redaction | Design | Verified |
+| RP-13 | P1: Callable declaration locators | Design | Verified |
+| RP-14 | P1: Callable declaration locators | Design | Verified |
+| RP-15 | P1: Callable declaration locators | Design | Verified |
+| RP-16 | P1: Callable declaration locators | Design | Verified |
+| RP-17 | P1: Callable declaration locators | Design | Verified |
+| RP-18 | P1: Bounded catalogs | Design | Verified |
+| RP-19 | P1: Bounded catalogs | Design | Verified |
+| RP-20 | P1: Bounded catalogs | Design | Verified |
+| RP-21 | P1: Bounded catalogs | Design | Verified |
+| RP-22 | P1: Bounded catalogs | Design | Verified |
+| RP-23 | P1: Bounded catalogs | Design | Verified |
+| RP-24 | P1: Bounded catalogs | Design | Verified |
+| RP-25 | P1: Compact postings | Design | Verified |
+| RP-26 | P1: Compact postings | Design | Verified |
+| RP-27 | P1: Compact postings | Design | Verified |
+| RP-28 | P1: Compact postings | Design | Verified |
+| RP-29 | P1: Compact postings | Design | Verified |
+| RP-30 | P1: Compact postings | Design | Verified |
+| RP-31 | P1: Markdown pages for architecture identities | Design | Verified |
+| RP-32 | P1: Markdown pages for architecture identities | Design | Verified |
+| RP-33 | P1: Markdown pages for architecture identities | Design | Verified |
+| RP-34 | P1: Markdown pages for architecture identities | Design | Verified |
+| RP-35 | P1: Markdown pages for architecture identities | Design | Verified |
+| RP-36 | P1: Markdown pages for architecture identities | Design | Verified |
+| RP-37 | P1: Retrieval guide and generated AGENTS.md | Design | Verified |
+| RP-38 | P1: Retrieval guide and generated AGENTS.md | Design | Verified |
+| RP-39 | P1: Retrieval guide and generated AGENTS.md | Design | Verified |
+| RP-40 | P1: Retrieval guide and generated AGENTS.md | Design | Verified |
+| RP-41 | P1: Projection validation | Design | Verified |
+| RP-42 | P1: Projection validation | Design | Verified |
+| RP-43 | P1: Projection validation | Design | Verified |
+| RP-44 | P1: Projection validation | Design | Verified |
+| RP-45 | P1: Projection validation | Design | Verified |
+| RP-46 | P1: Determinism, security and assembly isolation | Design | Verified |
+| RP-47 | P1: Determinism, security and assembly isolation | Design | Verified |
+| RP-48 | P1: Determinism, security and assembly isolation | Design | Verified |
+| RP-49 | P1: Determinism, security and assembly isolation | Design | Verified |
+| RP-50 | P1: Determinism, security and assembly isolation | Design | Verified |
+| RP-51 | P1: Determinism, security and assembly isolation | Design | Verified |
+| RP-52 | P2: Bounded artifacts and shard shape | - | Verified |
+| RP-53 | P2: Bounded artifacts and shard shape | - | Verified |
+| RP-54 | P2: Bounded artifacts and shard shape | - | Verified |
+| RP-55 | P2: Bounded artifacts and shard shape | - | Verified |
+| RP-56 | P2: Bounded artifacts and shard shape | - | Verified |
+| RP-57 | P1: Projector seam and atomic publication | Design | Verified |
 
 **ID format:** `RP-[NUMBER]`
 
