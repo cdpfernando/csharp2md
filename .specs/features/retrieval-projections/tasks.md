@@ -1166,10 +1166,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] No catalog, posting, Markdown, source or guide artifact is published
-- [ ] The manifest lists exactly the artifacts that exist
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1602+ tests pass (no silent deletions)
+- [x] No catalog, posting, Markdown, source or guide artifact is published
+- [x] The manifest lists exactly the artifacts that exist
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1602+ tests pass (no silent deletions)
 
 **Tests**: integration
 **Gate**: full

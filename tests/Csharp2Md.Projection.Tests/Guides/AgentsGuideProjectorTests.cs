@@ -99,7 +99,13 @@ public sealed class AgentsGuideProjectorTests
     {
         var store = new InMemoryTransactionalStore(new PackageProjector());
         var session = store.Open("s-test", new EmptySourceReader());
-        session.Stage(FactualSnapshot.Empty);
+        session.Stage(new FactualSnapshot(
+            [CatalogProjectionFactory.CreateEntryPoint("Run", "Orders.Api")],
+            [],
+            [],
+            [],
+            [],
+            []));
         var publication = session.Commit();
         var text = GuideText(AgentsGuideProjector.Project(CatalogProjectionFactory.ViewOf()));
 

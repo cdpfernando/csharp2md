@@ -28,6 +28,11 @@ public sealed class PackageProjector : IPackageProjector
     {
         ArgumentNullException.ThrowIfNull(view);
         ArgumentNullException.ThrowIfNull(source);
+        if (HasNoFacts(view))
+        {
+            return [];
+        }
+
         return SourceProjector.Project(view, source)
             .AddRange(CatalogProjector.Project(view, _ceilingBytes))
             .AddRange(PostingProjector.Project(view, _ceilingBytes))
@@ -35,4 +40,11 @@ public sealed class PackageProjector : IPackageProjector
             .AddRange(RetrievalGuideProjector.Project(view))
             .AddRange(AgentsGuideProjector.Project(view));
     }
+
+    private static bool HasNoFacts(PublishedPackageView view) =>
+        view.Slots.All(static slot =>
+            !slot.CanonicalKey.StartsWith("facts/", StringComparison.Ordinal)
+            && !slot.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal)
+            && !slot.CanonicalKey.StartsWith("relations/", StringComparison.Ordinal)
+            && !slot.CanonicalKey.StartsWith("quarantine/", StringComparison.Ordinal));
 }

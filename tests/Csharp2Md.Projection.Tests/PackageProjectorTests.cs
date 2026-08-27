@@ -41,15 +41,18 @@ public sealed class PackageProjectorTests
 
     [Fact]
     [Trait("Requirement", "RP-01")]
+    [Trait("Requirement", "RP-51")]
     public void PackageProjector_Project_ReturnsEmptyFragmentArray()
     {
         IPackageProjector projector = new PackageProjector();
 
         var fragments = projector.Project(EmptyView(), new EmptyReader());
 
+        Assert.Empty(fragments);
+        Assert.DoesNotContain(fragments, fragment => fragment.CanonicalKey.StartsWith("catalogs/", StringComparison.Ordinal));
         Assert.DoesNotContain(fragments, fragment => fragment.CanonicalKey.StartsWith("markdown/", StringComparison.Ordinal));
-        Assert.Contains(fragments, fragment => fragment.CanonicalKey == "retrieval.md");
-        Assert.Contains(fragments, fragment => fragment.CanonicalKey == "AGENTS.md");
+        Assert.DoesNotContain(fragments, fragment => fragment.CanonicalKey == "retrieval.md");
+        Assert.DoesNotContain(fragments, fragment => fragment.CanonicalKey == "AGENTS.md");
     }
 
     private static PublishedPackageView EmptyView()

@@ -346,7 +346,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-48 | P1: Determinism, security and assembly isolation | Design | implemented |
 | RP-49 | P1: Determinism, security and assembly isolation | Design | implemented |
 | RP-50 | P1: Determinism, security and assembly isolation | Design | implemented |
-| RP-51 | P1: Determinism, security and assembly isolation | Design | Pending |
+| RP-51 | P1: Determinism, security and assembly isolation | Design | implemented |
 | RP-52 | P2: Bounded artifacts and shard shape | - | implemented |
 | RP-53 | P2: Bounded artifacts and shard shape | - | implemented |
 | RP-54 | P2: Bounded artifacts and shard shape | - | implemented |
