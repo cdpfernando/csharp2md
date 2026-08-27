@@ -827,13 +827,13 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] Exactly one `targets` cross-solution relation is published, for the `OrderPlaced` pair
-- [ ] Exactly one HTTP correlation candidate is published, for the `POST shipments` pair
-- [ ] Both entries' artifact keys and ordinals resolve to the named operation inside each package in one read
-- [ ] Contracts shared through `Acme.Shared.Contracts` appear in `composition/shared-contracts.json`
-- [ ] `PaymentProcessed` produces no entry, asserted as the unpaired-publish case
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Exactly one `targets` cross-solution relation is published, for the `OrderPlaced` pair
+- [x] Exactly one HTTP correlation candidate is published, for the `POST shipments` pair
+- [x] Both entries' artifact keys and ordinals resolve to the named operation inside each package in one read
+- [x] Contracts shared through `Acme.Shared.Contracts` appear in `composition/shared-contracts.json`
+- [x] `PaymentProcessed` produces no entry, asserted as the unpaired-publish case
+- [x] Gate check passes: build gate
+- [x] Test count reported; Analysis 656 pass; total 1716 (previous 1715)
 
 **Tests**: integration
 **Gate**: build

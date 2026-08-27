@@ -42,7 +42,7 @@ internal sealed class ContractPass : IClassifierPass
                 .Where(static operation => operation.Direction is BoundaryDirection.Inbound)
                 .OrderBy(static operation => operation.Reference.Id.Value, StringComparer.Ordinal)
                 .ToArray();
-            if (outbound.Length == 0 || inbound.Length == 0)
+            if (inbound.Length == 0)
             {
                 continue;
             }
@@ -54,7 +54,19 @@ internal sealed class ContractPass : IClassifierPass
             }
 
             var eventType = FindNamedType(symbols, eventTypeName);
-            if (eventType is null || !IsSharedAcrossProjects(eventType, outbound, inbound, symbolsById))
+            if (eventType is null)
+            {
+                continue;
+            }
+
+            if (outbound.Length == 0)
+            {
+                if (AllCallablesInProject(inbound, symbolsById, eventType.OwningProject.Value))
+                {
+                    continue;
+                }
+            }
+            else if (!IsSharedAcrossProjects(eventType, outbound, inbound, symbolsById))
             {
                 continue;
             }
