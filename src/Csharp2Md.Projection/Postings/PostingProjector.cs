@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Domain.Relations;
@@ -19,7 +20,9 @@ internal static class PostingProjector
     internal const string UnknownsKey = "postings/unknowns.json";
     internal const string FrontiersKey = "postings/frontiers.json";
 
-    public static ImmutableArray<StagedFragment> Project(PublishedPackageView view)
+    public static ImmutableArray<StagedFragment> Project(
+        PublishedPackageView view,
+        int ceilingBytes = ShardWriter.DefaultCeilingBytes)
     {
         ArgumentNullException.ThrowIfNull(view);
 
@@ -67,24 +70,26 @@ internal static class PostingProjector
         }
 
         var fragments = ImmutableArray.CreateBuilder<StagedFragment>();
-        Add(fragments, OutgoingKey, outgoing);
-        Add(fragments, IncomingKey, incoming);
-        Add(fragments, CallersKey, callers);
-        Add(fragments, CalleesKey, callees);
-        Add(fragments, ContractProducersKey, producers);
-        Add(fragments, ContractConsumersKey, consumers);
-        Add(fragments, DataReadersKey, readers);
-        Add(fragments, DataWritersKey, writers);
+        Add(fragments, OutgoingKey, outgoing, ceilingBytes);
+        Add(fragments, IncomingKey, incoming, ceilingBytes);
+        Add(fragments, CallersKey, callers, ceilingBytes);
+        Add(fragments, CalleesKey, callees, ceilingBytes);
+        Add(fragments, ContractProducersKey, producers, ceilingBytes);
+        Add(fragments, ContractConsumersKey, consumers, ceilingBytes);
+        Add(fragments, DataReadersKey, readers, ceilingBytes);
+        Add(fragments, DataWritersKey, writers, ceilingBytes);
         AddIndexed(
             fragments,
             UnknownsKey,
             "relations/unresolved.json",
-            view.Document.Unresolved.Select(static (record, ordinal) => (record.Source.Id, ordinal)));
+            view.Document.Unresolved.Select(static (record, ordinal) => (record.Source.Id, ordinal)),
+            ceilingBytes);
         AddIndexed(
             fragments,
             FrontiersKey,
             "relations/frontiers.json",
-            view.Document.Frontiers.Select(static (frontier, ordinal) => (frontier.Occurrence.Owner.Id, ordinal)));
+            view.Document.Frontiers.Select(static (frontier, ordinal) => (frontier.Occurrence.Owner.Id, ordinal)),
+            ceilingBytes);
         return fragments.ToImmutable();
     }
 
@@ -158,7 +163,8 @@ internal static class PostingProjector
     private static void Add(
         ImmutableArray<StagedFragment>.Builder fragments,
         string key,
-        Dictionary<string, List<PostingEntryDto>> groups)
+        Dictionary<string, List<PostingEntryDto>> groups,
+        int ceilingBytes)
     {
         if (groups.Count == 0)
         {
@@ -174,15 +180,16 @@ internal static class PostingProjector
                         .OrderBy(static entry => entry.ArtifactKey, StringComparer.Ordinal)
                         .ThenBy(static entry => entry.Ordinal),
                 ]))
-            .ToImmutableArray();
-        fragments.Add(new StagedFragment(ArtifactRole.Payload, key, CanonicalJson.Write(payload)));
+            .ToArray();
+        fragments.AddRange(ShardWriter.Write(key, Nodes(payload), ceilingBytes));
     }
 
     private static void AddIndexed(
         ImmutableArray<StagedFragment>.Builder fragments,
         string postingKey,
         string artifactKey,
-        IEnumerable<(string FactId, int Ordinal)> items)
+        IEnumerable<(string FactId, int Ordinal)> items,
+        int ceilingBytes)
     {
         var groups = new Dictionary<string, List<PostingEntryDto>>(StringComparer.Ordinal);
         foreach (var (factId, ordinal) in items)
@@ -190,6 +197,20 @@ internal static class PostingProjector
             Add(groups, factId, new PostingEntryDto(artifactKey, ordinal));
         }
 
-        Add(fragments, postingKey, groups);
+        Add(fragments, postingKey, groups, ceilingBytes);
+    }
+
+    private static List<(string FactId, JsonNode Entry)> Nodes(IReadOnlyList<PostingGroupDto> groups)
+    {
+        var nodes = new List<(string FactId, JsonNode Entry)>(groups.Count);
+        foreach (var group in groups)
+        {
+            nodes.Add((
+                group.FactId,
+                JsonNode.Parse(CanonicalJson.Write(group).AsSpan())
+                ?? throw new InvalidOperationException("Canonical posting group parsed to null.")));
+        }
+
+        return nodes;
     }
 }

@@ -52,6 +52,12 @@ public static class CanonicalJson
         return value ?? throw new JsonException($"Canonical JSON deserialized to null for '{typeof(T)}'.");
     }
 
+    public static ImmutableArray<byte> Write(JsonNode node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        return WriteNode(node);
+    }
+
     private static ImmutableArray<byte> WriteNode(JsonNode node)
     {
         var buffer = new ArrayBufferWriter<byte>();

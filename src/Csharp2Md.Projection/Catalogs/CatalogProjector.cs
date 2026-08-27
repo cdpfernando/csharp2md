@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
@@ -13,28 +14,37 @@ internal static class CatalogProjector
     internal const string DataStoresObjectsAndFieldsKey = "catalogs/data-stores-objects-and-fields.json";
     internal const string UnknownsKey = "catalogs/unknowns.json";
 
-    public static ImmutableArray<StagedFragment> Project(PublishedPackageView view)
+    public static ImmutableArray<StagedFragment> Project(
+        PublishedPackageView view,
+        int ceilingBytes = ShardWriter.DefaultCeilingBytes)
     {
         ArgumentNullException.ThrowIfNull(view);
 
         var fragments = ImmutableArray.CreateBuilder<StagedFragment>();
-        Add(fragments, view, EntryPointsKey, view.Document.EntryPoints.Select(static dto => dto.Identity));
-        Add(fragments, view, BoundaryOperationsKey, view.Document.BoundaryOperations.Select(static dto => dto.Identity));
+        Add(fragments, view, EntryPointsKey, view.Document.EntryPoints.Select(static dto => dto.Identity), ceilingBytes);
+        Add(
+            fragments,
+            view,
+            BoundaryOperationsKey,
+            view.Document.BoundaryOperations.Select(static dto => dto.Identity),
+            ceilingBytes);
         Add(
             fragments,
             view,
             ComponentsAndDeploymentUnitsKey,
             view.Document.Components.Select(static dto => dto.Identity)
-                .Concat(view.Document.DeploymentUnits.Select(static dto => dto.Identity)));
-        Add(fragments, view, ContractsKey, view.Document.Contracts.Select(static dto => dto.Identity));
+                .Concat(view.Document.DeploymentUnits.Select(static dto => dto.Identity)),
+            ceilingBytes);
+        Add(fragments, view, ContractsKey, view.Document.Contracts.Select(static dto => dto.Identity), ceilingBytes);
         Add(
             fragments,
             view,
             DataStoresObjectsAndFieldsKey,
             view.Document.DataStores.Select(static dto => dto.Identity)
                 .Concat(view.Document.DataObjects.Select(static dto => dto.Identity))
-                .Concat(view.Document.DataFields.Select(static dto => dto.Identity)));
-        AddUnknowns(fragments, view);
+                .Concat(view.Document.DataFields.Select(static dto => dto.Identity)),
+            ceilingBytes);
+        AddUnknowns(fragments, view, ceilingBytes);
         return fragments.ToImmutable();
     }
 
@@ -42,7 +52,8 @@ internal static class CatalogProjector
         ImmutableArray<StagedFragment>.Builder fragments,
         PublishedPackageView view,
         string catalogKey,
-        IEnumerable<FactReferenceDto> identities)
+        IEnumerable<FactReferenceDto> identities,
+        int ceilingBytes)
     {
         var entries = new List<CatalogEntryDto>();
         foreach (var identity in identities.OrderBy(static dto => dto.Id, StringComparer.Ordinal))
@@ -60,13 +71,13 @@ internal static class CatalogProjector
             return;
         }
 
-        fragments.Add(new StagedFragment(
-            ArtifactRole.Payload,
-            catalogKey,
-            CanonicalJson.Write(entries.ToImmutableArray())));
+        fragments.AddRange(ShardWriter.Write(catalogKey, Nodes(entries), ceilingBytes));
     }
 
-    private static void AddUnknowns(ImmutableArray<StagedFragment>.Builder fragments, PublishedPackageView view)
+    private static void AddUnknowns(
+        ImmutableArray<StagedFragment>.Builder fragments,
+        PublishedPackageView view,
+        int ceilingBytes)
     {
         var ranked = UnknownRanking.Rank(view);
         if (ranked.IsDefaultOrEmpty)
@@ -83,7 +94,22 @@ internal static class CatalogProjector
                 artifactKey,
                 item.Ordinal,
                 item.Record.Source.FactType))
-            .ToImmutableArray();
-        fragments.Add(new StagedFragment(ArtifactRole.Payload, UnknownsKey, CanonicalJson.Write(entries)));
+            .ToArray();
+        fragments.AddRange(ShardWriter.Write(UnknownsKey, Nodes(entries), ceilingBytes));
     }
+
+    private static List<(string FactId, JsonNode Entry)> Nodes(IReadOnlyList<CatalogEntryDto> entries)
+    {
+        var nodes = new List<(string FactId, JsonNode Entry)>(entries.Count);
+        foreach (var entry in entries)
+        {
+            nodes.Add((entry.FactId, Parse(CanonicalJson.Write(entry))));
+        }
+
+        return nodes;
+    }
+
+    private static JsonNode Parse(ImmutableArray<byte> utf8) =>
+        JsonNode.Parse(utf8.AsSpan())
+        ?? throw new InvalidOperationException("Canonical catalog entry parsed to null.");
 }

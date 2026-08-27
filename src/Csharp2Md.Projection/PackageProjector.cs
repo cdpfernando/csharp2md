@@ -11,13 +11,26 @@ namespace Csharp2Md.Projection;
 
 public sealed class PackageProjector : IPackageProjector
 {
+    private readonly int _ceilingBytes;
+
+    public PackageProjector()
+        : this(ShardWriter.DefaultCeilingBytes)
+    {
+    }
+
+    public PackageProjector(int ceilingBytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(ceilingBytes);
+        _ceilingBytes = ceilingBytes;
+    }
+
     public ImmutableArray<StagedFragment> Project(PublishedPackageView view, ISourceDocumentReader source)
     {
         ArgumentNullException.ThrowIfNull(view);
         ArgumentNullException.ThrowIfNull(source);
         return SourceProjector.Project(view, source)
-            .AddRange(CatalogProjector.Project(view))
-            .AddRange(PostingProjector.Project(view))
+            .AddRange(CatalogProjector.Project(view, _ceilingBytes))
+            .AddRange(PostingProjector.Project(view, _ceilingBytes))
             .AddRange(MarkdownProjector.Project(view))
             .AddRange(RetrievalGuideProjector.Project(view))
             .AddRange(AgentsGuideProjector.Project(view));

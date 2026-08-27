@@ -1057,11 +1057,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] The default ceiling is 1 MiB and is overridable
-- [ ] A synthetic over-ceiling input splits; the fixture's own catalogs do not
-- [ ] Bucket keys derive from the fact id; a test renaming every display name yields the same assignment
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1574+ tests pass (no silent deletions)
+- [x] The default ceiling is 1 MiB and is overridable
+- [x] A synthetic over-ceiling input splits; the fixture's own catalogs do not
+- [x] Bucket keys derive from the fact id; a test renaming every display name yields the same assignment
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1574+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
