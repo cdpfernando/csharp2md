@@ -914,13 +914,13 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] With one solution failing, the committed package is byte-identical to the same run without the failing sibling
-- [ ] The manifest declares `complete: false`, `incomplete_scope_reason: solution-unpublished`, and the failing entry carries its stage
-- [ ] Composition still covers the committed solutions
-- [ ] With every solution failing, a manifest is published with zero committed entries and no composition artifact
-- [ ] The process exit code is 2 in both cases
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] With one solution failing, the committed package is byte-identical to the same run without the failing sibling
+- [x] The manifest declares `complete: false`, `incomplete_scope_reason: solution-unpublished`, and the failing entry carries its stage
+- [x] Composition still covers the committed solutions
+- [x] With every solution failing, a manifest is published with zero committed entries and no composition artifact
+- [x] The process exit code is 2 in both cases
+- [x] Gate check passes: build gate
+- [x] Test count reported; Analysis 662 pass; total 1722 (previous 1720)
 
 **Tests**: integration
 **Gate**: build

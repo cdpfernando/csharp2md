@@ -166,8 +166,8 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-06 | P1: Deterministic batch output | Design | Verified |
 | MSC-07 | P1: Deterministic batch output | Design | Verified |
 | MSC-08 | P1: Deterministic batch output | Design | Verified |
-| MSC-09 | P1: Deterministic batch output | Design | Implementing |
-| MSC-10 | P1: Deterministic batch output | Design | Implementing |
+| MSC-09 | P1: Deterministic batch output | Design | Verified |
+| MSC-10 | P1: Deterministic batch output | Design | Verified |
 | MSC-11 | P1: Deterministic batch output | Design | Verified |
 | MSC-12 | P1: Deterministic batch output | Design | Verified |
 | MSC-13 | P1: Deterministic batch output | Design | Verified |
@@ -192,7 +192,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-32 | P3: Grouped global catalogs | Design | Verified |
 | MSC-33 | P3: Grouped global catalogs | Design | Verified |
 | MSC-34 | P3: Grouped global catalogs | Design | Verified |
-| MSC-35 | Edge cases | Design | Pending |
+| MSC-35 | Edge cases | Design | Verified |
 | MSC-36 | Edge cases | Design | Verified |
 | MSC-37 | Edge cases | Design | Verified |
 | MSC-38 | Edge cases | Design | Verified |
