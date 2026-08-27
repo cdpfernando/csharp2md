@@ -907,10 +907,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] A test asserts no candidate, unresolved record or frontier id appears in any confirmed posting
-- [ ] Frontiers cite `relations/frontiers.json` with a resolving ordinal
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1526+ tests pass (no silent deletions)
+- [x] A test asserts no candidate, unresolved record or frontier id appears in any confirmed posting
+- [x] Frontiers cite `relations/frontiers.json` with a resolving ordinal
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1526+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

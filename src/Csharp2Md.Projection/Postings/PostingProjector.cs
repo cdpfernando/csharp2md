@@ -16,6 +16,8 @@ internal static class PostingProjector
     internal const string ContractConsumersKey = "postings/contract-consumers.json";
     internal const string DataReadersKey = "postings/data-readers.json";
     internal const string DataWritersKey = "postings/data-writers.json";
+    internal const string UnknownsKey = "postings/unknowns.json";
+    internal const string FrontiersKey = "postings/frontiers.json";
 
     public static ImmutableArray<StagedFragment> Project(PublishedPackageView view)
     {
@@ -73,6 +75,16 @@ internal static class PostingProjector
         Add(fragments, ContractConsumersKey, consumers);
         Add(fragments, DataReadersKey, readers);
         Add(fragments, DataWritersKey, writers);
+        AddIndexed(
+            fragments,
+            UnknownsKey,
+            "relations/unresolved.json",
+            view.Document.Unresolved.Select(static (record, ordinal) => (record.Source.Id, ordinal)));
+        AddIndexed(
+            fragments,
+            FrontiersKey,
+            "relations/frontiers.json",
+            view.Document.Frontiers.Select(static (frontier, ordinal) => (frontier.Occurrence.Owner.Id, ordinal)));
         return fragments.ToImmutable();
     }
 
@@ -164,5 +176,20 @@ internal static class PostingProjector
                 ]))
             .ToImmutableArray();
         fragments.Add(new StagedFragment(ArtifactRole.Payload, key, CanonicalJson.Write(payload)));
+    }
+
+    private static void AddIndexed(
+        ImmutableArray<StagedFragment>.Builder fragments,
+        string postingKey,
+        string artifactKey,
+        IEnumerable<(string FactId, int Ordinal)> items)
+    {
+        var groups = new Dictionary<string, List<PostingEntryDto>>(StringComparer.Ordinal);
+        foreach (var (factId, ordinal) in items)
+        {
+            Add(groups, factId, new PostingEntryDto(artifactKey, ordinal));
+        }
+
+        Add(fragments, postingKey, groups);
     }
 }
