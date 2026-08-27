@@ -46,7 +46,7 @@ internal sealed class FilesystemSourceDocumentReader : ISourceDocumentReader
             return false;
         }
 
-        bytes = [.. File.ReadAllBytes(absolute)];
+        bytes = SharedFileRead.Read(absolute);
         return true;
     }
 }

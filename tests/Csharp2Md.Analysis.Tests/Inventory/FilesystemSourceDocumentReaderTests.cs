@@ -30,6 +30,31 @@ public sealed class FilesystemSourceDocumentReaderTests
 
     [Fact]
     [Trait("Requirement", "RP-07")]
+    public void TryRead_FileHeldWithReadWriteShare_ReturnsOriginalBytes()
+    {
+        var tree = Directory.CreateTempSubdirectory("csharp2md-src-reader-share-");
+        try
+        {
+            var path = Path.Combine(tree.FullName, "held.cs");
+            ImmutableArray<byte> original = [7, 8, 9];
+            File.WriteAllBytes(path, [.. original]);
+            var id = DocumentId.Create("doc-held");
+            var reader = new FilesystemSourceDocumentReader(
+                tree.FullName,
+                new Dictionary<DocumentId, string> { [id] = path });
+
+            using var held = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+            Assert.True(reader.TryRead(id, out var bytes));
+            Assert.True(original.AsSpan().SequenceEqual(bytes.AsSpan()));
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-07")]
     public void TryRead_PathRemovedAfterInventory_ReturnsFalseWithoutThrowing()
     {
         var tree = Directory.CreateTempSubdirectory("csharp2md-src-reader-gone-");
