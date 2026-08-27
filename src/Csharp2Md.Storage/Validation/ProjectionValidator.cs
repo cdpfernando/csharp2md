@@ -68,6 +68,17 @@ public static class ProjectionValidator
                 }
             }
         }
+
+        foreach (var fragment in projections)
+        {
+            PackageValidator.EnsureNoAbsolutePathTokens(fragment.CanonicalKey, fragment.CanonicalKey);
+            if (fragment.IsDeferred || fragment.Payload.IsDefaultOrEmpty)
+            {
+                continue;
+            }
+
+            PackageValidator.EnsureNoAbsolutePaths(fragment.CanonicalKey, fragment.Payload.AsSpan());
+        }
     }
 
     private static void EnsureSpanInsideSource(

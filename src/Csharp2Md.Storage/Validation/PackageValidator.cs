@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
@@ -26,7 +27,7 @@ public static class PackageValidator
         .Select(descriptor => descriptor.WireName)
         .ToFrozenSet(StringComparer.Ordinal);
 
-    private static readonly FrozenSet<string> UnixFilesystemRoots = FrozenSet.ToFrozenSet(
+    internal static readonly FrozenSet<string> UnixFilesystemRoots = FrozenSet.ToFrozenSet(
         [
             "home",
             "usr",
@@ -402,7 +403,68 @@ public static class PackageValidator
         }
     }
 
-    private static bool IsAbsoluteFilesystemPath(string text)
+    internal static void EnsureNoAbsolutePaths(string artifactKey, ReadOnlySpan<byte> payload)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(artifactKey);
+
+        JsonNode? node;
+        try
+        {
+            node = JsonNode.Parse(payload);
+        }
+        catch (JsonException)
+        {
+            EnsureNoAbsolutePathTokens(Encoding.UTF8.GetString(payload), artifactKey);
+            return;
+        }
+
+        try
+        {
+            try
+        {
+            ScanNode(node, artifactKey);
+        }
+        catch (PublicationRejectedException exception) when (exception.Gate == "absolute-path")
+        {
+            throw new PublicationRejectedException("absolute-path", artifactKey);
+        }
+        }
+        catch (PublicationRejectedException exception) when (exception.Gate == "absolute-path")
+        {
+            throw new PublicationRejectedException("absolute-path", artifactKey);
+        }
+    }
+
+    internal static void EnsureNoAbsolutePathTokens(string text, string artifactKey)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        ArgumentException.ThrowIfNullOrWhiteSpace(artifactKey);
+
+        var start = 0;
+        for (var index = 0; index <= text.Length; index++)
+        {
+            if (index < text.Length && !IsPathTokenSeparator(text[index]))
+            {
+                continue;
+            }
+
+            if (index > start)
+            {
+                var token = text[start..index].Trim('"', '\'', '`', '<', '>', '[', ']', '(', ')', ',');
+                if (IsAbsoluteFilesystemPath(token))
+                {
+                    throw new PublicationRejectedException("absolute-path", artifactKey);
+                }
+            }
+
+            start = index + 1;
+        }
+    }
+
+    private static bool IsPathTokenSeparator(char value) =>
+        char.IsWhiteSpace(value) || value is '"' or '\'' or '`' or '(' or ')' or '[' or ']' or '<' or '>' or ',';
+
+    internal static bool IsAbsoluteFilesystemPath(string text)
     {
         if (text.Length == 0)
         {

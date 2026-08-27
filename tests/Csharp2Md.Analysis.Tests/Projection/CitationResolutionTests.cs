@@ -28,6 +28,27 @@ public sealed class CitationResolutionTests : IClassFixture<CitationResolutionTe
     }
 
     [Fact]
+    [Trait("Requirement", "RP-49")]
+    public void Analyze_Fixture_ProjectionArtifactsContainNoAbsolutePath()
+    {
+        var projections = _fixture.Files
+            .Where(static pair => IsProjection(pair.Key))
+            .ToArray();
+        Assert.NotEmpty(projections);
+        foreach (var (key, bytes) in projections)
+        {
+            Assert.False(Path.IsPathRooted(key), key);
+            Assert.DoesNotContain(":\\", key, StringComparison.Ordinal);
+            Assert.False(key.StartsWith("/", StringComparison.Ordinal), key);
+            var text = Encoding.UTF8.GetString(bytes);
+            Assert.DoesNotContain(":\\", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("/home/", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("/opt/", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("/Users/", text, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     [Trait("Requirement", "RP-20")]
     public void Analyze_Fixture_EveryCatalogCitationResolvesToClaimedFact()
     {
@@ -170,6 +191,13 @@ public sealed class CitationResolutionTests : IClassFixture<CitationResolutionTe
         Assert.NotEmpty(files);
         return files;
     }
+
+    private static bool IsProjection(string key) =>
+        key.StartsWith("catalogs/", StringComparison.Ordinal)
+        || key.StartsWith("postings/", StringComparison.Ordinal)
+        || key.StartsWith("markdown/", StringComparison.Ordinal)
+        || key.StartsWith("source/", StringComparison.Ordinal)
+        || key is "retrieval.md" or "AGENTS.md";
 
     private JsonNode ElementAt(string artifactKey, int ordinal)
     {

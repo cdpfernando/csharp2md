@@ -1123,10 +1123,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] A projection containing a Windows or Unix absolute path aborts the publication
-- [ ] A test asserts no published projection artifact contains an absolute path for the fixture
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1592+ tests pass (no silent deletions)
+- [x] A projection containing a Windows or Unix absolute path aborts the publication
+- [x] A test asserts no published projection artifact contains an absolute path for the fixture
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1592+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
