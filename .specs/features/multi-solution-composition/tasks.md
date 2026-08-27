@@ -857,12 +857,12 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] The same two solutions copied under a second parent directory produce identical package directory names
-- [ ] Both runs produce byte-identical `batch-manifest.json` and byte-identical composition artifacts
-- [ ] Reversing the `--solution` order produces byte-identical batch and composition artifacts
-- [ ] The comparison reads published bytes, never a value recomputed by the test
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The same two solutions copied under a second parent directory produce identical package directory names
+- [x] Both runs produce byte-identical `batch-manifest.json` and byte-identical composition artifacts
+- [x] Reversing the `--solution` order produces byte-identical batch and composition artifacts
+- [x] The comparison reads published bytes, never a value recomputed by the test
+- [x] Gate check passes: build gate
+- [x] Test count reported; Analysis 658 pass; total 1718 (previous 1716)
 
 **Tests**: integration
 **Gate**: build

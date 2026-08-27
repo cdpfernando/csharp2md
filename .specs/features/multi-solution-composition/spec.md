@@ -162,8 +162,8 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-02 | P1: Deterministic batch output | Design | Verified |
 | MSC-03 | P1: Deterministic batch output | Design | Verified |
 | MSC-04 | P1: Deterministic batch output | Design | Verified |
-| MSC-05 | P1: Deterministic batch output | Design | Implementing |
-| MSC-06 | P1: Deterministic batch output | Design | Pending |
+| MSC-05 | P1: Deterministic batch output | Design | Verified |
+| MSC-06 | P1: Deterministic batch output | Design | Verified |
 | MSC-07 | P1: Deterministic batch output | Design | Verified |
 | MSC-08 | P1: Deterministic batch output | Design | Pending |
 | MSC-09 | P1: Deterministic batch output | Design | Implementing |
