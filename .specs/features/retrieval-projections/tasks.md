@@ -692,11 +692,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] An unredacted document's published sha256 equals its `ContentSha256`
-- [ ] A document whose bytes changed after inventory aborts with `source-drift` naming the document
-- [ ] A test asserts the prior package survives that abort byte-identical
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1461+ tests pass (no silent deletions)
+- [x] An unredacted document's published sha256 equals its `ContentSha256`
+- [x] A document whose bytes changed after inventory aborts with `source-drift` naming the document
+- [x] A test asserts the prior package survives that abort byte-identical
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1461+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

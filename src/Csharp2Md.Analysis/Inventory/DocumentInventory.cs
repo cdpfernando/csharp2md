@@ -1,6 +1,8 @@
+using System.Security.Cryptography;
 using System.Xml.Linq;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Literals;
 
 namespace Csharp2Md.Analysis.Inventory;
 
@@ -78,7 +80,8 @@ internal static class DocumentInventory
                 continue;
             }
 
-            var document = Document.Create(owningProject.Id, relative);
+            var digest = Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(absolute)));
+            var document = Document.Create(owningProject.Id, relative, DocumentHash.Create(digest));
             documents.Add(document);
             if (IsCSharpDocument(relative))
             {

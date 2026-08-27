@@ -25,7 +25,7 @@ internal static class ProjectionPackageFactory
         var workspace = WorkspaceIdentity.Create("acme");
         var solutionId = SolutionId.Create(workspace, "src/Acme.sln");
         var projectId = ProjectId.Create(solutionId, projectPath);
-        var document = Document.Create(projectId, relativePath);
+        var document = Document.Create(projectId, relativePath, HashBytes(bytes));
         var hash = DocumentHash.Create(
             Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)));
         var (view, reader, documents) = Assemble(
@@ -55,7 +55,7 @@ internal static class ProjectionPackageFactory
         {
             var projectId = ProjectId.Create(solutionId, projectPath);
             facts.Add(Project.Create(projectId));
-            var document = Document.Create(projectId, relativePath);
+            var document = Document.Create(projectId, relativePath, HashBytes(bytes));
             facts.Add(document);
             documents.Add(document);
             bytesById[DocumentId.Create(document.Reference.Id.Value)] = [.. bytes];
@@ -83,4 +83,7 @@ internal static class ProjectionPackageFactory
         public bool TryRead(DocumentId document, out ImmutableArray<byte> bytes) =>
             _bytes.TryGetValue(document, out bytes);
     }
+
+    private static DocumentHash HashBytes(byte[] bytes) =>
+        DocumentHash.Create(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)));
 }

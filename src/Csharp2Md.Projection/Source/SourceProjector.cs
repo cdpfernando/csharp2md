@@ -91,6 +91,12 @@ internal static class SourceProjector
                 return;
             }
 
+            var digest = RedactionEnvelope.Sha256(original);
+            if (!string.Equals(digest, _document.ContentSha256, StringComparison.Ordinal))
+            {
+                throw new PublicationRejectedException("source-drift", _document.Identity.Id);
+            }
+
             _sourceBytes = SecretRedactor.Redact(original, _spans);
             _envelopeBytes = _spans.IsDefaultOrEmpty
                 ? []

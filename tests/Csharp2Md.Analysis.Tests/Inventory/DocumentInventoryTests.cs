@@ -29,7 +29,7 @@ public sealed class DocumentInventoryTests
         Assert.DoesNotContain('\\', controller.RelativePath);
         Assert.False(Path.IsPathRooted(controller.RelativePath));
         Assert.False(HasDrivePrefix(controller.RelativePath));
-        Assert.Equal(Document.Create(orders.Id, "Acme.Orders/Api/OrdersController.cs"), controller);
+        AssertInventoried(controller, orders.Id, "Acme.Orders/Api/OrdersController.cs");
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public sealed class DocumentInventoryTests
             var json = Assert.Single(
                 inventoried.Documents,
                 document => string.Equals(document.RelativePath, "notes.json", StringComparison.Ordinal));
-            Assert.Equal(Document.Create(project.Id, "notes.json"), json);
+            AssertInventoried(json, project.Id, "notes.json");
             var unsupported = Assert.Single(
                 inventoried.Diagnostics,
                 record => string.Equals(record.IdentityOrKey, "notes.json", StringComparison.Ordinal));
@@ -325,7 +325,7 @@ public sealed class DocumentInventoryTests
             var nearMiss = Assert.Single(
                 inventoried.Documents,
                 document => string.Equals(document.RelativePath, "myappsettings.json", StringComparison.Ordinal));
-            Assert.Equal(Document.Create(project.Id, "myappsettings.json"), nearMiss);
+            AssertInventoried(nearMiss, project.Id, "myappsettings.json");
             Assert.DoesNotContain(
                 inventoried.ConfigurationDocuments,
                 document => string.Equals(document.RelativePath, "myappsettings.json", StringComparison.Ordinal));
@@ -388,7 +388,7 @@ public sealed class DocumentInventoryTests
         var document = Assert.Single(
             inventoried.Documents,
             candidate => string.Equals(candidate.RelativePath, relativePath, StringComparison.Ordinal));
-        Assert.Equal(Document.Create(project.Id, relativePath), document);
+        AssertInventoried(document, project.Id, relativePath);
         Assert.Contains(
             inventoried.ConfigurationDocuments,
             candidate => candidate.Equals(document));
@@ -412,6 +412,13 @@ public sealed class DocumentInventoryTests
             inventoried.Diagnostics,
             record => string.Equals(record.IdentityOrKey, relativePath, StringComparison.Ordinal));
         Assert.Equal("unsupported-document", unsupported.Code);
+    }
+
+    private static void AssertInventoried(Document document, ProjectId projectId, string relativePath)
+    {
+        Assert.Equal(Document.Create(projectId, relativePath).Reference, document.Reference);
+        Assert.NotNull(document.SourceHash);
+        Assert.Equal(relativePath, document.RelativePath);
     }
 
     private static string AcmeOrdersSolutionPath()

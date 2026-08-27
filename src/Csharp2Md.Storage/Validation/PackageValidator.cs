@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
@@ -197,7 +198,7 @@ public static class PackageValidator
 
         foreach (var dto in document.Documents)
         {
-            EnsureContentHash(dto, dto.Identity.Id, dto.ContentSha256);
+            EnsureDocumentContentHash(dto);
         }
 
         foreach (var dto in document.Symbols)
@@ -299,6 +300,24 @@ public static class PackageValidator
         foreach (var dto in document.Frontiers)
         {
             EnsureContentHash(dto, dto.Occurrence.Owner.Id, dto.ContentSha256);
+        }
+    }
+
+    private static void EnsureDocumentContentHash(DocumentDto dto)
+    {
+        var payload = CanonicalJson.PayloadContentSha256(dto);
+        if (string.Equals(dto.ContentSha256, payload, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        try
+        {
+            _ = DocumentHash.Create(dto.ContentSha256);
+        }
+        catch (ArgumentException exception)
+        {
+            throw new PublicationRejectedException("content-hash", dto.Identity.Id, exception);
         }
     }
 

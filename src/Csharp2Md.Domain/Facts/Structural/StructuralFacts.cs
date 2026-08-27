@@ -89,21 +89,28 @@ public sealed record Document : IFact
 
     public string RelativePath { get; }
 
-    private Document(FactReference reference, ProjectId owningProject, string relativePath)
+    public DocumentHash? SourceHash { get; }
+
+    private Document(FactReference reference, ProjectId owningProject, string relativePath, DocumentHash? sourceHash)
     {
         Reference = reference;
         OwningProject = owningProject;
         RelativePath = relativePath;
+        SourceHash = sourceHash;
     }
 
-    public static Document Create(ProjectId owningProject, string relativePath)
+    public static Document Create(ProjectId owningProject, string relativePath, DocumentHash? sourceHash = null)
     {
         FactGuards.RequireInitialized(owningProject, nameof(owningProject));
         var path = FactIdGrammar.ValidateRelativePath(relativePath, nameof(relativePath));
+        if (sourceHash is { } hash && hash.Equals(default(DocumentHash)))
+        {
+            throw new ArgumentException("A source hash must be initialized when supplied.", nameof(sourceHash));
+        }
 
         var id = FactIdGrammar.Create("document", ("project", owningProject.Value), ("path", path));
         var reference = new FactReference(id, nameof(Document));
-        return new Document(reference, owningProject, path);
+        return new Document(reference, owningProject, path, sourceHash);
     }
 }
 
