@@ -336,9 +336,9 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-38 | P1: Retrieval guide and generated AGENTS.md | Design | Pending |
 | RP-39 | P1: Retrieval guide and generated AGENTS.md | Design | Pending |
 | RP-40 | P1: Retrieval guide and generated AGENTS.md | Design | Pending |
-| RP-41 | P1: Projection validation | Design | Pending |
-| RP-42 | P1: Projection validation | Design | Pending |
-| RP-43 | P1: Projection validation | Design | Pending |
+| RP-41 | P1: Projection validation | Design | implemented |
+| RP-42 | P1: Projection validation | Design | implemented |
+| RP-43 | P1: Projection validation | Design | implemented |
 | RP-44 | P1: Projection validation | Design | Pending |
 | RP-45 | P1: Projection validation | Design | Pending |
 | RP-46 | P1: Determinism, security and assembly isolation | Design | implemented |

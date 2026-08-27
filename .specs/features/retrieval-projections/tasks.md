@@ -453,11 +453,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] A projection citing an absent artifact key aborts with `projection-key` naming that key
-- [ ] A projection citing an out-of-range ordinal aborts with `projection-ordinal` naming key and ordinal
-- [ ] A test asserts no staging file exists on disk after either abort
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1404+ tests pass (no silent deletions)
+- [x] A projection citing an absent artifact key aborts with `projection-key` naming that key
+- [x] A projection citing an out-of-range ordinal aborts with `projection-ordinal` naming key and ordinal
+- [x] A test asserts no staging file exists on disk after either abort
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1404+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

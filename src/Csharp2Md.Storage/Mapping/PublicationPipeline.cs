@@ -33,6 +33,8 @@ internal static class PublicationPipeline
             {
                 throw new PublicationRejectedException("projection", exception.Message, exception);
             }
+
+            ProjectionValidator.Validate(view, projections);
         }
 
         return PackagePublisher.ToPublicationOrder(report.Document, projections);
