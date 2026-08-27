@@ -27,6 +27,14 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
         return Open(SolutionCoordinate.For(solutionKey), sourceReader, solutionKey);
     }
 
+    public void PublishBatch(ImmutableArray<BatchSolutionRecord> solutions)
+    {
+        if (solutions.IsDefaultOrEmpty)
+        {
+            throw new ArgumentException("Batch publication requires at least one solution record.", nameof(solutions));
+        }
+    }
+
     public bool TryGetPublication(string solutionKey, out CommittedPublication publication)
     {
         ArgumentException.ThrowIfNullOrEmpty(solutionKey);

@@ -24,6 +24,7 @@ public sealed class AnalysisPublicSurfaceTests
         "PublicationRejectedException",
         "DiagnosticRecord",
         "SolutionCoordinate",
+        "BatchSolutionRecord",
     ];
 
     private static readonly string[] ForbiddenSurfaceTokens =

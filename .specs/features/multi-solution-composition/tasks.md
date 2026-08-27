@@ -331,10 +331,10 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] `BatchSolutionRecord` carries identity, file name, status and failing stage — and an API-shape test asserts it exposes no artifact key, ordinal or fact type
-- [ ] `PublishBatch` rejects a default or empty record array with `ArgumentException`
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] `BatchSolutionRecord` carries identity, file name, status and failing stage — and an API-shape test asserts it exposes no artifact key, ordinal or fact type
+- [x] `PublishBatch` rejects a default or empty record array with `ArgumentException`
+- [x] Gate check passes: build gate
+- [x] Test count reported; total 1640 (Domain 555, Analysis 650, Storage 254, Cli 29, Projection 152)
 
 **Tests**: unit
 **Gate**: build

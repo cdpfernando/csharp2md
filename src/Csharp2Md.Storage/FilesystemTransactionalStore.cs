@@ -42,6 +42,14 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         return Open(SolutionCoordinate.For(solutionKey), sourceReader, solutionKey);
     }
 
+    public void PublishBatch(ImmutableArray<BatchSolutionRecord> solutions)
+    {
+        if (solutions.IsDefaultOrEmpty)
+        {
+            throw new ArgumentException("Batch publication requires at least one solution record.", nameof(solutions));
+        }
+    }
+
     private IStoreSession Open(
         SolutionCoordinate coordinate,
         ISourceDocumentReader sourceReader,
