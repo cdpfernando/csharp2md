@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
 
@@ -16,8 +17,7 @@ internal static class InventoryFacts
         ArgumentNullException.ThrowIfNull(listedProjectPaths);
         ArgumentException.ThrowIfNullOrWhiteSpace(authorizedRoot);
 
-        var solution = Solution.Create(
-            SolutionId.Create(WorkspaceIdentity.Create("default"), Path.GetFileName(solutionPath)));
+        var solution = Solution.Create(SolutionCoordinate.For(solutionPath).Identity);
         var solutionDirectory = Path.GetDirectoryName(Path.GetFullPath(solutionPath))
             ?? throw new ArgumentException($"'{solutionPath}' has no containing directory.", nameof(solutionPath));
         var root = Path.GetFullPath(authorizedRoot);

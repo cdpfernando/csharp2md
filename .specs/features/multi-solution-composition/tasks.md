@@ -193,10 +193,10 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] No `WorkspaceIdentity.Create` call remains in `InventoryFacts.cs`
-- [ ] The `Solution` structural fact keeps the identity it had before this task, asserted against a fixture analysis
-- [ ] Gate check passes: build gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] No `WorkspaceIdentity.Create` call remains in `InventoryFacts.cs`
+- [x] The `Solution` structural fact keeps the identity it had before this task, asserted against a fixture analysis
+- [x] Gate check passes: build gate
+- [x] Test count reported; total 1623 (Domain 555, Analysis 641, Storage 246, Cli 29, Projection 152)
 
 **Tests**: unit
 **Gate**: build
