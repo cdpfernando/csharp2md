@@ -120,18 +120,6 @@ public static class DomainMapper
             static dto => $"{dto.Occurrence.Owner.Id}:{dto.Occurrence.Kind}:{dto.Occurrence.OccurrenceOrdinal}");
 
         var versions = TaxonomyVersions.Initial;
-        var artifacts = BuildManifestArtifacts(
-            structural: solutions.Count + projects.Count + documents.Count + symbols.Count,
-            architecture: components.Count + deploymentUnits.Count + entryPoints.Count + boundaryOperations.Count + externalSystems.Count,
-            contract: contracts.Count + contractBindings.Count + contractRevisions.Count,
-            persistence: dataStores.Count + dataObjects.Count + dataFields.Count + dataOperations.Count,
-            configuration: configurationBindings.Count,
-            observationCounts: observationDtos.ToDictionary(pair => pair.Key, pair => pair.Value.Length),
-            confirmedCounts: confirmedDtos.ToDictionary(pair => pair.Key, pair => pair.Value.Length),
-            candidateCount: candidateDtos.Length,
-            unresolvedCount: unresolvedDtos.Length,
-            frontierCount: frontierDtos.Length);
-
         return new WireDocument(
             new ManifestEnvelope(
                 versions.SchemaVersion,
@@ -139,7 +127,7 @@ public static class DomainMapper
                 versions.ObservationSchemaVersion,
                 context.SolutionKey,
                 context.SolutionFileName,
-                artifacts),
+                []),
             ReadEmbeddedRegistry(),
             Ordered(solutions, static dto => dto.Identity.Id),
             Ordered(projects, static dto => dto.Identity.Id),
@@ -246,62 +234,6 @@ public static class DomainMapper
 
     private static ImmutableArray<T> Ordered<T>(IEnumerable<T> items, Func<T, string> identity) =>
         items.OrderBy(identity, StringComparer.Ordinal).ToImmutableArray();
-
-    private static ImmutableArray<ManifestEntry> BuildManifestArtifacts(
-        int structural,
-        int architecture,
-        int contract,
-        int persistence,
-        int configuration,
-        IReadOnlyDictionary<string, int> observationCounts,
-        IReadOnlyDictionary<string, int> confirmedCounts,
-        int candidateCount,
-        int unresolvedCount,
-        int frontierCount)
-    {
-        var artifacts = ImmutableArray.CreateBuilder<ManifestEntry>();
-        AddFamily(artifacts, FactFamily.Structural, structural);
-        AddFamily(artifacts, FactFamily.Architecture, architecture);
-        AddFamily(artifacts, FactFamily.Contract, contract);
-        AddFamily(artifacts, FactFamily.Persistence, persistence);
-        AddFamily(artifacts, FactFamily.Configuration, configuration);
-
-        foreach (var kind in TaxonomyTables.Default.ObservationKinds)
-        {
-            observationCounts.TryGetValue(kind.WireName, out var count);
-            artifacts.Add(new ManifestEntry(
-                "observations/" + kind.WireName,
-                "payload",
-                count,
-                "observations/" + kind.WireName + ".json"));
-        }
-
-        foreach (var relation in TaxonomyTables.Default.Relations)
-        {
-            confirmedCounts.TryGetValue(relation.WireName, out var count);
-            artifacts.Add(new ManifestEntry(
-                "relations/confirmed/" + relation.WireName,
-                "payload",
-                count,
-                "relations/confirmed/" + relation.WireName + ".json"));
-        }
-
-        artifacts.Add(new ManifestEntry("relations/candidates", "payload", candidateCount, "relations/candidates.json"));
-        artifacts.Add(new ManifestEntry("relations/unresolved", "payload", unresolvedCount, "relations/unresolved.json"));
-        artifacts.Add(new ManifestEntry("relations/frontiers", "payload", frontierCount, "relations/frontiers.json"));
-
-        return artifacts.ToImmutable();
-    }
-
-    private static void AddFamily(ImmutableArray<ManifestEntry>.Builder artifacts, FactFamily family, int count)
-    {
-        var segment = family.ToString().ToLowerInvariant();
-        artifacts.Add(new ManifestEntry(
-            "facts/" + segment,
-            "payload",
-            count,
-            "facts/" + segment + ".json"));
-    }
 
     private static ImmutableArray<byte> ReadEmbeddedRegistry()
     {

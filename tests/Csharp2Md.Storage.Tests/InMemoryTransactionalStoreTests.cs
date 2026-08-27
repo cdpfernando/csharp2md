@@ -291,7 +291,9 @@ public sealed class InMemoryTransactionalStoreTests
         var manifest = CanonicalJson.Read<ManifestEnvelope>(artifacts[^1].Payload.AsSpan());
         Assert.Equal("solution-a", manifest.SolutionKey);
         Assert.Equal("solution-a", manifest.SolutionFileName);
-        Assert.All(manifest.Artifacts, entry => Assert.Equal(0, entry.Count));
+        Assert.DoesNotContain(
+            manifest.Artifacts,
+            entry => entry.Count == 0 && IsOmittedFamily(entry.CanonicalKey));
     }
 
     [Fact]
@@ -425,4 +427,9 @@ public sealed class InMemoryTransactionalStoreTests
         return segments.Contains("obj", StringComparer.OrdinalIgnoreCase)
             || segments.Contains("bin", StringComparer.OrdinalIgnoreCase);
     }
+
+    private static bool IsOmittedFamily(string canonicalKey) =>
+        canonicalKey.StartsWith("facts/", StringComparison.Ordinal)
+        || canonicalKey.StartsWith("observations/", StringComparison.Ordinal)
+        || canonicalKey.StartsWith("relations/", StringComparison.Ordinal);
 }

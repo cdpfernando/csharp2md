@@ -92,6 +92,11 @@ public sealed class FilesystemEmptyCommitTests
         var manifest = CanonicalJson.Read<ManifestEnvelope>(onDisk["manifest.json"]);
         Assert.Equal(FilesystemTestPaths.SolutionHex(SolutionKey), manifest.SolutionKey);
         Assert.Equal("Acme Payments.sln", manifest.SolutionFileName);
-        Assert.All(manifest.Artifacts, entry => Assert.Equal(0, entry.Count));
+        Assert.DoesNotContain(
+            manifest.Artifacts,
+            entry => entry.Count == 0
+                && (entry.CanonicalKey.StartsWith("facts/", StringComparison.Ordinal)
+                    || entry.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal)
+                    || entry.CanonicalKey.StartsWith("relations/", StringComparison.Ordinal)));
     }
 }

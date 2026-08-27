@@ -1,5 +1,4 @@
 using Csharp2Md.Analysis.Storage;
-using Csharp2Md.Domain.Registry;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
 
@@ -42,17 +41,11 @@ public sealed class EmptySnapshotMappingTests
 
     [Fact]
     [Trait("Requirement", "STOR-06")]
-    public void ToWire_EmptySnapshot_ReportsZeroCountForEveryFamilyOnTheManifest()
+    public void ToWire_EmptySnapshot_DoesNotPopulateManifestArtifacts()
     {
         var document = DomainMapper.ToWire(FactualSnapshot.Empty, Context);
 
-        foreach (var family in Enum.GetValues<FactFamily>())
-        {
-            var key = "facts/" + FamilyPath(family);
-            var entry = Assert.Single(document.Manifest.Artifacts, artifact => artifact.CanonicalKey == key);
-            Assert.Equal(0, entry.Count);
-            Assert.Equal("payload", entry.Role);
-        }
+        Assert.True(document.Manifest.Artifacts.IsDefaultOrEmpty);
     }
 
     [Fact]
@@ -86,8 +79,6 @@ public sealed class EmptySnapshotMappingTests
         Assert.True(restored.Unresolved.IsEmpty);
         Assert.True(restored.Frontiers.IsEmpty);
     }
-
-    private static string FamilyPath(FactFamily family) => family.ToString().ToLowerInvariant();
 
     private static void AssertZero(CoverageMetricDto metric)
     {

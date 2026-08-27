@@ -259,11 +259,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] `WireDocument.Manifest` is populated by the publication path, not by `ToWire`
-- [ ] `PackagePublisher` reads its keys from `PublishedPackageView` rather than inline strings
-- [ ] A test asserts the published manifest lists no entry with `Count = 0` for an omitted shard
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1365+ tests pass (no silent deletions)
+- [x] `WireDocument.Manifest` is populated by the publication path, not by `ToWire`
+- [x] `PackagePublisher` reads its keys from `PublishedPackageView` rather than inline strings
+- [x] A test asserts the published manifest lists no entry with `Count = 0` for an omitted shard
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1365+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
