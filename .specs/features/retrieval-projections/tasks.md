@@ -714,11 +714,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] The secret's literal bytes appear in no fragment: source, catalog, posting, Markdown, manifest or diagnostic
-- [ ] No hash of the individual secret value appears in any fragment
-- [ ] The marker occupies the secret's span in the published source artifact
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1465+ tests pass (no silent deletions)
+- [x] The secret's literal bytes appear in no fragment: source, catalog, posting, Markdown, manifest or diagnostic
+- [x] No hash of the individual secret value appears in any fragment
+- [x] The marker occupies the secret's span in the published source artifact
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1465+ tests pass (no silent deletions)
 
 **Tests**: integration
 **Gate**: build
