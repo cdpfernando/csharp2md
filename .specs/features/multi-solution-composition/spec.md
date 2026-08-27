@@ -172,9 +172,9 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-12 | P1: Deterministic batch output | Design | Verified |
 | MSC-13 | P1: Deterministic batch output | Design | Pending |
 | MSC-14 | P1: Deterministic batch output | Design | Pending |
-| MSC-15 | P1: Deterministic batch output | Design | Pending |
+| MSC-15 | P1: Deterministic batch output | Design | Implementing |
 | MSC-16 | P2: Proven cross-solution correlations | Design | Implementing |
-| MSC-17 | P2: Proven cross-solution correlations | Design | Implementing |
+| MSC-17 | P2: Proven cross-solution correlations | Design | Verified |
 | MSC-18 | P2: Proven cross-solution correlations | Design | Verified |
 | MSC-19 | P2: Proven cross-solution correlations | Design | Verified |
 | MSC-20 | P2: Proven cross-solution correlations | Design | Verified |

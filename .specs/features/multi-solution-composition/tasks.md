@@ -619,13 +619,13 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] An entry citing a solution identity absent from the batch is rejected with reason `batch-composition`
-- [ ] An entry citing an artifact key or ordinal absent from that solution's contribution is rejected
-- [ ] An entry pairing a solution with itself is rejected
-- [ ] A published empty artifact is rejected
-- [ ] A valid composition passes without throwing
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] An entry citing a solution identity absent from the batch is rejected with reason `batch-composition`
+- [x] An entry citing an artifact key or ordinal absent from that solution's contribution is rejected
+- [x] An entry pairing a solution with itself is rejected
+- [x] A published empty artifact is rejected
+- [x] A valid composition passes without throwing
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; Storage 272 pass; total 1690 (previous 1684)
 
 **Tests**: unit
 **Gate**: quick
