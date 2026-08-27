@@ -519,11 +519,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] `analyze` publishes projections without any new flag
-- [ ] A store constructed without a projector commits factual artifacts alone and publishes no projection artifact
-- [ ] The CLI still declares no direct project reference to Domain
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1418+ tests pass (no silent deletions)
+- [x] `analyze` publishes projections without any new flag
+- [x] A store constructed without a projector commits factual artifacts alone and publishes no projection artifact
+- [x] The CLI still declares no direct project reference to Domain
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1418+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: build

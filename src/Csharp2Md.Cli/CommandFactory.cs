@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Csharp2Md.Analysis;
+using Csharp2Md.Projection;
 using Csharp2Md.Storage;
 
 namespace Csharp2Md.Cli;
@@ -56,7 +57,7 @@ internal static class CommandFactory
                     return Invalid(parseResult, "--output");
                 }
 
-                analysisEngine = new AnalysisEngine(new FilesystemTransactionalStore(outputPath));
+                analysisEngine = new AnalysisEngine(new FilesystemTransactionalStore(outputPath, new PackageProjector()));
             }
 
             AnalysisResult result;
