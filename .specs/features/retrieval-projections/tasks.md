@@ -1187,11 +1187,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Every RP-NN from RP-01 to RP-57 is carried by at least one test trait
-- [ ] A test enumerates the traits and fails naming any requirement with no test
-- [ ] Every edge case listed in the spec has a named test
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1610+ tests pass (no silent deletions)
+- [x] Every RP-NN from RP-01 to RP-57 is carried by at least one test trait
+- [x] A test enumerates the traits and fails naming any requirement with no test
+- [x] Every edge case listed in the spec has a named test
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1610+ tests pass (no silent deletions)
 
 **Tests**: integration
 **Gate**: build

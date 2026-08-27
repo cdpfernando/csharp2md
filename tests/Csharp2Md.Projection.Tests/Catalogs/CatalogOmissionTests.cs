@@ -43,6 +43,21 @@ public sealed class CatalogOmissionTests
     }
 
     [Fact]
+    [Trait("Requirement", "RP-21")]
+    public void Project_FactOutsideCatalogFamilies_DoesNotFailProjectionValidation()
+    {
+        var symbol = CatalogProjectionFactory.Callable("Orphan");
+        var view = CatalogProjectionFactory.ViewOf(symbol);
+
+        var fragments = new PackageProjector().Project(view, new EmptySourceReader());
+
+        Csharp2Md.Storage.Validation.ProjectionValidator.Validate(view, fragments);
+        Assert.DoesNotContain(fragments, fragment => fragment.CanonicalKey.StartsWith("catalogs/", StringComparison.Ordinal));
+        Assert.Contains(view.Slots, slot => slot.CanonicalKey == "facts/structural.json");
+        Assert.Contains(fragments, fragment => fragment.CanonicalKey == "retrieval.md");
+    }
+
+    [Fact]
     [Trait("Requirement", "RP-22")]
     public void Project_EntryPoints_AreOrderedByFactIdOrdinal()
     {

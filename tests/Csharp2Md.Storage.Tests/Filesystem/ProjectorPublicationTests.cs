@@ -71,6 +71,7 @@ public sealed class ProjectorPublicationTests
     }
 
     [Fact]
+    [Trait("Requirement", "RP-02")]
     [Trait("Requirement", "RP-03")]
     public void PublicationPipeline_ProjectsFromValidatedDocumentBeforeOrdering()
     {

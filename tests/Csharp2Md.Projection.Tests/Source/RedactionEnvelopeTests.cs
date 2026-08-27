@@ -105,6 +105,34 @@ public sealed class RedactionEnvelopeTests
     }
 
     [Fact]
+    [Trait("Requirement", "RP-09")]
+    [Trait("Requirement", "RP-10")]
+    public void Project_WholeDocumentSecret_PublishesOnlyTheMarkerAndDeclaresRedaction()
+    {
+        var body = "entire-secret-document";
+        var (view, reader, _) = ProjectionPackageFactory.PackageWithSecret(
+            "Acme.Orders/Acme.Orders.csproj",
+            "Acme.Orders/secrets.txt",
+            body,
+            new SourceSpanDto(1, 1, 1, body.Length));
+
+        var fragments = SourceProjector.Project(view, reader);
+        var source = Assert.Single(
+            fragments,
+            fragment => !fragment.CanonicalKey.EndsWith(".meta.json", StringComparison.Ordinal));
+        var envelopeFragment = Assert.Single(
+            fragments,
+            fragment => fragment.CanonicalKey.EndsWith(".meta.json", StringComparison.Ordinal));
+        var published = source.ReadPayload();
+        var envelope = CanonicalJson.Read<RedactionEnvelopeDto>(envelopeFragment.ReadPayload().AsSpan());
+
+        Assert.True(SecretRedactor.Marker.AsSpan().SequenceEqual(published.AsSpan()));
+        Assert.True(envelope.Redacted);
+        Assert.Equal(source.CanonicalKey, envelope.Artifact);
+        Assert.NotEmpty(envelope.RedactedSpans);
+    }
+
+    [Fact]
     [Trait("Requirement", "RP-10")]
     public void Fragment_HashesMatchOriginalAndPublishedBytes()
     {

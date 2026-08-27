@@ -131,6 +131,28 @@ public sealed class RetrievalGuideProjectorTests
 
     [Fact]
     [Trait("Requirement", "RP-37")]
+    [Trait("Requirement", "RP-38")]
+    public void PackageProjector_NoArchitectureFacts_PublishesGuidesWithoutMarkdownPages()
+    {
+        var view = CatalogProjectionFactory.ViewOf(
+            CatalogProjectionFactory.CreateSolutionFact(),
+            CatalogProjectionFactory.CreateProjectFact("src/Acme.Orders/Acme.Orders.csproj"),
+            CatalogProjectionFactory.CreateDocumentFact(
+                "src/Acme.Orders/Acme.Orders.csproj",
+                "src/Acme.Orders/Program.cs"));
+        var reader = new EmptySourceReader();
+
+        var fragments = new PackageProjector().Project(view, reader);
+
+        Assert.DoesNotContain(
+            fragments,
+            fragment => fragment.CanonicalKey.StartsWith("markdown/", StringComparison.Ordinal));
+        Assert.Contains(fragments, fragment => fragment.CanonicalKey == RetrievalGuideProjector.Key);
+        Assert.Contains(fragments, fragment => fragment.CanonicalKey == AgentsGuideProjector.Key);
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-37")]
     public void PackageProjector_ComposesRetrievalGuideAfterMarkdown()
     {
         var view = CatalogProjectionFactory.ViewOf(CatalogProjectionFactory.CreateEntryPoint("Run", "Orders.Api"));
