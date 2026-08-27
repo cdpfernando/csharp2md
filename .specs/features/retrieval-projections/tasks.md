@@ -237,11 +237,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Every manifest entry corresponds to a fragment in the same publication
-- [ ] A test asserts no manifest entry names an artifact absent from the fragment list, using a document with several empty families
-- [ ] Existing manifest assertions still pass unchanged
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1362+ tests pass (no silent deletions)
+- [x] Every manifest entry corresponds to a fragment in the same publication
+- [x] A test asserts no manifest entry names an artifact absent from the fragment list, using a document with several empty families
+- [x] Existing manifest assertions still pass unchanged
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1362+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

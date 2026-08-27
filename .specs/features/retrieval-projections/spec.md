@@ -298,7 +298,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | --- | --- | --- | --- |
 | RP-01 | P1: Projector seam and atomic publication | Design | Pending |
 | RP-02 | P1: Projector seam and atomic publication | Design | Pending |
-| RP-03 | P1: Projector seam and atomic publication | Design | Pending |
+| RP-03 | P1: Projector seam and atomic publication | Design | implemented |
 | RP-04 | P1: Projector seam and atomic publication | Design | Pending |
 | RP-05 | P1: Projector seam and atomic publication | Design | Pending |
 | RP-06 | P1: Projector seam and atomic publication | Design | Pending |
