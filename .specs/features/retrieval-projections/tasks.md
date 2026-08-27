@@ -1013,11 +1013,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] All seven scenarios from `output-and-retrieval.md` are documented
-- [ ] Each scenario names at least one artifact key present in the same publication
-- [ ] The guide is listed in the manifest and contains no absolute path
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1561+ tests pass (no silent deletions)
+- [x] All seven scenarios from `output-and-retrieval.md` are documented
+- [x] Each scenario names at least one artifact key present in the same publication
+- [x] The guide is listed in the manifest and contains no absolute path
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1561+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

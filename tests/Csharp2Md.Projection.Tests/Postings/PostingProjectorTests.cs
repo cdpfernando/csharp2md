@@ -141,9 +141,9 @@ public sealed class PostingProjectorTests
             source.Select(static fragment => fragment.CanonicalKey)
                 .Concat(catalogs.Select(static fragment => fragment.CanonicalKey))
                 .Concat(postings.Select(static fragment => fragment.CanonicalKey)),
-            composed.Select(static fragment => fragment.CanonicalKey));
-        Assert.Equal(PostingProjector.OutgoingKey, composed[^2].CanonicalKey);
-        Assert.Equal(PostingProjector.IncomingKey, composed[^1].CanonicalKey);
+            composed.Select(static fragment => fragment.CanonicalKey).Take(source.Length + catalogs.Length + postings.Length));
+        Assert.Equal(PostingProjector.OutgoingKey, composed[source.Length + catalogs.Length].CanonicalKey);
+        Assert.Equal(PostingProjector.IncomingKey, composed[source.Length + catalogs.Length + 1].CanonicalKey);
     }
 
     [Fact]

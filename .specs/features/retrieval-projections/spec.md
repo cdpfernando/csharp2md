@@ -332,10 +332,10 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-34 | P1: Markdown pages for architecture identities | Design | implemented |
 | RP-35 | P1: Markdown pages for architecture identities | Design | implemented |
 | RP-36 | P1: Markdown pages for architecture identities | Design | implemented |
-| RP-37 | P1: Retrieval guide and generated AGENTS.md | Design | Pending |
+| RP-37 | P1: Retrieval guide and generated AGENTS.md | Design | implemented |
 | RP-38 | P1: Retrieval guide and generated AGENTS.md | Design | Pending |
 | RP-39 | P1: Retrieval guide and generated AGENTS.md | Design | Pending |
-| RP-40 | P1: Retrieval guide and generated AGENTS.md | Design | Pending |
+| RP-40 | P1: Retrieval guide and generated AGENTS.md | Design | implemented |
 | RP-41 | P1: Projection validation | Design | implemented |
 | RP-42 | P1: Projection validation | Design | implemented |
 | RP-43 | P1: Projection validation | Design | implemented |

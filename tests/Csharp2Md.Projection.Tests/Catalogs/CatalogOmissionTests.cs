@@ -39,7 +39,7 @@ public sealed class CatalogOmissionTests
 
         var fragments = new PackageProjector().Project(view, new EmptySourceReader());
 
-        Assert.Empty(fragments);
+        Assert.DoesNotContain(fragments, fragment => fragment.CanonicalKey.StartsWith("catalogs/", StringComparison.Ordinal));
     }
 
     [Fact]

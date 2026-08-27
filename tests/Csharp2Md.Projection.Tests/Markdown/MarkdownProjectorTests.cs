@@ -185,8 +185,8 @@ public sealed class MarkdownProjectorTests
             catalogs.Select(static fragment => fragment.CanonicalKey)
                 .Concat(postings.Select(static fragment => fragment.CanonicalKey))
                 .Concat(pages.Select(static fragment => fragment.CanonicalKey)),
-            composed.Select(static fragment => fragment.CanonicalKey));
-        Assert.Equal(pages[^1].CanonicalKey, composed[^1].CanonicalKey);
-        Assert.StartsWith("markdown/", composed[^1].CanonicalKey, StringComparison.Ordinal);
+            composed.Select(static fragment => fragment.CanonicalKey).Take(catalogs.Length + postings.Length + pages.Length));
+        Assert.Equal(pages[^1].CanonicalKey, composed[catalogs.Length + postings.Length + pages.Length - 1].CanonicalKey);
+        Assert.StartsWith("markdown/", composed[catalogs.Length + postings.Length + pages.Length - 1].CanonicalKey, StringComparison.Ordinal);
     }
 }
