@@ -281,10 +281,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Both stores call the pipeline and hold no independent copy of the sequence
-- [ ] A test asserts both stores produce the same fragment key set for the same snapshot
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1370+ tests pass (no silent deletions)
+- [x] Both stores call the pipeline and hold no independent copy of the sequence
+- [x] A test asserts both stores produce the same fragment key set for the same snapshot
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1370+ tests pass (no silent deletions)
 
 **Tests**: integration
 **Gate**: build

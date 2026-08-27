@@ -1,6 +1,5 @@
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Mapping;
-using Csharp2Md.Storage.Validation;
 
 namespace Csharp2Md.Storage;
 
@@ -52,9 +51,9 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
         {
             EnsureActive();
 
-            var document = DomainMapper.ToWire(_staged, new ManifestContext(_solutionKey, SolutionFileName(_solutionKey)));
-            var report = PackageValidator.Validate(document);
-            var artifacts = PackagePublisher.ToPublicationOrder(report.Document);
+            var artifacts = PublicationPipeline.Publish(
+                _staged,
+                new ManifestContext(_solutionKey, SolutionFileName(_solutionKey)));
 
             _committed = true;
             _store.Release(_solutionKey);

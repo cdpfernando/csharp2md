@@ -3,7 +3,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Mapping;
-using Csharp2Md.Storage.Validation;
 
 namespace Csharp2Md.Storage;
 
@@ -132,11 +131,9 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
 
             try
             {
-                var document = DomainMapper.ToWire(
-                    _staged,
-                    new ManifestContext(_hex, Path.GetFileName(_solutionKey)));
-                var report = PackageValidator.Validate(document);
-                var artifacts = PackagePublisher.ToPublicationOrder(report.Document);
+            var artifacts = PublicationPipeline.Publish(
+                _staged,
+                new ManifestContext(_hex, Path.GetFileName(_solutionKey)));
                 WriteStaging(artifacts);
                 SwapStagingIntoChild();
                 _committed = true;
