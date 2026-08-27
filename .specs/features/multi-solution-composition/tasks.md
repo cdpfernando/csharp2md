@@ -386,12 +386,12 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] Every boundary operation, contract, component, deployment unit and external system in the view appears exactly once
-- [ ] Every entry's artifact key and ordinal equal what `TryLocate` returns for that fact id
-- [ ] A fact the view cannot locate is omitted rather than emitted with a placeholder ordinal
-- [ ] External-system names read `Name.Value`; component and deployment-unit names read `Name`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every boundary operation, contract, component, deployment unit and external system in the view appears exactly once
+- [x] Every entry's artifact key and ordinal equal what `TryLocate` returns for that fact id
+- [x] A fact the view cannot locate is omitted rather than emitted with a placeholder ordinal
+- [x] External-system names read `Name.Value`; component and deployment-unit names read `Name`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; total 1651 (Domain 555, Analysis 650, Storage 259, Cli 29, Projection 158)
 
 **Tests**: unit
 **Gate**: quick

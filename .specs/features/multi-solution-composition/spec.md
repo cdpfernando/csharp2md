@@ -182,7 +182,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | MSC-22 | P2: Proven cross-solution correlations | Design | Pending |
 | MSC-23 | P2: Proven cross-solution correlations | Design | Pending |
 | MSC-24 | P2: Proven cross-solution correlations | Design | Pending |
-| MSC-25 | P2: Proven cross-solution correlations | Design | Implementing |
+| MSC-25 | P2: Proven cross-solution correlations | Design | Verified |
 | MSC-26 | P2: Proven cross-solution correlations | Design | Pending |
 | MSC-27 | P2: Proven cross-solution correlations | Design | Pending |
 | MSC-28 | P2: Proven cross-solution correlations | Design | Pending |
