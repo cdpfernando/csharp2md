@@ -949,10 +949,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Each page states the identity's fact id, its facet values and its direct confirmed relations
-- [ ] Links point at catalogs, postings and `source/` artifacts that exist in the same publication
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1539+ tests pass (no silent deletions)
+- [x] Each page states the identity's fact id, its facet values and its direct confirmed relations
+- [x] Links point at catalogs, postings and `source/` artifacts that exist in the same publication
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1539+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

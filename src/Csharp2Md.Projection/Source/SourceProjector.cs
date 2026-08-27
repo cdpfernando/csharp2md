@@ -110,7 +110,7 @@ internal static class SourceProjector
         }
     }
 
-    private static string ArtifactKey(DocumentDto document)
+    internal static string ArtifactKey(DocumentDto document)
     {
         var relative = document.RelativePath.Replace('\\', '/');
         return "source/" + ProjectSlug(document.OwningProject) + "/" + relative;

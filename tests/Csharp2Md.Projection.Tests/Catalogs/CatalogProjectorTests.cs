@@ -135,8 +135,10 @@ public sealed class CatalogProjectorTests
 
         Assert.Equal(
             source.Select(fragment => fragment.CanonicalKey).Concat(catalogs.Select(fragment => fragment.CanonicalKey)),
-            composed.Select(fragment => fragment.CanonicalKey));
-        Assert.Equal(source.Length + catalogs.Length, composed.Length);
+            composed
+                .Select(fragment => fragment.CanonicalKey)
+                .Take(source.Length + catalogs.Length));
+        Assert.True(composed.Length >= source.Length + catalogs.Length);
         Assert.Equal("catalogs/entry-points.json", composed[source.Length].CanonicalKey);
         Assert.Equal("catalogs/boundary-operations.json", composed[source.Length + 1].CanonicalKey);
     }
@@ -262,7 +264,7 @@ public sealed class CatalogProjectorTests
         var composed = new PackageProjector().Project(view, new EmptySourceReader());
         var catalogs = CatalogProjector.Project(view);
 
-        Assert.Equal(catalogs.Select(fragment => fragment.CanonicalKey), composed.Select(fragment => fragment.CanonicalKey));
+        Assert.Equal(catalogs.Select(fragment => fragment.CanonicalKey), composed.Where(fragment => fragment.CanonicalKey.StartsWith("catalogs/", StringComparison.Ordinal)).Select(fragment => fragment.CanonicalKey));
         Assert.Equal(
             [
                 "catalogs/entry-points.json",
@@ -270,7 +272,7 @@ public sealed class CatalogProjectorTests
                 "catalogs/components-and-deployment-units.json",
                 "catalogs/contracts.json",
             ],
-            composed.Select(fragment => fragment.CanonicalKey));
+            composed.Where(fragment => fragment.CanonicalKey.StartsWith("catalogs/", StringComparison.Ordinal)).Select(fragment => fragment.CanonicalKey));
     }
 
     [Fact]
@@ -403,7 +405,7 @@ public sealed class CatalogProjectorTests
                 "catalogs/contracts.json",
                 "catalogs/data-stores-objects-and-fields.json",
             ],
-            composed.Select(fragment => fragment.CanonicalKey));
+            composed.Where(fragment => fragment.CanonicalKey.StartsWith("catalogs/", StringComparison.Ordinal)).Select(fragment => fragment.CanonicalKey));
     }
 
     [Fact]

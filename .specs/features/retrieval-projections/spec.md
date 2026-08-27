@@ -327,7 +327,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-29 | P1: Compact postings | Design | implemented |
 | RP-30 | P1: Compact postings | Design | implemented |
 | RP-31 | P1: Markdown pages for architecture identities | Design | Pending |
-| RP-32 | P1: Markdown pages for architecture identities | Design | Pending |
+| RP-32 | P1: Markdown pages for architecture identities | Design | implemented |
 | RP-33 | P1: Markdown pages for architecture identities | Design | Pending |
 | RP-34 | P1: Markdown pages for architecture identities | Design | Pending |
 | RP-35 | P1: Markdown pages for architecture identities | Design | Pending |
