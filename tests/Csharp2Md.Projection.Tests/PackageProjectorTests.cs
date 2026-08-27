@@ -49,6 +49,7 @@ public sealed class PackageProjectorTests
 
         Assert.DoesNotContain(fragments, fragment => fragment.CanonicalKey.StartsWith("markdown/", StringComparison.Ordinal));
         Assert.Contains(fragments, fragment => fragment.CanonicalKey == "retrieval.md");
+        Assert.Contains(fragments, fragment => fragment.CanonicalKey == "AGENTS.md");
     }
 
     private static PublishedPackageView EmptyView()

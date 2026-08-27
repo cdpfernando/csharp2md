@@ -134,14 +134,14 @@ public sealed class RetrievalGuideProjectorTests
         var pages = MarkdownProjector.Project(view);
         var guide = RetrievalGuideProjector.Project(view);
 
-        Assert.Equal(RetrievalGuideProjector.Key, composed[^1].CanonicalKey);
+        Assert.Equal(RetrievalGuideProjector.Key, composed[^2].CanonicalKey);
         Assert.Equal(pages.Length + 1, composed.Count(static fragment =>
             fragment.CanonicalKey.StartsWith("markdown/", StringComparison.Ordinal)
             || fragment.CanonicalKey == RetrievalGuideProjector.Key));
-        Assert.Equal(guide[0].CanonicalKey, composed[^1].CanonicalKey);
+        Assert.Equal(guide[0].CanonicalKey, composed[^2].CanonicalKey);
         Assert.Equal(
             Encoding.UTF8.GetString(guide[0].Payload.AsSpan()),
-            Encoding.UTF8.GetString(composed[^1].Payload.AsSpan()));
+            Encoding.UTF8.GetString(composed[^2].Payload.AsSpan()));
     }
 
     private static string GuideText(ImmutableArray<StagedFragment> fragments) =>

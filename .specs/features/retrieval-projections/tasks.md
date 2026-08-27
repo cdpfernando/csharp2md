@@ -1035,11 +1035,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] All four required subjects are covered
-- [ ] A test asserts the text enumerates no fact type, observation kind, facet axis or relation triple
-- [ ] The file is listed in the manifest and contains no absolute path
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1567+ tests pass (no silent deletions)
+- [x] All four required subjects are covered
+- [x] A test asserts the text enumerates no fact type, observation kind, facet axis or relation triple
+- [x] The file is listed in the manifest and contains no absolute path
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1567+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
