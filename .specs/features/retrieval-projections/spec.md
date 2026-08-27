@@ -339,8 +339,8 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-41 | P1: Projection validation | Design | implemented |
 | RP-42 | P1: Projection validation | Design | implemented |
 | RP-43 | P1: Projection validation | Design | implemented |
-| RP-44 | P1: Projection validation | Design | Pending |
-| RP-45 | P1: Projection validation | Design | Pending |
+| RP-44 | P1: Projection validation | Design | implemented |
+| RP-45 | P1: Projection validation | Design | implemented |
 | RP-46 | P1: Determinism, security and assembly isolation | Design | implemented |
 | RP-47 | P1: Determinism, security and assembly isolation | Design | Pending |
 | RP-48 | P1: Determinism, security and assembly isolation | Design | implemented |

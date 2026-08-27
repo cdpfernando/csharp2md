@@ -32,7 +32,7 @@ internal static class PackagePublisher
         return fragments.Add(new StagedFragment(ArtifactRole.Manifest, ManifestKey, CanonicalJson.Write(manifest)));
     }
 
-    private static ImmutableArray<byte> Write(WireDocument document, string canonicalKey)
+    internal static ImmutableArray<byte> Write(WireDocument document, string canonicalKey)
     {
         if (canonicalKey == RegistryKey)
         {

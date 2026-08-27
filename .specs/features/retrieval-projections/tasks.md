@@ -475,11 +475,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] A Markdown value differing from the cited payload aborts with `projection-value` naming page and value
-- [ ] A locator span outside the published source artifact aborts with `projection-span` naming the locator
-- [ ] Both rejection details are asserted on their message content, not just the exception type
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1410+ tests pass (no silent deletions)
+- [x] A Markdown value differing from the cited payload aborts with `projection-value` naming page and value
+- [x] A locator span outside the published source artifact aborts with `projection-span` naming the locator
+- [x] Both rejection details are asserted on their message content, not just the exception type
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1410+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
