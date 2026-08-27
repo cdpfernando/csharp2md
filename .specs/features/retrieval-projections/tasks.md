@@ -671,10 +671,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] A redacted document has an envelope declaring both hashes and every redacted span in ordinal order
-- [ ] An unredacted document has no envelope
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1455+ tests pass (no silent deletions)
+- [x] A redacted document has an envelope declaring both hashes and every redacted span in ordinal order
+- [x] An unredacted document has no envelope
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1455+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

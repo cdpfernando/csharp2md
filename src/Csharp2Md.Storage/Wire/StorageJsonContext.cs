@@ -51,6 +51,8 @@ namespace Csharp2Md.Storage.Wire;
 [JsonSerializable(typeof(QuarantineEnvelope))]
 [JsonSerializable(typeof(MeasurementRecordDto))]
 [JsonSerializable(typeof(MeasurementsEnvelope))]
+[JsonSerializable(typeof(RedactionEnvelopeDto))]
+[JsonSerializable(typeof(ImmutableArray<SourceSpanDto>))]
 [JsonSerializable(typeof(StructuralFactsShard))]
 [JsonSerializable(typeof(ArchitectureFactsShard))]
 [JsonSerializable(typeof(ContractFactsShard))]

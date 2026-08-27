@@ -50,3 +50,11 @@ public sealed record MeasurementRecordDto(
     long? DurationMilliseconds);
 
 public sealed record MeasurementsEnvelope(ImmutableArray<MeasurementRecordDto> Records);
+
+public sealed record RedactionEnvelopeDto(
+    string Document,
+    string Artifact,
+    bool Redacted,
+    ImmutableArray<SourceSpanDto> RedactedSpans,
+    string OriginalSha256,
+    string PublishedSha256);

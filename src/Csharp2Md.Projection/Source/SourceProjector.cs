@@ -26,28 +26,82 @@ internal static class SourceProjector
         foreach (var document in documents)
         {
             var key = ArtifactKey(document);
-            fragments.Add(StagedFragment.Deferred(
-                ArtifactRole.Payload,
-                key,
-                () => Materialize(source, document, view.Document.Diagnostics)));
+            var spans = SecretRedactor.SpansFor(document.Identity.Id, view.Document.Diagnostics);
+            var publication = new DocumentPublication(source, document, key, spans);
+            fragments.Add(StagedFragment.Deferred(ArtifactRole.Payload, key, publication.SourceBytes));
+            if (!spans.IsDefaultOrEmpty)
+            {
+                fragments.Add(StagedFragment.Deferred(
+                    ArtifactRole.Payload,
+                    key + ".meta.json",
+                    publication.EnvelopeBytes));
+            }
         }
 
         return fragments.ToImmutable();
     }
 
-    private static ImmutableArray<byte> Materialize(
-        ISourceDocumentReader source,
-        DocumentDto document,
-        DiagnosticsEnvelope diagnostics)
+    private sealed class DocumentPublication
     {
-        var identity = DocumentId.Create(document.Identity.Id);
-        if (!source.TryRead(identity, out var bytes) || bytes.IsDefault)
+        private readonly ISourceDocumentReader _source;
+        private readonly DocumentDto _document;
+        private readonly string _artifactKey;
+        private readonly ImmutableArray<SourceSpanDto> _spans;
+        private ImmutableArray<byte> _sourceBytes;
+        private ImmutableArray<byte> _envelopeBytes;
+        private bool _ready;
+
+        public DocumentPublication(
+            ISourceDocumentReader source,
+            DocumentDto document,
+            string artifactKey,
+            ImmutableArray<SourceSpanDto> spans)
         {
-            return [];
+            _source = source;
+            _document = document;
+            _artifactKey = artifactKey;
+            _spans = spans;
         }
 
-        var spans = SecretRedactor.SpansFor(document.Identity.Id, diagnostics);
-        return SecretRedactor.Redact(bytes, spans);
+        public ImmutableArray<byte> SourceBytes()
+        {
+            Ensure();
+            return _sourceBytes;
+        }
+
+        public ImmutableArray<byte> EnvelopeBytes()
+        {
+            Ensure();
+            return _envelopeBytes;
+        }
+
+        private void Ensure()
+        {
+            if (_ready)
+            {
+                return;
+            }
+
+            var identity = DocumentId.Create(_document.Identity.Id);
+            if (!_source.TryRead(identity, out var original) || original.IsDefault)
+            {
+                _sourceBytes = [];
+                _envelopeBytes = [];
+                _ready = true;
+                return;
+            }
+
+            _sourceBytes = SecretRedactor.Redact(original, _spans);
+            _envelopeBytes = _spans.IsDefaultOrEmpty
+                ? []
+                : RedactionEnvelope.Fragment(
+                    _document.Identity.Id,
+                    _artifactKey,
+                    original,
+                    _sourceBytes,
+                    _spans).Payload;
+            _ready = true;
+        }
     }
 
     private static string ArtifactKey(DocumentDto document)

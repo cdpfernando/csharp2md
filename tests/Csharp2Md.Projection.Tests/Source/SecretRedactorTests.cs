@@ -117,7 +117,10 @@ public sealed class SecretRedactorTests
             body,
             new SourceSpanDto(1, prefix.Length + 1, 1, body.Length));
 
-        var fragment = Assert.Single(SourceProjector.Project(view, reader));
+        var fragments = SourceProjector.Project(view, reader);
+        var fragment = Assert.Single(
+            fragments,
+            candidate => !candidate.CanonicalKey.EndsWith(".meta.json", StringComparison.Ordinal));
         var published = Encoding.UTF8.GetString(fragment.ReadPayload().AsSpan());
 
         Assert.DoesNotContain(secret, published, StringComparison.Ordinal);
