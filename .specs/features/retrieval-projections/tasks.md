@@ -736,10 +736,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Every entry carries fact id, artifact key and zero-based ordinal
-- [ ] A test resolves every entry against the cited artifact and asserts the fact id matches
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1471+ tests pass (no silent deletions)
+- [x] Every entry carries fact id, artifact key and zero-based ordinal
+- [x] A test resolves every entry against the cited artifact and asserts the fact id matches
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1471+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
