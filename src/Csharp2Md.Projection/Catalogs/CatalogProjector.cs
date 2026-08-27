@@ -11,6 +11,7 @@ internal static class CatalogProjector
     internal const string ComponentsAndDeploymentUnitsKey = "catalogs/components-and-deployment-units.json";
     internal const string ContractsKey = "catalogs/contracts.json";
     internal const string DataStoresObjectsAndFieldsKey = "catalogs/data-stores-objects-and-fields.json";
+    internal const string UnknownsKey = "catalogs/unknowns.json";
 
     public static ImmutableArray<StagedFragment> Project(PublishedPackageView view)
     {
@@ -33,6 +34,7 @@ internal static class CatalogProjector
             view.Document.DataStores.Select(static dto => dto.Identity)
                 .Concat(view.Document.DataObjects.Select(static dto => dto.Identity))
                 .Concat(view.Document.DataFields.Select(static dto => dto.Identity)));
+        AddUnknowns(fragments, view);
         return fragments.ToImmutable();
     }
 
@@ -62,5 +64,26 @@ internal static class CatalogProjector
             ArtifactRole.Payload,
             catalogKey,
             CanonicalJson.Write(entries.ToImmutableArray())));
+    }
+
+    private static void AddUnknowns(ImmutableArray<StagedFragment>.Builder fragments, PublishedPackageView view)
+    {
+        var ranked = UnknownRanking.Rank(view);
+        if (ranked.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        var artifactKey = view.Slots
+            .Single(static slot => slot.CanonicalKey.EndsWith("/unresolved.json", StringComparison.Ordinal))
+            .CanonicalKey;
+        var entries = ranked
+            .Select(item => new CatalogEntryDto(
+                item.Record.Source.Id,
+                artifactKey,
+                item.Ordinal,
+                item.Record.Source.FactType))
+            .ToImmutableArray();
+        fragments.Add(new StagedFragment(ArtifactRole.Payload, UnknownsKey, CanonicalJson.Write(entries)));
     }
 }

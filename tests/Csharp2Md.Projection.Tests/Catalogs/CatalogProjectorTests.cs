@@ -405,6 +405,66 @@ public sealed class CatalogProjectorTests
             ],
             composed.Select(fragment => fragment.CanonicalKey));
     }
+
+    [Fact]
+    [Trait("Requirement", "RP-20")]
+    [Trait("Requirement", "RP-23")]
+    public void Project_Unknowns_EveryEntryResolvesAgainstCitedUnresolvedOrdinal()
+    {
+        var (view, _, _, _) = UnknownRankingTests.DegreeFixture();
+
+        var entries = CatalogProjectionFactory.ReadCatalog(
+            CatalogProjector.Project(view),
+            "catalogs/unknowns.json");
+
+        CatalogProjectionFactory.AssertUnknownsResolve(view, entries);
+        Assert.All(entries, entry =>
+        {
+            Assert.False(string.IsNullOrEmpty(entry.FactId));
+            Assert.False(string.IsNullOrEmpty(entry.ArtifactKey));
+            Assert.True(entry.Ordinal >= 0, entry.FactId);
+        });
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-23")]
+    public void Project_Unknowns_FollowsUnknownRankingOrder()
+    {
+        var (view, highId, midId, zeroId) = UnknownRankingTests.DegreeFixture();
+
+        var entries = CatalogProjectionFactory.ReadCatalog(
+            CatalogProjector.Project(view),
+            "catalogs/unknowns.json");
+        var ranked = UnknownRanking.Rank(view);
+
+        Assert.Equal(
+            ranked.Select(item => item.Record.Source.Id).ToArray(),
+            entries.Select(entry => entry.FactId).ToArray());
+        Assert.Equal([highId, midId, zeroId], entries.Select(entry => entry.FactId).ToArray());
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-18")]
+    [Trait("Requirement", "RP-23")]
+    public void PackageProjector_PlacesUnknownsCatalogAfterPersistence()
+    {
+        var store = CatalogProjectionFactory.CreateStore("OrdersDb");
+        var dataObject = CatalogProjectionFactory.CreateObject(store, "order_headers");
+        var field = CatalogProjectionFactory.CreateField(dataObject, "order_status");
+        var (unknowns, _, _, _) = UnknownRankingTests.DegreeFixture();
+        var view = PublishedPackageView.From(
+            unknowns.Document with
+            {
+                DataStores = CatalogProjectionFactory.ViewOf(store, dataObject, field).Document.DataStores,
+                DataObjects = CatalogProjectionFactory.ViewOf(store, dataObject, field).Document.DataObjects,
+                DataFields = CatalogProjectionFactory.ViewOf(store, dataObject, field).Document.DataFields,
+            });
+
+        var composed = new PackageProjector().Project(view, new EmptySourceReader());
+
+        Assert.Equal("catalogs/data-stores-objects-and-fields.json", composed[^2].CanonicalKey);
+        Assert.Equal("catalogs/unknowns.json", composed[^1].CanonicalKey);
+    }
 }
 
 internal sealed class EmptySourceReader : ISourceDocumentReader

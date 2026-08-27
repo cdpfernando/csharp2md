@@ -313,12 +313,12 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-15 | P1: Callable declaration locators | Design | implemented |
 | RP-16 | P1: Callable declaration locators | Design | implemented |
 | RP-17 | P1: Callable declaration locators | Design | implemented |
-| RP-18 | P1: Bounded catalogs | Design | Pending |
+| RP-18 | P1: Bounded catalogs | Design | implemented |
 | RP-19 | P1: Bounded catalogs | Design | implemented |
 | RP-20 | P1: Bounded catalogs | Design | implemented |
 | RP-21 | P1: Bounded catalogs | Design | Pending |
 | RP-22 | P1: Bounded catalogs | Design | Pending |
-| RP-23 | P1: Bounded catalogs | Design | Pending |
+| RP-23 | P1: Bounded catalogs | Design | implemented |
 | RP-24 | P1: Bounded catalogs | Design | Pending |
 | RP-25 | P1: Compact postings | Design | Pending |
 | RP-26 | P1: Compact postings | Design | implemented |

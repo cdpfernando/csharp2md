@@ -3,6 +3,9 @@ using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Literals;
+using Csharp2Md.Domain.Observations;
+using Csharp2Md.Domain.Proof;
+using Csharp2Md.Domain.Registry;
 using Csharp2Md.Domain.Relations;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
@@ -81,6 +84,47 @@ internal static class CatalogProjectionFactory
 
     internal static DataOperation CreateOperation(DataObject dataObject) =>
         DataOperation.Create(dataObject.Reference, DataOperationKind.Read, MappingStateKind.ExplicitConfirmation);
+
+    internal static Domain.Facts.Solution CreateSolutionFact() => Domain.Facts.Solution.Create(Solution);
+
+    internal static Domain.Facts.Project CreateProjectFact(string relativeProjectPath) =>
+        Domain.Facts.Project.Create(ProjectId.Create(Solution, relativeProjectPath));
+
+    internal static Document CreateDocumentFact(string relativeProjectPath, string relativePath) =>
+        Document.Create(ProjectId.Create(Solution, relativeProjectPath), relativePath);
+
+    internal static ConfirmedRelation Contains(FactReference source, FactReference target, int occurrenceOrdinal = 1) =>
+        ConfirmedRelation.Create(
+            RelationKind.Contains,
+            source,
+            target,
+            FacetBinding.Create(TaxonomyTables.Default.FacetAxes, [], []),
+            Evidence(source, occurrenceOrdinal),
+            ClassifierIdentity.Create("csharp2md.structural.contains", 1),
+            [AnalysisVariantId.Create("net10.0", "Release", [], "ci")],
+            EvidenceMethod.Syntactic);
+
+    internal static UnresolvedRecord CreateUnresolved(RelationKind kind, FactReference owner) =>
+        UnresolvedRecord.Create(kind, owner, UnresolvedCause.NoCandidateFound, Evidence(owner, 1));
+
+    internal static void AssertUnknownsResolve(PublishedPackageView view, ImmutableArray<CatalogEntryDto> entries)
+    {
+        Assert.NotEmpty(entries);
+        foreach (var entry in entries)
+        {
+            Assert.False(string.IsNullOrEmpty(entry.FactId));
+            Assert.False(string.IsNullOrEmpty(entry.ArtifactKey));
+            Assert.True(entry.Ordinal >= 0, entry.FactId);
+            Assert.Equal(entry.FactId, FactIdAt(view, new ArtifactCitation(entry.ArtifactKey, entry.Ordinal)));
+            Assert.Equal(view.Document.Unresolved[entry.Ordinal].Source.Id, entry.FactId);
+        }
+    }
+
+    private static EvidenceChain Evidence(FactReference owner, int occurrenceOrdinal) =>
+        EvidenceChain.Create(
+        [
+            new ObservationIdentity(owner, ObservationKind.Invocation, NormalizedPayload.Create([]), occurrenceOrdinal),
+        ]);
 
     internal static ImmutableArray<CatalogEntryDto> ReadCatalog(ImmutableArray<StagedFragment> fragments, string key)
     {

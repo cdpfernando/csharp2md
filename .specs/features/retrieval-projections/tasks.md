@@ -799,11 +799,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Degree counts relations where the owner is either source or target
-- [ ] An owner with zero relations ranks last rather than being omitted
-- [ ] Equal degrees break by fact id ordinally, asserted from two input orders
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1490+ tests pass (no silent deletions)
+- [x] Degree counts relations where the owner is either source or target
+- [x] An owner with zero relations ranks last rather than being omitted
+- [x] Equal degrees break by fact id ordinally, asserted from two input orders
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1490+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
