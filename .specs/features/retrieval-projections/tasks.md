@@ -1079,11 +1079,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] The union of shard entries equals the entry set produced without splitting
-- [ ] Every resulting shard appears in the manifest
-- [ ] Re-running produces the same shard assignment
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1580+ tests pass (no silent deletions)
+- [x] The union of shard entries equals the entry set produced without splitting
+- [x] Every resulting shard appears in the manifest
+- [x] Re-running produces the same shard assignment
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1580+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full
