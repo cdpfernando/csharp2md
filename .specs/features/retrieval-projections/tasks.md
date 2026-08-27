@@ -1144,11 +1144,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Projection's reference set is exactly Storage and Domain
-- [ ] Analysis declares no reference to Storage, Projection or Cli
-- [ ] The CLI declares no direct reference to Domain
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1598+ tests pass (no silent deletions)
+- [x] Projection's reference set is exactly Storage and Domain
+- [x] Analysis declares no reference to Storage, Projection or Cli
+- [x] The CLI declares no direct reference to Domain
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1598+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: build

@@ -4,21 +4,26 @@ namespace Csharp2Md.Projection.Tests.Isolation;
 
 public sealed class ProjectionIsolationTests
 {
+    public static TheoryData<string> ForbiddenAnalysisProjectReferences() =>
+        new()
+        {
+            "Csharp2Md.Storage",
+            "Csharp2Md.Projection",
+            "Csharp2Md.Cli",
+        };
+
     [Fact]
     [Trait("Requirement", "ENG-04")]
     public void ProjectionCsproj_DeclaresNoProjectReferenceToAnalysis() =>
-        AssertNoProjectReference("Csharp2Md.Analysis");
+        AssertNoProjectReference(ProjectionCsprojPath(), "Csharp2Md.Analysis");
 
     [Fact]
     [Trait("Requirement", "RP-01")]
+    [Trait("Requirement", "RP-50")]
     [Trait("Requirement", "ENG-04")]
     public void ProjectionCsproj_ProjectReferencesEqualStorageAndDomain()
     {
-        var names = ReadProjectReferenceIncludes(ProjectionCsprojPath())
-            .Select(include => Path.GetFileNameWithoutExtension(
-                include.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToArray();
+        var names = ReadProjectReferenceNames(ProjectionCsprojPath());
 
         Assert.Equal(["Csharp2Md.Domain", "Csharp2Md.Storage"], names);
     }
@@ -26,28 +31,61 @@ public sealed class ProjectionIsolationTests
     [Fact]
     [Trait("Requirement", "ENG-04")]
     public void ProjectionCsproj_DeclaresNoProjectReferenceToCli() =>
-        AssertNoProjectReference("Csharp2Md.Cli");
+        AssertNoProjectReference(ProjectionCsprojPath(), "Csharp2Md.Cli");
 
-    private static void AssertNoProjectReference(string forbiddenProject)
+    [Theory]
+    [Trait("Requirement", "RP-50")]
+    [MemberData(nameof(ForbiddenAnalysisProjectReferences))]
+    public void AnalysisCsproj_DeclaresNoProjectReferenceTo(string forbiddenProject) =>
+        AssertNoProjectReference(CsprojPath("Csharp2Md.Analysis"), forbiddenProject);
+
+    [Fact]
+    [Trait("Requirement", "RP-50")]
+    public void AnalysisCsproj_ProjectReferencesEqualDomainOnly()
     {
-        var csprojPath = ProjectionCsprojPath();
+        var names = ReadProjectReferenceNames(CsprojPath("Csharp2Md.Analysis"));
 
-        Assert.True(File.Exists(csprojPath), $"Projection project file was not found at '{csprojPath}'.");
+        Assert.Equal(["Csharp2Md.Domain"], names);
+    }
+
+    [Fact]
+    [Trait("Requirement", "RP-50")]
+    public void CliCsproj_DeclaresNoDirectProjectReferenceToDomain() =>
+        AssertNoProjectReference(CsprojPath("Csharp2Md.Cli"), "Csharp2Md.Domain");
+
+    [Fact]
+    [Trait("Requirement", "RP-50")]
+    public void CliCsproj_ProjectReferencesEqualAnalysisStorageAndProjection()
+    {
+        var names = ReadProjectReferenceNames(CsprojPath("Csharp2Md.Cli"));
+
+        Assert.DoesNotContain("Csharp2Md.Domain", names);
+        Assert.Equal(["Csharp2Md.Analysis", "Csharp2Md.Projection", "Csharp2Md.Storage"], names);
+    }
+
+    private static void AssertNoProjectReference(string csprojPath, string forbiddenProject)
+    {
+        Assert.True(File.Exists(csprojPath), $"Project file was not found at '{csprojPath}'.");
 
         var offending = ReadProjectReferenceIncludes(csprojPath)
             .FirstOrDefault(include => ReferencesProject(include, forbiddenProject));
 
         Assert.True(
             offending is null,
-            $"Csharp2Md.Projection must not declare a project reference to {forbiddenProject}, but found '{offending}'.");
+            $"{Path.GetFileNameWithoutExtension(csprojPath)} must not declare a project reference to {forbiddenProject}, but found '{offending}'.");
     }
 
-    private static string ProjectionCsprojPath() =>
-        Path.Combine(
-            ProjectionTestPaths.RepoRoot,
-            "src",
-            "Csharp2Md.Projection",
-            "Csharp2Md.Projection.csproj");
+    private static string ProjectionCsprojPath() => CsprojPath("Csharp2Md.Projection");
+
+    private static string CsprojPath(string projectName) =>
+        Path.Combine(ProjectionTestPaths.RepoRoot, "src", projectName, projectName + ".csproj");
+
+    private static string[] ReadProjectReferenceNames(string csprojPath) =>
+        ReadProjectReferenceIncludes(csprojPath)
+            .Select(include => Path.GetFileNameWithoutExtension(
+                include.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
 
     private static IReadOnlyList<string> ReadProjectReferenceIncludes(string csprojPath)
     {
