@@ -541,11 +541,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] `Symbol.Create` accepts an optional locator and produces the same `FactId` with or without it
-- [ ] Construction guards reject an uninitialized document or hash when a locator is supplied
-- [ ] Tests cover present, absent and invalid locators
-- [ ] Gate check passes: Full gate command
-- [ ] Test count: 1424+ tests pass (no silent deletions)
+- [x] `Symbol.Create` accepts an optional locator and produces the same `FactId` with or without it
+- [x] Construction guards reject an uninitialized document or hash when a locator is supplied
+- [x] Tests cover present, absent and invalid locators
+- [x] Gate check passes: Full gate command
+- [x] Test count: 1424+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: full

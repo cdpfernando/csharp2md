@@ -1,5 +1,6 @@
 using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Identity;
+using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Registry;
 
 namespace Csharp2Md.Domain.Facts;
@@ -118,15 +119,27 @@ public sealed record Symbol : IFact
 
     public SymbolFacetSet Facets { get; }
 
-    private Symbol(FactReference reference, ProjectId owningProject, CanonicalSymbolSignature signature, SymbolFacetSet facets)
+    public DeclarationLocator? DeclarationLocator { get; }
+
+    private Symbol(
+        FactReference reference,
+        ProjectId owningProject,
+        CanonicalSymbolSignature signature,
+        SymbolFacetSet facets,
+        DeclarationLocator? declarationLocator)
     {
         Reference = reference;
         OwningProject = owningProject;
         Signature = signature;
         Facets = facets;
+        DeclarationLocator = declarationLocator;
     }
 
-    public static Symbol Create(CanonicalSymbolSignature signature, ProjectId owningProject, SymbolFacetSet facets)
+    public static Symbol Create(
+        CanonicalSymbolSignature signature,
+        ProjectId owningProject,
+        SymbolFacetSet facets,
+        DeclarationLocator? declarationLocator = null)
     {
         FactGuards.RequireInitialized(signature, nameof(signature));
         FactGuards.RequireInitialized(owningProject, nameof(owningProject));
@@ -135,8 +148,21 @@ public sealed record Symbol : IFact
             throw new ArgumentException("A symbol requires an initialized facet set.", nameof(facets));
         }
 
+        if (declarationLocator is { } locator)
+        {
+            if (locator.Equals(default(DeclarationLocator)) || locator.Document.Equals(default(DocumentId)))
+            {
+                throw new ArgumentException("A declaration locator requires an initialized document.", nameof(declarationLocator));
+            }
+
+            if (locator.Hash.Equals(default(DocumentHash)))
+            {
+                throw new ArgumentException("A declaration locator requires an initialized hash.", nameof(declarationLocator));
+            }
+        }
+
         var id = FactIdGrammar.Create("symbol", ("project", owningProject.Value), ("signature", signature.Value));
         var reference = new FactReference(id, nameof(Symbol));
-        return new Symbol(reference, owningProject, signature, facets);
+        return new Symbol(reference, owningProject, signature, facets, declarationLocator);
     }
 }

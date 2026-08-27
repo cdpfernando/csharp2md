@@ -308,7 +308,7 @@ Every ambiguity is resolved or recorded here. Nothing is left silently unclear.
 | RP-10 | P1: Source projection and secret redaction | Design | Pending |
 | RP-11 | P1: Source projection and secret redaction | Design | Pending |
 | RP-12 | P1: Source projection and secret redaction | Design | Pending |
-| RP-13 | P1: Callable declaration locators | Design | Pending |
+| RP-13 | P1: Callable declaration locators | Design | implemented |
 | RP-14 | P1: Callable declaration locators | Design | Pending |
 | RP-15 | P1: Callable declaration locators | Design | Pending |
 | RP-16 | P1: Callable declaration locators | Design | Pending |
