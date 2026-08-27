@@ -928,10 +928,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Every citation in every published catalog and posting resolves to the claimed fact or relation
-- [ ] Posting groups are ordered by subject fact id, entries by artifact key then ordinal
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1532+ tests pass (no silent deletions)
+- [x] Every citation in every published catalog and posting resolves to the claimed fact or relation
+- [x] Posting groups are ordered by subject fact id, entries by artifact key then ordinal
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1532+ tests pass (no silent deletions)
 
 **Tests**: integration
 **Gate**: build
