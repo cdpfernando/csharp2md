@@ -302,10 +302,10 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] Interface defined per the design, with no Roslyn or JSON types on its surface
-- [ ] A test asserts the Analysis public surface still exposes no forbidden namespace
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1372+ tests pass (no silent deletions)
+- [x] Interface defined per the design, with no Roslyn or JSON types on its surface
+- [x] A test asserts the Analysis public surface still exposes no forbidden namespace
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1372+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: build

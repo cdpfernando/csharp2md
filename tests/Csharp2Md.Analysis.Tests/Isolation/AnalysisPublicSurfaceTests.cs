@@ -15,6 +15,7 @@ public sealed class AnalysisPublicSurfaceTests
         "StageReport",
         "PublicationStatus",
         "ITransactionalStore",
+        "ISourceDocumentReader",
         "IStoreSession",
         "StagedFragment",
         "ArtifactRole",
