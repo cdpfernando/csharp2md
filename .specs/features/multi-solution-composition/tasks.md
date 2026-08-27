@@ -589,13 +589,13 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] Relations and candidates are ordered by source solution, source fact, target solution, target fact
-- [ ] An artifact exceeding a configured byte ceiling splits into ordinal-suffixed shards using `ShardWriter`
-- [ ] An artifact with zero entries is not emitted at all
-- [ ] A batch whose contributions carry no component, deployment unit, external system, contract or boundary operation emits no composition fragment
-- [ ] Reordering the contributions produces byte-identical fragments
-- [ ] Gate check passes: full gate
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Relations and candidates are ordered by source solution, source fact, target solution, target fact
+- [x] An artifact exceeding a configured byte ceiling splits into ordinal-suffixed shards using `ShardWriter`
+- [x] An artifact with zero entries is not emitted at all
+- [x] A batch whose contributions carry no component, deployment unit, external system, contract or boundary operation emits no composition fragment
+- [x] Reordering the contributions produces byte-identical fragments
+- [x] Gate check passes: full gate
+- [x] Test count reported; Storage 266 + Projection 184; total 1684 (previous 1679)
 
 **Tests**: unit
 **Gate**: full
