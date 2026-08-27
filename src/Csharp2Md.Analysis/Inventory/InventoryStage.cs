@@ -3,6 +3,7 @@ using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
+using Csharp2Md.Domain.Literals;
 
 namespace Csharp2Md.Analysis.Inventory;
 
@@ -46,6 +47,7 @@ internal sealed class InventoryStage : IPipelineStage
         var factCount = 1;
         var csharpDocuments = ImmutableArray.CreateBuilder<Document>();
         var configurationDocuments = ImmutableArray.CreateBuilder<Document>();
+        var sourcePaths = ImmutableDictionary.CreateBuilder<DocumentId, string>();
         var targetFrameworks = new SortedSet<string>(StringComparer.Ordinal);
 
         foreach (var projectPath in existing)
@@ -78,6 +80,7 @@ internal sealed class InventoryStage : IPipelineStage
 
                 context.Accumulator.AddFact(document);
                 factCount++;
+                sourcePaths[DocumentId.Create(document.Reference.Id.Value)] = absolute;
             }
 
             foreach (var diagnostic in inventoried.Diagnostics)
@@ -107,6 +110,7 @@ internal sealed class InventoryStage : IPipelineStage
                 .ToImmutable()
                 .OrderBy(static document => document.RelativePath, StringComparer.Ordinal),
         ];
+        BindSourceReader(context, root, sourcePaths.ToImmutable());
 
         return ValueTask.FromResult(new StageResult(
             factCount,
@@ -138,6 +142,20 @@ internal sealed class InventoryStage : IPipelineStage
         }
 
         return frameworks.ToImmutable();
+    }
+
+    private static void BindSourceReader(
+        PipelineContext context,
+        string authorizedRoot,
+        IReadOnlyDictionary<DocumentId, string> paths)
+    {
+        if (context.SourceDocumentReader is FilesystemSourceDocumentReader existing)
+        {
+            existing.Load(authorizedRoot, paths);
+            return;
+        }
+
+        context.SourceDocumentReader = new FilesystemSourceDocumentReader(authorizedRoot, paths);
     }
 
     private static bool TryGuard(PipelineContext context, string root, string path, out StageResult abort)

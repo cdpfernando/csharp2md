@@ -367,11 +367,11 @@ T43 → T44 → T45 → T46 → T47 → T48 → T49
 **Tools**: per the Tooling table above.
 
 **Done when**:
-- [ ] `Documents` is ordered by document id, ordinally
-- [ ] `TryRead` returns false for a path removed after inventory, without throwing
-- [ ] Tests cover a readable document, a removed document, and ordering
-- [ ] Gate check passes: Build gate command
-- [ ] Test count: 1386+ tests pass (no silent deletions)
+- [x] `Documents` is ordered by document id, ordinally
+- [x] `TryRead` returns false for a path removed after inventory, without throwing
+- [x] Tests cover a readable document, a removed document, and ordering
+- [x] Gate check passes: Build gate command
+- [x] Test count: 1386+ tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: build
