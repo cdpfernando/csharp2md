@@ -358,11 +358,11 @@ T24 -> T28
 
 **Done when**:
 
-- [ ] `BatchView` derives `Complete` and `IncompleteScopeReason` from its records rather than accepting them from a caller
-- [ ] `Complete` is `false` with reason `solution-unpublished` when any record is unpublished, `true` with a null reason otherwise
-- [ ] `Compose` accepts only `BatchView`, asserted by an API-shape test
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] `BatchView` derives `Complete` and `IncompleteScopeReason` from its records rather than accepting them from a caller
+- [x] `Complete` is `false` with reason `solution-unpublished` when any record is unpublished, `true` with a null reason otherwise
+- [x] `Compose` accepts only `BatchView`, asserted by an API-shape test
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; total 1645 (Domain 555, Analysis 650, Storage 259, Cli 29, Projection 152)
 
 **Tests**: unit
 **Gate**: quick
