@@ -608,8 +608,8 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-100 | P2: HTTP verb and route | Audit I3 | Design | Pending |
 | GCPC-101 | P2: HTTP verb and route | Audit I3; RP-33 | Design | Pending |
 | GCPC-102 | P2: HTTP verb and route | AD-010 | Design | Pending |
-| GCPC-103 | P2: Configuration triage | Audit I4 | Design | Pending |
-| GCPC-104 | P2: Configuration triage | ROSE-11; CDC missing-project | Design | Pending |
+| GCPC-103 | P2: Configuration triage | Audit I4 | Design | Verified |
+| GCPC-104 | P2: Configuration triage | ROSE-11; CDC missing-project | Design | Verified |
 | GCPC-105 | P2: Configuration triage | Audit I4 | Design | Pending |
 | GCPC-106 | P2: Configuration triage | Audit I4 | Design | Pending |
 | GCPC-107 | P2: Configuration triage | AD-004 | Design | Pending |

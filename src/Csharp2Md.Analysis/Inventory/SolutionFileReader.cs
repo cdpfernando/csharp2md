@@ -5,6 +5,13 @@ namespace Csharp2Md.Analysis.Inventory;
 
 internal static partial class SolutionFileReader
 {
+    /// <summary>
+    /// The project type GUID a classic `.sln` uses for a solution folder entry. A solution folder
+    /// carries a folder name where a project path belongs, so it must never reach the
+    /// missing-project diagnosis (GCPC-103).
+    /// </summary>
+    private const string SolutionFolderTypeGuid = "2150E333-8FDC-42A3-9474-1A3956D46DE8";
+
     public static ImmutableArray<string> ReadProjectPaths(string solutionPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(solutionPath);
@@ -38,7 +45,7 @@ internal static partial class SolutionFileReader
         foreach (var line in File.ReadLines(solutionPath))
         {
             var match = SlnProjectPathPattern().Match(line);
-            if (match.Success)
+            if (match.Success && !IsSolutionFolder(match.Groups["typeGuid"].Value))
             {
                 builder.Add(match.Groups["path"].Value);
             }
@@ -47,6 +54,11 @@ internal static partial class SolutionFileReader
         return builder.ToImmutable();
     }
 
-    [GeneratedRegex(@"^Project\(""[^""]*""\)\s*=\s*""[^""]*"",\s*""(?<path>[^""]+)""", RegexOptions.CultureInvariant)]
+    private static bool IsSolutionFolder(string typeGuid) =>
+        typeGuid.Trim('{', '}').Equals(SolutionFolderTypeGuid, StringComparison.OrdinalIgnoreCase);
+
+    [GeneratedRegex(
+        @"^Project\(""(?<typeGuid>[^""]*)""\)\s*=\s*""[^""]*"",\s*""(?<path>[^""]+)""",
+        RegexOptions.CultureInvariant)]
     private static partial Regex SlnProjectPathPattern();
 }

@@ -563,11 +563,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] The T5 fixture asserts no diagnostic names the solution folder
-- [ ] The same fixture asserts the genuinely missing project is still diagnosed, naming the referencing solution and the missing path
-- [ ] A `.slnx` regression asserts folder elements were never affected
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The T5 fixture asserts no diagnostic names the solution folder
+- [x] The same fixture asserts the genuinely missing project is still diagnosed, naming the referencing solution and the missing path
+- [x] A `.slnx` regression asserts folder elements were never affected
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 717 pass; total 1778 (Domain 555, Analysis 717, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: build

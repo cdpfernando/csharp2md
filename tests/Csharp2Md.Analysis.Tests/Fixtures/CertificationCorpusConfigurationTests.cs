@@ -7,11 +7,12 @@ using Csharp2Md.Storage.Wire;
 namespace Csharp2Md.Analysis.Tests.Fixtures;
 
 /// <summary>
-/// GCPC-103, GCPC-105: reproduces the audit's solution-folder and configuration-parsing findings
-/// (finding I4, design.md F2 and F3) in the versioned certification corpus. The fixes — stop
-/// diagnosing solution folders as missing projects, and align configuration parsing with the .NET
-/// configuration provider — land in later phases (T13, T14); this task only proves the current,
-/// pre-fix diagnostic set is present and reproducible in CI.
+/// GCPC-103, GCPC-104, GCPC-105: reproduces the audit's solution-folder and configuration-parsing
+/// findings (finding I4, design.md F2 and F3) in the versioned certification corpus. GCPC-103/104
+/// (solution-folder filtering) are fixed by T13: <c>SolutionFileReader</c> filters solution-folder
+/// entries by project type GUID, so "Docs" never reaches the missing-project branch, while the
+/// genuinely missing "ConfigurationShapes.Ghost" project is still diagnosed. GCPC-105..107
+/// (configuration-parsing policy) land in T14; those cases still document the pre-fix baseline.
 /// </summary>
 public sealed class CertificationCorpusConfigurationTests
 {
@@ -22,13 +23,13 @@ public sealed class CertificationCorpusConfigurationTests
 
     [Fact]
     [Trait("Requirement", "GCPC-103")]
-    public void ReadProjectPaths_ConfigurationShapesSln_ListsTheSolutionFolderAndTheMissingProjectSeparately()
+    public void ReadProjectPaths_ConfigurationShapesSln_ExcludesTheSolutionFolderButListsBothProjects()
     {
         Assert.True(File.Exists(SolutionPath), $"Expected fixture at '{SolutionPath}'.");
 
         var paths = SolutionFileReader.ReadProjectPaths(SolutionPath).ToArray();
 
-        Assert.Contains("Docs", paths);
+        Assert.DoesNotContain("Docs", paths);
         Assert.Contains(
             paths,
             path => path.Contains("ConfigurationShapes.Ghost", StringComparison.Ordinal));
@@ -39,7 +40,8 @@ public sealed class CertificationCorpusConfigurationTests
 
     [Fact]
     [Trait("Requirement", "GCPC-103")]
-    public async Task AnalyzeAsync_ConfigurationShapes_CurrentlyDiagnosesTheSolutionFolderAsAMissingProjectSeparatelyFromTheGenuinelyMissingOne()
+    [Trait("Requirement", "GCPC-104")]
+    public async Task AnalyzeAsync_ConfigurationShapes_DoesNotDiagnoseTheSolutionFolderButStillDiagnosesTheGenuinelyMissingProject()
     {
         var diagnostics = await AnalyzeAndReadDiagnosticsAsync();
 
@@ -47,17 +49,18 @@ public sealed class CertificationCorpusConfigurationTests
             .Where(record => record.Code == "missing-project")
             .ToArray();
 
-        // Documented pre-fix baseline (F3, GCPC-103): SolutionFileReader does not filter by project
-        // type GUID, so the solution-folder line ("Docs") reaches the same missing-project branch as
-        // the genuinely missing project. T13 (a later phase) is what stops the folder being diagnosed.
-        Assert.Contains(
+        // T13 (GCPC-103): the solution-folder line ("Docs") is filtered by project type GUID before
+        // it ever reaches the missing-project branch, so no diagnostic names it.
+        Assert.DoesNotContain(
             missingProjectDiagnostics,
             record => record.IdentityOrKey == "Docs");
-        Assert.Contains(
-            missingProjectDiagnostics,
-            record => record.IdentityOrKey is not null
-                && record.IdentityOrKey.Contains("ConfigurationShapes.Ghost", StringComparison.Ordinal));
-        Assert.Equal(2, missingProjectDiagnostics.Length);
+        // GCPC-104: the genuinely missing project is still diagnosed, naming the missing path; the
+        // diagnostic is published inside ConfigurationShapes.sln's own publication (SolutionPath,
+        // read by AnalyzeAndReadDiagnosticsAsync below), which is how it names the referencing
+        // solution.
+        var missingGhost = Assert.Single(missingProjectDiagnostics);
+        Assert.Contains("ConfigurationShapes.Ghost", missingGhost.IdentityOrKey, StringComparison.Ordinal);
+        Assert.Contains("ConfigurationShapes.Ghost", missingGhost.Message, StringComparison.Ordinal);
     }
 
     [Theory]
