@@ -705,10 +705,10 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Every published entry point in the corpus cites a resolvable evidence record
-- [ ] The cited evidence is asserted present in the artifact at the cited ordinal, read from the published package
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every published entry point in the corpus cites a resolvable evidence record
+- [x] The cited evidence is asserted present in the artifact at the cited ordinal, read from the published package
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; Analysis 734 pass; Storage 289 pass; total 1800 (Domain 560, Analysis 734, Storage 289, Cli 33, Projection 184)
 
 **Tests**: integration
 **Gate**: build

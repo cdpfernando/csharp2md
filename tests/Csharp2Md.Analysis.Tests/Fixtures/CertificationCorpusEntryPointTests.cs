@@ -72,6 +72,40 @@ public sealed class CertificationCorpusEntryPointTests
                 && record.Message.Contains("Index", StringComparison.Ordinal));
     }
 
+    [Fact]
+    [Trait("Requirement", "GCPC-023")]
+    public async Task AnalyzeAsync_CertificationCorpus_EveryEntryPointCitesEvidenceResolvableInThePublishedPackage()
+    {
+        var publication = await AnalyzeCorpusAsync();
+        var architecture = ReadShard<ArchitectureFactsShard>(publication, "facts/architecture.json");
+        var executes = ReadShard<ImmutableArray<ConfirmedRelationDto>>(publication, "relations/confirmed/executes.json");
+
+        Assert.NotEmpty(architecture.EntryPoints);
+        foreach (var entryPoint in architecture.EntryPoints)
+        {
+            // Every published EntryPoint cites the evidence that proved its entry capability, via the
+            // "executes" relation's derived_from -- each citation names an observation by owner, kind
+            // and occurrence ordinal, and that observation must actually be present in the artifact its
+            // kind maps to (GCPC-023).
+            var relation = Assert.Single(
+                executes,
+                candidate => candidate.Kind == "executes" && candidate.Source.Id == entryPoint.Identity.Id);
+            Assert.NotEmpty(relation.DerivedFrom);
+
+            foreach (var citation in relation.DerivedFrom)
+            {
+                var artifactKey = "observations/" + citation.Kind + ".json";
+                var observations = ReadShard<ImmutableArray<ObservationDto>>(publication, artifactKey);
+
+                Assert.Contains(
+                    observations,
+                    observation => observation.Identity.Owner.Id == citation.Owner.Id
+                        && observation.Identity.Kind == citation.Kind
+                        && observation.Identity.OccurrenceOrdinal == citation.OccurrenceOrdinal);
+            }
+        }
+    }
+
     private static void AssertHasCallable(StructuralFactsShard structural, string methodName) =>
         Assert.Contains(
             structural.Symbols,

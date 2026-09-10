@@ -528,7 +528,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-020 | P1: Entry capability | Audit B2; supersedes EBC-05 | Design | Verified |
 | GCPC-021 | P1: Entry capability | Audit B2; supersedes EBC-05 | Design | Verified |
 | GCPC-022 | P1: Entry capability | Preserves EBC-08 | Design | Verified |
-| GCPC-023 | P1: Entry capability | AD-004 evidence before promotion | Design | Pending |
+| GCPC-023 | P1: Entry capability | AD-004 evidence before promotion | Design | Verified |
 | GCPC-024 | P1: Entry capability | AD-010 proof states | Design | Verified |
 | GCPC-025 | P1: Entry capability | Audit gate 3; D-01 | Design | Verified |
 | GCPC-026 | P1: Document policy | D-04; audit I4 | Design | Verified |
