@@ -198,6 +198,60 @@ public sealed class SymbolFactEmitterTests
     }
 
     [Fact]
+    [Trait("Requirement", "GCPC-020")]
+    public async Task ExecuteAsync_AccessibilityShapes_PublicMethodOnPublicType_CarriesExternallyReachable()
+    {
+        var symbols = await EmitAccessibilityShapesAsync();
+
+        Assert.Contains(SymbolFacet.ExternallyReachable, FacetsNamed(symbols, "PublicMethod"));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-020")]
+    public async Task ExecuteAsync_AccessibilityShapes_PrivateMethod_DoesNotCarryExternallyReachable()
+    {
+        var symbols = await EmitAccessibilityShapesAsync();
+
+        Assert.DoesNotContain(SymbolFacet.ExternallyReachable, FacetsNamed(symbols, "PrivateMethod"));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-020")]
+    public async Task ExecuteAsync_AccessibilityShapes_ProtectedMethodOnPublicType_CarriesExternallyReachable()
+    {
+        var symbols = await EmitAccessibilityShapesAsync();
+
+        Assert.Contains(SymbolFacet.ExternallyReachable, FacetsNamed(symbols, "ProtectedMethod"));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-020")]
+    public async Task ExecuteAsync_AccessibilityShapes_InternalMethodOnPublicType_DoesNotCarryExternallyReachable()
+    {
+        var symbols = await EmitAccessibilityShapesAsync();
+
+        Assert.DoesNotContain(SymbolFacet.ExternallyReachable, FacetsNamed(symbols, "InternalMethod"));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-020")]
+    public async Task ExecuteAsync_AccessibilityShapes_PublicMethodOnInternalNestedType_DoesNotCarryExternallyReachable()
+    {
+        var symbols = await EmitAccessibilityShapesAsync();
+
+        Assert.DoesNotContain(SymbolFacet.ExternallyReachable, FacetsNamed(symbols, "OnInternalNested"));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-020")]
+    public async Task ExecuteAsync_AccessibilityShapes_PublicMethodOnPrivateNestedType_DoesNotCarryExternallyReachable()
+    {
+        var symbols = await EmitAccessibilityShapesAsync();
+
+        Assert.DoesNotContain(SymbolFacet.ExternallyReachable, FacetsNamed(symbols, "OnPrivateNested"));
+    }
+
+    [Fact]
     [Trait("Requirement", "ROSE-16")]
     public async Task ExecuteAsync_AcmeOrders_OrdersControllerIsNotTaggedController()
     {
@@ -546,6 +600,78 @@ public sealed class SymbolFactEmitterTests
             "Acme.Orders.slnx");
         Assert.True(File.Exists(path), $"Expected fixture at '{path}'.");
         return path;
+    }
+
+    private static async Task<Symbol[]> EmitAccessibilityShapesAsync()
+    {
+        var tree = Directory.CreateTempSubdirectory("csharp2md-accessibility-");
+        try
+        {
+            var solutionPath = WriteAccessibilityShapesSolution(tree.FullName);
+            var context = new PipelineContext(new SwallowingSession(), solutionPath);
+            try
+            {
+                await new InventoryStage().ExecuteAsync(context, CancellationToken.None);
+                var result = await new SemanticAnalysisStage().ExecuteAsync(context, CancellationToken.None);
+                Assert.False(result.AbortPublication, context.Detail);
+
+                return context.Accumulator.ToSnapshot().Facts.OfType<Symbol>().ToArray();
+            }
+            finally
+            {
+                context.BoundSolution?.Dispose();
+            }
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+        }
+    }
+
+    private static string WriteAccessibilityShapesSolution(string root)
+    {
+        var projectDir = Path.Combine(root, "App");
+        Directory.CreateDirectory(projectDir);
+        File.WriteAllText(
+            Path.Combine(projectDir, "App.csproj"),
+            """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+              </PropertyGroup>
+            </Project>
+            """);
+        File.WriteAllText(
+            Path.Combine(projectDir, "Accessibility.cs"),
+            """
+            public class Reachable
+            {
+                public void PublicMethod() {}
+                private void PrivateMethod() {}
+                protected void ProtectedMethod() {}
+                internal void InternalMethod() {}
+
+                internal class InternalNested
+                {
+                    public void OnInternalNested() {}
+                }
+
+                private class PrivateNested
+                {
+                    public void OnPrivateNested() {}
+                }
+            }
+            """);
+
+        var solutionPath = Path.Combine(root, "App.slnx");
+        File.WriteAllText(
+            solutionPath,
+            """
+            <Solution>
+              <Project Path="App/App.csproj" />
+            </Solution>
+            """);
+        return solutionPath;
     }
 
     private static string WriteDeclaredShapesSolution(string root)

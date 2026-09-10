@@ -648,11 +648,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A public method on a public type carries the facet; a private method does not
-- [ ] A public method on an internal or private nested type does not carry it, proving effective rather than declared accessibility
-- [ ] Protected and internal cases are each asserted explicitly rather than folded together
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A public method on a public type carries the facet; a private method does not
+- [x] A public method on an internal or private nested type does not carry it, proving effective rather than declared accessibility
+- [x] Protected and internal cases are each asserted explicitly rather than folded together
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 730 pass; total 1796 (Domain 560, Analysis 730, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: build
