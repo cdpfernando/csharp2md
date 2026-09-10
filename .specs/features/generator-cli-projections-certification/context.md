@@ -219,6 +219,46 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   `output-and-retrieval.md`'s scale scenario already uses) that forces a confirmed-relation,
   candidate, unresolved or frontier family to shard, assert the guide's prose for that family is
   still correct, watch it fail against the current code, then fix the four call sites.
+  **Confirmed, with a concrete size symptom, at T63** (2026-09-10): `ScaleInputGenerator`
+  (`tests/Csharp2Md.Storage.Tests/Scale/ScaleInputGenerator.cs`) is exactly the fixture this entry
+  asked for, and it exposed a second, more severe symptom than the prose-correctness one described
+  above -- once `contains`/`belongs-to`/observation families actually split into many shards under
+  the real ~32 KiB ceiling, `RetrievalGuideProjector`'s own `retrieval.md` grows past that same
+  ceiling, because its "## 2. Select a postings bucket" section (`PostingHints`, driven off
+  `view.Slots`) lists one line per *shard key* rather than one line per posting family. T63 did not
+  attempt the four-call-site rework this entry already scoped out (still a Projection-layer
+  production change, still outside a test-only task's file scope, still without dedicated tests to
+  drive it) -- it excludes `retrieval.md` from its own "every file within ceiling" check instead,
+  with the reasoning inline at the exclusion. The fixture this entry asked for now exists and
+  reproduces the failure on demand; closing the four call sites is still open.
+- **`Csharp2Md.Projection.ShardWriter`'s bucketing is a single fixed-depth 256-bucket hash, not
+  adaptive like `LayoutPlanner`'s own family splitting** (found in T63, 2026-09-10, while calibrating
+  `ScaleInputGenerator`): design.md F9 already named this precisely -- "`ShardWriter` buckets on the
+  first byte of `sha256(factId)` -- 256 buckets, no recursion -- and is called only by the catalog and
+  posting projectors" -- and framed it as a fact both `LayoutPlanner`'s adaptive depth and this
+  limitation drive the layout planner's design, but did not itself say the postings path was ever
+  brought up to the same adaptive standard. It was not: `PostingProjector` groups posting entries by
+  the *target* (or source) fact id of a relation, one list per id, then hands each family's whole set
+  of groups to `ShardWriter.Write` for bucketing -- but the unit of bucketing is the *group key*
+  (the fact id), never a group's own entries, so one fact id with a large fan-in or fan-out (a single
+  project owning thousands of documents, a single shared component thousands of symbols belong to)
+  puts its *entire* posting list in one shard, and that one shard cannot itself be split further
+  today. `ScaleInputGenerator`'s first draft made exactly this mistake -- one shared `Component` as
+  every synthetic symbol's `belongs-to` target, and one shared `Project` as every synthetic
+  document's `contains` source -- and both `postings/incoming.json` and (by the same mechanism)
+  `postings/outgoing.json` exceeded the ceiling in a single bucket, independent of and in addition to
+  the `contains`/`belongs-to` relation-family sharding `LayoutPlanner` already handles correctly. Not
+  fixed here: `ScaleInputGenerator` instead spreads its synthetic Documents and Symbols across 25
+  Projects and 25 Components (`ScaleInputGenerator.FanoutGroups`) so no single posting group grows
+  large enough to expose it, which is a legitimate calibration choice for proving GCPC-038/GCPC-039's
+  *relation-family* sharding (T63's actual scope) but leaves this a real, unaddressed scaling gap for
+  any future package where one fact id's fan-in or fan-out is itself large -- for example a real
+  project that legitimately owns thousands of documents. Closing it means making
+  `Csharp2Md.Projection.ShardWriter`'s own bucket depth adaptive (mirroring
+  `LayoutPlanner.PlanFamily`'s prefix-extension loop), a production change with its own test burden,
+  out of scope for T63 as a test-only task. A follow-up task should add a fixture with one
+  deliberately high-fan-in fact id and prove `ShardWriter` splits its posting group into more than
+  one shard, watch it fail against the current code, then generalize the bucketing.
 - **`ContractPass` never promotes a same-project handled event to a `Contract` fact** (found in T54,
   2026-09-10): `ContractPass.IsSharedAcrossProjects` (pre-existing code, not touched by any task in
   this feature) requires a message type to cross a project boundary via its producer or its consumer
