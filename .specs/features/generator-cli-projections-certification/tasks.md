@@ -1932,14 +1932,16 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Analyzing without explicit consent is asserted to run no source generator
-- [ ] Diagnostic analyzers are asserted never to execute, on a fixture project that declares one
-- [ ] The guard fails if the consent flag is removed or defaulted on
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Analyzing without explicit consent is asserted to run no source generator
+- [x] Diagnostic analyzers are asserted never to execute, on a fixture project that declares one
+- [x] The guard fails if the consent flag is removed or defaulted on
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; total ≥ previous task's total — **Analysis 816 pass** (up from 813); total 2035 (Domain 563, Analysis 816, Storage 372, Cli 58, Projection 226)
 
 **Tests**: integration
 **Gate**: build
+
+**Deviation**: none. `CompilationSanitizerTests.cs` (ROSE-29/30, pre-existing) already proves no analyzer or generator *reference* survives `CompilationSanitizer.Strip`; this task adds the complementary *behavioral* proof -- a canary `ISourceGenerator`/`DiagnosticAnalyzer` that actually flips a flag when Roslyn runs it, proven to run without stripping (proof of life, and the concrete demonstration of "fails if the consent flag is removed or defaulted on") and proven not to run after `CompilationSanitizer.Strip(project).GetCompilationAsync(...)` -- the exact call chain `SemanticAnalysisStage.cs:76-78` uses -- both against an `AdhocWorkspace` probe and against a real MSBuild-loaded project (`MsBuildWorkspaceFactory`). No consent mechanism for source generators exists anywhere in this codebase today (confirmed by search), matching spec.md's Out of Scope row for AD-003: the trust boundary stays "no consent, so never enabled."
 
 **Commit**: `test(analysis): guard the source-generator and analyzer trust boundary`
 

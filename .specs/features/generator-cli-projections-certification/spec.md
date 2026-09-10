@@ -590,7 +590,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-082 | P1: Security and fidelity | AD-021 | Design | Verified |
 | GCPC-083 | P1: Security and fidelity | quality-and-security.md zero-tolerance gates | Design | Verified |
 | GCPC-084 | P1: Security and fidelity | AD-021 plus the new label surface | Design | Verified |
-| GCPC-085 | P1: Security and fidelity | AD-003 | Design | Pending |
+| GCPC-085 | P1: Security and fidelity | AD-003 | Design | Verified |
 | GCPC-086 | P1: Security and fidelity | quality-and-security.md security | Design | Verified |
 | GCPC-087 | P2: Contract accounting | Audit I2 | Design | Pending |
 | GCPC-088 | P2: Contract accounting | Audit I2; AD-009 | Design | Verified |
