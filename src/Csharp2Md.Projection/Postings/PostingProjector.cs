@@ -93,6 +93,18 @@ internal static class PostingProjector
         return fragments.ToImmutable();
     }
 
+    /// <summary>
+    /// GCPC-091: a contract's producer publishes it, its consumer handles it. For a messaging binding
+    /// -- the only kind <c>ContractPass</c> creates today -- that distinction is
+    /// <see cref="BoundaryOperationDto.Direction"/> (outbound publishes, inbound handles), never
+    /// <see cref="ContractBindingDto.PayloadRole"/>: <c>ContractPass</c> assigns every messaging
+    /// binding, producer and consumer alike, the same <c>"request"</c> payload role (EBC-22/EBC-26;
+    /// there is no messaging "response"), so a role-only split put every messaging operation in
+    /// <c>consumers</c> and left <c>producers</c> permanently empty. This is additive, scoped to
+    /// <c>Protocol == "messaging"</c> only: a non-messaging (HTTP-shaped) binding keeps using
+    /// <see cref="ContractBindingDto.PayloadRole"/> exactly as before (RP-25 -- role decides, not the
+    /// operation's own name or direction), so that existing, tested behavior does not change.
+    /// </summary>
     private static void AddContractRole(
         PublishedPackageView view,
         Dictionary<string, List<PostingEntryDto>> producers,
@@ -105,6 +117,22 @@ internal static class PostingProjector
             && string.Equals(candidate.Contract.Id, relation.Target.Id, StringComparison.Ordinal));
         if (binding is null)
         {
+            return;
+        }
+
+        var operation = view.Document.BoundaryOperations.FirstOrDefault(candidate =>
+            string.Equals(candidate.Identity.Id, binding.Operation.Id, StringComparison.Ordinal));
+        if (operation is not null && string.Equals(operation.Protocol, "messaging", StringComparison.Ordinal))
+        {
+            if (string.Equals(operation.Direction, "outbound", StringComparison.Ordinal))
+            {
+                Add(producers, relation.Target.Id, entry);
+            }
+            else if (string.Equals(operation.Direction, "inbound", StringComparison.Ordinal))
+            {
+                Add(consumers, relation.Target.Id, entry);
+            }
+
             return;
         }
 

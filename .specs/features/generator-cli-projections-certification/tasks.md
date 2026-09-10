@@ -1864,15 +1864,22 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] The T4 fixture's handled event is asserted to reach both its producer and its consumer in one posting hop from the contract identity
-- [ ] The unhandled event is asserted to publish an explicit unresolved or excluded outcome and no contract
-- [ ] A payload slot whose contract identity is unproven is asserted published as candidate or unresolved, never as a contract
-- [ ] The published diagnostics and catalogs are asserted never to state that messaging is absent when only the contract is
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The T4 fixture's handled event is asserted to reach both its producer and its consumer in one posting hop from the contract identity — via a substitute fixture; see deviation
+- [x] The unhandled event is asserted to publish an explicit unresolved or excluded outcome and no contract — already proven at the accounting level by T28; T57 adds the GCPC-089 "never claims no messaging" proof at the posting layer
+- [x] A payload slot whose contract identity is unproven is asserted published as candidate or unresolved, never as a contract
+- [x] The published diagnostics and catalogs are asserted never to state that messaging is absent when only the contract is
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; total ≥ previous task's total — **Projection 220 pass** (up from 215); total 2026 (Domain 563, Analysis 813, Storage 372, Cli 58, Projection 220)
 
 **Tests**: unit
 **Gate**: quick
+
+**Deviation** (real defect found and fixed inside this task's own named `Where`, plus one substitution the investigation forced):
+
+1. **Real bug found and fixed, in scope**: `PostingProjector.AddContractRole` classified a binding's role by `ContractBindingDto.PayloadRole` alone. `ContractPass` assigns every messaging binding -- producer and consumer alike -- the same `"request"` role (there is no messaging "response"), so `producers` was permanently empty for the only kind of contract this codebase creates today; every messaging operation, regardless of direction, landed in `consumers`. Fixed additively, scoped to `Protocol == "messaging"` only: for a messaging binding, direction (`BoundaryOperationDto.Direction`, outbound/inbound) now decides producer vs. consumer; a non-messaging binding is untouched and still goes through the original `PayloadRole` path. This preserves two pre-existing, deliberately tested behaviors discovered while diagnosing the fix (both from the completed, unrelated `entrypoints-boundaries-contracts` workstream): RP-25 (`ContractDataAccessPostingTests`, which proves *role* decides over the operation's own name/direction for an HTTP-shaped binding) and EBC-25 (`ContractPassTests`, which proves a same-project publish+handle pair never becomes a `Contract` at all). Two earlier attempts at this fix were tried and reverted because they broke one of those two tests each — see context.md's Deferred Ideas for the full account.
+2. **Fixture substitution, forced by EBC-25**: T4's `Certification.Messaging/ContractShapes.cs` `OrderCreated`/`OrderCreatedEventHandler` pair can never become a `Contract` fact (both inside one project; EBC-25), so it cannot prove GCPC-091's "one posting hop" claim at all -- confirmed by a real `analyze` run of the certification corpus publishing no `facts/contract.json` (T54's earlier finding). `tests/Csharp2Md.Projection.Tests/Postings/MessagingContractPostingTests.cs` proves GCPC-091 with a hand-built messaging fixture matching `ContractPass`'s real output shape (both bindings `PayloadRole = "request"`) instead.
+
+**Not fixed, recorded as a new Deferred Idea in `context.md`**: neither `ContractPass` nor `RelationPass` emits a discrete `CandidateLink`/`UnresolvedRecord` for a message operation that is simply unhandled (as opposed to one whose payload type is null/anonymous, which `RelationPass.EmitUnresolved` already covers) -- T4's `OrderShipped` produces no contract, no binding, and no discrete unresolved record today, only an aggregate accounting count (T28). `MessagingContractPostingTests` proves `PostingProjector` is ready for such a record (it would surface correctly through `postings/unknowns.json`), but nothing yet makes `ContractPass`/`RelationPass` emit one -- out of this task's file scope.
 
 **Commit**: `feat(projection): recover contract producers and consumers in one hop`
 

@@ -238,3 +238,40 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   (likely requiring a scoped `ContractPass.cs` change, or a reassessment of whether the same-project
   restriction is intentional pre-existing behavior this feature should leave alone) — not folded into
   T54 because it is outside T54's own file scope and Done-when.
+  **Resolved (as "leave alone")** in T57: `ContractPass.IsSharedAcrossProjects` and the uniform
+  `"request"` payload role for every messaging binding are both pre-existing, deliberately tested
+  behavior from the completed `entrypoints-boundaries-contracts` workstream --
+  `ContractPassTests.Execute_EventTypeDeclaredInSameProjectAsPublisherAndHandler_DoesNotCreateContract`
+  (EBC-25) and `Execute_OutboundAndInboundMessagingForSharedEventType_CreatesContractBindingsAndRevision`
+  (EBC-21/22/26, asserting `PayloadRole == "request"` for both the outbound and inbound binding)
+  respectively. Two candidate fixes were tried and reverted because each broke one of those two tests:
+  keying `PostingProjector.AddContractRole` off `BoundaryOperation.Direction` for every binding broke
+  RP-25's `ContractDataAccessPostingTests` (whose fixture deliberately names operations opposite their
+  payload role, to prove role decides, not direction or name); assigning messaging outbound bindings
+  `PayloadRole = "response"` in `ContractPass` broke the EBC-21/22/26 test above. T57's actual fix is
+  additive and scoped to `Protocol == "messaging"` only (see T57's commit and the doc comment on
+  `AddContractRole`), so neither pre-existing behavior changed. T4's `OrderCreated` genuinely can never
+  reach GCPC-091's producer/consumer proof while EBC-25 stands; T57 proved GCPC-091 with a hand-built
+  messaging fixture instead (mirroring T54's substitution), and left T4's `OrderCreated` as the
+  GCPC-089 "unresolved event" case only, unchanged.
+- **`ContractPass`/`RelationPass` publish no discrete candidate or unresolved record for a message
+  operation that is simply unhandled** (found in T57, 2026-09-10): GCPC-092 requires an unproven
+  contract identity to be "published as candidate or unresolved... and SHALL NOT publish it as a
+  contract." `RelationPass.EmitUnresolved`'s messaging branch (`RelationPass.cs:121-156`) already adds
+  an `UnresolvedRecord(kind: UsesContract)` for a published message whose type argument is `null` or
+  anonymous (an unnameable payload) -- but T4's `OrderShipped` (a normally-named type published with
+  simply no handler anywhere) hits none of the existing `AddUnresolved`/`AddCandidate` call sites in
+  either `ContractPass.cs` or `RelationPass.cs`: it silently produces no `Contract`, no
+  `ContractBinding`, no `UnresolvedRecord` and no `CandidateLink` at all. The only place its absence is
+  accounted for today is `ContractAccounting`'s aggregate numeric report (T27/T29, GCPC-088), which
+  correctly counts it in the "unresolved" bucket of `contract_coverage` -- but that is a count, not a
+  discrete per-item record the way `InvokesPass`'s disposition ledger (GCPC-011..018) or
+  `PersistenceEmitter`'s unresolved nodes are. T57 proved (via a hand-built fixture, not a live
+  `analyze` of the T4 corpus, since `ContractPass` itself does not reach this state today) that if an
+  `UnresolvedRecord(kind: UsesContract)` existed for an unhandled message operation,
+  `PostingProjector` would correctly surface it through `postings/unknowns.json` and never fabricate a
+  producer or consumer entry for it -- proving the projection side is ready. Closing this for real
+  requires an Analysis-layer change (a new branch in `RelationPass.EmitUnresolved`, or in
+  `ContractPass` itself, for "published, zero inbound handlers, not already anonymous/null") that is
+  out of T57's own file scope (`PostingProjector.cs`). A follow-up task should add this branch and
+  prove it against T4's real `OrderShipped` end to end.

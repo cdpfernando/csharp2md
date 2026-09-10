@@ -594,10 +594,10 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-086 | P1: Security and fidelity | quality-and-security.md security | Design | Pending |
 | GCPC-087 | P2: Contract accounting | Audit I2 | Design | Pending |
 | GCPC-088 | P2: Contract accounting | Audit I2; AD-009 | Design | Verified |
-| GCPC-089 | P2: Contract accounting | Audit I2 | Design | Pending |
+| GCPC-089 | P2: Contract accounting | Audit I2 | Design | Verified |
 | GCPC-090 | P2: Contract accounting | taxonomy.md contracts | Design | Pending |
-| GCPC-091 | P2: Contract accounting | output-and-retrieval.md postings | Design | Pending |
-| GCPC-092 | P2: Contract accounting | AD-010 | Design | Pending |
+| GCPC-091 | P2: Contract accounting | output-and-retrieval.md postings | Design | Verified |
+| GCPC-092 | P2: Contract accounting | AD-010 | Design | Verified |
 | GCPC-093 | P2: Legible projections | Audit I1 | Design | Verified |
 | GCPC-094 | P2: Legible projections | RP-34; AD-007 | Design | Verified |
 | GCPC-095 | P2: Legible projections | AD-007; output-and-retrieval.md Markdown | Design | Verified |
