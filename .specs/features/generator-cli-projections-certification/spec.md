@@ -602,7 +602,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-094 | P2: Legible projections | RP-34; AD-007 | Design | Verified |
 | GCPC-095 | P2: Legible projections | AD-007; output-and-retrieval.md Markdown | Design | Verified |
 | GCPC-096 | P2: Legible projections | Audit I1 | Design | Verified |
-| GCPC-097 | P2: Legible projections | RP-44 extended to labels | Design | Pending |
+| GCPC-097 | P2: Legible projections | RP-44 extended to labels | Design | Verified |
 | GCPC-098 | P2: Legible projections | RP-33 | Design | Verified |
 | GCPC-099 | P2: HTTP verb and route | Audit I3; extends EBC-06 | Design | Verified |
 | GCPC-100 | P2: HTTP verb and route | Audit I3 | Design | Verified |

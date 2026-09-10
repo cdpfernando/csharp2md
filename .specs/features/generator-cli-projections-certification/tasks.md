@@ -1484,16 +1484,17 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A label altered by one character is asserted to abort publication, naming the offender
-- [ ] A label citing a missing key, and one citing an out-of-range ordinal, are each asserted to abort
-- [ ] The prior package is asserted byte-identical after each abort
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A label altered by one character is asserted to abort publication, naming the offender
+- [x] A label citing a missing key, and one citing an out-of-range ordinal, are each asserted to abort
+- [x] The prior package is asserted byte-identical after each abort
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Storage: 354 -> 357; Projection: 205 (unchanged); total 1943 -> 1946 (Domain 563, Analysis 788, Storage 357, Cli 33, Projection 205)
 
 **Tests**: unit
 **Gate**: full
 
 **Commit**: `feat(storage): fail publication on a label that contradicts the payload`
+- Deviation (real defect found and fixed while writing this task's own tests, inside the named `Where` file): the pre-existing generic `EnsureValueMatches` already walked catalog JSON automatically once T43 added `Labels` (a `LabelDto`'s `kind`/`value`/`artifact_key`/`ordinal` shape happens to match the citation shape `ProjectionValidator` already recognized) -- but a real, *uncorrupted* end-to-end publish of any `EntryPoint`/`BoundaryOperation` with a proven Type label failed this check, discovered by this task's own first (deliberately uncorrupted) baseline commit throwing `projection-value` before any corruption was applied. Root cause: `LabelProjector`'s Type/Method labels are the *decoded* plain-text form of a `CanonicalSymbolSignature` field that stays percent-encoded on the wire (`container=global%3A%3AAcme.Orders.Host`), so a literal substring check between the decoded label value (`global::Acme.Orders.Host`) and the still-encoded payload text never matches, even for a completely correct package. Fixed by trying the value's percent-encoded form (`Uri.EscapeDataString`) as a second, still-exact match before declaring a mismatch -- a no-op for every citation whose payload value was never encoded, so no prior passing case is weakened. Without this fix, T42-T44's label projection could not publish a single real EntryPoint or BoundaryOperation catalog entry; this closes that gap for real, not just for the corrupted-label test cases this task asked for.
 
 ---
 
