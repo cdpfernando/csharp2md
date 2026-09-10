@@ -507,8 +507,8 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | Requirement ID | Story | Origin | Phase | Status |
 | --- | --- | --- | --- | --- |
 | GCPC-001 | P1: Certified execution | Audit B1; AD-009 | Design | Pending |
-| GCPC-002 | P1: Certified execution | quality-and-security.md run coverage | Design | Pending |
-| GCPC-003 | P1: Certified execution | quality-and-security.md denominator table | Design | Pending |
+| GCPC-002 | P1: Certified execution | quality-and-security.md run coverage | Design | Verified |
+| GCPC-003 | P1: Certified execution | quality-and-security.md denominator table | Design | Verified |
 | GCPC-004 | P1: Certified execution | Audit B1 | Design | Pending |
 | GCPC-005 | P1: Certified execution | AD-009; quality-and-security.md | Design | Verified |
 | GCPC-006 | P1: Certified execution | AD-009 | Design | Pending |

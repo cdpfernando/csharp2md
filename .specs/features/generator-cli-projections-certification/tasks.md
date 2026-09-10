@@ -989,10 +989,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Both denominators are independently re-derived in the test and asserted equal
-- [ ] The T4 fixture's unhandled event is asserted to sit in the contract denominator and not in its numerator
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Both denominators are independently re-derived in the test and asserted equal
+- [x] The T4 fixture's unhandled event is asserted to sit in the contract denominator and not in its numerator
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 776 pass; total 1860 (Domain 563, Analysis 776, Storage 304, Cli 33, Projection 184)
+- Deviation: none functional. Contract coverage's denominator is scoped to messaging boundary operations only (`BoundaryOperation.Protocol is Messaging`) -- HTTP boundary operations carry no mechanically recognized payload type anywhere in this codebase today, so they are not yet an enumerable population per GCPC-003. Persistence coverage is tested against `fixtures/SyntheticSolution/Acme.Orders` rather than the certification corpus, because the certification corpus contains no persistence fixture at all (its persistence_coverage there is legitimately `not_applicable`); Acme.Orders already exercises a resolved read/write/flush and one occurrence that must stay unresolved (`OrderSqlQueries.SelectAllFrom`'s run-time table name), so it is the only fixture that lets the "unknowns > 0" bullet be tested honestly.
 
 **Tests**: unit
 **Gate**: build

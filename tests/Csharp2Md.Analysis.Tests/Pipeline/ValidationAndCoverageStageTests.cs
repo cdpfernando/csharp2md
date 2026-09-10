@@ -118,6 +118,145 @@ public sealed class ValidationAndCoverageStageTests
         Assert.DoesNotContain(properties, name => forbidden.Any(name.Contains));
     }
 
+    [Fact]
+    [Trait("Requirement", "GCPC-003")]
+    public async Task ExecuteAsync_CertificationCorpus_ContractDenominatorMatchesIndependentRecount()
+    {
+        var snapshot = await RunThroughValidationAndCoverageAsync(CertificationCorpusPaths.SolutionPath);
+        var metric = snapshot.Coverage!.ContractCoverage;
+
+        var independentDenominator = snapshot.Facts.OfType<BoundaryOperation>()
+            .Count(operation => operation.Protocol is BoundaryProtocol.Messaging);
+
+        Assert.True(independentDenominator > 0);
+        Assert.Equal(CoverageMetricState.Evaluated, metric.State);
+        Assert.Equal(independentDenominator, metric.Denominator);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-002")]
+    [Trait("Requirement", "GCPC-089")]
+    public async Task ExecuteAsync_CertificationCorpus_UnhandledPublishedEventSitsInContractDenominatorNotNumerator()
+    {
+        var snapshot = await RunThroughValidationAndCoverageAsync(CertificationCorpusPaths.SolutionPath);
+        var metric = snapshot.Coverage!.ContractCoverage;
+
+        // OrderShipped (fixtures/CertificationCorpus/Certification.Messaging/ContractShapes.cs, T4) is
+        // published with deliberately no handler anywhere in the corpus.
+        var orderShippedOperations = snapshot.Facts.OfType<BoundaryOperation>()
+            .Where(operation => operation.Protocol is BoundaryProtocol.Messaging
+                && operation.ProtocolOperationKey is not null
+                && operation.ProtocolOperationKey.Value.Value.Contains("OrderShipped", StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(orderShippedOperations);
+
+        var boundOperationIds = snapshot.Facts.OfType<ContractBinding>()
+            .Select(binding => binding.Operation.Id.Value)
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.All(orderShippedOperations, operation => Assert.DoesNotContain(operation.Reference.Id.Value, boundOperationIds));
+        Assert.True(metric.Denominator >= orderShippedOperations.Length);
+        Assert.True(metric.Unknowns > 0);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-002")]
+    public async Task ExecuteAsync_CertificationCorpus_ContractAccounting_NeverExceedsDenominator()
+    {
+        var snapshot = await RunThroughValidationAndCoverageAsync(CertificationCorpusPaths.SolutionPath);
+        var metric = snapshot.Coverage!.ContractCoverage;
+
+        Assert.True(metric.Numerator + metric.Exclusions + metric.Unknowns <= metric.Denominator);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-003")]
+    public async Task ExecuteAsync_AcmeOrders_PersistenceDenominatorMatchesIndependentRecount()
+    {
+        var snapshot = await RunThroughValidationAndCoverageAsync(AcmeOrdersSolutionPath);
+        var metric = snapshot.Coverage!.PersistenceCoverage;
+
+        var independentDenominator = snapshot.Observations.Count(o => o.Identity.Kind is ObservationKind.DataAccess);
+
+        Assert.True(independentDenominator > 0);
+        Assert.Equal(CoverageMetricState.Evaluated, metric.State);
+        Assert.Equal(independentDenominator, metric.Denominator);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-002")]
+    public async Task ExecuteAsync_AcmeOrders_PersistenceNumeratorMatchesIndependentlyResolvedOccurrences()
+    {
+        var snapshot = await RunThroughValidationAndCoverageAsync(AcmeOrdersSolutionPath);
+        var metric = snapshot.Coverage!.PersistenceCoverage;
+
+        var independentNumerator = IndependentPersistenceNumerator(snapshot);
+
+        Assert.True(independentNumerator > 0);
+        Assert.Equal(independentNumerator, metric.Numerator);
+        // The run-time-only table name in OrderSqlQueries.SelectAllFrom mints no data object (PK-27-style
+        // fixture comment: "the table is a run-time value, so no node may be minted for it"), so at least
+        // one recognized occurrence stays unresolved.
+        Assert.True(metric.Unknowns > 0);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-002")]
+    public async Task ExecuteAsync_AcmeOrders_PersistenceAccounting_NeverExceedsDenominator()
+    {
+        var snapshot = await RunThroughValidationAndCoverageAsync(AcmeOrdersSolutionPath);
+        var metric = snapshot.Coverage!.PersistenceCoverage;
+
+        Assert.True(metric.Numerator + metric.Exclusions + metric.Unknowns <= metric.Denominator);
+    }
+
+    /// <summary>
+    /// Independent re-derivation of persistence_coverage's numerator, written separately from
+    /// <see cref="ValidationAndCoverageStage"/>'s own (private) implementation: an occurrence resolved to
+    /// an operation and target either backs a confirmed <c>accesses-data</c> relation directly, or is a
+    /// bare flush (<c>SaveChanges</c>) whose owning callable is itself the source of one.
+    /// </summary>
+    private static int IndependentPersistenceNumerator(FactualSnapshot snapshot)
+    {
+        var dataAccessObservations = snapshot.Observations
+            .Where(o => o.Identity.Kind is ObservationKind.DataAccess)
+            .ToArray();
+
+        var accessesDataRelations = snapshot.ConfirmedRelations
+            .Where(r => r.Kind is RelationKind.AccessesData)
+            .ToArray();
+
+        var evidencedIdentities = accessesDataRelations.SelectMany(r => r.DerivedFrom.DerivedFrom).ToHashSet();
+        var resolvedOwnerIds = accessesDataRelations.Select(r => r.Source.Id.Value).ToHashSet(StringComparer.Ordinal);
+
+        bool IsFlush(Observation access) =>
+            HasPayload(access, "context-type")
+            && !HasPayload(access, "sql-target")
+            && PayloadValue(access, "operation") == "unknown";
+
+        return dataAccessObservations.Count(access =>
+            evidencedIdentities.Contains(access.Identity)
+            || (IsFlush(access) && resolvedOwnerIds.Contains(access.Identity.Owner.Id.Value)));
+    }
+
+    private static bool HasPayload(Observation observation, string key) => PayloadValue(observation, key) is not null;
+
+    private static string? PayloadValue(Observation observation, string key)
+    {
+        foreach (var entry in observation.Identity.Payload.Entries)
+        {
+            if (string.Equals(entry.Key, key, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(entry.Value.Value))
+            {
+                return entry.Value.Value;
+            }
+        }
+
+        return null;
+    }
+
+    private static readonly string AcmeOrdersSolutionPath = Path.Combine(
+        AnalysisTestPaths.RepoRoot, "fixtures", "SyntheticSolution", "Acme.Orders", "Acme.Orders.slnx");
+
     /// <summary>
     /// Independent re-derivation of entry_point_coverage's denominator: every reachable, non-constructor
     /// callable declared on a type that mechanically looks like an ASP.NET controller (derives from

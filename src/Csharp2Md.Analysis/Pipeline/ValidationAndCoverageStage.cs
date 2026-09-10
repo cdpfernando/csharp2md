@@ -1,3 +1,5 @@
+using Csharp2Md.Analysis.Classification;
+using Csharp2Md.Analysis.Classification.Persistence;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
@@ -30,12 +32,8 @@ internal sealed class ValidationAndCoverageStage : IPipelineStage
 
         var entryPointCoverage = ComputeEntryPointCoverage(snapshot);
         var linkedCallCoverage = ComputeLinkedCallCoverage(snapshot);
-
-        // T28 replaces these two with real computation over the contract and persistence populations.
-        var contractCoverage = CoverageMetric.NotApplicable(
-            "Contract coverage is not yet computed by this pipeline stage.");
-        var persistenceCoverage = CoverageMetric.NotApplicable(
-            "Persistence coverage is not yet computed by this pipeline stage.");
+        var contractCoverage = ComputeContractCoverage(snapshot);
+        var persistenceCoverage = ComputePersistenceCoverage(snapshot);
 
         context.Accumulator.SetCoverage(
             new CoverageReport(entryPointCoverage, linkedCallCoverage, contractCoverage, persistenceCoverage));
@@ -165,6 +163,91 @@ internal sealed class ValidationAndCoverageStage : IPipelineStage
             ? CoverageMetric.NotApplicable("No in-solution invocation occurrences were recognized.")
             : CoverageMetric.Evaluated(numerator, denominator, exclusions, unknowns);
     }
+
+    /// <summary>
+    /// contract_coverage: the denominator is every messaging <see cref="BoundaryOperation"/> fact
+    /// (published or consumed) -- "boundary payload slots requiring accepted/returned/published/consumed
+    /// contracts" per quality-and-security.md, scoped to the protocol <c>ContractPass</c> actually
+    /// resolves payload identity for; HTTP boundary operations carry no mechanically recognized payload
+    /// type today, so they are not yet an enumerable population. The numerator is the operations
+    /// <c>ContractPass</c> bound into a <see cref="Contract"/> via a <see cref="ContractBinding"/>; the
+    /// remainder (an outbound-only publish with no in-solution consumer, for example) is left
+    /// unaccounted by that pass today and is reported here as unknown rather than silently dropped
+    /// (GCPC-089).
+    /// </summary>
+    private static CoverageMetric ComputeContractCoverage(FactualSnapshot snapshot)
+    {
+        var denominatorOperations = snapshot.Facts.OfType<BoundaryOperation>()
+            .Where(static operation => operation.Protocol is BoundaryProtocol.Messaging)
+            .ToArray();
+
+        var boundOperationIds = snapshot.Facts.OfType<ContractBinding>()
+            .Select(static binding => binding.Operation.Id.Value)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var denominator = denominatorOperations.Length;
+        var numerator = denominatorOperations.Count(operation => boundOperationIds.Contains(operation.Reference.Id.Value));
+        var unknowns = Math.Max(0, denominator - numerator);
+
+        return denominator == 0
+            ? CoverageMetric.NotApplicable("No messaging boundary operations were recognized.")
+            : CoverageMetric.Evaluated(numerator, denominator, exclusions: 0, unknowns);
+    }
+
+    /// <summary>
+    /// persistence_coverage: the denominator is every recognized data-access occurrence (an
+    /// <see cref="ObservationKind.DataAccess"/> observation) -- "recognized data-access operations
+    /// requiring operation and target resolution" per quality-and-security.md, matching what
+    /// <c>PersistenceModelBuilder</c> counts as recognized. The numerator is occurrences that resolved
+    /// to an operation and target: those cited as evidence for a confirmed <see cref="RelationKind.AccessesData"/>
+    /// relation, plus a flush occurrence (a bare <c>SaveChanges</c>) whose owning callable is itself the
+    /// source of such a relation -- the flush confirms a tracked assignment observed elsewhere, so it
+    /// carries no operation evidence of its own (mirrors <c>PersistenceModelBuilder.ResolveUnresolved</c>,
+    /// re-derived here from published facts and observations only). Every remaining occurrence carries a
+    /// published <see cref="UnresolvedRecord"/>, so nothing is a silent exclusion.
+    /// </summary>
+    private static CoverageMetric ComputePersistenceCoverage(FactualSnapshot snapshot)
+    {
+        var dataAccessObservations = snapshot.Observations
+            .Where(static o => o.Identity.Kind is ObservationKind.DataAccess)
+            .ToArray();
+
+        var accessesDataRelations = snapshot.ConfirmedRelations
+            .Where(static r => r.Kind is RelationKind.AccessesData)
+            .ToArray();
+
+        var evidencedIdentities = accessesDataRelations
+            .SelectMany(static r => r.DerivedFrom.DerivedFrom)
+            .ToHashSet();
+
+        var resolvedOwnerIds = accessesDataRelations
+            .Select(static r => r.Source.Id.Value)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var denominator = dataAccessObservations.Length;
+        var numerator = dataAccessObservations.Count(access =>
+            evidencedIdentities.Contains(access.Identity)
+            || (IsFlush(access) && resolvedOwnerIds.Contains(access.Identity.Owner.Id.Value)));
+        var unknowns = Math.Max(0, denominator - numerator);
+
+        return denominator == 0
+            ? CoverageMetric.NotApplicable("No recognized data-access occurrences were found in the analyzed variants.")
+            : CoverageMetric.Evaluated(numerator, denominator, exclusions: 0, unknowns);
+    }
+
+    /// <summary>
+    /// A bare flush (<c>SaveChanges</c>/<c>SaveChangesAsync</c>) reaches the ledger as a data access on
+    /// the context itself with no statement and no resolved operation -- it mints nothing on its own; it
+    /// only confirms a tracked assignment observed on the same callable (mirrors
+    /// <c>PersistenceModelBuilder.IsFlush</c>).
+    /// </summary>
+    private static bool IsFlush(Observation access) =>
+        PayloadReader.Value(access, PersistenceModelBuilder.ContextTypeKey) is not null
+        && PayloadReader.Value(access, PersistenceModelBuilder.SqlTargetKey) is null
+        && string.Equals(
+            PayloadReader.Value(access, PersistenceModelBuilder.OperationKey),
+            PersistenceModelBuilder.UnknownOperation,
+            StringComparison.Ordinal);
 
     private static bool IsHandleAsync(Symbol method) =>
         string.Equals(ReadField(method.Signature.Value, "metadata"), "HandleAsync", StringComparison.Ordinal);
