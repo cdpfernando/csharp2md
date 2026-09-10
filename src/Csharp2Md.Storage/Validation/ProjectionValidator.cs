@@ -104,6 +104,20 @@ public static class ProjectionValidator
 
     private static string AuthoritativeText(PublishedPackageView view, ArtifactCitation citation)
     {
+        var shardedArtifact = view.Plan.Artifacts.FirstOrDefault(
+            artifact => artifact.ArtifactKey == citation.ArtifactKey && !artifact.Records.IsEmpty);
+        if (shardedArtifact is not null)
+        {
+            if ((uint)citation.Ordinal >= (uint)shardedArtifact.Records.Length)
+            {
+                return string.Empty;
+            }
+
+            var entry = shardedArtifact.Records[citation.Ordinal].Entry;
+            var recordNode = JsonNode.Parse(entry.AsSpan());
+            return recordNode?.ToJsonString() ?? Encoding.UTF8.GetString(entry.AsSpan());
+        }
+
         var bytes = PackagePublisher.Write(view.Document, citation.ArtifactKey);
         var node = JsonNode.Parse(bytes.AsSpan());
         var element = ElementAt(node, citation.Ordinal);

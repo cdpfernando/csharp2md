@@ -87,12 +87,25 @@ public sealed class InternTableTests
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
 
-        var containsArtifact = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == "relations/confirmed/contains.json");
-        var inlineBytes = containsArtifact.Payload.AsSpan().Length;
+        // T35's real ceiling can now shard this family across "contains.json" and/or
+        // "contains.<bucket>.json" shard keys; gather every shard so the measurement covers the whole
+        // family regardless of how the ceiling split it.
+        var containsArtifacts = publication.ArtifactsInPublicationOrder
+            .Where(artifact => artifact.CanonicalKey == "relations/confirmed/contains.json"
+                || artifact.CanonicalKey.StartsWith("relations/confirmed/contains.", StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(containsArtifacts);
+        var inlineBytes = containsArtifacts.Sum(artifact => artifact.Payload.AsSpan().Length);
 
-        var records = (JsonArray)JsonNode.Parse(containsArtifact.Payload.AsSpan())!;
+        var records = new JsonArray();
+        foreach (var artifact in containsArtifacts)
+        {
+            foreach (var record in (JsonArray)JsonNode.Parse(artifact.Payload.AsSpan())!)
+            {
+                records.Add(record?.DeepClone());
+            }
+        }
+
         var encoded = InternTable.Encode(records);
         var internedBytes = CanonicalJson.Write((JsonNode)encoded).Length;
 

@@ -202,17 +202,18 @@ public static class LayoutPlanner
             return ([], [], []);
         }
 
-        var indices = Enumerable.Range(0, original.Length).ToArray();
-        Array.Sort(indices, (a, b) => string.CompareOrdinal(original[a].Identity, original[b].Identity));
-
-        var inlineBytes = SerializeRecords(indices.Select(i => original[i].Entry)).Length;
+        // Unsplit: keep the document's own order, exactly as the pre-plan writer did -- existing callers
+        // (e.g. the unresolved/frontiers postings and catalogs) address these families by that natural
+        // ordinal, not through a citation lookup. Only once a family is actually split does the physical
+        // ordinal become an adaptive-sharding concern (below), which no caller has depended on until now.
+        var inlineBytes = SerializeRecords(original.Select(static source => source.Entry)).Length;
         var citationByIndex = new ArtifactCitation[original.Length];
         if (inlineBytes <= ceilingBytes)
         {
-            var records = indices.Select(i => new PlannedRecord(original[i].Identity, original[i].Entry)).ToImmutableArray();
-            for (var ordinal = 0; ordinal < indices.Length; ordinal++)
+            var records = original.Select(static source => new PlannedRecord(source.Identity, source.Entry)).ToImmutableArray();
+            for (var ordinal = 0; ordinal < original.Length; ordinal++)
             {
-                citationByIndex[indices[ordinal]] = new ArtifactCitation(baseKey, ordinal);
+                citationByIndex[ordinal] = new ArtifactCitation(baseKey, ordinal);
             }
 
             return (
@@ -221,6 +222,7 @@ public static class LayoutPlanner
                 []);
         }
 
+        var indices = Enumerable.Range(0, original.Length).ToArray();
         var depthBytes = 1;
         Dictionary<string, List<int>> buckets;
         while (true)
