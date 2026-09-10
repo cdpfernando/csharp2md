@@ -1,9 +1,11 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Facts;
 using Csharp2Md.Projection.Guides;
 using Csharp2Md.Projection.Markdown;
 using Csharp2Md.Projection.Tests.Catalogs;
+using Csharp2Md.Projection.Tests.Markdown;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
@@ -12,51 +14,209 @@ namespace Csharp2Md.Projection.Tests.Guides;
 
 public sealed class RetrievalGuideProjectorTests
 {
-    private static readonly string[] Scenarios =
+    private static readonly string[] RelationKinds =
     [
-        "locate an entry point, operation, contract, symbol or data field",
-        "open the canonical fact and direct relations",
-        "follow `executes`, `implements-operation` and `invokes`",
-        "inspect `uses-contract`, `accesses-data`, `operates-on` and `targets` effects",
-        "open complete callable bodies through source locators",
-        "inspect candidates and open frontiers separately",
-        "stop on terminal effects, cycles, unsupported capabilities or a declared reading budget",
+        "executes",
+        "implements-operation",
+        "invokes",
+        "uses-contract",
+        "accesses-data",
+        "operates-on",
+        "targets",
     ];
 
     [Fact]
-    [Trait("Requirement", "RP-37")]
-    public void Project_DocumentsAllSevenRetrievalScenarios()
-    {
-        var view = CatalogProjectionFactory.ViewOf(CatalogProjectionFactory.CreateEntryPoint("Run", "Orders.Api"));
-
-        var text = GuideText(RetrievalGuideProjector.Project(view));
-
-        Assert.Equal(7, Scenarios.Length);
-        foreach (var scenario in Scenarios)
-        {
-            Assert.Contains(scenario, text, StringComparison.Ordinal);
-        }
-    }
-
-    [Fact]
-    [Trait("Requirement", "RP-37")]
-    public void Project_EachScenarioNamesAnArtifactKeyPresentInSlots()
+    [Trait("Requirement", "GCPC-046")]
+    public void Project_LocateSection_NamesACatalogAndNeverACanonicalPayloadArtifact()
     {
         var view = CatalogProjectionFactory.ViewOf(
             CatalogProjectionFactory.CreateEntryPoint("Run", "Orders.Api"),
             CatalogProjectionFactory.CreateContract("orders.v1.OrderPlaced"));
-        var slots = view.Slots.Select(static slot => slot.CanonicalKey).ToHashSet(StringComparer.Ordinal);
 
-        var text = GuideText(RetrievalGuideProjector.Project(view));
-        var sections = ScenarioBodies(text);
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view)), "## 1. Locate an identity");
+        var named = ArtifactKeys(section);
 
-        Assert.Equal(7, sections.Length);
-        foreach (var section in sections)
+        Assert.Contains("catalogs/entry-points.json", named);
+        Assert.Contains("catalogs/contracts.json", named);
+        Assert.DoesNotContain(named, key => key.StartsWith("facts/", StringComparison.Ordinal));
+        Assert.DoesNotContain(named, key => key.StartsWith("relations/", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-046")]
+    public void Project_LocateSection_WhenNoCatalogFamilyHasFacts_NamesNoArtifactAtAll()
+    {
+        var view = CatalogProjectionFactory.ViewOf(CatalogProjectionFactory.Callable("Orphan"));
+
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view)), "## 1. Locate an identity");
+
+        Assert.Empty(ArtifactKeys(section));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-047")]
+    public void Project_PostingsSection_TeachesBucketSelectionAndNamesEachPresentBucket()
+    {
+        var symbol = CatalogProjectionFactory.Callable("Run");
+        var component = CatalogProjectionFactory.CreateComponent("Orders.Api");
+        var entry = EntryPoint.Create(symbol.Reference, component.Reference);
+        var view = CatalogProjectionFactory.ViewOf(
+            [symbol, component, entry],
+            [MarkdownProjectionFactory.Executes(entry, symbol)]);
+
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view)), "## 2. Select a postings bucket");
+        var named = ArtifactKeys(section);
+
+        Assert.Contains("resolve by ordinal", section, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("never the whole canonical payload", section, StringComparison.Ordinal);
+        Assert.Contains("postings/outgoing.json", named);
+        Assert.Contains("postings/incoming.json", named);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-048")]
+    public void Project_RelationsSection_DocumentsAllSevenKinds()
+    {
+        var view = CatalogProjectionFactory.ViewOf();
+
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view)), "## 3. Follow a confirmed relation");
+
+        foreach (var kind in RelationKinds)
         {
-            var named = ArtifactKeys(section);
-            Assert.NotEmpty(named);
-            Assert.Contains(named, key => slots.Contains(key));
+            Assert.Contains("`" + kind + "`", section, StringComparison.Ordinal);
         }
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-048")]
+    public void Project_RelationsSection_NamesTheHoldingArtifactOnlyForKindsPresentInThisPublication()
+    {
+        var view = ViewWithConfirmedRelationKinds("executes", "uses-contract");
+
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view)), "## 3. Follow a confirmed relation");
+        var named = ArtifactKeys(section);
+
+        Assert.Contains("relations/confirmed/executes.json", named);
+        Assert.Contains("relations/confirmed/uses-contract.json", named);
+        Assert.DoesNotContain("relations/confirmed/invokes.json", named);
+        Assert.DoesNotContain("relations/confirmed/targets.json", named);
+        Assert.Contains("no such relation is recognized in this package", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-048")]
+    public void Project_RelationsSection_NamesTheHoldingArtifactForEveryOneOfTheSevenKindsWhenAllArePresent()
+    {
+        var view = ViewWithConfirmedRelationKinds(RelationKinds);
+
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view)), "## 3. Follow a confirmed relation");
+        var named = ArtifactKeys(section);
+
+        foreach (var kind in RelationKinds)
+        {
+            Assert.Contains("relations/confirmed/" + kind + ".json", named);
+        }
+
+        Assert.DoesNotContain("no such relation is recognized", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-049")]
+    public void Project_DispositionsSection_DocumentsCandidatesUnresolvedAndFrontiersEachWithTheirOwnArtifact()
+    {
+        var owner = CatalogProjectionFactory.CreateComponent("Orders.Api").Reference;
+        var candidate = Csharp2Md.Domain.Relations.CandidateLink.Create(
+            Csharp2Md.Domain.Relations.RelationKind.Contains,
+            owner,
+            owner,
+            Evidence(owner));
+        var unresolved = CatalogProjectionFactory.CreateUnresolved(Csharp2Md.Domain.Relations.RelationKind.Invokes, owner);
+        var frontier = Csharp2Md.Domain.Relations.OpenFrontier.Create(
+            new Csharp2Md.Domain.Observations.ObservationIdentity(
+                owner,
+                Csharp2Md.Domain.Observations.ObservationKind.Invocation,
+                Csharp2Md.Domain.Observations.NormalizedPayload.Create([]),
+                1),
+            Csharp2Md.Domain.Relations.FrontierCause.FurtherContinuationObserved);
+        var view = CatalogProjectionFactory.ViewOf(
+            [],
+            unresolved: [unresolved],
+            candidates: [candidate],
+            frontiers: [frontier]);
+
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view)), "## 4. Follow an unproven disposition");
+        var named = ArtifactKeys(section);
+
+        Assert.Contains("relations/candidates.json", named);
+        Assert.Contains("relations/unresolved.json", named);
+        Assert.Contains("relations/frontiers.json", named);
+        Assert.Contains("postings/unknowns.json", named);
+        Assert.Contains("postings/frontiers.json", named);
+        Assert.Contains("candidate link", section, StringComparison.Ordinal);
+        Assert.Contains("unresolved record", section, StringComparison.Ordinal);
+        Assert.Contains("open frontier", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-049")]
+    public void Project_DispositionsSection_WhenNoneArePresent_NamesNoDispositionArtifact()
+    {
+        var view = CatalogProjectionFactory.ViewOf();
+
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view)), "## 4. Follow an unproven disposition");
+
+        Assert.Empty(ArtifactKeys(section));
+        Assert.Equal(3, Regex.Matches(section, "none is recognized in this package").Count);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-051")]
+    public void Project_StoppingRules_DocumentsAllFive()
+    {
+        var section = Section(
+            GuideText(RetrievalGuideProjector.Project(CatalogProjectionFactory.ViewOf())),
+            "## 6. Stop");
+
+        Assert.Contains("terminal effect", section, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("cycle", section, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("open frontier", section, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("capability is unsupported", section, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("reading budget is exhausted", section, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("100,000", section, StringComparison.Ordinal);
+        Assert.Contains("25 file reads", section, StringComparison.Ordinal);
+        Assert.Equal(5, Regex.Matches(section, @"^\d+\. ", RegexOptions.Multiline).Count);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-055")]
+    public void ValidateNoAbsentKeys_TextNamingAKeyNotInThePublication_AbortsNamingTheOffender()
+    {
+        const string offender = "catalogs/entry-points.json";
+        var known = new HashSet<string>(StringComparer.Ordinal) { "manifest.json" };
+
+        var exception = Assert.Throws<PublicationRejectedException>(
+            () => RetrievalGuideProjector.ValidateNoAbsentKeys("Read `" + offender + "`.", known));
+
+        Assert.Equal("projection-key", exception.Gate);
+        Assert.Equal(offender, exception.Detail);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-055")]
+    public void ValidateNoAbsentKeys_TextNamingOnlyKnownKeys_DoesNotThrow()
+    {
+        var known = new HashSet<string>(StringComparer.Ordinal) { "catalogs/entry-points.json" };
+
+        RetrievalGuideProjector.ValidateNoAbsentKeys("Read `catalogs/entry-points.json`.", known);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-055")]
+    public void ValidateNoAbsentKeys_TextNamingAWordThatIsNotArtifactShaped_DoesNotThrow()
+    {
+        RetrievalGuideProjector.ValidateNoAbsentKeys(
+            "Follow `invokes`.",
+            new HashSet<string>(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -103,18 +263,25 @@ public sealed class RetrievalGuideProjectorTests
     }
 
     [Fact]
-    [Trait("Requirement", "RP-37")]
-    [Trait("Requirement", "RP-40")]
-    public void Project_DoesNotNameASlotKeyAbsentFromThePublication()
+    [Trait("Requirement", "GCPC-055")]
+    public void Project_NeverNamesAnArtifactKeyAbsentFromTheSamePublication()
     {
-        var view = CatalogProjectionFactory.ViewOf();
+        var view = CatalogProjectionFactory.ViewOf(
+            CatalogProjectionFactory.CreateEntryPoint("Run", "Orders.Api"),
+            CatalogProjectionFactory.CreateContract("orders.v1.OrderPlaced"));
         var slots = view.Slots.Select(static slot => slot.CanonicalKey).ToHashSet(StringComparer.Ordinal);
+        var catalogKeys = Csharp2Md.Projection.Catalogs.CatalogProjector.Project(view)
+            .Select(static fragment => fragment.CanonicalKey);
+        var postingKeys = Csharp2Md.Projection.Postings.PostingProjector.Project(view)
+            .Select(static fragment => fragment.CanonicalKey);
+        var known = new HashSet<string>(slots, StringComparer.Ordinal);
+        known.UnionWith(catalogKeys);
+        known.UnionWith(postingKeys);
 
         var named = ArtifactKeys(GuideText(RetrievalGuideProjector.Project(view)));
 
-        Assert.DoesNotContain("relations/candidates.json", named);
-        Assert.DoesNotContain("facts/architecture.json", named);
-        Assert.All(named, key => Assert.True(slots.Contains(key), key));
+        Assert.NotEmpty(named);
+        Assert.All(named, key => Assert.True(known.Contains(key), key));
     }
 
     [Fact]
@@ -172,22 +339,55 @@ public sealed class RetrievalGuideProjectorTests
             Encoding.UTF8.GetString(composed[^2].Payload.AsSpan()));
     }
 
+    private static Csharp2Md.Domain.Proof.EvidenceChain Evidence(Csharp2Md.Domain.Identity.FactReference owner) =>
+        Csharp2Md.Domain.Proof.EvidenceChain.Create(
+        [
+            new Csharp2Md.Domain.Observations.ObservationIdentity(
+                owner,
+                Csharp2Md.Domain.Observations.ObservationKind.Invocation,
+                Csharp2Md.Domain.Observations.NormalizedPayload.Create([]),
+                1),
+        ]);
+
+    /// <summary>
+    /// Builds a view whose <c>ConfirmedRelations</c> carries one wire-level record per named kind --
+    /// bypassing domain-level <c>ConfirmedRelation.Create</c>'s per-kind shape guards (a real callable
+    /// symbol for `invokes`, a registered payload-role facet for `uses-contract`, and so on), since this
+    /// test only needs <see cref="PublishedPackageView.Slots"/> to carry each kind's
+    /// <c>relations/confirmed/&lt;kind&gt;.json</c> artifact, which <c>LayoutPlanner</c> derives purely
+    /// from a kind having at least one record -- content shape included.
+    /// </summary>
+    private static PublishedPackageView ViewWithConfirmedRelationKinds(params string[] kinds)
+    {
+        var document = CatalogProjectionFactory.ViewOf().Document;
+        var confirmed = kinds.ToImmutableDictionary(
+            static kind => kind,
+            static kind => (ImmutableArray<ConfirmedRelationDto>)[FakeRelation(kind)],
+            StringComparer.Ordinal);
+        return PublishedPackageView.From(document with { ConfirmedRelations = confirmed });
+    }
+
+    private static ConfirmedRelationDto FakeRelation(string kind) =>
+        new(
+            kind,
+            new FactReferenceDto("id1:symbol;n=src-" + kind, "Symbol"),
+            new FactReferenceDto("id1:symbol;n=dst-" + kind, "Symbol"),
+            [],
+            [],
+            new ProofAgentIdentityDto("csharp2md.test", 1),
+            ["net10.0|Release||ci"],
+            "semantic",
+            new string('a', 64));
+
     private static string GuideText(ImmutableArray<StagedFragment> fragments) =>
         Encoding.UTF8.GetString(Assert.Single(fragments).Payload.AsSpan());
 
-    private static string[] ScenarioBodies(string text)
+    private static string Section(string text, string heading)
     {
-        var matches = Regex.Matches(text, @"^## \d+\. .+$", RegexOptions.Multiline);
-        Assert.Equal(7, matches.Count);
-        var bodies = new string[7];
-        for (var index = 0; index < matches.Count; index++)
-        {
-            var start = matches[index].Index;
-            var end = index + 1 < matches.Count ? matches[index + 1].Index : text.Length;
-            bodies[index] = text[start..end];
-        }
-
-        return bodies;
+        var start = text.IndexOf(heading, StringComparison.Ordinal);
+        Assert.True(start >= 0, "Heading '" + heading + "' not found.");
+        var next = text.IndexOf("\n## ", start + heading.Length, StringComparison.Ordinal);
+        return next < 0 ? text[start..] : text[start..(next + 1)];
     }
 
     private static ImmutableArray<string> ArtifactKeys(string text) =>

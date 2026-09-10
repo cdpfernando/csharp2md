@@ -1513,18 +1513,19 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Each scenario's first step is asserted to name a catalog, and asserted never to name a canonical payload artifact
-- [ ] Each of `executes`, `implements-operation`, `invokes`, `uses-contract`, `accesses-data`, `operates-on` and `targets` is asserted to have its own documented path naming the artifact that holds it
-- [ ] Candidates, unresolved records and open frontiers each have their own documented path
-- [ ] All five stopping rules are documented
-- [ ] A guide naming an artifact key absent from the publication is asserted to abort
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Each scenario's first step is asserted to name a catalog, and asserted never to name a canonical payload artifact
+- [x] Each of `executes`, `implements-operation`, `invokes`, `uses-contract`, `accesses-data`, `operates-on` and `targets` is asserted to have its own documented path naming the artifact that holds it
+- [x] Candidates, unresolved records and open frontiers each have their own documented path
+- [x] All five stopping rules are documented
+- [x] A guide naming an artifact key absent from the publication is asserted to abort
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Projection: 205 -> 215; total 1946 -> 1956 (Domain 563, Analysis 788, Storage 357, Cli 33, Projection 215)
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(projection): rewrite the retrieval guide around catalogs and postings`
+- Deviation (one file beyond this task's named `Where`, a one-line forced consequence): `RetrievalGuideProjector.Project` now recomputes `CatalogProjector.Project`/`PostingProjector.Project` internally (matching the precedent `MarkdownProjector` already set for its own cross-reference index) to render only artifact keys this publication actually produces, so it needs the same `ceilingBytes` every other projector in `PackageProjector.Project` already receives. `src/Csharp2Md.Projection/PackageProjector.cs`'s call site changed from `RetrievalGuideProjector.Project(view)` to `RetrievalGuideProjector.Project(view, _ceilingBytes)` -- a one-argument change, no other line touched. The guide's content is a full rewrite per the task; its structure is now six sections (locate, postings, confirmed relations, unproven dispositions, source locators, stop) rather than the prior seven, since GCPC-046..051 do not require a fixed section count and the prior "open a canonical fact" and "inspect effects" scenarios are exactly what GCPC-046/GCPC-050 now forbid pointing at directly.
 
 ---
 

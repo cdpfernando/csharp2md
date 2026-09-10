@@ -37,7 +37,7 @@ public sealed class PackageProjector : IPackageProjector
             .AddRange(CatalogProjector.Project(view, _ceilingBytes))
             .AddRange(PostingProjector.Project(view, _ceilingBytes))
             .AddRange(MarkdownProjector.Project(view))
-            .AddRange(RetrievalGuideProjector.Project(view))
+            .AddRange(RetrievalGuideProjector.Project(view, _ceilingBytes))
             .AddRange(AgentsGuideProjector.Project(view));
     }
 
