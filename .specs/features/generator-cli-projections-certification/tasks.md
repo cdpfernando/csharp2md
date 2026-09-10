@@ -397,10 +397,10 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] The test computes an order-independent digest over every tracked file under `fixtures/SyntheticSolution`
-- [ ] The expected digest is committed, and the failure message names the files that differ
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The test computes an order-independent digest over every tracked file under `fixtures/SyntheticSolution`
+- [x] The expected digest is committed, and the failure message names the files that differ
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 679 pass; total 1740 (Domain 555, Analysis 679, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: quick
