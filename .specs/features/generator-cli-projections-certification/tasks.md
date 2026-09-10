@@ -817,10 +817,10 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Every disposition kind is representable: confirmed, candidate, unresolved, open frontier and a categorized exclusion
-- [ ] Adding two dispositions for one occurrence is asserted to be detectable rather than silently overwriting
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every disposition kind is representable: confirmed, candidate, unresolved, open frontier and a categorized exclusion
+- [x] Adding two dispositions for one occurrence is asserted to be detectable rather than silently overwriting
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 750 pass; total 1816 (Domain 560, Analysis 750, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: quick
