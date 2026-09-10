@@ -370,10 +370,10 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A test asserts every one of the six assets is currently inventoried as a `Document`, recording the pre-fix baseline T10 inverts
-- [ ] The `.pfx` is a self-signed throwaway carrying no real key material
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A test asserts every one of the six assets is currently inventoried as a `Document`, recording the pre-fix baseline T10 inverts
+- [x] The `.pfx` is a self-signed throwaway carrying no real key material
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 678 pass; total 1739 (Domain 555, Analysis 678, Storage 289, Cli 33, Projection 184)
 
 **Tests**: integration
 **Gate**: quick
