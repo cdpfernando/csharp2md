@@ -12,7 +12,8 @@ internal sealed record InventoriedDocuments(
     ImmutableArray<Document> CSharpDocuments,
     ImmutableArray<Document> ConfigurationDocuments,
     ImmutableArray<DiagnosticRecord> Diagnostics,
-    ImmutableArray<string> ExcludedRelativePaths);
+    ImmutableArray<string> ExcludedRelativePaths,
+    DocumentPolicyReport PolicyReport);
 
 internal static class DocumentInventory
 {
@@ -79,6 +80,7 @@ internal static class DocumentInventory
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticRecord>();
         var excludedRelativePaths = ImmutableArray.CreateBuilder<string>();
         var excludedExtensions = new SortedSet<string>(StringComparer.Ordinal);
+        var outcomes = ImmutableArray.CreateBuilder<(DocumentPolicyCategory Category, bool Accepted, long Bytes)>();
         foreach (var absolute in absolutePaths.OrderBy(path => path, comparison))
         {
             var relative = ToRelativeDocumentPath(root, absolute);
@@ -92,10 +94,13 @@ internal static class DocumentInventory
             {
                 excludedRelativePaths.Add(relative);
                 excludedExtensions.Add(ExtensionForReporting(relative));
+                outcomes.Add((decision.Category, false, new FileInfo(absolute).Length));
                 continue;
             }
 
-            var digest = Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(absolute)));
+            var bytes = File.ReadAllBytes(absolute);
+            outcomes.Add((decision.Category, true, bytes.LongLength));
+            var digest = Convert.ToHexStringLower(SHA256.HashData(bytes));
             var document = Document.Create(owningProject.Id, relative, DocumentHash.Create(digest));
             documents.Add(document);
             switch (decision.Category)
@@ -123,7 +128,8 @@ internal static class DocumentInventory
             csharpDocuments.ToImmutable(),
             configurationDocuments.ToImmutable(),
             diagnostics.ToImmutable(),
-            excludedRelativePaths.ToImmutable());
+            excludedRelativePaths.ToImmutable(),
+            DocumentPolicyReport.FromOutcomes(outcomes));
     }
 
     private static string ExtensionForReporting(string relativePath)

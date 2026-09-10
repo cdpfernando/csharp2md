@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Literals;
@@ -16,6 +17,7 @@ internal sealed class SnapshotAccumulator
     private readonly List<OpenFrontier> _frontiers = [];
     private readonly List<DiagnosticRecord> _diagnostics = [];
     private readonly List<SuspectedSecretEvidence> _secrets = [];
+    private DocumentPolicyReport _documentPolicy = DocumentPolicyReport.Empty;
 
     public bool StructuralCorruption { get; private set; }
 
@@ -93,6 +95,12 @@ internal sealed class SnapshotAccumulator
 
     public void AddSuspectedSecret(SuspectedSecretEvidence evidence) => _secrets.Add(evidence);
 
+    public void AddDocumentPolicyReport(DocumentPolicyReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+        _documentPolicy = _documentPolicy.Merge(report);
+    }
+
     public FactualSnapshot ToSnapshot() =>
         new(
             [.. _facts.Values],
@@ -102,7 +110,8 @@ internal sealed class SnapshotAccumulator
             [.. _unresolved],
             [.. _frontiers],
             [.. _diagnostics],
-            [.. _secrets]);
+            [.. _secrets],
+            _documentPolicy);
 
     private static bool IsBound(Observation observation) =>
         string.Equals(observation.Diagnostic.Code, "bound", StringComparison.Ordinal);

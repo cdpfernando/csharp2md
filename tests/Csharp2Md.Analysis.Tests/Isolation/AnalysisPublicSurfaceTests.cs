@@ -25,6 +25,9 @@ public sealed class AnalysisPublicSurfaceTests
         "DiagnosticRecord",
         "SolutionCoordinate",
         "BatchSolutionRecord",
+        "DocumentPolicyReport",
+        "DocumentPolicyCategoryTotal",
+        "DocumentPolicyCategory",
     ];
 
     private static readonly string[] ForbiddenSurfaceTokens =

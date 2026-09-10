@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Observations;
@@ -31,6 +32,8 @@ public sealed record FactualSnapshot
 
     public ImmutableArray<SuspectedSecretEvidence> SuspectedSecrets { get; }
 
+    public DocumentPolicyReport DocumentPolicy { get; }
+
     public FactualSnapshot(
         ImmutableArray<IFact> facts,
         ImmutableArray<Observation> observations,
@@ -39,7 +42,8 @@ public sealed record FactualSnapshot
         ImmutableArray<UnresolvedRecord> unresolved,
         ImmutableArray<OpenFrontier> frontiers,
         ImmutableArray<DiagnosticRecord> diagnostics = default,
-        ImmutableArray<SuspectedSecretEvidence> suspectedSecrets = default)
+        ImmutableArray<SuspectedSecretEvidence> suspectedSecrets = default,
+        DocumentPolicyReport? documentPolicy = null)
     {
         Facts = facts;
         Observations = observations;
@@ -51,6 +55,7 @@ public sealed record FactualSnapshot
         SuspectedSecrets = suspectedSecrets.IsDefault
             ? ImmutableArray<SuspectedSecretEvidence>.Empty
             : suspectedSecrets;
+        DocumentPolicy = documentPolicy ?? DocumentPolicyReport.Empty;
     }
 
     public FactualSnapshot Merge(FactualSnapshot other)
@@ -65,6 +70,7 @@ public sealed record FactualSnapshot
             Unresolved.AddRange(other.Unresolved),
             Frontiers.AddRange(other.Frontiers),
             Diagnostics.AddRange(other.Diagnostics),
-            SuspectedSecrets.AddRange(other.SuspectedSecrets));
+            SuspectedSecrets.AddRange(other.SuspectedSecrets),
+            DocumentPolicy.Merge(other.DocumentPolicy));
     }
 }

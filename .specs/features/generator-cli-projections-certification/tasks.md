@@ -508,10 +508,10 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Counts and bytes are asserted per category against the T6 fixture's known contents
-- [ ] Accepted plus excluded equals the total enumerated document count
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Counts and bytes are asserted per category against the T6 fixture's known contents
+- [x] Accepted plus excluded equals the total enumerated document count
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; Analysis 712 pass; total 1773 (Domain 555, Analysis 712, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: build

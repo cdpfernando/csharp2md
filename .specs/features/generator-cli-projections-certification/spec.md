@@ -539,7 +539,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-031 | P1: Document policy | D-04 redefinition | Design | Verified |
 | GCPC-032 | P1: Document policy | D-04; supersedes RP-07 | Design | Verified |
 | GCPC-033 | P1: Document policy | D-04; audit I4 | Design | Verified |
-| GCPC-034 | P1: Document policy | D-04 measurement | Design | Pending |
+| GCPC-034 | P1: Document policy | D-04 measurement | Design | Verified |
 | GCPC-035 | P1: Document policy | D-04 safeguard | Design | Verified |
 | GCPC-036 | P1: Bounded payloads | D-02; output-and-retrieval.md scale constraints | Design | Pending |
 | GCPC-037 | P1: Bounded payloads | D-02 | Design | Pending |

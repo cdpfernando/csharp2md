@@ -5,9 +5,10 @@ namespace Csharp2Md.Analysis.Inventory;
 /// <summary>
 /// The policy category a document is decided into. Every accepted category is admitted with a
 /// <c>Document</c> fact and a <c>source/</c> artifact (GCPC-027); every excluded category is not
-/// (GCPC-028).
+/// (GCPC-028). Public because <see cref="DocumentPolicyCategoryTotal"/> carries it on the public
+/// <c>FactualSnapshot</c>.
 /// </summary>
-internal enum DocumentPolicyCategory
+public enum DocumentPolicyCategory
 {
     CSharpSource,
     ProjectFile,

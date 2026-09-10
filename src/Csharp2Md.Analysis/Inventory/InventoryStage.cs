@@ -101,6 +101,8 @@ internal sealed class InventoryStage : IPipelineStage
                 context.Accumulator.AddDiagnostic(diagnostic);
             }
 
+            context.Accumulator.AddDocumentPolicyReport(inventoried.PolicyReport);
+
             csharpDocuments.AddRange(inventoried.CSharpDocuments);
             configurationDocuments.AddRange(inventoried.ConfigurationDocuments);
         }
