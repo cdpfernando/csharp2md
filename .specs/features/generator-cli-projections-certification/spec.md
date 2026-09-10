@@ -613,9 +613,9 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-105 | P2: Configuration triage | Audit I4 | Design | Verified |
 | GCPC-106 | P2: Configuration triage | Audit I4 | Design | Verified |
 | GCPC-107 | P2: Configuration triage | AD-004 | Design | Verified |
-| GCPC-108 | P2: Determinism and batch | Standing determinism constraint | Design | Pending |
-| GCPC-109 | P2: Determinism and batch | ROSE-52; MSC-05 | Design | Pending |
-| GCPC-110 | P2: Determinism and batch | ROSE-54; MSC-06 | Design | Pending |
+| GCPC-108 | P2: Determinism and batch | Standing determinism constraint | Design | Verified |
+| GCPC-109 | P2: Determinism and batch | ROSE-52; MSC-05 | Design | Verified |
+| GCPC-110 | P2: Determinism and batch | ROSE-54; MSC-06 | Design | Verified |
 | GCPC-111 | P2: Determinism and batch | AD-008 | Design | Pending |
 | GCPC-112 | P2: Determinism and batch | output-and-retrieval.md composition | Design | Pending |
 | GCPC-113 | P2: Determinism and batch | output-and-retrieval.md partial composition | Design | Pending |

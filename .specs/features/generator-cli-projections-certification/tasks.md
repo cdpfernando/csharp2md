@@ -1962,15 +1962,17 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Two runs over the same input are asserted byte-identical across every published artifact, compared file by file rather than by count
-- [ ] The same repository analyzed from two different absolute paths is asserted byte-identical
-- [ ] Reversed `--solution` order and shuffled document enumeration order are each asserted byte-identical
-- [ ] Shard assignment, label content and provenance are each explicitly included in the comparison
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Two runs over the same input are asserted byte-identical across every published artifact, compared file by file rather than by count
+- [x] The same repository analyzed from two different absolute paths is asserted byte-identical
+- [x] Reversed `--solution` order and shuffled document enumeration order are each asserted byte-identical
+- [x] Shard assignment, label content and provenance are each explicitly included in the comparison
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; total ≥ previous task's total — **Analysis 820 pass** (up from 816), **Storage 372 pass** (unchanged); total 2039 (Domain 563, Analysis 820, Storage 372, Cli 58, Projection 226)
 
 **Tests**: integration
 **Gate**: build
+
+**Deviation**: none in production code. The suite reuses the internal `CompositionBatch` test helper (same assembly, `Composition` namespace) for analysis/snapshot plumbing, and adds a `CertificationCorpus`-specific clone-copy helper mirroring `ClonePathIndependenceTests`'s `CopyClone` (the existing helper only clones `SyntheticSolution`). "Shuffled document enumeration order" is proven by substituting pipeline stage index 0 with a wrapper that runs the real `InventoryStage` then reverses `context.CSharpDocuments` before the rest of the default pipeline runs — the same technique `DocumentOrderIndependenceTests` (ROSE-54) uses, extended here through the full pipeline and a real filesystem commit instead of stopping at in-memory fact identities. "Reversed `--solution` order" uses `CertificationCorpus.slnx` plus the existing `ConfigurationShapes.sln` fixture (already proven committable by `CertificationCorpusConfigurationTests`) as a genuine two-solution batch, so composition artifacts are exercised, not just a single package.
 
 **Commit**: `test(analysis): prove whole-package determinism across runs, paths and order`
 
