@@ -601,12 +601,12 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-093 | P2: Legible projections | Audit I1 | Design | Verified |
 | GCPC-094 | P2: Legible projections | RP-34; AD-007 | Design | Verified |
 | GCPC-095 | P2: Legible projections | AD-007; output-and-retrieval.md Markdown | Design | Verified |
-| GCPC-096 | P2: Legible projections | Audit I1 | Design | Pending |
+| GCPC-096 | P2: Legible projections | Audit I1 | Design | Verified |
 | GCPC-097 | P2: Legible projections | RP-44 extended to labels | Design | Pending |
 | GCPC-098 | P2: Legible projections | RP-33 | Design | Verified |
 | GCPC-099 | P2: HTTP verb and route | Audit I3; extends EBC-06 | Design | Verified |
 | GCPC-100 | P2: HTTP verb and route | Audit I3 | Design | Verified |
-| GCPC-101 | P2: HTTP verb and route | Audit I3; RP-33 | Design | Pending |
+| GCPC-101 | P2: HTTP verb and route | Audit I3; RP-33 | Design | Verified |
 | GCPC-102 | P2: HTTP verb and route | AD-010 | Design | Verified |
 | GCPC-103 | P2: Configuration triage | Audit I4 | Design | Verified |
 | GCPC-104 | P2: Configuration triage | ROSE-11; CDC missing-project | Design | Verified |

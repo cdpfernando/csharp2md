@@ -148,6 +148,11 @@ internal static class CatalogProjectionFactory
         var document = view.Document;
         return artifactKey switch
         {
+            "facts/structural.json" => Concat(
+                document.Solutions.Select(static dto => dto.Identity.Id),
+                document.Projects.Select(static dto => dto.Identity.Id),
+                document.Documents.Select(static dto => dto.Identity.Id),
+                document.Symbols.Select(static dto => dto.Identity.Id)),
             "facts/architecture.json" => Concat(
                 document.Components.Select(static dto => dto.Identity.Id),
                 document.DeploymentUnits.Select(static dto => dto.Identity.Id),
@@ -238,6 +243,12 @@ internal static class CatalogProjectionFactory
         var document = view.Document;
         return artifactKey switch
         {
+            "facts/structural.json" => CanonicalJson.Write(
+                new StructuralFactsShard(
+                    document.Solutions,
+                    document.Projects,
+                    document.Documents,
+                    document.Symbols)),
             "facts/architecture.json" => CanonicalJson.Write(
                 new ArchitectureFactsShard(
                     document.Components,

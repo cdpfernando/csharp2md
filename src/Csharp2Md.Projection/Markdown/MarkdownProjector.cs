@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Projection.Catalogs;
+using Csharp2Md.Projection.Labels;
 using Csharp2Md.Projection.Postings;
 using Csharp2Md.Projection.Source;
 using Csharp2Md.Storage.Mapping;
@@ -108,10 +109,11 @@ internal static class MarkdownProjector
         ImmutableDictionary<string, ArtifactCitation> catalogs,
         IReadOnlyDictionary<string, ImmutableArray<ArtifactCitation>> postings)
     {
+        var labels = LabelProjector.For(new FactReferenceDto(subject.FactId, subject.FactType), view);
         var text = new StringBuilder();
-        text.Append("# ").Append(Cite(subject.FactType, citation)).Append('\n');
+        text.Append("# ").Append(Title(labels, subject.FactType, citation)).Append('\n');
         text.Append('\n');
-        text.Append("Fact id: ").Append(Cite(subject.FactId, citation)).Append('\n');
+        text.Append("Fact id: ").Append(Cite(subject.FactId, citation)).Append(" (").Append(subject.FactType).Append(")\n");
         text.Append('\n');
         text.Append("## Facets").Append('\n');
         foreach (var (axis, value) in subject.Facets)
@@ -158,6 +160,67 @@ internal static class MarkdownProjector
     private static string Cite(string value, ArtifactCitation citation) =>
         "[" + value + "](" + citation.ArtifactKey + ") <!-- "
         + citation.Ordinal.ToString(CultureInfo.InvariantCulture) + " -->";
+
+    /// <summary>
+    /// The page title: leads with the proven compact label instead of the fact type plus an encoded id
+    /// (GCPC-096), each piece cited to the exact artifact and ordinal <see cref="LabelProjector"/> proved
+    /// it against (GCPC-094). A name-only identity (component, deployment unit, contract, data store, data
+    /// object) titles by its name. An entry point or boundary operation titles by its method (falling back
+    /// to its type, then its owning component, if the symbol itself is not proven), with the proven HTTP
+    /// verb and route led in front when they exist and never synthesized when they do not (GCPC-101,
+    /// GCPC-102). When nothing is proven at all, the fact type is the only fallback left (GCPC-098).
+    /// </summary>
+    private static string Title(ImmutableArray<LabelDto> labels, string factType, ArtifactCitation selfCitation)
+    {
+        var name = FindLabel(labels, LabelProjector.Name);
+        if (name is not null)
+        {
+            return CiteLabel(name);
+        }
+
+        var component = FindLabel(labels, LabelProjector.Component);
+        var headline = FindLabel(labels, LabelProjector.Method) ?? FindLabel(labels, LabelProjector.Type) ?? component;
+        if (headline is null)
+        {
+            return Cite(factType, selfCitation);
+        }
+
+        var title = new StringBuilder();
+        var verb = FindLabel(labels, LabelProjector.Verb);
+        if (verb is not null)
+        {
+            title.Append(CiteLabel(verb)).Append(' ');
+        }
+
+        var route = FindLabel(labels, LabelProjector.Route);
+        if (route is not null)
+        {
+            title.Append(CiteLabel(route)).Append(' ');
+        }
+
+        title.Append(CiteLabel(headline));
+        if (component is not null && component != headline)
+        {
+            title.Append(" (").Append(CiteLabel(component)).Append(')');
+        }
+
+        return title.ToString();
+    }
+
+    private static LabelDto? FindLabel(ImmutableArray<LabelDto> labels, string kind)
+    {
+        foreach (var label in labels)
+        {
+            if (label.Kind == kind)
+            {
+                return label;
+            }
+        }
+
+        return null;
+    }
+
+    private static string CiteLabel(LabelDto label) => Cite(label.Value, new ArtifactCitation(label.ArtifactKey, label.Ordinal));
 
     private static ImmutableArray<(ConfirmedRelationDto Record, ArtifactCitation Citation)> DirectRelations(
         PublishedPackageView view,

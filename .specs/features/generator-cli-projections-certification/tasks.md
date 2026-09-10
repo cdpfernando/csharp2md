@@ -1455,16 +1455,17 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] No published page's title consists solely of a fact type plus an encoded identity
-- [ ] An HTTP boundary operation page is asserted to show the published verb and route, and asserted not to synthesize either
-- [ ] Page bytes are asserted identical across two runs
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] No published page's title consists solely of a fact type plus an encoded identity
+- [x] An HTTP boundary operation page is asserted to show the published verb and route, and asserted not to synthesize either
+- [x] Page bytes are asserted identical across two runs
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Projection: 200 -> 205; total 1938 -> 1943
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(projection): title pages by their proven label`
+- Deviation (one file beyond this task's named `Where`, needed to support this task's own tests): `LabelProjector`'s Type/Method labels cite the Symbol fact at `facts/structural.json`, a citation no existing Markdown test fixture had ever exercised (every prior citation in a page pointed at `facts/architecture.json`, `facts/contract.json` or `facts/persistence.json`). `tests/Csharp2Md.Projection.Tests/Catalogs/CatalogProjectionFactory.cs`'s `IdsIn`/`ArtifactBytes` switches, used by the pre-existing `Project_EveryReproducedValue_IsPresentAtCitedArtifactOrdinal` regression test to independently resolve every citation a page emits, gained a `"facts/structural.json"` case (`StructuralFactsShard` of Solutions/Projects/Documents/Symbols) so that test keeps proving every reproduced value against its real payload once the title starts citing Symbols. Production code touches only `MarkdownProjector.cs` as scoped.
 
 ---
 
