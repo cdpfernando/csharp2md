@@ -732,11 +732,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A structural relation's scope is asserted to contain the declaration evidence and no `invocation` or `data-access` observation
-- [ ] A causal relation's scope is asserted to contain exactly the occurrence that produced it
-- [ ] An empty scope is rejected, since the taxonomy requires a non-empty `derived_from`
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A structural relation's scope is asserted to contain the declaration evidence and no `invocation` or `data-access` observation
+- [x] A causal relation's scope is asserted to contain exactly the occurrence that produced it
+- [x] An empty scope is rejected, since the taxonomy requires a non-empty `derived_from`
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 739 pass; total 1805 (Domain 560, Analysis 739, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: quick
