@@ -535,11 +535,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] An allowlisted `.ts` file is asserted inventoried while the sibling `.js` stays excluded
-- [ ] An allowlist entry naming a path outside the authorized root is rejected
-- [ ] An empty allowlist is asserted to change nothing
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] An allowlisted `.ts` file is asserted inventoried while the sibling `.js` stays excluded
+- [x] An allowlist entry naming a path outside the authorized root is rejected
+- [x] An empty allowlist is asserted to change nothing
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 715 pass; total 1776 (Domain 555, Analysis 715, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: build

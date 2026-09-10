@@ -535,7 +535,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-027 | P1: Document policy | D-04; supersedes ROSE-04 | Design | Verified |
 | GCPC-028 | P1: Document policy | D-04; supersedes ROSE-05 and ROSE-06 | Design | Verified |
 | GCPC-029 | P1: Document policy | D-04; architecture-knowledge-engine.md supported sources | Design | Verified |
-| GCPC-030 | P1: Document policy | D-04 allowlist | Design | Pending |
+| GCPC-030 | P1: Document policy | D-04 allowlist | Design | Verified |
 | GCPC-031 | P1: Document policy | D-04 redefinition | Design | Verified |
 | GCPC-032 | P1: Document policy | D-04; supersedes RP-07 | Design | Verified |
 | GCPC-033 | P1: Document policy | D-04; audit I4 | Design | Verified |

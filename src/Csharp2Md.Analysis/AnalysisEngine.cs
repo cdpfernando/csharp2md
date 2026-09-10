@@ -29,7 +29,7 @@ public sealed class AnalysisEngine : IAnalysisEngine
         var outcomes = ImmutableArray.CreateBuilder<SolutionOutcome>(request.SolutionPaths.Length);
         foreach (var path in request.SolutionPaths)
         {
-            outcomes.Add(await AnalyzeSolutionAsync(path, cancellationToken).ConfigureAwait(false));
+            outcomes.Add(await AnalyzeSolutionAsync(path, request.AllowedDocumentPaths, cancellationToken).ConfigureAwait(false));
         }
 
         outcomes.Sort(static (left, right) =>
@@ -47,12 +47,19 @@ public sealed class AnalysisEngine : IAnalysisEngine
         }
     }
 
-    private async Task<SolutionOutcome> AnalyzeSolutionAsync(string path, CancellationToken cancellationToken)
+    private async Task<SolutionOutcome> AnalyzeSolutionAsync(
+        string path,
+        ImmutableArray<string> allowedDocumentPaths,
+        CancellationToken cancellationToken)
     {
         var canonical = Path.GetFullPath(path);
         var reader = new FilesystemSourceDocumentReader();
         var session = _store.Open(canonical, reader);
-        var context = new PipelineContext(session, path) { SourceDocumentReader = reader };
+        var context = new PipelineContext(session, path)
+        {
+            SourceDocumentReader = reader,
+            AllowedDocumentPaths = allowedDocumentPaths,
+        };
         try
         {
             var run = await _orchestrator.RunAsync(context, cancellationToken).ConfigureAwait(false);
