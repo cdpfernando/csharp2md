@@ -506,19 +506,19 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 
 | Requirement ID | Story | Origin | Phase | Status |
 | --- | --- | --- | --- | --- |
-| GCPC-001 | P1: Certified execution | Audit B1; AD-009 | Design | Pending |
+| GCPC-001 | P1: Certified execution | Audit B1; AD-009 | Design | Verified |
 | GCPC-002 | P1: Certified execution | quality-and-security.md run coverage | Design | Verified |
 | GCPC-003 | P1: Certified execution | quality-and-security.md denominator table | Design | Verified |
 | GCPC-004 | P1: Certified execution | Audit B1 | Design | Pending |
 | GCPC-005 | P1: Certified execution | AD-009; quality-and-security.md | Design | Verified |
-| GCPC-006 | P1: Certified execution | AD-009 | Design | Pending |
-| GCPC-007 | P1: Certified execution | quality-and-security.md degradation | Design | Pending |
-| GCPC-008 | P1: Certified execution | quality-and-security.md degradation; STOR-32 | Design | Pending |
-| GCPC-009 | P1: Certified execution | Audit B1 zero denominators | Design | Pending |
-| GCPC-010 | P1: Certified execution | Audit B1 zero denominators | Design | Pending |
+| GCPC-006 | P1: Certified execution | AD-009 | Design | Verified |
+| GCPC-007 | P1: Certified execution | quality-and-security.md degradation | Design | Verified |
+| GCPC-008 | P1: Certified execution | quality-and-security.md degradation; STOR-32 | Design | Verified |
+| GCPC-009 | P1: Certified execution | Audit B1 zero denominators | Design | Verified |
+| GCPC-010 | P1: Certified execution | Audit B1 zero denominators | Design | Verified |
 | GCPC-011 | P1: Invocation accounting | Audit B3; audit gate 2 | Design | Verified |
 | GCPC-012 | P1: Invocation accounting | Audit gate 2 | Design | Verified |
-| GCPC-013 | P1: Invocation accounting | Audit B3 | Design | Pending |
+| GCPC-013 | P1: Invocation accounting | Audit B3 | Design | Verified |
 | GCPC-014 | P1: Invocation accounting | CLLF-13; taxonomy.md evidence dimensions | Design | Verified |
 | GCPC-015 | P1: Invocation accounting | AD-009 | Design | Verified |
 | GCPC-016 | P1: Invocation accounting | Supersedes CLLF-20 silence | Design | Verified |

@@ -1046,12 +1046,13 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Each of the three statuses is asserted on an input that produces only that status
-- [ ] A library-only solution with no entry points is asserted `degraded` with `entry_point_coverage` `not_applicable` and a stated reason, never `passed`
-- [ ] An unaccounted occurrence is asserted to force `failed` and to be named
-- [ ] A quarantined derived fact is asserted to force `failed`
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Each of the three statuses is asserted on an input that produces only that status
+- [x] A library-only solution with no entry points is asserted `degraded` with `entry_point_coverage` `not_applicable` and a stated reason, never `passed`
+- [x] An unaccounted occurrence is asserted to force `failed` and to be named
+- [x] A quarantined derived fact is asserted to force `failed`
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 788 pass; total 1872 (Domain 563, Analysis 788, Storage 304, Cli 33, Projection 184)
+- Deviation: "a classifier conflict affects a covered area" (GCPC-006/007/008) has no dedicated published record anywhere in this codebase -- taxonomy.md's "the conflict is published" is prose with no backing type. The only fact-level conflict this pipeline actually detects and publishes today is an identity collision (`SnapshotAccumulator.StructuralCorruption`/`CollidingIdentity`), so `RunCertifier` treats that single signal as covering both "a derived fact is quarantined" and "a classifier conflict affects a covered area" -- documented in `RunCertifier`'s own remarks rather than inventing a new conflict-tracking type. `ValidationAndCoverageStage.ExecuteAsync` (not named in this task's `Where`) was touched to call `RunCertifier.Certify` and `SetCertification` once coverage is computed, reusing the same `context.Accumulator.StructuralCorruption`/`CollidingIdentity` and `snapshot.InvocationAccounting` T29 already publishes.
 
 **Tests**: unit
 **Gate**: build

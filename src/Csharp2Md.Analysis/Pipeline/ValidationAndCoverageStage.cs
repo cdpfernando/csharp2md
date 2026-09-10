@@ -35,8 +35,15 @@ internal sealed class ValidationAndCoverageStage : IPipelineStage
         var contractCoverage = ComputeContractCoverage(snapshot);
         var persistenceCoverage = ComputePersistenceCoverage(snapshot);
 
-        context.Accumulator.SetCoverage(
-            new CoverageReport(entryPointCoverage, linkedCallCoverage, contractCoverage, persistenceCoverage));
+        var coverage = new CoverageReport(entryPointCoverage, linkedCallCoverage, contractCoverage, persistenceCoverage);
+        context.Accumulator.SetCoverage(coverage);
+
+        context.Accumulator.SetCertification(
+            RunCertifier.Certify(
+                coverage,
+                snapshot.InvocationAccounting,
+                context.Accumulator.StructuralCorruption,
+                context.Accumulator.CollidingIdentity));
 
         return StubStages.ZeroResult();
     }
