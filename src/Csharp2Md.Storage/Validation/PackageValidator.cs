@@ -605,7 +605,7 @@ public static class PackageValidator
             Quarantine = quarantined,
             RunCertification = quarantined.IsEmpty
                 ? document.RunCertification
-                : new RunCertificationEnvelope("failed"),
+                : new RunCertificationEnvelope("failed", ["A derived fact was quarantined during publication."]),
         };
 
         return new ValidationReport(next, quarantined);

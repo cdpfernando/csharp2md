@@ -8,7 +8,8 @@ namespace Csharp2Md.Storage;
 
 public static class FactualPackageReader
 {
-    private static readonly CoverageMetricDto ZeroCoverage = new(0, 0, 0, 0, []);
+    private static readonly CoverageMetricDto UnevaluatedCoverage =
+        CoverageMetricDto.NotApplicable("Coverage is not present in this package.");
 
     public static PackageReadResult Read(string packageDirectory)
     {
@@ -60,9 +61,9 @@ public static class FactualPackageReader
 
         var quarantineEnvelope = ReadOptionalObject<QuarantineEnvelope>(packageDirectory, "quarantine/records.json");
         var coverage = ReadOptionalObject<CoverageEnvelope>(packageDirectory, "coverage.json")
-            ?? new CoverageEnvelope(ZeroCoverage, ZeroCoverage, ZeroCoverage, ZeroCoverage);
+            ?? new CoverageEnvelope(UnevaluatedCoverage, UnevaluatedCoverage, UnevaluatedCoverage, UnevaluatedCoverage);
         var certification = ReadOptionalObject<RunCertificationEnvelope>(packageDirectory, "run-certification.json")
-            ?? new RunCertificationEnvelope("not_evaluated");
+            ?? new RunCertificationEnvelope("degraded", ["Run certification is not present in this package."]);
         var diagnostics = ReadOptionalObject<DiagnosticsEnvelope>(packageDirectory, "diagnostics.json")
             ?? new DiagnosticsEnvelope([]);
         var measurements = ReadOptionalObject<MeasurementsEnvelope>(packageDirectory, "measurements.json")

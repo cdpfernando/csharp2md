@@ -8,7 +8,8 @@ namespace Csharp2Md.Storage.Mapping;
 
 public static class DomainMapper
 {
-    private static readonly CoverageMetricDto ZeroCoverage = new(0, 0, 0, 0, []);
+    private static readonly CoverageMetricDto UnevaluatedCoverage =
+        CoverageMetricDto.NotApplicable("Coverage is not yet computed by this pipeline stage.");
 
     public static WireDocument ToWire(FactualSnapshot snapshot, ManifestContext context)
     {
@@ -152,8 +153,8 @@ public static class DomainMapper
             unresolvedDtos,
             frontierDtos,
             [],
-            new CoverageEnvelope(ZeroCoverage, ZeroCoverage, ZeroCoverage, ZeroCoverage),
-            new RunCertificationEnvelope("not_evaluated"),
+            new CoverageEnvelope(UnevaluatedCoverage, UnevaluatedCoverage, UnevaluatedCoverage, UnevaluatedCoverage),
+            new RunCertificationEnvelope("degraded", ["Coverage and certification are not yet computed by this pipeline stage."]),
             new DiagnosticsEnvelope(MapDiagnostics(snapshot)),
             new MeasurementsEnvelope([]));
     }

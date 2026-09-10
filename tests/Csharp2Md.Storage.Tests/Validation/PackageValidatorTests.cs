@@ -277,7 +277,7 @@ public sealed class PackageValidatorTests
         Assert.Equal(document.Candidates.Length, report.Document.Candidates.Length);
         Assert.Equal(document.Candidates[0].Kind, report.Document.Candidates[0].Kind);
         Assert.True(report.Quarantine.IsEmpty);
-        Assert.Equal("not_evaluated", report.Document.RunCertification.Status);
+        Assert.Equal("degraded", report.Document.RunCertification.Status);
     }
 
     [Fact]
@@ -292,7 +292,7 @@ public sealed class PackageValidatorTests
         Assert.Equal(document.Frontiers.Length, report.Document.Frontiers.Length);
         Assert.Equal(document.Frontiers[0].Cause, report.Document.Frontiers[0].Cause);
         Assert.True(report.Quarantine.IsEmpty);
-        Assert.Equal("not_evaluated", report.Document.RunCertification.Status);
+        Assert.Equal("degraded", report.Document.RunCertification.Status);
     }
 
     [Fact]
@@ -313,7 +313,7 @@ public sealed class PackageValidatorTests
         var frontier = Assert.Single(report.Document.Frontiers);
         Assert.Equal(nameof(FrontierCause.FurtherContinuationObserved), frontier.Cause);
         Assert.True(report.Quarantine.IsEmpty);
-        Assert.Equal("not_evaluated", report.Document.RunCertification.Status);
+        Assert.Equal("degraded", report.Document.RunCertification.Status);
     }
 
     private static SolutionDto ValidSolutionDto() =>

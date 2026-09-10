@@ -205,7 +205,7 @@ public sealed class CommittedPackageReadTests
     private static void AssertHappyPathEnvelopes(PackageReadResult result)
     {
         Assert.True(result.Quarantine.IsEmpty);
-        Assert.Equal("not_evaluated", result.Certification.Status);
+        Assert.Equal("degraded", result.Certification.Status);
         AssertZero(result.Coverage.EntryPointCoverage);
         AssertZero(result.Coverage.LinkedCallCoverage);
         AssertZero(result.Coverage.ContractCoverage);

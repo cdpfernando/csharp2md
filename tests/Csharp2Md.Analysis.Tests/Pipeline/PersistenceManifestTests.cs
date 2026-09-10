@@ -61,7 +61,7 @@ public sealed class PersistenceManifestTests
         var coverage = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "coverage.json");
         CanonicalJson.Read<CoverageEnvelope>(coverage.Payload.AsSpan());
         var certification = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "run-certification.json");
-        Assert.Equal("not_evaluated", CanonicalJson.Read<RunCertificationEnvelope>(certification.Payload.AsSpan()).Status);
+        Assert.Equal("degraded", CanonicalJson.Read<RunCertificationEnvelope>(certification.Payload.AsSpan()).Status);
     }
 
     private static async Task<CommittedPublication> PublishDefaultPipeline()

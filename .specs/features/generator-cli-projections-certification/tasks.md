@@ -903,11 +903,12 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] `not_evaluated` is absent from the status vocabulary and a test asserts it cannot be serialized
-- [ ] Round-trip is asserted for every envelope, including the `not_applicable` metric form
-- [ ] The JSON Schemas under `contracts/json-schema/envelopes/` are updated and asserted to accept the new shapes and reject the old
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] `not_evaluated` is absent from the status vocabulary and a test asserts it cannot be serialized
+- [x] Round-trip is asserted for every envelope, including the `not_applicable` metric form
+- [x] The JSON Schemas under `contracts/json-schema/envelopes/` are updated and asserted to accept the new shapes and reject the old
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Storage 304 pass; Projection 184 pass; total 1840 (Domain 563, Analysis 756, Storage 304, Cli 33, Projection 184)
+- Deviation: `CoverageMetricDto`/`RunCertificationEnvelope` are consumed outside `EnvelopeDtos.cs` (`DomainMapper.cs`, `FactualPackageReader.cs`, `PackageValidator.cs`, and two test files), so the new validated shapes forced minimal, compile-preserving call-site fixes in those files too — a hardcoded `not_evaluated`/zero-coverage placeholder becomes a valid `"degraded"` interim status until T31 wires in the real computation. `ProjectorPublicationTests.cs` needed the same array-vs-record-equality fix `ImmutableArray<T>`'s reference-based `Equals` already required elsewhere in this codebase.
 
 **Tests**: unit
 **Gate**: full

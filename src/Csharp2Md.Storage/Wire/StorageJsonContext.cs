@@ -47,6 +47,8 @@ namespace Csharp2Md.Storage.Wire;
 [JsonSerializable(typeof(BatchManifestArtifactEntry))]
 [JsonSerializable(typeof(ImmutableArray<BatchManifestSolutionEntry>))]
 [JsonSerializable(typeof(ImmutableArray<BatchManifestArtifactEntry>))]
+[JsonSerializable(typeof(DegradationReasonDto))]
+[JsonSerializable(typeof(ImmutableArray<DegradationReasonDto>))]
 [JsonSerializable(typeof(CoverageMetricDto))]
 [JsonSerializable(typeof(CoverageEnvelope))]
 [JsonSerializable(typeof(RunCertificationEnvelope))]

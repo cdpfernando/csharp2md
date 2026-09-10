@@ -66,7 +66,8 @@ public sealed class ProjectorPublicationTests
             Path.GetFileName(SolutionKey));
         var expected = PackageValidator.Validate(DomainMapper.ToWire(FactualSnapshot.Empty, context)).Document;
         Assert.Equal(expected.Manifest.SolutionKey, projector.View.Document.Manifest.SolutionKey);
-        Assert.Equal(expected.RunCertification, projector.View.Document.RunCertification);
+        Assert.Equal(expected.RunCertification.Status, projector.View.Document.RunCertification.Status);
+        Assert.Equal(expected.RunCertification.Reasons.ToArray(), projector.View.Document.RunCertification.Reasons.ToArray());
         Assert.Equal(expected.Quarantine.Length, projector.View.Document.Quarantine.Length);
     }
 

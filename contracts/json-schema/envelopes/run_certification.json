@@ -7,10 +7,20 @@
   "properties": {
     "status": {
       "type": "string"
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
     }
   },
   "required": [
-    "status"
+    "status",
+    "reasons"
   ],
   "additionalProperties": false
 }
