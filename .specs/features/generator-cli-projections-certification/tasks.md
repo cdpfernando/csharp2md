@@ -1900,16 +1900,18 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] The secret's literal value is asserted absent from every published byte of every artifact, scanned by walking the package rather than a listed subset
-- [ ] The secret's individual hash is asserted absent from every published byte
-- [ ] The sidecar is asserted to still declare `redacted`, the ordinal-sorted spans, the original hash and the published hash
-- [ ] A corpus secret whose value would otherwise become a label is asserted to produce no label
-- [ ] The coverage, provenance and accounting envelopes are asserted to carry no credential, connection string, token, certificate or authorization value
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The secret's literal value is asserted absent from every published byte of every artifact, scanned by walking the package rather than a listed subset
+- [x] The secret's individual hash is asserted absent from every published byte
+- [x] The sidecar is asserted to still declare `redacted`, the ordinal-sorted spans, the original hash and the published hash
+- [x] A corpus secret whose value would otherwise become a label is asserted to produce no label
+- [x] The coverage, provenance and accounting envelopes are asserted to carry no credential, connection string, token, certificate or authorization value
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; total ≥ previous task's total — **Storage 372 pass** (unchanged), **Projection 226 pass** (up from 220); total 2032 (Domain 563, Analysis 813, Storage 372, Cli 58, Projection 226)
 
 **Tests**: integration
 **Gate**: full
+
+**Deviation**: none in production code. `fixtures/SyntheticSolution/Acme.Orders`'s `appsettings.json` is reused as "the corpus configuration document carrying a secret" (T45's already-tested case); `Data/OrderSqlQueries.cs`'s separate inline `inline-fixture-secret` is deliberately *not* swept here -- confirmed by direct inspection of a real published package that it legitimately appears unredacted in `source/.../OrderSqlQueries.cs` (`.cs` files are not configuration documents and are never fed through `SecretRedactor`), so asserting its absence would have been a wrong assertion, not a stronger one. Its own guarantee (never becoming a structured fact) is already covered elsewhere (persistence classifier tests).
 
 **Commit**: `test(projection): sweep every published byte for secrets`
 
