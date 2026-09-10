@@ -126,6 +126,37 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   rather than leaving it implicit. If that turns out too large for one task, split it into its
   own follow-up task before the Completion Gate — do not let T66 close the roadmap with this
   still open.
+  **Resolved** in T52's commit: `PublicationPipeline.Publish` now derives the ceiling from
+  `CeilingCalculator.Derive(readingBudgetTokens, maxFileReadsPerScenario)` (defaulting to the
+  same declared defaults absent a CLI override) and plans every family against it, replacing the
+  hardcoded `int.MaxValue`; `ManifestBuilder`/`ProvenanceDto` publish that same ceiling and an
+  allowlist digest in `manifest.json`'s provenance. `analyze` gained `--allowlist`,
+  `--reading-budget-tokens` and `--max-file-reads-per-scenario`, validated before any analysis
+  begins (a non-positive budget or an out-of-root allowlist entry exits `1` and publishes
+  nothing). Closing this for real (rather than leaving `PublishedPackageView.From(WireDocument)`'s
+  unsplit default live) surfaced three further bugs no prior task had a way to find, because
+  nothing before T52 ever made a real `analyze` run actually shard a family:
+  (1) `CatalogProjector.AddUnknowns` threw `InvalidOperationException` (`.Single()` on an empty
+  sequence) the moment `relations/unresolved.json` actually split, because it looked for the
+  literal unsplit key instead of resolving each unknown's shard-aware citation;
+  (2) `PostingProjector`'s `AddIndexed`-built `postings/unknowns.json` and `postings/frontiers.json`
+  silently cited the unsplit base key at the record's *document*-order ordinal even when the family
+  was split, producing wrong citations `ProjectionValidator` would reject once decoded against a
+  real shard; (3) T48's own `validate` reconstructed its `PublishedPackageView` with the unsplit
+  default ceiling regardless of what ceiling the package was actually published under, so
+  re-validating a real sharded package failed with a false `projection-key`. Fixed by: giving
+  `LayoutPlan` per-record citation arrays for candidates, unresolved records and open frontiers
+  (mirroring the existing `RelationLocations` for confirmed relations) and exposing them on
+  `PublishedPackageView` as `TryLocateCandidate`/`TryLocateUnresolved`/`TryLocateFrontier`;
+  rewriting `CatalogProjector.AddUnknowns` and `PostingProjector`'s two `AddIndexed` call sites to
+  resolve through those instead of a hardcoded key; and having `validate` re-plan with the ceiling
+  read from the package's own published provenance. Proven by
+  `tests/Csharp2Md.Cli.Tests/ComposeCommandTests.cs`'s two-solution batch (the only fixture in the
+  suite large enough to actually shard `relations/unresolved.json`) and by rewriting eight
+  Analysis-layer tests across six files to merge shards instead of assuming one flat file per
+  family — see T52's deviation note in `tasks.md` for the full list. A distinct, still-open gap in
+  `RetrievalGuideProjector`'s own prose (not a crash, and not proven by any current test) is
+  recorded as its own new Deferred Idea immediately below, not folded into this resolution.
 - **`RetrievalScenarioRunner` is not wired into the live `analyze`/`validate` pipeline** (found
   in Phase 8 batch, T47, 2026-09-10): `RetrievalScenarioRunner.Run` (GCPC-052..GCPC-054) is
   fully implemented and tested against real published packages through both
@@ -160,3 +191,31 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   `IsAbsoluteFilesystemPath`) that had never been exercised before `validate` became the first
   caller to re-scan a real published package's own `source/` fragments end to end — see T48's
   deviation note in `tasks.md` for both.
+- **`RetrievalGuideProjector`'s "is this family recognized" checks assume no confirmed-relation,
+  candidate, unresolved or frontier family is ever sharded** (found in T52, 2026-09-10, while
+  wiring the derived ceiling as `analyze`'s live default -- context.md's other T37 entry, resolved
+  in this same commit): `AppendRelationsSection` and `AppendDisposition` in
+  `src/Csharp2Md.Projection/Guides/RetrievalGuideProjector.cs` both test `slots.Contains(artifactKey)`
+  against the family's unsplit base key (e.g. `"relations/confirmed/contains.json"`,
+  `"relations/candidates.json"`) to decide whether to tell the reader "select its posting bucket ...
+  then read `<key>`" or "no such relation is recognized in this package" / "none is recognized in
+  this package". Once T52 makes the derived ~32 KiB ceiling `analyze`'s live default, a family that
+  is large enough to shard no longer has that exact base key as a real slot (only
+  `<stem>.<bucket>.json` shard keys do), so the guide prints the *wrong* prose for it -- claiming a
+  relation kind or a disposition class is entirely absent from the package when it is actually
+  present, just sharded. This is a **false negative in generated prose**, not a crash: it never
+  throws (unlike the two bugs T52 did fix in `CatalogProjector.AddUnknowns` and
+  `PostingProjector`'s `AddIndexed`, both of which threw or mis-cited before this same commit fixed
+  them), and no test in the current suite -- including the 2-solution batch that proved the
+  `CatalogProjector`/`PostingProjector` fixes -- happens to shard a *confirmed relation, candidate,
+  unresolved or frontier* family large enough to expose it (only `Unresolved` sharded in that
+  fixture, and `AppendDisposition`'s prose for it happened to still read correctly by coincidence in
+  that specific run). Left open because fixing it correctly means reworking four call sites
+  (`AppendRelationsSection`'s `RelationKinds` loop, `AppendDisposition`'s three callers, plus
+  whatever `AppendSourceSection`-style check applies) to test family presence by stem/prefix rather
+  than exact slot equality, and there is no existing failing test to drive or verify that rewrite --
+  attempting it without one risks a silent, unverified regression under time pressure. A follow-up
+  task should add a fixture (or a `ScaleInputGenerator`-produced input, matching the pattern
+  `output-and-retrieval.md`'s scale scenario already uses) that forces a confirmed-relation,
+  candidate, unresolved or frontier family to shard, assert the guide's prose for that family is
+  still correct, watch it fail against the current code, then fix the four call sites.

@@ -19,7 +19,10 @@ internal static class PublicationPipeline
         IPackageProjector? projector,
         IBatchComposer? composer,
         ISourceDocumentReader source,
-        Func<WireDocument, PublishedPackageView>? createView = null)
+        Func<WireDocument, PublishedPackageView>? createView = null,
+        int? readingBudgetTokens = null,
+        int? maxFileReadsPerScenario = null,
+        ImmutableArray<string> allowlist = default)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(context);
@@ -27,11 +30,19 @@ internal static class PublicationPipeline
 
         var document = DomainMapper.ToWire(snapshot, context);
         var report = PackageValidator.Validate(document);
-        // An effectively unbounded ceiling: activating the derived, real ceiling for every live analysis
-        // is T52's own change (it touches a wide swath of existing Analysis-layer expectations that this
-        // batch's own scope, Storage and Projection, is not meant to move on its own). LayoutPlanner's
-        // adaptive sharding itself is fully implemented and tested against an explicit ceiling.
-        var plan = LayoutPlanner.Plan(report.Document, int.MaxValue);
+
+        // T52: the derived ceiling (CeilingCalculator.Derive's defaults, absent a CLI override) is now the
+        // enforced default for every live publication -- closing the T37 deferred item. Every existing
+        // caller that never supplied a budget keeps getting the same ~32 KiB default the CLI itself falls
+        // back to; only a caller that explicitly passes readingBudgetTokens/maxFileReadsPerScenario moves
+        // it.
+        var ceiling = CeilingCalculator.Derive(
+            readingBudgetTokens ?? CeilingCalculator.DefaultReadingBudgetTokens,
+            maxFileReadsPerScenario ?? CeilingCalculator.DefaultMaxFileReadsPerScenario);
+        var allowlistDigest = ProvenanceDto.ComputeAllowlistDigest(allowlist.IsDefault ? [] : allowlist);
+        var provenance = ProvenanceDto.Current(ceiling, allowlistDigest);
+
+        var plan = LayoutPlanner.Plan(report.Document, ceiling.CeilingBytes);
         var projections = ImmutableArray<StagedFragment>.Empty;
         SolutionContribution? contribution = null;
         var publishedDocument = report.Document;
@@ -66,7 +77,7 @@ internal static class PublicationPipeline
                 // unaffected -- this only ever activates for the real, end-to-end `analyze` pipeline.
                 if (projections.Any(static fragment => fragment.CanonicalKey == "retrieval.md"))
                 {
-                    var candidateFragments = PackagePublisher.ToPublicationOrder(report.Document, plan, projections);
+                    var candidateFragments = PackagePublisher.ToPublicationOrder(report.Document, plan, projections, provenance);
                     var scenarioRecords = RetrievalScenarioRunner
                         .Run(new StagedFragmentArtifactSource(candidateFragments))
                         .ToMeasurementRecords();
@@ -84,7 +95,7 @@ internal static class PublicationPipeline
                         // keeps flowing to `composer.Contribute` below unchanged, so a caller depending on
                         // exactly one `createView` invocation per publish (a same-instance-to-projector-
                         // and-composer guarantee) still sees exactly that.
-                        plan = LayoutPlanner.Plan(publishedDocument, int.MaxValue);
+                        plan = LayoutPlanner.Plan(publishedDocument, ceiling.CeilingBytes);
                     }
                 }
             }
@@ -95,7 +106,7 @@ internal static class PublicationPipeline
             }
         }
 
-        var fragments = PackagePublisher.ToPublicationOrder(publishedDocument, plan, projections);
+        var fragments = PackagePublisher.ToPublicationOrder(publishedDocument, plan, projections, provenance);
         ValidateManifestCardinality(fragments);
         return new PublicationOutcome(fragments, contribution);
     }

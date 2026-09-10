@@ -30,9 +30,31 @@ internal static class CommandFactory
             Required = true,
         };
 
+        var allowlistOption = new Option<string[]>("--allowlist")
+        {
+            Description = "A document path, relative to a requested solution's authorized root, to admit even "
+                + "though the supported-document policy would otherwise exclude it. Repeat for each document.",
+            Arity = ArgumentArity.ZeroOrMore,
+        };
+
+        var readingBudgetOption = new Option<int?>("--reading-budget-tokens")
+        {
+            Description = "The declared per-scenario reading budget in tokens, used to derive the enforced "
+                + $"per-artifact byte ceiling. Must be positive. Defaults to {CeilingCalculator.DefaultReadingBudgetTokens}.",
+        };
+
+        var maxFileReadsOption = new Option<int?>("--max-file-reads-per-scenario")
+        {
+            Description = "The declared per-scenario maximum file reads, used to derive the enforced "
+                + $"per-artifact byte ceiling. Must be positive. Defaults to {CeilingCalculator.DefaultMaxFileReadsPerScenario}.",
+        };
+
         var analyze = new Command("analyze", "Analyze one or more solutions.");
         analyze.Options.Add(solutionOption);
         analyze.Options.Add(outputOption);
+        analyze.Options.Add(allowlistOption);
+        analyze.Options.Add(readingBudgetOption);
+        analyze.Options.Add(maxFileReadsOption);
         analyze.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
             var paths = parseResult.GetValue(solutionOption) ?? [];
@@ -44,10 +66,33 @@ internal static class CommandFactory
                 }
             }
 
+            // GCPC-036/GCPC-037: the declared per-scenario budget, validated before any analysis begins so
+            // a malformed value publishes nothing (GCPC-073). Absent an override, CeilingCalculator's own
+            // declared defaults apply -- the same ~32 KiB ceiling PublicationPipeline.Publish now enforces
+            // by default for every caller (T52 closes the T37 deferred item: this was never the live
+            // default before, only ever proven under an explicit test ceiling).
+            var readingBudgetTokens = parseResult.GetValue(readingBudgetOption);
+            var maxFileReadsPerScenario = parseResult.GetValue(maxFileReadsOption);
+            CeilingCalculation ceiling;
+            try
+            {
+                ceiling = CeilingCalculator.Derive(
+                    readingBudgetTokens ?? CeilingCalculator.DefaultReadingBudgetTokens,
+                    maxFileReadsPerScenario ?? CeilingCalculator.DefaultMaxFileReadsPerScenario);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return Invalid(
+                    parseResult,
+                    "--reading-budget-tokens and --max-file-reads-per-scenario must be positive");
+            }
+
+            var allowlist = parseResult.GetValue(allowlistOption) ?? [];
+
             AnalysisRequest request;
             try
             {
-                request = AnalysisRequest.Create([.. paths]);
+                request = AnalysisRequest.Create([.. paths], [.. allowlist]);
             }
             catch (ArgumentException exception)
             {
@@ -69,8 +114,19 @@ internal static class CommandFactory
                 // solution composition dead on every real `analyze` run -- proven only by tests that built
                 // their own store with a composer directly. Found while proving T51's "compose reproduces
                 // the same batch artifacts analyze produced" against a real multi-solution batch.
+                //
+                // PackageProjector's own ceiling is passed the same derived bytes as the store: GCPC-039
+                // names catalogs and postings alongside facts, observations and relations as artifacts that
+                // must split under the ceiling, so the projector cannot keep sharding at its own unrelated
+                // 1 MiB default (ShardWriter.DefaultCeilingBytes) once the store enforces the real one.
                 analysisEngine = new AnalysisEngine(
-                    new FilesystemTransactionalStore(outputPath, new PackageProjector(), new BatchComposer()));
+                    new FilesystemTransactionalStore(
+                        outputPath,
+                        new PackageProjector(ceiling.CeilingBytes),
+                        new BatchComposer(),
+                        readingBudgetTokens,
+                        maxFileReadsPerScenario,
+                        [.. allowlist]));
             }
 
             AnalysisResult result;
@@ -220,11 +276,11 @@ internal static class CommandFactory
                     File.ReadAllBytes(Path.Combine(packagePath, "manifest.json")), "manifest.json");
                 var context = new ManifestContext(manifest.SolutionKey, manifest.SolutionFileName);
                 var document = DomainMapper.ToWire(result.Snapshot, context);
-                // The unsplit default ceiling: the live `analyze` pipeline plans every family this way too
-                // until T52 makes the derived ceiling the enforced default. When that lands, this must plan
-                // with the same real ceiling `analyze` used (from the package's own published provenance),
-                // or a sharded package's projection citations will not resolve against this reconstruction.
-                var view = PublishedPackageView.From(document);
+                // T52: re-plan with the real ceiling this package was actually published under (its own
+                // provenance), not the unsplit default -- a sharded family's citations only resolve when
+                // this reconstruction buckets records exactly the way the live publish did.
+                var ceilingBytes = manifest.Provenance?.ArtifactCeilingBytes ?? int.MaxValue;
+                var view = PublishedPackageView.From(document, LayoutPlanner.Plan(document, ceilingBytes));
                 ProjectionValidator.Validate(view, result.Projections);
             }
             catch (PublicationRejectedException exception)

@@ -90,9 +90,13 @@ public sealed class AnalyzePackageWriteTests
             Assert.Contains(
                 manifest.Artifacts,
                 static entry => entry.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal) && entry.Count > 0);
+            // T52 made the derived ~32 KiB ceiling the live default: "contains" is one of the families
+            // that can now legitimately split into shards ("relations/confirmed/contains.<bucket>") rather
+            // than staying a single "relations/confirmed/contains" artifact, so this checks the family by
+            // prefix, matching the "observations/" assertion just above it.
             Assert.Contains(
                 manifest.Artifacts,
-                static entry => entry.CanonicalKey == "relations/confirmed/contains" && entry.Count > 0);
+                static entry => entry.CanonicalKey.StartsWith("relations/confirmed/contains", StringComparison.Ordinal) && entry.Count > 0);
         }
         finally
         {

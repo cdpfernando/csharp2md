@@ -56,13 +56,22 @@ public sealed record ProvenanceDto(
     /// deterministic-build default the .NET SDK already applies), the five taxonomy version axes, and the
     /// derived ceiling with its token estimator.
     /// </summary>
-    public static ProvenanceDto Current()
+    public static ProvenanceDto Current() => Current(CeilingCalculator.Derive(), EmptyAllowlistDigest);
+
+    /// <summary>
+    /// The provenance of the running generator build, using the caller-supplied ceiling and allowlist
+    /// digest instead of the derived defaults (T52: the CLI's own <c>--reading-budget-tokens</c>,
+    /// <c>--max-file-reads-per-scenario</c> and <c>--allowlist</c> reach here, so a run's published
+    /// provenance reflects the values that actually shaped it, not always the default).
+    /// </summary>
+    public static ProvenanceDto Current(CeilingCalculation ceiling, string allowlistDigest)
     {
+        ArgumentNullException.ThrowIfNull(allowlistDigest);
+
         var assembly = typeof(ProvenanceDto).Assembly;
         var generatorVersion = assembly.GetName().Version?.ToString() ?? "0.0.0.0";
         var buildIdentity = assembly.ManifestModule.ModuleVersionId.ToString();
         var versions = TaxonomyTables.Default.Versions;
-        var ceiling = CeilingCalculator.Derive();
 
         return new ProvenanceDto(
             generatorVersion,
@@ -75,6 +84,6 @@ public sealed record ProvenanceDto(
             ceiling.CeilingBytes,
             ceiling.TokenEstimatorId,
             DefaultDocumentPolicyVersion,
-            EmptyAllowlistDigest);
+            allowlistDigest);
     }
 }

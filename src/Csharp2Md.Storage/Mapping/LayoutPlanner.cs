@@ -38,6 +38,18 @@ public sealed class LayoutPlan
     /// </summary>
     public ImmutableDictionary<string, ImmutableArray<ArtifactCitation>> RelationLocations { get; }
 
+    /// <summary>The citation for each record at its original position in <see cref="WireDocument.Candidates"/>,
+    /// however the family was split (GCPC-041).</summary>
+    public ImmutableArray<ArtifactCitation> CandidateLocations { get; }
+
+    /// <summary>The citation for each record at its original position in <see cref="WireDocument.Unresolved"/>,
+    /// however the family was split (GCPC-041).</summary>
+    public ImmutableArray<ArtifactCitation> UnresolvedLocations { get; }
+
+    /// <summary>The citation for each record at its original position in <see cref="WireDocument.Frontiers"/>,
+    /// however the family was split (GCPC-041).</summary>
+    public ImmutableArray<ArtifactCitation> FrontierLocations { get; }
+
     /// <summary>
     /// One entry per record that could not be reduced to fit the ceiling by further splitting -- it is
     /// published in a shard of its own rather than truncated (GCPC-038's edge case).
@@ -51,11 +63,17 @@ public sealed class LayoutPlan
         ImmutableArray<PlannedArtifact> artifacts,
         ImmutableDictionary<string, ArtifactCitation> factLocations,
         ImmutableDictionary<string, ImmutableArray<ArtifactCitation>> relationLocations,
+        ImmutableArray<ArtifactCitation> candidateLocations,
+        ImmutableArray<ArtifactCitation> unresolvedLocations,
+        ImmutableArray<ArtifactCitation> frontierLocations,
         ImmutableArray<DegradationReasonDto> degradationReasons)
     {
         Artifacts = artifacts;
         FactLocations = factLocations;
         RelationLocations = relationLocations;
+        CandidateLocations = candidateLocations;
+        UnresolvedLocations = unresolvedLocations;
+        FrontierLocations = frontierLocations;
         DegradationReasons = degradationReasons;
     }
 }
@@ -127,20 +145,20 @@ public static class LayoutPlanner
             relationLocations[relation.WireName] = citations;
         }
 
-        PlanAndAdd(
+        var candidateLocations = PlanAndAdd(
             artifacts,
             degradations,
             "relations/candidates.json",
             document.Candidates.Select(static dto =>
                 new RecordSource(RelationIdentity(dto.Kind, dto.Source.Id, dto.ProposedTarget.Id), CanonicalJson.Write(dto))),
             ceilingBytes);
-        PlanAndAdd(
+        var unresolvedLocations = PlanAndAdd(
             artifacts,
             degradations,
             "relations/unresolved.json",
             document.Unresolved.Select(static dto => new RecordSource(dto.Source.Id, CanonicalJson.Write(dto))),
             ceilingBytes);
-        PlanAndAdd(
+        var frontierLocations = PlanAndAdd(
             artifacts,
             degradations,
             "relations/frontiers.json",
@@ -166,21 +184,29 @@ public static class LayoutPlanner
 
         var sorted = artifacts.ToImmutable().Sort(
             static (left, right) => string.CompareOrdinal(left.ArtifactKey, right.ArtifactKey));
-        return new LayoutPlan(sorted, factLocations, relationLocations.ToImmutable(), degradations.ToImmutable());
+        return new LayoutPlan(
+            sorted,
+            factLocations,
+            relationLocations.ToImmutable(),
+            candidateLocations,
+            unresolvedLocations,
+            frontierLocations,
+            degradations.ToImmutable());
     }
 
     private readonly record struct RecordSource(string Identity, ImmutableArray<byte> Entry);
 
-    private static void PlanAndAdd(
+    private static ImmutableArray<ArtifactCitation> PlanAndAdd(
         ImmutableArray<PlannedArtifact>.Builder artifacts,
         ImmutableArray<DegradationReasonDto>.Builder degradations,
         string baseKey,
         IEnumerable<RecordSource> sources,
         int ceilingBytes)
     {
-        var (planned, _, planDegradations) = PlanFamily(baseKey, sources, ceilingBytes);
+        var (planned, citations, planDegradations) = PlanFamily(baseKey, sources, ceilingBytes);
         artifacts.AddRange(planned);
         degradations.AddRange(planDegradations);
+        return citations;
     }
 
     /// <summary>

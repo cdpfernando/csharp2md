@@ -71,4 +71,31 @@ public sealed class PublishedPackageView
         citation = citations[index];
         return true;
     }
+
+    /// <summary>Locates the citation for the record at <paramref name="index"/> in the document's own
+    /// <c>Candidates</c> array, however the family was split (GCPC-040, GCPC-041).</summary>
+    public bool TryLocateCandidate(int index, out ArtifactCitation citation) =>
+        TryLocateIndexed(Plan.CandidateLocations, index, out citation);
+
+    /// <summary>Locates the citation for the record at <paramref name="index"/> in the document's own
+    /// <c>Unresolved</c> array, however the family was split (GCPC-040, GCPC-041).</summary>
+    public bool TryLocateUnresolved(int index, out ArtifactCitation citation) =>
+        TryLocateIndexed(Plan.UnresolvedLocations, index, out citation);
+
+    /// <summary>Locates the citation for the record at <paramref name="index"/> in the document's own
+    /// <c>Frontiers</c> array, however the family was split (GCPC-040, GCPC-041).</summary>
+    public bool TryLocateFrontier(int index, out ArtifactCitation citation) =>
+        TryLocateIndexed(Plan.FrontierLocations, index, out citation);
+
+    private static bool TryLocateIndexed(ImmutableArray<ArtifactCitation> citations, int index, out ArtifactCitation citation)
+    {
+        citation = default;
+        if (index < 0 || citations.IsDefault || index >= citations.Length)
+        {
+            return false;
+        }
+
+        citation = citations[index];
+        return true;
+    }
 }

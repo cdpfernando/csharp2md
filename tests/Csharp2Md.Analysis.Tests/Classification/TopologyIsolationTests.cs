@@ -93,14 +93,33 @@ public sealed class TopologyIsolationTests
         return CanonicalJson.Read<T>(fragment.Payload.AsSpan());
     }
 
+    /// <summary>
+    /// T52 made the derived ~32 KiB ceiling the live default, so a flat record-array family (unlike the
+    /// compound fact shards <see cref="ReadShard{T}"/> reads) may now legitimately be sharded into
+    /// "&lt;stem&gt;.&lt;bucket&gt;.json" artifacts instead of staying one file at its base key -- this
+    /// merges every shard back into one array, matching what <c>FactualPackageReader.ReadShardedArray</c>
+    /// does for a real reader.
+    /// </summary>
     private static ImmutableArray<ConfirmedRelationDto> ReadOptionalRelations(
         CommittedPublication publication,
         string canonicalKey)
     {
-        var fragment = publication.ArtifactsInPublicationOrder
-            .SingleOrDefault(artifact => artifact.CanonicalKey == canonicalKey);
-        return fragment is null
-            ? []
-            : CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(fragment.Payload.AsSpan());
+        var stem = canonicalKey.EndsWith(".json", StringComparison.Ordinal)
+            ? canonicalKey[..^".json".Length]
+            : canonicalKey;
+        var shardPaths = publication.ArtifactsInPublicationOrder
+            .Select(static artifact => artifact.CanonicalKey)
+            .Where(key => key == canonicalKey
+                || (key.StartsWith(stem + ".", StringComparison.Ordinal) && key.EndsWith(".json", StringComparison.Ordinal)))
+            .OrderBy(static key => key, StringComparer.Ordinal);
+
+        var records = ImmutableArray.CreateBuilder<ConfirmedRelationDto>();
+        foreach (var key in shardPaths)
+        {
+            var fragment = publication.ArtifactsInPublicationOrder.Single(artifact => artifact.CanonicalKey == key);
+            records.AddRange(CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(fragment.Payload.AsSpan()));
+        }
+
+        return records.ToImmutable();
     }
 }

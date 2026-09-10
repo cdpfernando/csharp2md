@@ -13,13 +13,34 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
     private readonly IPackageProjector? _projector;
     private readonly IBatchComposer? _composer;
     private readonly FilesystemRetryPolicy _retry;
+    private readonly int? _readingBudgetTokens;
+    private readonly int? _maxFileReadsPerScenario;
+    private readonly ImmutableArray<string> _allowlist;
     private readonly Dictionary<string, SolutionContribution> _contributions = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// <paramref name="readingBudgetTokens"/> and <paramref name="maxFileReadsPerScenario"/> (T52's
+    /// <c>--reading-budget-tokens</c> and <c>--max-file-reads-per-scenario</c>), absent an override, are
+    /// the same declared defaults <see cref="Mapping.CeilingCalculator"/> already derives the enforced
+    /// per-artifact ceiling from on every publish; <paramref name="allowlist"/> is the same allowlist
+    /// <see cref="Analysis.AnalysisRequest"/> already admitted through the pipeline (T12), threaded here
+    /// only so its digest reaches the published provenance (GCPC-058).
+    /// </summary>
     public FilesystemTransactionalStore(
         string outputRoot,
         IPackageProjector? projector = null,
-        IBatchComposer? composer = null)
-        : this(outputRoot, projector, composer, FilesystemRetryPolicy.Default)
+        IBatchComposer? composer = null,
+        int? readingBudgetTokens = null,
+        int? maxFileReadsPerScenario = null,
+        ImmutableArray<string> allowlist = default)
+        : this(
+            outputRoot,
+            projector,
+            composer,
+            FilesystemRetryPolicy.Default,
+            readingBudgetTokens,
+            maxFileReadsPerScenario,
+            allowlist)
     {
     }
 
@@ -36,6 +57,18 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         IPackageProjector? projector,
         IBatchComposer? composer,
         FilesystemRetryPolicy retry)
+        : this(outputRoot, projector, composer, retry, null, null, default)
+    {
+    }
+
+    internal FilesystemTransactionalStore(
+        string outputRoot,
+        IPackageProjector? projector,
+        IBatchComposer? composer,
+        FilesystemRetryPolicy retry,
+        int? readingBudgetTokens,
+        int? maxFileReadsPerScenario,
+        ImmutableArray<string> allowlist)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(outputRoot);
         ArgumentOutOfRangeException.ThrowIfLessThan(retry.MaxAttempts, 1);
@@ -43,6 +76,9 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         _projector = projector;
         _composer = composer;
         _retry = retry;
+        _readingBudgetTokens = readingBudgetTokens;
+        _maxFileReadsPerScenario = maxFileReadsPerScenario;
+        _allowlist = allowlist;
     }
 
     internal IReadOnlyDictionary<string, SolutionContribution> AccumulatedContributions => _contributions;
@@ -381,7 +417,11 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
                     Path.GetFileName(_childPath),
                     _projector,
                     _composer,
-                    _sourceReader);
+                    _sourceReader,
+                    createView: null,
+                    _store._readingBudgetTokens,
+                    _store._maxFileReadsPerScenario,
+                    _store._allowlist);
                 var artifacts = outcome.Fragments.AddRange(_deferred);
                 WriteStaging(artifacts);
                 SwapStagingIntoChild();

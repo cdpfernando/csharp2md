@@ -11,7 +11,8 @@ internal static class ManifestBuilder
     public static ManifestEnvelope From(
         ManifestContext context,
         ImmutableArray<StagedFragment> payloads,
-        PublishedPackageView view)
+        PublishedPackageView view,
+        ProvenanceDto? provenance = null)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(view);
@@ -69,7 +70,7 @@ internal static class ManifestBuilder
             context.SolutionKey,
             context.SolutionFileName,
             artifacts.ToImmutable(),
-            ProvenanceDto.Current());
+            provenance ?? ProvenanceDto.Current());
     }
 
     /// <summary>

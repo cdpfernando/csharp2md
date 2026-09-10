@@ -42,10 +42,16 @@ public sealed class CertificationCorpusContainsPayloadTests
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
 
-        var containsArtifact = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == "relations/confirmed/contains.json");
-        var postFixBytes = containsArtifact.Payload.AsSpan().Length;
+        // T52 made the derived ~32 KiB ceiling the live default: even after T20's per-edge reduction,
+        // "contains" may now legitimately be sharded into "relations/confirmed/contains.<bucket>.json"
+        // artifacts instead of staying one file -- the reduction claim is about the family's total
+        // serialized content, so sum every shard's bytes rather than assume a single fragment.
+        var containsArtifacts = publication.ArtifactsInPublicationOrder
+            .Where(artifact => artifact.CanonicalKey == "relations/confirmed/contains.json"
+                || artifact.CanonicalKey.StartsWith("relations/confirmed/contains.", StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(containsArtifacts);
+        var postFixBytes = containsArtifacts.Sum(artifact => artifact.Payload.AsSpan().Length);
 
         Assert.True(
             postFixBytes < PreFixContainsPayloadBytes / 2,
@@ -68,10 +74,15 @@ public sealed class CertificationCorpusContainsPayloadTests
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
 
-        var belongsToArtifact = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == "relations/confirmed/belongs-to.json");
-        var postFixBytes = belongsToArtifact.Payload.AsSpan().Length;
+        // T52 made the derived ~32 KiB ceiling the live default: "belongs-to" may now legitimately be
+        // sharded into "relations/confirmed/belongs-to.<bucket>.json" artifacts instead of staying one
+        // file -- sum every shard's bytes rather than assume a single fragment.
+        var belongsToArtifacts = publication.ArtifactsInPublicationOrder
+            .Where(artifact => artifact.CanonicalKey == "relations/confirmed/belongs-to.json"
+                || artifact.CanonicalKey.StartsWith("relations/confirmed/belongs-to.", StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(belongsToArtifacts);
+        var postFixBytes = belongsToArtifacts.Sum(artifact => artifact.Payload.AsSpan().Length);
 
         Assert.True(
             postFixBytes < PreFixBelongsToPayloadBytes,

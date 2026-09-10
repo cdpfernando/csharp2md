@@ -26,7 +26,8 @@ internal static class PackagePublisher
     internal static ImmutableArray<StagedFragment> ToPublicationOrder(
         WireDocument document,
         LayoutPlan plan,
-        ImmutableArray<StagedFragment> projections = default)
+        ImmutableArray<StagedFragment> projections = default,
+        ProvenanceDto? provenance = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(plan);
@@ -48,7 +49,7 @@ internal static class PackagePublisher
         }
 
         var context = new ManifestContext(document.Manifest.SolutionKey, document.Manifest.SolutionFileName);
-        var manifest = ManifestBuilder.From(context, fragments, view);
+        var manifest = ManifestBuilder.From(context, fragments, view, provenance);
         return fragments.Add(new StagedFragment(ArtifactRole.Manifest, ManifestKey, CanonicalJson.Write(manifest)));
     }
 

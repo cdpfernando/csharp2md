@@ -78,7 +78,7 @@ public sealed class CertificationCorpusEntryPointTests
     {
         var publication = await AnalyzeCorpusAsync();
         var architecture = ReadShard<ArchitectureFactsShard>(publication, "facts/architecture.json");
-        var executes = ReadShard<ImmutableArray<ConfirmedRelationDto>>(publication, "relations/confirmed/executes.json");
+        var executes = ReadShardedArray<ConfirmedRelationDto>(publication, "relations/confirmed/executes.json");
 
         Assert.NotEmpty(architecture.EntryPoints);
         foreach (var entryPoint in architecture.EntryPoints)
@@ -95,7 +95,7 @@ public sealed class CertificationCorpusEntryPointTests
             foreach (var citation in relation.DerivedFrom)
             {
                 var artifactKey = "observations/" + citation.Kind + ".json";
-                var observations = ReadShard<ImmutableArray<ObservationDto>>(publication, artifactKey);
+                var observations = ReadShardedArray<ObservationDto>(publication, artifactKey);
 
                 Assert.Contains(
                     observations,
@@ -117,6 +117,34 @@ public sealed class CertificationCorpusEntryPointTests
             Assert.Single(
                 publication.ArtifactsInPublicationOrder,
                 artifact => artifact.CanonicalKey == canonicalKey).Payload.AsSpan());
+
+    /// <summary>
+    /// T52 made the derived ~32 KiB ceiling the live default, so a flat record-array family may now
+    /// legitimately be sharded into "&lt;stem&gt;.&lt;bucket&gt;.json" artifacts instead of staying one
+    /// file at its base key -- this merges every shard back into one array, matching what
+    /// <c>FactualPackageReader.ReadShardedArray</c> does for a real reader. Unlike <see cref="ReadShard{T}"/>,
+    /// this is only ever correct for a flat record-array family, never a compound fact shard.
+    /// </summary>
+    private static ImmutableArray<T> ReadShardedArray<T>(CommittedPublication publication, string canonicalKey)
+    {
+        var stem = canonicalKey.EndsWith(".json", StringComparison.Ordinal)
+            ? canonicalKey[..^".json".Length]
+            : canonicalKey;
+        var shardKeys = publication.ArtifactsInPublicationOrder
+            .Select(static artifact => artifact.CanonicalKey)
+            .Where(key => key == canonicalKey
+                || (key.StartsWith(stem + ".", StringComparison.Ordinal) && key.EndsWith(".json", StringComparison.Ordinal)))
+            .OrderBy(static key => key, StringComparer.Ordinal);
+
+        var records = ImmutableArray.CreateBuilder<T>();
+        foreach (var key in shardKeys)
+        {
+            var fragment = publication.ArtifactsInPublicationOrder.Single(artifact => artifact.CanonicalKey == key);
+            records.AddRange(CanonicalJson.Read<ImmutableArray<T>>(fragment.Payload.AsSpan()));
+        }
+
+        return records.ToImmutable();
+    }
 
     private static async Task<CommittedPublication> AnalyzeCorpusAsync()
     {

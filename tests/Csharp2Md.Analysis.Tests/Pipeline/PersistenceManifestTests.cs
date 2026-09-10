@@ -38,10 +38,17 @@ public sealed class PersistenceManifestTests
         Assert.NotEmpty(structural.Documents);
         Assert.NotEmpty(structural.Symbols);
         Assert.Contains(payloadKeys, key => key.StartsWith("observations/", StringComparison.Ordinal));
-        var containsFragment = Assert.Single(
-            artifacts,
-            fragment => fragment.CanonicalKey == "relations/confirmed/contains.json");
-        var contains = CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(containsFragment.Payload.AsSpan());
+        // T52 made the derived ~32 KiB ceiling the live default: "contains" may now legitimately be
+        // sharded into "relations/confirmed/contains.<bucket>.json" artifacts instead of staying one file
+        // at its base key -- merge every shard back into one array, as FactualPackageReader would.
+        var containsFragments = artifacts
+            .Where(fragment => fragment.CanonicalKey == "relations/confirmed/contains.json"
+                || fragment.CanonicalKey.StartsWith("relations/confirmed/contains.", StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(containsFragments);
+        var contains = containsFragments
+            .SelectMany(fragment => CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(fragment.Payload.AsSpan()))
+            .ToArray();
         Assert.NotEmpty(contains);
 
         var registry = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "contracts/taxonomy-registry.json");
@@ -55,7 +62,7 @@ public sealed class PersistenceManifestTests
             entry => entry.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal) && entry.Count > 0);
         Assert.Contains(
             manifest.Artifacts,
-            entry => entry.CanonicalKey == "relations/confirmed/contains" && entry.Count > 0);
+            entry => entry.CanonicalKey.StartsWith("relations/confirmed/contains", StringComparison.Ordinal) && entry.Count > 0);
         Assert.Equal(SolutionCoordinate.For(publication.SolutionKey).Identity.Value, manifest.SolutionKey);
 
         var coverage = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "coverage.json");

@@ -41,7 +41,9 @@ public sealed class AnalyzeOptionSurfaceTests
             .Select(static option => option.Name)
             .OrderBy(static name => name, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(["--output", "--solution"], analyzeProductOptions);
+        Assert.Equal(
+            ["--allowlist", "--max-file-reads-per-scenario", "--output", "--reading-budget-tokens", "--solution"],
+            analyzeProductOptions);
         Assert.Empty(analyze.Arguments);
     }
 

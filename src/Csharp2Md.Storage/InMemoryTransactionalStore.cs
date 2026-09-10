@@ -13,11 +13,22 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
     private readonly Dictionary<string, SolutionContribution> _contributions = new(StringComparer.Ordinal);
     private readonly IPackageProjector? _projector;
     private readonly IBatchComposer? _composer;
+    private readonly int? _readingBudgetTokens;
+    private readonly int? _maxFileReadsPerScenario;
+    private readonly ImmutableArray<string> _allowlist;
 
-    public InMemoryTransactionalStore(IPackageProjector? projector = null, IBatchComposer? composer = null)
+    public InMemoryTransactionalStore(
+        IPackageProjector? projector = null,
+        IBatchComposer? composer = null,
+        int? readingBudgetTokens = null,
+        int? maxFileReadsPerScenario = null,
+        ImmutableArray<string> allowlist = default)
     {
         _projector = projector;
         _composer = composer;
+        _readingBudgetTokens = readingBudgetTokens;
+        _maxFileReadsPerScenario = maxFileReadsPerScenario;
+        _allowlist = allowlist;
     }
 
     internal IReadOnlyDictionary<string, SolutionContribution> AccumulatedContributions => _contributions;
@@ -128,7 +139,11 @@ public sealed class InMemoryTransactionalStore : ITransactionalStore
                 PackageDirectoryName(_coordinate),
                 _projector,
                 _composer,
-                _sourceReader);
+                _sourceReader,
+                createView: null,
+                _store._readingBudgetTokens,
+                _store._maxFileReadsPerScenario,
+                _store._allowlist);
             var artifacts = outcome.Fragments.AddRange(_deferred);
             foreach (var fragment in _deferred)
             {
