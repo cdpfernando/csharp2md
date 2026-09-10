@@ -47,7 +47,13 @@ public sealed class AnalyzePackageWriteTests
             Assert.Equal(0, exitCode);
             Assert.Equal(before, after);
 
-            var child = Assert.Single(Directory.GetDirectories(outputPath));
+            // GCPC-068 (T51) wired a BatchComposer into the real `analyze` store, so a run whose solution
+            // carries composition facts (components, deployment units, ...) now also writes a top-level
+            // composition/ directory alongside the package directory -- filter for the package's own
+            // deterministic "s-<hash>" name rather than assuming it is the only directory under --output.
+            var child = Assert.Single(
+                Directory.GetDirectories(outputPath),
+                static path => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(path), "^s-[0-9a-f]{32}$"));
             Assert.Matches("^s-[0-9a-f]{32}$", Path.GetFileName(child));
 
             var result = FactualPackageReader.Read(child);

@@ -13,7 +13,10 @@ public sealed class ProjectorWiringTests
         var source = File.ReadAllText(
             Path.Combine(CliTestPaths.RepoRoot, "src", "Csharp2Md.Cli", "CommandFactory.cs"));
 
-        Assert.Contains("new FilesystemTransactionalStore(outputPath, new PackageProjector())", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "new FilesystemTransactionalStore(outputPath, new PackageProjector(), new BatchComposer())",
+            source,
+            StringComparison.Ordinal);
     }
 
     [Fact]

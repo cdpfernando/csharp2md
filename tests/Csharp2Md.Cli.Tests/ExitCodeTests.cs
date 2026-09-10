@@ -227,7 +227,11 @@ public sealed class ExitCodeTests
             ["analyze", "--solution", solutionPath, "--output", outputPath]);
         Assert.True(exitCode == 0, $"analyze failed with exit {exitCode}: {stderr}");
 
-        var child = Directory.GetDirectories(outputPath).Single();
+        // GCPC-068 (T51) wired a BatchComposer into the real analyze store, so this fixture's own
+        // composition facts also produce a top-level composition/ directory under --output -- filter for
+        // the package's deterministic "s-<hash>" name.
+        var child = Directory.GetDirectories(outputPath)
+            .Single(static path => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(path), "^s-[0-9a-f]{32}$"));
         return (child, outputPath);
     }
 

@@ -2,6 +2,7 @@ using System.CommandLine;
 using Csharp2Md.Analysis;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Projection;
+using Csharp2Md.Projection.Composition;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Retrieval;
@@ -62,7 +63,14 @@ internal static class CommandFactory
                     return Invalid(parseResult, "--output");
                 }
 
-                analysisEngine = new AnalysisEngine(new FilesystemTransactionalStore(outputPath, new PackageProjector()));
+                // A BatchComposer alongside the projector: without it, FilesystemTransactionalStore's own
+                // composer field stays null, PublicationPipeline.Publish's composer.Contribute branch never
+                // runs, and PublishBatch's composer?.Compose(view) is permanently []. That left cross-
+                // solution composition dead on every real `analyze` run -- proven only by tests that built
+                // their own store with a composer directly. Found while proving T51's "compose reproduces
+                // the same batch artifacts analyze produced" against a real multi-solution batch.
+                analysisEngine = new AnalysisEngine(
+                    new FilesystemTransactionalStore(outputPath, new PackageProjector(), new BatchComposer()));
             }
 
             AnalysisResult result;
@@ -98,8 +106,85 @@ internal static class CommandFactory
         validate.SetAction(ValidateAction(packageOption));
 
         rootCommand.Subcommands.Add(validate);
+
+        var composePackagesOption = new Option<string[]>("--package")
+        {
+            Description = "Path to an already-published package directory to include in the batch. Repeat for each solution.",
+            Required = true,
+            Arity = ArgumentArity.OneOrMore,
+        };
+
+        var composeOutputOption = new Option<string>("--output")
+        {
+            Description = "The root every named package already lives under; receives batch-manifest.json and composition/.",
+            Required = true,
+        };
+
+        var compose = new Command("compose", "Recompose published packages into a batch, touching no solution.");
+        compose.Options.Add(composePackagesOption);
+        compose.Options.Add(composeOutputOption);
+        compose.SetAction(ComposeAction(composePackagesOption, composeOutputOption));
+
+        rootCommand.Subcommands.Add(compose);
         return rootCommand;
     }
+
+    /// <summary>
+    /// GCPC-068: rebuilds each named package's contribution through <see cref="ContributionReader"/> (no
+    /// solution opened, no re-analysis) and reuses <see cref="BatchComposer.Compose"/> and <see
+    /// cref="FilesystemTransactionalStore.PublishBatch"/> unchanged -- the exact write path a live
+    /// <c>analyze</c> batch uses, driven by a seeded contribution instead of one a live commit produced. A
+    /// named package with no manifest is treated as unpublished (GCPC-072): the batch declares incomplete
+    /// scope and every already-committed package stays untouched, exactly as a live analyze batch does.
+    /// </summary>
+    private static Func<ParseResult, CancellationToken, Task<int>> ComposeAction(
+        Option<string[]> packagesOption, Option<string> outputOption) =>
+        (ParseResult parseResult, CancellationToken cancellationToken) =>
+        {
+            var packagePaths = parseResult.GetValue(packagesOption) ?? [];
+            var outputPath = parseResult.GetValue(outputOption);
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                return Task.FromResult(Invalid(parseResult, "--output"));
+            }
+
+            var composer = new BatchComposer();
+            var store = new FilesystemTransactionalStore(outputPath, composer: composer);
+            var solutions = ImmutableArray.CreateBuilder<BatchSolutionRecord>(packagePaths.Length);
+            foreach (var packagePath in packagePaths)
+            {
+                if (File.Exists(Path.Combine(packagePath, "manifest.json")))
+                {
+                    var manifest = PackageValidator.ReadPayloadOrThrow<ManifestEnvelope>(
+                        File.ReadAllBytes(Path.Combine(packagePath, "manifest.json")), "manifest.json");
+                    var coordinate = SolutionCoordinate.For(manifest.SolutionFileName);
+                    solutions.Add(new BatchSolutionRecord(coordinate.Identity, manifest.SolutionFileName, PublicationStatus.Committed, null));
+                    store.SeedContribution(coordinate.Identity.Value, ContributionReader.Read(packagePath, composer));
+                }
+                else
+                {
+                    var fallbackName = Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(packagePath)));
+                    var coordinate = SolutionCoordinate.For(fallbackName);
+                    solutions.Add(new BatchSolutionRecord(coordinate.Identity, fallbackName, PublicationStatus.Unpublished, "package-missing"));
+                }
+            }
+
+            var stdout = parseResult.InvocationConfiguration.Output;
+            var error = parseResult.InvocationConfiguration.Error;
+            try
+            {
+                store.PublishBatch(solutions.ToImmutable());
+            }
+            catch (PublicationRejectedException exception)
+            {
+                error.WriteLine($"csharp2md: {exception.Message}");
+                return Task.FromResult(ExitCodes.StructuralCorruption);
+            }
+
+            var incomplete = solutions.Any(static record => record.Status == PublicationStatus.Unpublished);
+            stdout.WriteLine(incomplete ? "Composition incomplete: at least one solution is unpublished." : "Composition complete.");
+            return Task.FromResult(incomplete ? ExitCodes.PartialComposition : ExitCodes.Success);
+        };
 
     /// <summary>
     /// GCPC-063, GCPC-064, GCPC-066, GCPC-067: re-hydrates the package named by <paramref name="packageOption"/>

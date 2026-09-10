@@ -47,6 +47,19 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
 
     internal IReadOnlyDictionary<string, SolutionContribution> AccumulatedContributions => _contributions;
 
+    /// <summary>
+    /// Registers a contribution built by re-reading an already-published package (<see
+    /// cref="ContributionReader"/>, T51's <c>compose</c> path) as if it had come from a live <see
+    /// cref="IStoreSession.Commit"/> on this store instance, so <see cref="PublishBatch"/> composes it
+    /// through the exact same path a live <c>analyze</c> batch uses -- no second write path is introduced.
+    /// </summary>
+    public void SeedContribution(string solutionIdentity, SolutionContribution contribution)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(solutionIdentity);
+        ArgumentNullException.ThrowIfNull(contribution);
+        _contributions[solutionIdentity] = contribution;
+    }
+
     public IStoreSession Open(SolutionCoordinate coordinate, ISourceDocumentReader sourceReader)
     {
         ArgumentNullException.ThrowIfNull(sourceReader);

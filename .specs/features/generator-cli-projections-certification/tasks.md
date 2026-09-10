@@ -1668,14 +1668,16 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] `compose` over published packages is asserted to produce byte-identical batch artifacts to those `analyze` produced
-- [ ] No solution file is opened; a test asserts it
-- [ ] A package directory missing from the output root is asserted to yield an incomplete-scope batch
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] `compose` over published packages is asserted to produce byte-identical batch artifacts to those `analyze` produced
+- [x] No solution file is opened; a test asserts it
+- [x] A package directory missing from the output root is asserted to yield an incomplete-scope batch
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; total ≥ previous task's total — **1988 tests, 0 failed** (Domain 563, Analysis 788, Storage 372, Cli 50, Projection 215), up from T50's 1985 (Cli 47 → 50: three new tests in `tests/Csharp2Md.Cli.Tests/ComposeCommandTests.cs`)
 
 **Tests**: integration
 **Gate**: build
+
+**Deviation** (beyond this task's named `Where`, forced by a real gap this task's own "byte-identical to analyze" proof surfaced): `src/Csharp2Md.Cli/CommandFactory.cs`'s `analyze` handler never actually wired a `BatchComposer` into its `FilesystemTransactionalStore` -- only the projector was passed, so `PublicationPipeline.Publish`'s composer branch never ran and `PublishBatch`'s composition was permanently empty on every real `analyze` invocation; cross-solution composition worked only in tests that built their own store with a composer directly. Fixed by passing `new BatchComposer()` alongside the projector, matching what `compose` (and every Storage/Analysis-layer composition test) already assumed `analyze` did. This changed real `analyze` output: a solution whose own facts carry composition-eligible identities (components, deployment units, ...) now also writes a top-level `composition/` directory under `--output`, even for a single solution, since `BatchComposer.Compose`'s emptiness check is per-contribution, not cross-solution-only. Four pre-existing/new tests assumed exactly one directory under `--output` and were updated to filter for the package's own deterministic `s-<hash>` name instead of assuming it is the only entry: `AnalyzePackageWriteTests.Analyze_WritesSchemaValidPackageOnlyUnderOutput` (pre-existing) and three of this task's own new tests/helpers.
 
 **Commit**: `feat(cli): add the compose subcommand over published packages`
 

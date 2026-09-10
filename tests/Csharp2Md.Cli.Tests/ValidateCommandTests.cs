@@ -96,7 +96,7 @@ public sealed class ValidateCommandTests
                 ["analyze", "--solution", solutionPath, "--output", outputPath]);
             Assert.Equal(0, analyzeExit);
 
-            var child = Directory.GetDirectories(outputPath).Single();
+            var child = SinglePackageDirectory(outputPath);
 
             // No access to the original solution directory: it is gone entirely before validate runs.
             Directory.Delete(tempSolutionRoot, recursive: true);
@@ -194,6 +194,12 @@ public sealed class ValidateCommandTests
         }
     }
 
+    /// <summary>The one package directory ("s-&lt;hash&gt;") under an output root that may also hold a
+    /// top-level composition/ directory (GCPC-068 wired a BatchComposer into the real analyze store).</summary>
+    private static string SinglePackageDirectory(string outputPath) =>
+        Directory.GetDirectories(outputPath)
+            .Single(static path => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(path), "^s-[0-9a-f]{32}$"));
+
     private static async Task<(string Child, string OutputPath)> AnalyzeFixtureAsync()
     {
         var solutionPath = Path.Combine(
@@ -205,7 +211,7 @@ public sealed class ValidateCommandTests
             ["analyze", "--solution", solutionPath, "--output", outputPath]);
         Assert.True(exitCode == 0, $"analyze failed with exit {exitCode}: {stderr}");
 
-        var child = Directory.GetDirectories(outputPath).Single();
+        var child = SinglePackageDirectory(outputPath);
         return (child, outputPath);
     }
 

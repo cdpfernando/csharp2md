@@ -8,12 +8,12 @@ public sealed class AnalyzeCommandTreeTests
     [Fact]
     [Trait("Requirement", "ENG-37")]
     [Trait("Requirement", "GCPC-063")]
-    public void RootCommand_ExposesAnalyzeAndValidate()
+    public void RootCommand_ExposesExactlyTheThreeCertificationVerbs()
     {
         var root = CommandFactory.CreateRootCommand();
 
         var names = root.Subcommands.Select(static command => command.Name).OrderBy(static name => name, StringComparer.Ordinal).ToArray();
-        Assert.Equal(["analyze", "validate"], names);
+        Assert.Equal(["analyze", "compose", "validate"], names);
         Assert.Null(root.Action);
     }
 
