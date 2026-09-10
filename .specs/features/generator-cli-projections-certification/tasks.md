@@ -1610,14 +1610,16 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Seven corruptions exist: bad hash, wrong count, dangling reference, out-of-range ordinal, out-of-bounds locator, broken link, mismatched provenance
-- [ ] Each is asserted rejected, naming the artifact key, the defect class and the offending value
-- [ ] Each corruption is asserted to differ from the clean package in exactly the intended way
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Seven corruptions exist: bad hash, wrong count, dangling reference, out-of-range ordinal, out-of-bounds locator, broken link, mismatched provenance
+- [x] Each is asserted rejected, naming the artifact key, the defect class and the offending value
+- [x] Each corruption is asserted to differ from the clean package in exactly the intended way
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; total ≥ previous task's total — **1977 tests, 0 failed** (Domain 563, Analysis 788, Storage 372, Cli 39, Projection 215), up from T48's 1969 (Storage 364 → 372: eight new tests in `tests/Csharp2Md.Storage.Tests/Corruption/`)
 
 **Tests**: integration
 **Gate**: full
+
+**Note**: a projection-content mutation (dangling reference, out-of-range ordinal, out-of-bounds locator, broken link) is crafted to preserve the mutated file's exact byte length, so it is caught by the specific `ProjectionValidator` gate it targets rather than by the coarser `manifest-size-mismatch` check `PackageValidator.ValidatePackageDirectory` runs first in the same real order T48's `validate` uses — both checks are real and both run; a length-changing edit would still be caught, just by the earlier, coarser gate, which would not exercise what this task is proving.
 
 **Commit**: `test(storage): add one corrupted package per defect class`
 

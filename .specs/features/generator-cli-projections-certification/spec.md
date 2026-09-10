@@ -570,7 +570,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-062 | P1: Provenance | AD-007 | Design | Verified |
 | GCPC-063 | P1: CLI surface | Roadmap row 8; D-03 | Design | Verified |
 | GCPC-064 | P1: CLI surface | User constraint on validate | Design | Verified |
-| GCPC-065 | P1: CLI surface | quality-and-security.md zero-tolerance gates | Design | Pending |
+| GCPC-065 | P1: CLI surface | quality-and-security.md zero-tolerance gates | Design | Verified |
 | GCPC-066 | P1: CLI surface | quality-and-security.md degradation | Design | Verified |
 | GCPC-067 | P1: CLI surface | AD-009 | Design | Verified |
 | GCPC-068 | P1: CLI surface | Workstream 7 deferred compose idea | Design | Pending |
