@@ -561,11 +561,11 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-053 | P1: Retrieval guide | D-02 budget | Design | Pending |
 | GCPC-054 | P1: Retrieval guide | Audit gate 9 | Design | Pending |
 | GCPC-055 | P1: Retrieval guide | RP-42 extended to the guide | Design | Pending |
-| GCPC-056 | P1: Provenance | Audit scope note and gate 8 | Design | Pending |
-| GCPC-057 | P1: Provenance | taxonomy.md version axes | Design | Pending |
+| GCPC-056 | P1: Provenance | Audit scope note and gate 8 | Design | Verified |
+| GCPC-057 | P1: Provenance | taxonomy.md version axes | Design | Verified |
 | GCPC-058 | P1: Provenance | D-02; D-04 | Design | Pending |
-| GCPC-059 | P1: Provenance | STOR-43; output-and-retrieval.md | Design | Pending |
-| GCPC-060 | P1: Provenance | Standing determinism constraint | Design | Pending |
+| GCPC-059 | P1: Provenance | STOR-43; output-and-retrieval.md | Design | Verified |
+| GCPC-060 | P1: Provenance | Standing determinism constraint | Design | Verified |
 | GCPC-061 | P1: Provenance | Audit I5 | Design | Verified |
 | GCPC-062 | P1: Provenance | AD-007 | Design | Pending |
 | GCPC-063 | P1: CLI surface | Roadmap row 8; D-03 | Design | Pending |

@@ -9,7 +9,8 @@ public sealed record ManifestEnvelope(
     int ObservationSchemaVersion,
     string SolutionKey,
     string SolutionFileName,
-    ImmutableArray<ManifestEntry> Artifacts);
+    ImmutableArray<ManifestEntry> Artifacts,
+    ProvenanceDto? Provenance = null);
 
 public sealed record ManifestEntry(
     string CanonicalKey,

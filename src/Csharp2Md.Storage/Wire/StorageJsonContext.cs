@@ -42,6 +42,7 @@ namespace Csharp2Md.Storage.Wire;
 [JsonSerializable(typeof(OpenFrontierDto))]
 [JsonSerializable(typeof(ManifestEnvelope))]
 [JsonSerializable(typeof(ManifestEntry))]
+[JsonSerializable(typeof(ProvenanceDto))]
 [JsonSerializable(typeof(BatchManifestEnvelope))]
 [JsonSerializable(typeof(BatchManifestSolutionEntry))]
 [JsonSerializable(typeof(BatchManifestArtifactEntry))]

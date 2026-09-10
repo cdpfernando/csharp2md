@@ -68,7 +68,8 @@ internal static class ManifestBuilder
             versions.ObservationSchemaVersion,
             context.SolutionKey,
             context.SolutionFileName,
-            artifacts.ToImmutable());
+            artifacts.ToImmutable(),
+            ProvenanceDto.Current());
     }
 
     /// <summary>
