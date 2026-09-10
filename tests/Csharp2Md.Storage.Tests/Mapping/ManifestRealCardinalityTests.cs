@@ -87,19 +87,8 @@ public sealed class ManifestRealCardinalityTests
         {
             case JsonArray array:
                 return array.Count;
-            case JsonObject obj:
-                var sum = 0;
-                var sawArray = false;
-                foreach (var property in obj)
-                {
-                    if (property.Value is JsonArray family)
-                    {
-                        sawArray = true;
-                        sum += family.Count;
-                    }
-                }
-
-                return sawArray ? sum : 1;
+            case JsonObject { Count: > 0 } obj when obj.All(static property => property.Value is JsonArray):
+                return obj.Sum(static property => ((JsonArray)property.Value!).Count);
             default:
                 return 1;
         }

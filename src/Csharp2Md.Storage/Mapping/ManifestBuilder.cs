@@ -73,11 +73,15 @@ internal static class ManifestBuilder
     }
 
     /// <summary>
-    /// An artifact's own real top-level entry count: a JSON array's length; a JSON object's own arrays
-    /// summed (matching how the compound fact-family bundles concatenate their sub-arrays); one for
-    /// anything else, including a single-record envelope.
+    /// An artifact's own real top-level entry count: a JSON array's length; a JSON object whose every
+    /// top-level property is itself an array has those arrays summed (matching how the compound
+    /// fact-family bundles, and the single-array <c>{"records": [...]}</c> envelopes, hold their records);
+    /// one for anything else, including a singleton envelope that happens to carry an incidental array
+    /// field (such as run-certification's list of free-text reasons, which is not a record collection).
+    /// Also used by <see cref="Validation.PackageValidator"/> to recompute an artifact's count when
+    /// checking it against the manifest.
     /// </summary>
-    private static int CountTopLevelEntries(ReadOnlySpan<byte> payload)
+    internal static int CountTopLevelEntries(ReadOnlySpan<byte> payload)
     {
         JsonNode? node;
         try
@@ -93,19 +97,8 @@ internal static class ManifestBuilder
         {
             case JsonArray array:
                 return array.Count;
-            case JsonObject obj:
-                var sum = 0;
-                var sawArray = false;
-                foreach (var property in obj)
-                {
-                    if (property.Value is JsonArray family)
-                    {
-                        sawArray = true;
-                        sum += family.Count;
-                    }
-                }
-
-                return sawArray ? sum : 1;
+            case JsonObject { Count: > 0 } obj when obj.All(static property => property.Value is JsonArray):
+                return obj.Sum(static property => ((JsonArray)property.Value!).Count);
             default:
                 return 1;
         }

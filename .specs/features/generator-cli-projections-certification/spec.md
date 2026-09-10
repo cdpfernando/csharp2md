@@ -567,7 +567,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-059 | P1: Provenance | STOR-43; output-and-retrieval.md | Design | Verified |
 | GCPC-060 | P1: Provenance | Standing determinism constraint | Design | Verified |
 | GCPC-061 | P1: Provenance | Audit I5 | Design | Verified |
-| GCPC-062 | P1: Provenance | AD-007 | Design | Pending |
+| GCPC-062 | P1: Provenance | AD-007 | Design | Verified |
 | GCPC-063 | P1: CLI surface | Roadmap row 8; D-03 | Design | Pending |
 | GCPC-064 | P1: CLI surface | User constraint on validate | Design | Pending |
 | GCPC-065 | P1: CLI surface | quality-and-security.md zero-tolerance gates | Design | Pending |

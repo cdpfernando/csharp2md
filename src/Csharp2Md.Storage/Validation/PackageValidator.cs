@@ -72,6 +72,124 @@ public static class PackageValidator
         }
     }
 
+    /// <summary>
+    /// Checks a manifest against the artifact bytes it describes: every declared entry exists with the
+    /// declared count and byte size (GCPC-061), and every artifact is declared -- nothing is reachable
+    /// that the manifest does not name (GCPC-062). A deferred artifact (a raw source copy, published with
+    /// a placeholder zero count and size because its bytes cannot be read twice -- see
+    /// <c>ManifestBuilder</c>) is skipped rather than compared, since there is nothing genuine to compare
+    /// it against. Also checks the manifest's own provenance for compatibility with the running generator
+    /// (GCPC-071's rejection reason; the exit-code mapping itself is Phase 9's CLI work).
+    /// </summary>
+    public static void ValidatePublishedManifest(
+        ManifestEnvelope manifest,
+        IReadOnlyDictionary<string, ImmutableArray<byte>> artifactsByKey,
+        IReadOnlySet<string>? deferredKeys = null)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+        ArgumentNullException.ThrowIfNull(artifactsByKey);
+        deferredKeys ??= FrozenSet<string>.Empty;
+
+        foreach (var entry in manifest.Artifacts)
+        {
+            if (deferredKeys.Contains(entry.Path))
+            {
+                continue;
+            }
+
+            if (!artifactsByKey.TryGetValue(entry.Path, out var bytes))
+            {
+                throw new PublicationRejectedException("manifest-file-missing", entry.Path);
+            }
+
+            if (bytes.Length != entry.ByteSize)
+            {
+                throw new PublicationRejectedException(
+                    "manifest-size-mismatch",
+                    $"{entry.Path}: manifest declares {entry.ByteSize} bytes, the artifact is {bytes.Length} bytes.");
+            }
+
+            // The taxonomy registry is one indivisible document, not a homogeneous record set: it
+            // legitimately declares count 1 while holding many internal tables (see ManifestBuilder /
+            // LayoutPlanner). Summing its arrays generically would not be "its own top-level entry count"
+            // in any meaningful sense, so it is exempt from the generic recount below.
+            if (entry.Path == PackagePublisher.RegistryKey)
+            {
+                continue;
+            }
+
+            var realCount = ManifestBuilder.CountTopLevelEntries(bytes.AsSpan());
+            if (realCount != entry.Count)
+            {
+                throw new PublicationRejectedException(
+                    "manifest-count-mismatch",
+                    $"{entry.Path}: manifest declares count {entry.Count}, the artifact's real count is {realCount}.");
+            }
+        }
+
+        var declared = manifest.Artifacts.Select(static entry => entry.Path).ToFrozenSet(StringComparer.Ordinal);
+        foreach (var key in artifactsByKey.Keys)
+        {
+            if (!declared.Contains(key) && !deferredKeys.Contains(key))
+            {
+                throw new PublicationRejectedException("undeclared-file", key);
+            }
+        }
+
+        if (manifest.Provenance is { } provenance)
+        {
+            EnsureProvenanceCompatible(provenance);
+        }
+    }
+
+    /// <summary>Rejects provenance naming a generator version newer than the one currently running.</summary>
+    public static void EnsureProvenanceCompatible(ProvenanceDto provenance)
+    {
+        ArgumentNullException.ThrowIfNull(provenance);
+
+        var running = ProvenanceDto.Current();
+        if (Version.TryParse(provenance.GeneratorVersion, out var declared)
+            && Version.TryParse(running.GeneratorVersion, out var current)
+            && declared > current)
+        {
+            throw new PublicationRejectedException(
+                "incompatible-provenance",
+                $"Package generator version {provenance.GeneratorVersion} is newer than the running generator version {running.GeneratorVersion}.");
+        }
+    }
+
+    /// <summary>
+    /// Re-validates an already-published package directory: reads its manifest and every file it
+    /// declares, checks cardinality and provenance the same way publication does (AD-025 -- one validator
+    /// serves both), and never writes anything.
+    /// </summary>
+    public static void ValidatePackageDirectory(string packageDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageDirectory);
+
+        var manifestPath = Path.Combine(packageDirectory, PackagePublisher.ManifestKey);
+        if (!File.Exists(manifestPath))
+        {
+            throw new PublicationRejectedException("not-a-package", packageDirectory);
+        }
+
+        var manifest = ReadPayloadOrThrow<ManifestEnvelope>(File.ReadAllBytes(manifestPath), PackagePublisher.ManifestKey);
+
+        var artifactsByKey = new Dictionary<string, ImmutableArray<byte>>(StringComparer.Ordinal);
+        foreach (var absolutePath in Directory.EnumerateFiles(packageDirectory, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(packageDirectory, absolutePath).Replace(Path.DirectorySeparatorChar, '/');
+            if (relative == PackagePublisher.ManifestKey)
+            {
+                continue;
+            }
+
+            artifactsByKey[relative] = File.ReadAllBytes(absolutePath).ToImmutableArray();
+        }
+
+        ValidatePublishedManifest(manifest, artifactsByKey);
+    }
+
     private static void EnsureRegisteredKinds(WireDocument document)
     {
         foreach (var factType in EnumerateFactTypes(document))

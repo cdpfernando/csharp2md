@@ -1,5 +1,6 @@
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Validation;
+using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage.Mapping;
 
@@ -61,8 +62,41 @@ internal static class PublicationPipeline
             }
         }
 
-        return new PublicationOutcome(
-            PackagePublisher.ToPublicationOrder(report.Document, plan, projections),
-            contribution);
+        var fragments = PackagePublisher.ToPublicationOrder(report.Document, plan, projections);
+        ValidateManifestCardinality(fragments);
+        return new PublicationOutcome(fragments, contribution);
+    }
+
+    /// <summary>
+    /// Proves the manifest this publication is about to write agrees with the bytes it is about to write,
+    /// before any of them reach disk (GCPC-061/GCPC-062) -- an abort here leaves the prior package
+    /// untouched, since nothing has been written yet.
+    /// </summary>
+    private static void ValidateManifestCardinality(ImmutableArray<StagedFragment> fragments)
+    {
+        var manifestFragment = fragments.Single(static fragment => fragment.CanonicalKey == PackagePublisher.ManifestKey);
+        var manifest = PackageValidator.ReadPayloadOrThrow<ManifestEnvelope>(
+            manifestFragment.Payload.AsSpan(), PackagePublisher.ManifestKey);
+
+        var artifactsByKey = new Dictionary<string, ImmutableArray<byte>>(StringComparer.Ordinal);
+        var deferredKeys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var fragment in fragments)
+        {
+            if (fragment.Role != ArtifactRole.Payload)
+            {
+                continue;
+            }
+
+            if (fragment.IsDeferred)
+            {
+                deferredKeys.Add(fragment.CanonicalKey);
+            }
+            else
+            {
+                artifactsByKey[fragment.CanonicalKey] = fragment.Payload;
+            }
+        }
+
+        PackageValidator.ValidatePublishedManifest(manifest, artifactsByKey, deferredKeys);
     }
 }
