@@ -62,6 +62,8 @@ namespace Csharp2Md.Storage.Wire;
 [JsonSerializable(typeof(RedactionEnvelopeDto))]
 [JsonSerializable(typeof(CatalogEntryDto))]
 [JsonSerializable(typeof(ImmutableArray<CatalogEntryDto>))]
+[JsonSerializable(typeof(LabelDto))]
+[JsonSerializable(typeof(ImmutableArray<LabelDto>))]
 [JsonSerializable(typeof(PostingEntryDto))]
 [JsonSerializable(typeof(PostingGroupDto))]
 [JsonSerializable(typeof(ImmutableArray<PostingEntryDto>))]

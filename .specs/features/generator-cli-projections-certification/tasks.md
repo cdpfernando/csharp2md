@@ -1399,11 +1399,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Every emitted label is asserted equal to the value at the artifact key and ordinal it cites
-- [ ] An unproven value is asserted to yield no label rather than an inferred one
-- [ ] A value inside a declared redacted span is asserted to yield no label
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every emitted label is asserted equal to the value at the artifact key and ordinal it cites
+- [x] An unproven value is asserted to yield no label rather than an inferred one
+- [x] A value inside a declared redacted span is asserted to yield no label
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; total ≥ previous task's total (Projection: 184 -> 193; total 1922 -> 1931)
 
 **Tests**: unit
 **Gate**: quick

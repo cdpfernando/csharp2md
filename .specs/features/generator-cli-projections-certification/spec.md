@@ -589,7 +589,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-081 | P1: Engine certification | D-03 | Design | Pending |
 | GCPC-082 | P1: Security and fidelity | AD-021 | Design | Pending |
 | GCPC-083 | P1: Security and fidelity | quality-and-security.md zero-tolerance gates | Design | Pending |
-| GCPC-084 | P1: Security and fidelity | AD-021 plus the new label surface | Design | Pending |
+| GCPC-084 | P1: Security and fidelity | AD-021 plus the new label surface | Design | Verified |
 | GCPC-085 | P1: Security and fidelity | AD-003 | Design | Pending |
 | GCPC-086 | P1: Security and fidelity | quality-and-security.md security | Design | Pending |
 | GCPC-087 | P2: Contract accounting | Audit I2 | Design | Pending |
@@ -599,11 +599,11 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-091 | P2: Contract accounting | output-and-retrieval.md postings | Design | Pending |
 | GCPC-092 | P2: Contract accounting | AD-010 | Design | Pending |
 | GCPC-093 | P2: Legible projections | Audit I1 | Design | Pending |
-| GCPC-094 | P2: Legible projections | RP-34; AD-007 | Design | Pending |
+| GCPC-094 | P2: Legible projections | RP-34; AD-007 | Design | Verified |
 | GCPC-095 | P2: Legible projections | AD-007; output-and-retrieval.md Markdown | Design | Pending |
 | GCPC-096 | P2: Legible projections | Audit I1 | Design | Pending |
 | GCPC-097 | P2: Legible projections | RP-44 extended to labels | Design | Pending |
-| GCPC-098 | P2: Legible projections | RP-33 | Design | Pending |
+| GCPC-098 | P2: Legible projections | RP-33 | Design | Verified |
 | GCPC-099 | P2: HTTP verb and route | Audit I3; extends EBC-06 | Design | Verified |
 | GCPC-100 | P2: HTTP verb and route | Audit I3 | Design | Verified |
 | GCPC-101 | P2: HTTP verb and route | Audit I3; RP-33 | Design | Pending |
