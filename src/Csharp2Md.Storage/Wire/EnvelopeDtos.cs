@@ -15,6 +15,7 @@ public sealed record ManifestEntry(
     string CanonicalKey,
     string Role,
     int Count,
+    long ByteSize,
     string Path);
 
 public sealed record BatchManifestEnvelope(

@@ -37,6 +37,9 @@
           "count": {
             "type": "integer"
           },
+          "byte_size": {
+            "type": "integer"
+          },
           "path": {
             "type": "string"
           }
@@ -45,6 +48,7 @@
           "canonical_key",
           "role",
           "count",
+          "byte_size",
           "path"
         ],
         "additionalProperties": false
