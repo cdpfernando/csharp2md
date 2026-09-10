@@ -215,6 +215,66 @@ public sealed class BoundaryFactsTests
         Assert.Equal("global::Acme.Shared.Contracts.OrderPlaced", outbound.ProtocolOperationKey!.Value.Value);
     }
 
+    [Fact]
+    [Trait("Requirement", "TAX-29")]
+    public void Inbound_HttpMethodAndRouteBothProven_ArePublishedOnTheirOwnFields()
+    {
+        var component = ComponentReference("payments-api");
+        var key = StructuralLiteral.Create(LiteralRole.ProtocolName, "POST /charge", "protocolOperationKey");
+
+        var operation = BoundaryOperation.Create(
+            SymbolReference("Charge"),
+            component,
+            BoundaryDirection.Inbound,
+            BoundaryProtocol.Http,
+            httpMethod: "POST",
+            route: Route("/charge"),
+            protocolOperationKey: key);
+
+        Assert.Equal("POST", operation.HttpMethod);
+        Assert.Equal(Route("/charge"), operation.Route);
+        Assert.Equal(key, operation.ProtocolOperationKey);
+    }
+
+    [Fact]
+    [Trait("Requirement", "TAX-29")]
+    public void Inbound_OnlyHttpMethodProven_PublishesTheMethodAndLeavesRouteUnset()
+    {
+        var component = ComponentReference("payments-api");
+        var key = StructuralLiteral.Create(LiteralRole.ProtocolName, "POST", "protocolOperationKey");
+
+        var operation = BoundaryOperation.Create(
+            SymbolReference("Charge"),
+            component,
+            BoundaryDirection.Inbound,
+            BoundaryProtocol.Http,
+            httpMethod: "POST",
+            route: null,
+            protocolOperationKey: key);
+
+        Assert.Equal("POST", operation.HttpMethod);
+        Assert.Null(operation.Route);
+    }
+
+    [Fact]
+    [Trait("Requirement", "TAX-29")]
+    public void Inbound_WrongRouteLiteralRole_IsRejectedNamingRoute()
+    {
+        var wrongRole = StructuralLiteral.Create(LiteralRole.SchemaName, "/charge", "route");
+        var key = StructuralLiteral.Create(LiteralRole.ProtocolName, "POST /charge", "protocolOperationKey");
+
+        var exception = Assert.Throws<ArgumentException>(() => BoundaryOperation.Create(
+            SymbolReference("Charge"),
+            ComponentReference("payments-api"),
+            BoundaryDirection.Inbound,
+            BoundaryProtocol.Http,
+            httpMethod: "POST",
+            route: wrongRole,
+            protocolOperationKey: key));
+
+        Assert.Equal("route", exception.ParamName);
+    }
+
     private static BoundaryOperation CreateOutbound(
         FactReference component, string destinationScope, string httpMethod, StructuralLiteral route) =>
         BoundaryOperation.Create(

@@ -874,11 +874,12 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] An inbound action with an explicit verb attribute and route template publishes both fields
-- [ ] An action whose route is conventional only publishes the verb and records the route as unresolved
-- [ ] `protocol_operation_key` is asserted still published, and asserted no longer to be the only source of the verb
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] An inbound action with an explicit verb attribute and route template publishes both fields
+- [x] An action whose route is conventional only publishes the verb and records the route as unresolved
+- [x] `protocol_operation_key` is asserted still published, and asserted no longer to be the only source of the verb
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Domain 563 pass; Analysis 756 pass; total 1825 (Domain 563, Analysis 756, Storage 289, Cli 33, Projection 184)
+- Deviation: `BoundaryOperation.Create`'s `CreateInbound` factory (`src/Csharp2Md.Domain/Facts/Architecture/BoundaryFacts.cs`) discarded the `httpMethod`/`route` parameters entirely (hardcoded `null`) for every inbound operation, regardless of what `BoundaryPass.cs` passed in. `BoundaryPass.cs` alone could not have closed GCPC-099/102 without this Domain-level fix, so `CreateInbound` was changed to accept, validate (route must carry the `Route` literal role) and store both. Also extended the fix symmetrically to the reverse of the stated case (route proven, verb not, e.g. a verb-agnostic `[Route]` attribute) since GCPC-102's text covers either unproven part.
 
 **Tests**: unit
 **Gate**: build

@@ -46,6 +46,102 @@ public sealed class BoundaryPassTests
     }
 
     [Fact]
+    [Trait("Requirement", "GCPC-099")]
+    [Trait("Requirement", "GCPC-100")]
+    public void Execute_RouteDeclarationWithVerbAndTemplate_PublishesBothHttpMethodAndRouteFields()
+    {
+        var pipeline = ArrangeOrders();
+        var controller = AddNamedType(pipeline, "OrdersController", "global::Acme.Orders.Api", OrdersProject);
+        var action = AddMethod(pipeline, "GetOrderStatus", "global::Acme.Orders.Api.OrdersController", OrdersProject);
+        var component = AddComponent(pipeline, [controller.Reference, action.Reference]);
+        pipeline.Accumulator.AddFact(EntryPoint.Create(action.Reference, component.Reference));
+        pipeline.Accumulator.AddObservation(
+            CreateObservation(
+                action.Reference,
+                ObservationKind.RouteDeclaration,
+                ordinal: 1,
+                RoutePayload("orders/{id}", "GET")));
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal(1, result.FactCount);
+        // GCPC-099: both proven fields are published on their own fields ...
+        Assert.Equal("GET", operation.HttpMethod);
+        Assert.NotNull(operation.Route);
+        Assert.Equal(LiteralRole.Route, operation.Route.Value.Role);
+        Assert.Equal("orders/{id}", operation.Route.Value.Value);
+        // GCPC-100: ... and protocolOperationKey is not the only place either was published.
+        Assert.NotNull(operation.ProtocolOperationKey);
+        Assert.Equal("GET orders/{id}", operation.ProtocolOperationKey.Value.Value);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Unresolved);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-102")]
+    public void Execute_RouteDeclarationWithVerbButNoTemplate_PublishesTheVerbAndRecordsRouteAsUnresolved()
+    {
+        var pipeline = ArrangeOrders();
+        var controller = AddNamedType(pipeline, "OrdersController", "global::Acme.Orders.Api", OrdersProject);
+        var action = AddMethod(pipeline, "GetOrderStatus", "global::Acme.Orders.Api.OrdersController", OrdersProject);
+        var component = AddComponent(pipeline, [controller.Reference, action.Reference]);
+        pipeline.Accumulator.AddFact(EntryPoint.Create(action.Reference, component.Reference));
+        var routeDeclaration = CreateObservation(
+            action.Reference,
+            ObservationKind.RouteDeclaration,
+            ordinal: 1,
+            VerbOnlyPayload("GET"));
+        pipeline.Accumulator.AddObservation(routeDeclaration);
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        // The verb is proven (a bare verb attribute with no template argument, i.e. convention-derived
+        // route) and published; the route itself is unresolved rather than silently absent.
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Equal("GET", operation.HttpMethod);
+        Assert.Null(operation.Route);
+        Assert.Equal(1, result.UnresolvedCount);
+        var unresolved = Assert.Single(pipeline.Accumulator.ToSnapshot().Unresolved.ToArray());
+        Assert.Equal(operation.Reference, unresolved.Source);
+        Assert.Equal(UnresolvedCause.InsufficientEvidence, unresolved.Cause);
+        Assert.Contains(unresolved.Available.DerivedFrom, identity => identity.Equals(routeDeclaration.Identity));
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Diagnostics);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-102")]
+    public void Execute_RouteDeclarationWithTemplateButNoVerb_PublishesTheRouteAndRecordsVerbAsUnresolved()
+    {
+        var pipeline = ArrangeOrders();
+        var controller = AddNamedType(pipeline, "OrdersController", "global::Acme.Orders.Api", OrdersProject);
+        var action = AddMethod(pipeline, "GetOrderStatus", "global::Acme.Orders.Api.OrdersController", OrdersProject);
+        var component = AddComponent(pipeline, [controller.Reference, action.Reference]);
+        pipeline.Accumulator.AddFact(EntryPoint.Create(action.Reference, component.Reference));
+        var routeDeclaration = CreateObservation(
+            action.Reference,
+            ObservationKind.RouteDeclaration,
+            ordinal: 1,
+            RoutePayload("orders/{id}"));
+        pipeline.Accumulator.AddObservation(routeDeclaration);
+        var context = new ClassifierContext(pipeline);
+
+        var result = new BoundaryPass().Execute(context, CancellationToken.None);
+
+        // Symmetric to the verb-only case: a verb-agnostic [Route] attribute proves the route but not
+        // the verb (GCPC-102 covers either unproven part, not only the route).
+        var operation = Assert.Single(pipeline.Accumulator.ToSnapshot().Facts.OfType<BoundaryOperation>().ToArray());
+        Assert.Null(operation.HttpMethod);
+        Assert.NotNull(operation.Route);
+        Assert.Equal("orders/{id}", operation.Route.Value.Value);
+        Assert.Equal(1, result.UnresolvedCount);
+        var unresolved = Assert.Single(pipeline.Accumulator.ToSnapshot().Unresolved.ToArray());
+        Assert.Equal(operation.Reference, unresolved.Source);
+        Assert.Equal(UnresolvedCause.InsufficientEvidence, unresolved.Cause);
+    }
+
+    [Fact]
     [Trait("Requirement", "EBC-33")]
     public void Execute_RouteTemplateWithDynamicSegments_UsesTemplateAsIs()
     {
@@ -623,6 +719,19 @@ public sealed class BoundaryPassTests
 
         return NormalizedPayload.Create(entries);
     }
+
+    /// <summary>
+    /// A route declaration observation carrying a verb but no route key at all -- e.g. a bare verb
+    /// attribute with no template argument, matching <c>RouteDeclarationDetector</c>'s real payload
+    /// shape for that case (GCPC-102).
+    /// </summary>
+    private static NormalizedPayload VerbOnlyPayload(string httpMethod) =>
+        NormalizedPayload.Create(
+        [
+            new PayloadEntry(
+                BoundaryPass.MethodNameKey,
+                StructuralLiteral.Create(LiteralRole.ProtocolName, httpMethod, BoundaryPass.MethodNameKey)),
+        ]);
 
     private static void AddCreateClient(PipelineContext pipeline, FactReference owner, string clientName, int ordinal) =>
         pipeline.Accumulator.AddObservation(

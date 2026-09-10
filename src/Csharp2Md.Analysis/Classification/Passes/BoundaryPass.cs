@@ -46,17 +46,17 @@ internal sealed class BoundaryPass : IClassifierPass
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var factCount = ClassifyHttpInbound(context);
+        var inbound = ClassifyHttpInbound(context);
         var outbound = ClassifyHttpOutbound(context);
         var messagingFacts = ClassifyMessagingOutbound(context) + ClassifyMessagingInbound(context);
         return new ClassifierPassResult(
-            factCount + outbound.FactCount + messagingFacts,
+            inbound.FactCount + outbound.FactCount + messagingFacts,
             0,
             outbound.CandidateCount,
-            outbound.UnresolvedCount);
+            outbound.UnresolvedCount + inbound.UnresolvedCount);
     }
 
-    private static int ClassifyHttpInbound(ClassifierContext context)
+    private static (int FactCount, int UnresolvedCount) ClassifyHttpInbound(ClassifierContext context)
     {
         var symbolsById = context.FactsByType<Symbol>()
             .ToDictionary(static symbol => symbol.Reference.Id.Value, StringComparer.Ordinal);
@@ -64,6 +64,7 @@ internal sealed class BoundaryPass : IClassifierPass
             .ToDictionary(static component => component.Reference.Id.Value, StringComparer.Ordinal);
 
         var factCount = 0;
+        var unresolvedCount = 0;
         var emittedKeys = new HashSet<string>(StringComparer.Ordinal);
         foreach (var entry in context.FactsByType<EntryPoint>().OrderBy(static e => e.Reference.Id.Value, StringComparer.Ordinal))
         {
@@ -81,11 +82,13 @@ internal sealed class BoundaryPass : IClassifierPass
             }
 
             var template = ReadPayloadValue(routeDeclaration, RouteKey);
-            if (template is null)
+            var httpMethod = ReadPayloadValue(routeDeclaration, MethodNameKey);
+            if (template is null && httpMethod is null)
             {
                 // SPEC_DEVIATION: spec EBC-06 empty template → empty-string protocolOperationKey.
                 // Reason: StructuralLiteral.Create rejects empty canonical text, matching the
-                // design missing-field rule (skip + diagnostic).
+                // design missing-field rule (skip + diagnostic). Neither the verb nor the route is
+                // proven here, so there is nothing to publish (GCPC-099..102 need at least one).
                 context.Accumulator.AddDiagnostic(
                     new DiagnosticRecord(
                         "missing-route-template",
@@ -97,25 +100,47 @@ internal sealed class BoundaryPass : IClassifierPass
             // SPEC_DEVIATION: EBC-06 names the route template as protocolOperationKey.
             // Reason: TAX-30 inbound identity is that key; GET vs DELETE on the same
             // template must not share one identity (Domain example is "POST /charge").
-            var httpMethod = ReadPayloadValue(routeDeclaration, MethodNameKey);
-            var operationKey = httpMethod is null ? template : httpMethod + " " + template;
+            var operationKey = template is null
+                ? httpMethod!
+                : httpMethod is null ? template : httpMethod + " " + template;
             if (!emittedKeys.Add(string.Join('\u0000', component.Reference.Id.Value, operationKey)))
             {
                 continue;
             }
 
+            // GCPC-099/GCPC-100: the verb and route are published in their own fields whenever
+            // proven, not left recoverable only by parsing protocolOperationKey.
             var protocolOperationKey = StructuralLiteral.Create(LiteralRole.ProtocolName, operationKey, "protocol-operation-key");
-            context.Accumulator.AddFact(
-                BoundaryOperation.Create(
-                    symbol.Reference,
-                    component.Reference,
-                    BoundaryDirection.Inbound,
-                    BoundaryProtocol.Http,
-                    protocolOperationKey: protocolOperationKey));
+            var route = template is null ? null : (StructuralLiteral?)StructuralLiteral.Create(LiteralRole.Route, template, RouteKey);
+            var operation = BoundaryOperation.Create(
+                symbol.Reference,
+                component.Reference,
+                BoundaryDirection.Inbound,
+                BoundaryProtocol.Http,
+                httpMethod: httpMethod,
+                route: route,
+                protocolOperationKey: protocolOperationKey);
+            context.Accumulator.AddFact(operation);
             factCount++;
+
+            if (route is null || httpMethod is null)
+            {
+                // GCPC-102: only one of the verb and the route is proven here (the other branch above
+                // already handled "neither") -- a conventional action carrying only a bare verb
+                // attribute proves the verb but not the route, and a generic, verb-agnostic [Route]
+                // attribute proves the route but not the verb. Publish the proven field and record the
+                // unproven one as unresolved instead of leaving it undiscoverable.
+                context.Accumulator.AddUnresolved(
+                    UnresolvedRecord.Create(
+                        RelationKind.Targets,
+                        operation.Reference,
+                        UnresolvedCause.InsufficientEvidence,
+                        EvidenceChain.Create([routeDeclaration.Identity])));
+                unresolvedCount++;
+            }
         }
 
-        return factCount;
+        return (factCount, unresolvedCount);
     }
 
     private static (int FactCount, int CandidateCount, int UnresolvedCount) ClassifyHttpOutbound(ClassifierContext context)
