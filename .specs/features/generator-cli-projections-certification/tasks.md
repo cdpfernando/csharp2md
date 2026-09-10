@@ -260,10 +260,10 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A test analyzes the corpus and asserts all three callables are inventoried as `Symbol` facts
-- [ ] The test records the current (defective) entry-point count as the documented pre-fix baseline, so T17 has something to invert
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A test analyzes the corpus and asserts all three callables are inventoried as `Symbol` facts
+- [x] The test records the current (defective) entry-point count as the documented pre-fix baseline, so T17 has something to invert
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 665 pass; total 1726 (Domain 555, Analysis 665, Storage 289, Cli 33, Projection 184)
 
 **Tests**: integration
 **Gate**: quick
