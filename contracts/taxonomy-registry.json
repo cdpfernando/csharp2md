@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "taxonomy_version": 1,
+  "taxonomy_version": 2,
   "observation_schema_version": 1,
   "extractor_set_version": 1,
   "classifier_set_version": 1,
@@ -452,7 +452,8 @@
         "repository",
         "client",
         "service",
-        "abstract"
+        "abstract",
+        "externally-reachable"
       ]
     },
     {

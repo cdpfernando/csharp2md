@@ -9,6 +9,7 @@ public enum SymbolFacet
     Client,
     Service,
     Abstract,
+    ExternallyReachable,
 }
 
 public readonly struct SymbolFacetSet : IEquatable<SymbolFacetSet>

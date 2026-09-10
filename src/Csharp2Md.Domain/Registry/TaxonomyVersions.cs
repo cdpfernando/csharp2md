@@ -23,6 +23,6 @@ public sealed partial record TaxonomyTables
         ObservationKinds = ObservationKindTable.All,
         FacetAxes = FacetAxisTable.All,
         ProofAxes = ProofAxisTable.All,
-        Versions = TaxonomyVersions.Initial,
+        Versions = TaxonomyVersions.Initial with { TaxonomyVersion = 2 },
     };
 }

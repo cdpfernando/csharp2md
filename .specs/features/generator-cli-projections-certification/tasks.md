@@ -620,11 +620,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] The `symbol-facet` axis publishes the new value and the registry projection is asserted byte-equal to the committed artifact
-- [ ] The AD-013 drift gate passes with declaration and artifact regenerated in this one commit
-- [ ] `taxonomy_version` is asserted to be 2 and the other four axes are asserted unchanged by this task
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The `symbol-facet` axis publishes the new value and the registry projection is asserted byte-equal to the committed artifact
+- [x] The AD-013 drift gate passes with declaration and artifact regenerated in this one commit
+- [x] `taxonomy_version` is asserted to be 2 and the other four axes are asserted unchanged by this task
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
+- [x] Test count reported; Domain 560 pass; total 1790 (Domain 560, Analysis 724, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: build

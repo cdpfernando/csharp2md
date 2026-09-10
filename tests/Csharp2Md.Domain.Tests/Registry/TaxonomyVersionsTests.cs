@@ -55,6 +55,22 @@ public sealed class TaxonomyVersionsTests
         Assert.Equal(PayloadRoleTable.All, tables.PayloadRoles);
         Assert.Equal(FacetAxisTable.All, tables.FacetAxes);
         Assert.Equal(ProofAxisTable.All, tables.ProofAxes);
-        Assert.Equal(TaxonomyVersions.Initial, tables.Versions);
+
+        // GCPC-019: the symbol-facet axis gained `externally-reachable`, a deliberate joint revision
+        // (spec.md P1: Registry and version axes) that moves `taxonomy_version` off `TaxonomyVersions.Initial`.
+        Assert.Equal(TaxonomyVersions.Initial with { TaxonomyVersion = 2 }, tables.Versions);
+    }
+
+    [Fact]
+    [Trait("Requirement", "TAX-84")]
+    public void TaxonomyTables_Default_MovesOnlyTaxonomyVersionToTwo()
+    {
+        var versions = TaxonomyTables.Default.Versions;
+
+        Assert.Equal(2, versions.TaxonomyVersion);
+        Assert.Equal(TaxonomyVersions.Initial.SchemaVersion, versions.SchemaVersion);
+        Assert.Equal(TaxonomyVersions.Initial.ObservationSchemaVersion, versions.ObservationSchemaVersion);
+        Assert.Equal(TaxonomyVersions.Initial.ExtractorSetVersion, versions.ExtractorSetVersion);
+        Assert.Equal(TaxonomyVersions.Initial.ClassifierSetVersion, versions.ClassifierSetVersion);
     }
 }
