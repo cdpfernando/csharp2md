@@ -1017,11 +1017,12 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] The per-disposition totals are asserted to sum to the recognized invocation-occurrence count
-- [ ] An occurrence holding both an unresolved record and an open frontier is asserted counted exactly once
-- [ ] Message operations and payload slots are asserted to sum to their per-outcome counts
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The per-disposition totals are asserted to sum to the recognized invocation-occurrence count
+- [x] An occurrence holding both an unresolved record and an open frontier is asserted counted exactly once
+- [x] Message operations and payload slots are asserted to sum to their per-outcome counts
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 781 pass; total 1865 (Domain 563, Analysis 781, Storage 304, Cli 33, Projection 184)
+- Deviation: `InvokesPass`'s disposition ledger is transient to one `Execute` call and an excluded occurrence (`external-framework-callable`, `duplicate-edge`) leaves no other published trace anywhere in the codebase today, so the ledger itself is the only place that split is still recoverable -- it cannot be re-derived from public facts the way T27/T28's coverage metrics are. `ClassificationAndPromotionStage.cs` (not named in this task's `Where`) was therefore touched to special-case capturing `InvokesPass`'s ledger via its internal `Execute(..., out ledger)` overload (already exposed for tests since T22) immediately after it runs, and to publish `ContractAccounting` (fully re-derivable from public facts, no ledger needed) once all passes finish. `InvocationAccounting.cs` holds both the `InvocationAccounting` and `ContractAccounting` static builders, since both are the accounting-ledger half of AD-024 this task publishes.
 
 **Tests**: unit
 **Gate**: build

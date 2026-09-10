@@ -517,10 +517,10 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-009 | P1: Certified execution | Audit B1 zero denominators | Design | Pending |
 | GCPC-010 | P1: Certified execution | Audit B1 zero denominators | Design | Pending |
 | GCPC-011 | P1: Invocation accounting | Audit B3; audit gate 2 | Design | Verified |
-| GCPC-012 | P1: Invocation accounting | Audit gate 2 | Design | Pending |
+| GCPC-012 | P1: Invocation accounting | Audit gate 2 | Design | Verified |
 | GCPC-013 | P1: Invocation accounting | Audit B3 | Design | Pending |
-| GCPC-014 | P1: Invocation accounting | CLLF-13; taxonomy.md evidence dimensions | Design | Pending |
-| GCPC-015 | P1: Invocation accounting | AD-009 | Design | Pending |
+| GCPC-014 | P1: Invocation accounting | CLLF-13; taxonomy.md evidence dimensions | Design | Verified |
+| GCPC-015 | P1: Invocation accounting | AD-009 | Design | Verified |
 | GCPC-016 | P1: Invocation accounting | Supersedes CLLF-20 silence | Design | Verified |
 | GCPC-017 | P1: Invocation accounting | CONTEXT.md Open Frontier; CLLF-11 | Design | Verified |
 | GCPC-018 | P1: Invocation accounting | CLLF-07 and CLLF-09; audit B3 | Design | Verified |
@@ -593,7 +593,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-085 | P1: Security and fidelity | AD-003 | Design | Pending |
 | GCPC-086 | P1: Security and fidelity | quality-and-security.md security | Design | Pending |
 | GCPC-087 | P2: Contract accounting | Audit I2 | Design | Pending |
-| GCPC-088 | P2: Contract accounting | Audit I2; AD-009 | Design | Pending |
+| GCPC-088 | P2: Contract accounting | Audit I2; AD-009 | Design | Verified |
 | GCPC-089 | P2: Contract accounting | Audit I2 | Design | Pending |
 | GCPC-090 | P2: Contract accounting | taxonomy.md contracts | Design | Pending |
 | GCPC-091 | P2: Contract accounting | output-and-retrieval.md postings | Design | Pending |
