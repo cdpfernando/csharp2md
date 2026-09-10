@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Certification.Api/Certification.Api.csproj" />
+  <Project Path="Certification.Queries/Certification.Queries.csproj" />
+  <Project Path="Certification.Messaging/Certification.Messaging.csproj" />
+  <Project Path="Certification.WebAssets/Certification.WebAssets.csproj" />
+</Solution>
