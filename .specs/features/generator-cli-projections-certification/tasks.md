@@ -1134,12 +1134,13 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] The derivation is asserted reproducible: same budget and ratio give the same ceiling
-- [ ] A different declared budget is asserted to move the ceiling, proving it is derived and not a constant
-- [ ] The token estimator is a declared deterministic function and its identifier is published
-- [ ] The published calculation names its inputs, so a consumer can re-derive the number
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The derivation is asserted reproducible: same budget and ratio give the same ceiling
+- [x] A different declared budget is asserted to move the ceiling, proving it is derived and not a constant
+- [x] The token estimator is a declared deterministic function and its identifier is published
+- [x] The published calculation names its inputs, so a consumer can re-derive the number
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; Storage 316 pass; total 1884 (Domain 563, Analysis 788, Storage 316, Cli 33, Projection 184)
+- Deviation: none. `CeilingCalculator` is a standalone, tested derivation; it is not yet consumed by `ShardWriter`/`LayoutPlanner` or written into the manifest -- that wiring is T35's and T39's own named `Where`, not this task's. At the declared defaults (100,000-token budget, 25 file reads, the measured 8.192 bytes/token ratio for this project's indented canonical JSON) it derives to exactly 32 KiB, matching design.md's Tech Decisions table.
 
 **Tests**: unit
 **Gate**: quick

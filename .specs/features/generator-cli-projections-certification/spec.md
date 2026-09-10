@@ -541,8 +541,8 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-033 | P1: Document policy | D-04; audit I4 | Design | Verified |
 | GCPC-034 | P1: Document policy | D-04 measurement | Design | Verified |
 | GCPC-035 | P1: Document policy | D-04 safeguard | Design | Verified |
-| GCPC-036 | P1: Bounded payloads | D-02; output-and-retrieval.md scale constraints | Design | Pending |
-| GCPC-037 | P1: Bounded payloads | D-02 | Design | Pending |
+| GCPC-036 | P1: Bounded payloads | D-02; output-and-retrieval.md scale constraints | Design | Verified |
+| GCPC-037 | P1: Bounded payloads | D-02 | Design | Verified |
 | GCPC-038 | P1: Bounded payloads | Audit B4; calibrates RP-52 | Design | Pending |
 | GCPC-039 | P1: Bounded payloads | Audit B4; output-and-retrieval.md | Design | Pending |
 | GCPC-040 | P1: Bounded payloads | Audit gate 4 | Design | Pending |
