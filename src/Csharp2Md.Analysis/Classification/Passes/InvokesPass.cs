@@ -19,10 +19,20 @@ internal sealed class InvokesPass : IClassifierPass
 
     public string Name => "Invokes";
 
-    public ClassifierPassResult Execute(ClassifierContext context, CancellationToken cancellationToken)
+    public ClassifierPassResult Execute(ClassifierContext context, CancellationToken cancellationToken) =>
+        Execute(context, cancellationToken, out _);
+
+    /// <summary>
+    /// Same as <see cref="Execute(ClassifierContext, CancellationToken)"/>, additionally exposing the
+    /// per-occurrence <see cref="InvocationDispositionLedger"/> (GCPC-011) built while classifying, for
+    /// tests that need to prove every recognized invocation occurrence carries exactly one disposition.
+    /// </summary>
+    internal ClassifierPassResult Execute(
+        ClassifierContext context, CancellationToken cancellationToken, out InvocationDispositionLedger ledger)
     {
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
+        ledger = new InvocationDispositionLedger();
 
         var symbols = context.FactsByType<Symbol>();
         var symbolsById = symbols.ToDictionary(static symbol => symbol.Reference.Id.Value, StringComparer.Ordinal);
@@ -61,6 +71,14 @@ internal sealed class InvokesPass : IClassifierPass
             if (!symbolsById.TryGetValue(observation.Identity.Owner.Id.Value, out var owner)
                 || !owner.Facets.Facets.Contains(SymbolFacet.Callable))
             {
+                // GCPC-011: the occurrence's own owner is not a recognized callable, so the occurrence
+                // is unresolved rather than silently vanishing.
+                unresolvedCount += AddUnresolved(
+                    context,
+                    observation.Identity.Owner,
+                    UnresolvedCause.InsufficientEvidence,
+                    evidence);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
@@ -72,6 +90,7 @@ internal sealed class InvokesPass : IClassifierPass
                     owner.Reference,
                     UnresolvedCause.InsufficientEvidence,
                     evidence);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
@@ -87,7 +106,18 @@ internal sealed class InvokesPass : IClassifierPass
                         evidence);
                     AddFrontier(context, frontiered, observation.Identity);
                 }
+                else
+                {
+                    // GCPC-011: bound, but no target signature could be extracted at all -- previously
+                    // silent; now unresolved instead of dropped.
+                    unresolvedCount += AddUnresolved(
+                        context,
+                        owner.Reference,
+                        UnresolvedCause.InsufficientEvidence,
+                        evidence);
+                }
 
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
@@ -99,11 +129,15 @@ internal sealed class InvokesPass : IClassifierPass
                     UnresolvedCause.NoCandidateFound,
                     evidence);
                 AddFrontier(context, frontiered, observation.Identity);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
             if (IsFrameworkSignature(targetSignature))
             {
+                // GCPC-016: a binding outside the analyzed solution scope is a counted exclusion, not a
+                // per-occurrence diagnostic and not silence.
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationExclusionCategory.ExternalFrameworkCallable));
                 continue;
             }
 
@@ -117,6 +151,7 @@ internal sealed class InvokesPass : IClassifierPass
                     {
                         candidateCount += AddCandidates(context, candidateKeys, owner, named, evidence);
                         AddFrontier(context, frontiered, observation.Identity);
+                        ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Candidate));
                         continue;
                     }
                 }
@@ -127,6 +162,7 @@ internal sealed class InvokesPass : IClassifierPass
                     UnresolvedCause.NoCandidateFound,
                     evidence);
                 AddFrontier(context, frontiered, observation.Identity);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
@@ -134,6 +170,7 @@ internal sealed class InvokesPass : IClassifierPass
             {
                 candidateCount += AddCandidates(context, candidateKeys, owner, matches, evidence);
                 AddFrontier(context, frontiered, observation.Identity);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Candidate));
                 continue;
             }
 
@@ -149,22 +186,36 @@ internal sealed class InvokesPass : IClassifierPass
                         UnresolvedCause.NoCandidateFound,
                         evidence);
                     AddFrontier(context, frontiered, observation.Identity);
+                    ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                     continue;
                 }
 
                 candidateCount += AddCandidates(context, candidateKeys, owner, implementors, evidence);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Candidate));
                 continue;
             }
 
             if (!target.Facets.Facets.Contains(SymbolFacet.Callable)
                 || context.AnalysisVariants.IsDefaultOrEmpty)
             {
+                // GCPC-011: a bound target that is not itself a recognized callable (or no analysis
+                // variant to attach evidence to) cannot be confirmed, so it is unresolved instead of
+                // silently dropped.
+                unresolvedCount += AddUnresolved(
+                    context,
+                    owner.Reference,
+                    UnresolvedCause.InsufficientEvidence,
+                    evidence);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
             var key = (RelationKind.Invokes, owner.Reference.Id.Value, target.Reference.Id.Value);
             if (!confirmed.Add(key))
             {
+                // GCPC-016: a duplicate occurrence of an already-confirmed edge is a counted exclusion,
+                // not silence -- the edge itself was already published for an earlier occurrence.
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationExclusionCategory.DuplicateEdge));
                 continue;
             }
 
@@ -180,6 +231,7 @@ internal sealed class InvokesPass : IClassifierPass
                     EvidenceMethod.Semantic,
                     sourceFact: owner));
             relationCount++;
+            ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Confirmed));
         }
 
         return new ClassifierPassResult(0, relationCount, candidateCount, unresolvedCount);

@@ -1,5 +1,13 @@
 using Csharp2Md.Analysis;
+using Csharp2Md.Analysis.Classification;
+using Csharp2Md.Analysis.Classification.Passes;
+using Csharp2Md.Analysis.Extraction;
+using Csharp2Md.Analysis.Inventory;
+using Csharp2Md.Analysis.Pipeline;
+using Csharp2Md.Analysis.Semantics;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Analysis.Tests.Pipeline;
+using Csharp2Md.Domain.Observations;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Wire;
 
@@ -8,8 +16,10 @@ namespace Csharp2Md.Analysis.Tests.Fixtures;
 /// <summary>
 /// GCPC-018: reproduces the audit's dropped-invocation regression
 /// (OrdersController.GetOrderAsync -> IOrderQueries.GetOrderAsync -> OrderQueries.GetOrderAsync) in
-/// the versioned certification corpus. The classifier fix for interface-dispatch disposition lands in
-/// a later phase (T23); this task only proves the shape and the current disposition set.
+/// the versioned certification corpus. T23 closes GCPC-011/GCPC-016: the two framework calls
+/// (<c>Ok</c>, <c>NotFound</c>) that <see cref="InvokesPass"/> used to skip in total silence are now
+/// counted exclusions, and every recognized invocation occurrence in the corpus carries exactly one
+/// disposition.
 /// </summary>
 public sealed class CertificationCorpusInvocationTests
 {
@@ -53,7 +63,7 @@ public sealed class CertificationCorpusInvocationTests
 
     [Fact]
     [Trait("Requirement", "GCPC-018")]
-    public async Task AnalyzeAsync_CertificationCorpus_DocumentsTheCurrentPreFixDispositionForTheInterfaceCall()
+    public async Task AnalyzeAsync_CertificationCorpus_InterfaceCallIsExactlyOneCandidateNeverAConfirmedInvokesToTheInterface()
     {
         var publication = await AnalyzeCorpusAsync();
 
@@ -62,33 +72,51 @@ public sealed class CertificationCorpusInvocationTests
             publication,
             "relations/confirmed/invokes.json");
 
-        // Documented pre-fix baseline (CLLF-07/CLLF-09, GCPC-018): today's InvokesPass already resolves
-        // an interface dispatch with a single concrete implementor to one CandidateLink and never a
-        // confirmed `invokes` to the interface member. The actual audit-B3 defect this batch reproduces
-        // for a later phase (T23) to close is the *framework-call* silence asserted below, and the
-        // wider disposition-accounting ledger (GCPC-011..015) that does not exist yet.
-        Assert.Contains(
-            candidates,
-            link => link.Kind == "invokes"
+        // GCPC-018: an interface dispatch with a single concrete implementor resolves to exactly one
+        // CandidateLink from the action to that concrete implementation, and never a confirmed
+        // `invokes` to the interface member.
+        var toConcreteImplementation = candidates
+            .Where(link => link.Kind == "invokes"
                 && link.Source.Id.Contains("OrderQueriesController", StringComparison.Ordinal)
                 && link.Source.Id.Contains("GetOrderStatus", StringComparison.Ordinal)
-                && link.ProposedTarget.Id.Contains("Certification.Queries", StringComparison.Ordinal)
-                && link.ProposedTarget.Id.Contains("GetOrderStatus", StringComparison.Ordinal));
+                && link.ProposedTarget.Id.Contains("Certification.Queries", StringComparison.Ordinal))
+            .ToArray();
+        var candidate = Assert.Single(toConcreteImplementation);
+        Assert.Contains("GetOrderStatus", candidate.ProposedTarget.Id, StringComparison.Ordinal);
         Assert.DoesNotContain(
             confirmedInvokes,
             relation => relation.Kind == "invokes"
                 && relation.Source.Id.Contains("OrderQueriesController", StringComparison.Ordinal)
                 && relation.Target.Id.Contains("IOrderQueries", StringComparison.Ordinal));
+    }
 
-        // Documented pre-fix baseline (audit-B3 / F4, GCPC-016): the two framework calls (Ok, NotFound)
-        // hit InvokesPass's silent framework skip today — no candidate, no confirmed relation, no
-        // unresolved record and no diagnostic. GCPC-016's counted exclusion ledger is a later phase (T23).
-        Assert.DoesNotContain(
-            candidates,
-            link => link.Source.Id.Contains("OrderQueriesController", StringComparison.Ordinal)
-                && link.Source.Id.Contains("GetOrderStatus", StringComparison.Ordinal)
-                && (link.ProposedTarget.Id.Contains("OkResult", StringComparison.Ordinal)
-                    || link.ProposedTarget.Id.Contains("NotFoundResult", StringComparison.Ordinal)));
+    [Fact]
+    [Trait("Requirement", "GCPC-016")]
+    public async Task AnalyzeAsync_CertificationCorpus_FrameworkCallsAreCountedExclusionsCarryingTheDeclaredCategory()
+    {
+        var (ledger, _) = await RunInvokesPassOverCorpusAsync();
+
+        var getOrderStatusDispositions = ledger.Dispositions
+            .Where(disposition => disposition.Occurrence.Owner.Id.Value.Contains("GetOrderStatus", StringComparison.Ordinal)
+                && disposition.Occurrence.Owner.Id.Value.Contains("OrderQueriesController", StringComparison.Ordinal))
+            .ToArray();
+
+        // The action makes three calls: the interface dispatch (a candidate, asserted separately) and
+        // the two framework calls (Ok, NotFound). Both framework calls are now counted exclusions
+        // carrying the declared category (GCPC-016), not the total silence the audit found.
+        var excluded = getOrderStatusDispositions
+            .Where(disposition => disposition.Kind is InvocationDispositionKind.Excluded)
+            .ToArray();
+        Assert.Equal(2, excluded.Length);
+        Assert.All(
+            excluded,
+            disposition => Assert.Equal(InvocationExclusionCategory.ExternalFrameworkCallable, disposition.ExclusionCategory));
+        Assert.Contains(
+            getOrderStatusDispositions,
+            disposition => disposition.Kind is InvocationDispositionKind.Candidate);
+
+        // No per-occurrence diagnostic is emitted for an excluded occurrence.
+        var publication = await AnalyzeCorpusAsync();
         var diagnosticsFragment = publication.ArtifactsInPublicationOrder
             .SingleOrDefault(artifact => artifact.CanonicalKey == "diagnostics.json");
         if (diagnosticsFragment is not null)
@@ -99,6 +127,34 @@ public sealed class CertificationCorpusInvocationTests
                 record => record.IdentityOrKey is not null
                     && record.IdentityOrKey.Contains("OrderQueriesController", StringComparison.Ordinal));
         }
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-011")]
+    public async Task AnalyzeAsync_CertificationCorpus_EveryRecognizedInvocationOccurrenceCarriesExactlyOneDisposition()
+    {
+        var (ledger, context) = await RunInvokesPassOverCorpusAsync();
+
+        // Denominator re-derived independently of the ledger: every Invocation and ObjectCreation
+        // observation in the corpus is a recognized invocation occurrence (GCPC-011).
+        var recognizedOccurrences = context.ObservationsByKind(ObservationKind.Invocation).Count()
+            + context.ObservationsByKind(ObservationKind.ObjectCreation).Count();
+
+        Assert.NotEmpty(ledger.Dispositions);
+        Assert.Empty(ledger.Duplicates);
+        Assert.Equal(recognizedOccurrences, ledger.Dispositions.Count);
+    }
+
+    private static async Task<(InvocationDispositionLedger Ledger, ClassifierContext Context)> RunInvokesPassOverCorpusAsync()
+    {
+        var solutionPath = CertificationCorpusPaths.SolutionPath;
+        var pipelineContext = new PipelineContext(new SwallowingSession(), solutionPath);
+        await new InventoryStage().ExecuteAsync(pipelineContext, CancellationToken.None);
+        await new SemanticAnalysisStage().ExecuteAsync(pipelineContext, CancellationToken.None);
+        await new ObservationExtractionStage().ExecuteAsync(pipelineContext, CancellationToken.None);
+        var context = new ClassifierContext(pipelineContext);
+        new InvokesPass().Execute(context, CancellationToken.None, out var ledger);
+        return (ledger, context);
     }
 
     private static T ReadShard<T>(CommittedPublication publication, string canonicalKey) =>

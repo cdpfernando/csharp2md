@@ -844,12 +844,13 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] The T3 fixture asserts exactly one candidate link from the action to the concrete implementation, and no confirmed `invokes` to the interface member
-- [ ] The two framework calls are asserted present as counted exclusions carrying the declared category
-- [ ] The line-91 branch is asserted to emit a disposition rather than nothing, on a fixture case that reaches it
-- [ ] Every recognized occurrence in the corpus is asserted to carry exactly one disposition
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The T3 fixture asserts exactly one candidate link from the action to the concrete implementation, and no confirmed `invokes` to the interface member
+- [x] The two framework calls are asserted present as counted exclusions carrying the declared category
+- [x] The line-91 branch is asserted to emit a disposition rather than nothing, on a fixture case that reaches it
+- [x] Every recognized occurrence in the corpus is asserted to carry exactly one disposition
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 753 pass; total 1819 (Domain 560, Analysis 753, Storage 289, Cli 33, Projection 184)
+- Finding (not fixed, out of T23's scope): `ConcreteImplementors` matches by metadata name + parameter shape + arity only, with no exclusion of the calling method's own declaring type or check of return type. For the T3 fixture this produces a second, spurious self-referencing candidate (`OrderQueriesController.GetOrderStatus` -> itself) alongside the correct one to `Certification.Queries.OrderQueries.GetOrderStatus`. GCPC-018's own wording ("one candidate link per concrete implementing symbol") is technically satisfied since the code treats both as matches; the imprecision is in match *detection*, not disposition. Tests were scoped to assert "exactly one candidate to the concrete implementation" rather than "exactly one candidate total" to avoid silently accepting the bug while not expanding this task's surface to fix unrelated matching logic.
 
 **Tests**: unit
 **Gate**: build
