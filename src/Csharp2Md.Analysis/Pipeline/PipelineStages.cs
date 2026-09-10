@@ -25,5 +25,6 @@ internal static class PipelineStages
                 new InvokesPass(),
                 new ExecutesPass(),
             ]))
+            .SetItem(4, new ValidationAndCoverageStage())
             .SetItem(5, new PersistenceStage());
 }

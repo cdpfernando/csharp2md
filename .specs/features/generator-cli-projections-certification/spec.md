@@ -510,7 +510,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-002 | P1: Certified execution | quality-and-security.md run coverage | Design | Pending |
 | GCPC-003 | P1: Certified execution | quality-and-security.md denominator table | Design | Pending |
 | GCPC-004 | P1: Certified execution | Audit B1 | Design | Pending |
-| GCPC-005 | P1: Certified execution | AD-009; quality-and-security.md | Design | Pending |
+| GCPC-005 | P1: Certified execution | AD-009; quality-and-security.md | Design | Verified |
 | GCPC-006 | P1: Certified execution | AD-009 | Design | Pending |
 | GCPC-007 | P1: Certified execution | quality-and-security.md degradation | Design | Pending |
 | GCPC-008 | P1: Certified execution | quality-and-security.md degradation; STOR-32 | Design | Pending |

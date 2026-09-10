@@ -960,11 +960,12 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] The test re-derives each denominator independently from the published facts and observations and asserts it equals the published value
-- [ ] Numerator plus exclusions plus unknowns is asserted never to exceed the denominator
-- [ ] No recall or precision percentage is published; a test asserts the envelope carries no such field
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The test re-derives each denominator independently from the published facts and observations and asserts it equals the published value
+- [x] Numerator plus exclusions plus unknowns is asserted never to exceed the denominator
+- [x] No recall or precision percentage is published; a test asserts the envelope carries no such field
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 770 pass; total 1854 (Domain 563, Analysis 770, Storage 304, Cli 33, Projection 184)
+- Deviation: none. Resumed and completed a prior worker's interrupted (uncommitted) draft of this file after verifying it matched the spec's denominator definitions in `docs/architecture/quality-and-security.md`; the only fix needed was a missing `using Csharp2Md.Analysis.Pipeline;` in the test file.
 
 **Tests**: unit
 **Gate**: build
