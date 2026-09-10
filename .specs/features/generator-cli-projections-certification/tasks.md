@@ -479,12 +479,12 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Analyzing the T6 fixture asserts none of the six excluded assets appears in the manifest, in `facts/structural.json` or under `source/`
-- [ ] Exactly one aggregated diagnostic is published, naming the excluded count and every excluded extension
-- [ ] No individual `unsupported-document` diagnostic remains
-- [ ] The project's `.cs`, `.csproj` and `appsettings.json` are asserted still present with their configuration facts intact
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Analyzing the T6 fixture asserts none of the six excluded assets appears in the manifest, in `facts/structural.json` or under `source/`
+- [x] Exactly one aggregated diagnostic is published, naming the excluded count and every excluded extension
+- [x] No individual `unsupported-document` diagnostic remains
+- [x] The project's `.cs`, `.csproj` and `appsettings.json` are asserted still present with their configuration facts intact
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; Analysis 706 pass; total 1767 (Domain 555, Analysis 706, Storage 289, Cli 33, Projection 184)
 
 **Tests**: integration
 **Gate**: build

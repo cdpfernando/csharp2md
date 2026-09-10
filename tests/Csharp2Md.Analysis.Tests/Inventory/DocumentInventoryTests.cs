@@ -85,10 +85,13 @@ public sealed class DocumentInventoryTests
     }
 
     [Fact]
-    [Trait("Requirement", "ROSE-05")]
-    [Trait("Requirement", "ROSE-06")]
-    public void Collect_PlantedJsonUnderProjectDirectory_IsDocumentPlusUnsupportedDiagnostic()
+    [Trait("Requirement", "GCPC-027")]
+    [Trait("Requirement", "GCPC-028")]
+    public void Collect_PlantedJsonUnderProjectDirectory_IsExcludedWithNoDocumentAndNoIndividualDiagnostic()
     {
+        // Supersedes the pre-supported-document-policy ROSE-05/ROSE-06 baseline (spec.md contract
+        // dependencies): a non-C#, non-appsettings document with no registered consumer is now
+        // excluded outright rather than inventoried with a per-document diagnostic (GCPC-028).
         var tree = Directory.CreateTempSubdirectory("csharp2md-doc-inv-json-");
         try
         {
@@ -115,18 +118,22 @@ public sealed class DocumentInventoryTests
 
             var inventoried = DocumentInventory.Collect(root, project, Path.Combine(projectDir, "App.csproj"));
 
-            var json = Assert.Single(
+            Assert.DoesNotContain(
                 inventoried.Documents,
                 document => string.Equals(document.RelativePath, "notes.json", StringComparison.Ordinal));
-            AssertInventoried(json, project.Id, "notes.json");
-            var unsupported = Assert.Single(
-                inventoried.Diagnostics,
-                record => string.Equals(record.IdentityOrKey, "notes.json", StringComparison.Ordinal));
-            Assert.Equal("unsupported-document", unsupported.Code);
-            Assert.False(Path.IsPathRooted(unsupported.IdentityOrKey));
             Assert.DoesNotContain(
                 inventoried.CSharpDocuments,
                 document => string.Equals(document.RelativePath, "notes.json", StringComparison.Ordinal));
+            var aggregated = Assert.Single(
+                inventoried.Diagnostics,
+                record => string.Equals(record.Code, "unsupported-document", StringComparison.Ordinal));
+            Assert.Null(aggregated.IdentityOrKey);
+            // The temp tree's own App.slnx solution file lives inside the project directory and is
+            // also excluded (no classifier consumes a .slnx as a document), so both it and notes.json
+            // are counted in the same aggregated diagnostic.
+            Assert.Contains("2 document(s)", aggregated.Message, StringComparison.Ordinal);
+            Assert.Contains(".json", aggregated.Message, StringComparison.Ordinal);
+            Assert.Contains(".slnx", aggregated.Message, StringComparison.Ordinal);
         }
         finally
         {
@@ -229,15 +236,23 @@ public sealed class DocumentInventoryTests
                 facts.Projects,
                 project => project.Id.Value.Contains("App.csproj", StringComparison.Ordinal));
 
-            var composeDocuments = DocumentInventory.Collect(root, compose, composePath, existing).Documents;
+            var composeInventory = DocumentInventory.Collect(root, compose, composePath, existing);
+            var composeDocuments = composeInventory.Documents;
             var nestedDocuments = DocumentInventory.Collect(root, nested, nestedProjectPath, existing).Documents;
 
             Assert.DoesNotContain(
                 composeDocuments,
                 document => document.RelativePath.EndsWith("Program.cs", StringComparison.Ordinal));
-            Assert.Contains(
+            // docker-compose.yml is excluded by the supported-document policy (GCPC-026, GCPC-028):
+            // no classifier declares ".yml", so it is not a Document, but the explicit <None Include>
+            // project item is still enumerated and reflected in the aggregated exclusion diagnostic.
+            Assert.DoesNotContain(
                 composeDocuments,
                 document => string.Equals(document.RelativePath, "docker-compose.yml", StringComparison.Ordinal));
+            var excluded = Assert.Single(
+                composeInventory.Diagnostics,
+                record => string.Equals(record.Code, "unsupported-document", StringComparison.Ordinal));
+            Assert.Contains(".yml", excluded.Message, StringComparison.Ordinal);
             var program = Assert.Single(
                 nestedDocuments,
                 document => document.RelativePath.EndsWith("Program.cs", StringComparison.Ordinal));
@@ -251,7 +266,8 @@ public sealed class DocumentInventoryTests
 
     [Fact]
     [Trait("Requirement", "CDC-25")]
-    public void Collect_MatchingAppsettingsNames_AreConfigurationDocumentsWithoutUnsupportedDiagnostic()
+    [Trait("Requirement", "GCPC-026")]
+    public void Collect_MatchingAppsettingsNames_AreConfigurationDocumentsAndCsprojIsAcceptedAsAProjectFile()
     {
         var tree = Directory.CreateTempSubdirectory("csharp2md-doc-inv-appsettings-");
         try
@@ -284,7 +300,7 @@ public sealed class DocumentInventoryTests
             AssertConfigurationDocument(inventoried, project, "appsettings.json");
             AssertConfigurationDocument(inventoried, project, "appsettings.Development.json");
             AssertConfigurationDocument(inventoried, project, "AppSettings.Production.json");
-            AssertUnsupportedDocument(inventoried, "App.csproj");
+            AssertAcceptedProjectFile(inventoried, project, "App.csproj");
         }
         finally
         {
@@ -294,7 +310,8 @@ public sealed class DocumentInventoryTests
 
     [Fact]
     [Trait("Requirement", "CDC-25")]
-    public void Collect_NearMissMyAppsettingsJson_IsUnsupportedNotConfiguration()
+    [Trait("Requirement", "GCPC-028")]
+    public void Collect_NearMissMyAppsettingsJson_IsExcludedNotConfiguration()
     {
         var tree = Directory.CreateTempSubdirectory("csharp2md-doc-inv-myappsettings-");
         try
@@ -322,14 +339,7 @@ public sealed class DocumentInventoryTests
 
             var inventoried = DocumentInventory.Collect(root, project, Path.Combine(projectDir, "App.csproj"));
 
-            var nearMiss = Assert.Single(
-                inventoried.Documents,
-                document => string.Equals(document.RelativePath, "myappsettings.json", StringComparison.Ordinal));
-            AssertInventoried(nearMiss, project.Id, "myappsettings.json");
-            Assert.DoesNotContain(
-                inventoried.ConfigurationDocuments,
-                document => string.Equals(document.RelativePath, "myappsettings.json", StringComparison.Ordinal));
-            AssertUnsupportedDocument(inventoried, "myappsettings.json");
+            AssertExcludedDocument(inventoried, "myappsettings.json");
         }
         finally
         {
@@ -339,7 +349,9 @@ public sealed class DocumentInventoryTests
 
     [Fact]
     [Trait("Requirement", "CDC-25")]
-    public void Collect_UnmatchedNonCsharpIncludingCsproj_KeepsUnsupportedDocument()
+    [Trait("Requirement", "GCPC-026")]
+    [Trait("Requirement", "GCPC-028")]
+    public void Collect_UnmatchedNonCsharpExcludedAndCsprojAccepted()
     {
         var tree = Directory.CreateTempSubdirectory("csharp2md-doc-inv-unmatched-");
         try
@@ -367,8 +379,8 @@ public sealed class DocumentInventoryTests
 
             var inventoried = DocumentInventory.Collect(root, project, Path.Combine(projectDir, "App.csproj"));
 
-            AssertUnsupportedDocument(inventoried, "notes.json");
-            AssertUnsupportedDocument(inventoried, "App.csproj");
+            AssertExcludedDocument(inventoried, "notes.json");
+            AssertAcceptedProjectFile(inventoried, project, "App.csproj");
             Assert.Empty(inventoried.ConfigurationDocuments);
             Assert.DoesNotContain(
                 inventoried.Diagnostics,
@@ -400,18 +412,30 @@ public sealed class DocumentInventoryTests
             record => string.Equals(record.IdentityOrKey, relativePath, StringComparison.Ordinal));
     }
 
-    private static void AssertUnsupportedDocument(InventoriedDocuments inventoried, string relativePath)
+    private static void AssertExcludedDocument(InventoriedDocuments inventoried, string relativePath)
     {
-        Assert.Contains(
+        Assert.DoesNotContain(
             inventoried.Documents,
             document => string.Equals(document.RelativePath, relativePath, StringComparison.Ordinal));
         Assert.DoesNotContain(
             inventoried.ConfigurationDocuments,
             document => string.Equals(document.RelativePath, relativePath, StringComparison.Ordinal));
-        var unsupported = Assert.Single(
+        Assert.DoesNotContain(
             inventoried.Diagnostics,
             record => string.Equals(record.IdentityOrKey, relativePath, StringComparison.Ordinal));
-        Assert.Equal("unsupported-document", unsupported.Code);
+    }
+
+    private static void AssertAcceptedProjectFile(InventoriedDocuments inventoried, Project project, string relativePath)
+    {
+        var document = Assert.Single(
+            inventoried.Documents,
+            candidate => string.Equals(candidate.RelativePath, relativePath, StringComparison.Ordinal));
+        AssertInventoried(document, project.Id, relativePath);
+        Assert.DoesNotContain(inventoried.CSharpDocuments, candidate => candidate.Equals(document));
+        Assert.DoesNotContain(inventoried.ConfigurationDocuments, candidate => candidate.Equals(document));
+        Assert.DoesNotContain(
+            inventoried.Diagnostics,
+            record => string.Equals(record.IdentityOrKey, relativePath, StringComparison.Ordinal));
     }
 
     private static void AssertInventoried(Document document, ProjectId projectId, string relativePath)

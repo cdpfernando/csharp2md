@@ -531,16 +531,16 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-023 | P1: Entry capability | AD-004 evidence before promotion | Design | Pending |
 | GCPC-024 | P1: Entry capability | AD-010 proof states | Design | Pending |
 | GCPC-025 | P1: Entry capability | Audit gate 3; D-01 | Design | Verified |
-| GCPC-026 | P1: Document policy | D-04; audit I4 | Design | Pending |
-| GCPC-027 | P1: Document policy | D-04; supersedes ROSE-04 | Design | Pending |
-| GCPC-028 | P1: Document policy | D-04; supersedes ROSE-05 and ROSE-06 | Design | Pending |
-| GCPC-029 | P1: Document policy | D-04; architecture-knowledge-engine.md supported sources | Design | Pending |
+| GCPC-026 | P1: Document policy | D-04; audit I4 | Design | Verified |
+| GCPC-027 | P1: Document policy | D-04; supersedes ROSE-04 | Design | Verified |
+| GCPC-028 | P1: Document policy | D-04; supersedes ROSE-05 and ROSE-06 | Design | Verified |
+| GCPC-029 | P1: Document policy | D-04; architecture-knowledge-engine.md supported sources | Design | Verified |
 | GCPC-030 | P1: Document policy | D-04 allowlist | Design | Pending |
-| GCPC-031 | P1: Document policy | D-04 redefinition | Design | Pending |
-| GCPC-032 | P1: Document policy | D-04; supersedes RP-07 | Design | Pending |
-| GCPC-033 | P1: Document policy | D-04; audit I4 | Design | Pending |
+| GCPC-031 | P1: Document policy | D-04 redefinition | Design | Verified |
+| GCPC-032 | P1: Document policy | D-04; supersedes RP-07 | Design | Verified |
+| GCPC-033 | P1: Document policy | D-04; audit I4 | Design | Verified |
 | GCPC-034 | P1: Document policy | D-04 measurement | Design | Pending |
-| GCPC-035 | P1: Document policy | D-04 safeguard | Design | Pending |
+| GCPC-035 | P1: Document policy | D-04 safeguard | Design | Verified |
 | GCPC-036 | P1: Bounded payloads | D-02; output-and-retrieval.md scale constraints | Design | Pending |
 | GCPC-037 | P1: Bounded payloads | D-02 | Design | Pending |
 | GCPC-038 | P1: Bounded payloads | Audit B4; calibrates RP-52 | Design | Pending |

@@ -83,6 +83,19 @@ internal sealed class InventoryStage : IPipelineStage
                 sourcePaths[DocumentId.Create(document.Reference.Id.Value)] = absolute;
             }
 
+            // Excluded documents (GCPC-028) publish no Document fact, but the authorized-root guard
+            // still runs over them so the supported-document policy cannot become a way to smuggle a
+            // path escape past PathGuard.
+            foreach (var excludedRelativePath in inventoried.ExcludedRelativePaths)
+            {
+                var absolute = Path.GetFullPath(
+                    Path.Combine(root, excludedRelativePath.Replace('/', Path.DirectorySeparatorChar)));
+                if (!TryGuard(context, root, absolute, out abort))
+                {
+                    return ValueTask.FromResult(abort);
+                }
+            }
+
             foreach (var diagnostic in inventoried.Diagnostics)
             {
                 context.Accumulator.AddDiagnostic(diagnostic);
