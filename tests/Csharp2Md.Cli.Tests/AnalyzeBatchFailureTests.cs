@@ -70,7 +70,7 @@ public sealed class AnalyzeBatchFailureTests
     public void AnalyzeAndRoot_ExposeNoNewOption()
     {
         var root = CommandFactory.CreateRootCommand();
-        var analyze = Assert.Single(root.Subcommands);
+        var analyze = Assert.Single(root.Subcommands, static command => command.Name == "analyze");
 
         var analyzeProductOptions = analyze.Options
             .Where(static option => option is not HelpOption and not VersionOption)

@@ -20,7 +20,7 @@ public sealed class ProjectorWiringTests
     [Trait("Requirement", "RP-06")]
     public void Analyze_PublishesProjectionsWithoutANewFlag()
     {
-        var analyze = Assert.Single(CommandFactory.CreateRootCommand().Subcommands);
+        var analyze = Assert.Single(CommandFactory.CreateRootCommand().Subcommands, static command => command.Name == "analyze");
         var names = analyze.Options
             .Where(static option => option is not HelpOption and not VersionOption)
             .Select(static option => option.Name)

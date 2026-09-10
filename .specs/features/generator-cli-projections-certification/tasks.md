@@ -1575,16 +1575,21 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] `validate` runs to completion in a process with no access to the original solution directory
-- [ ] No Roslyn or MSBuild type is loaded during `validate`; a test asserts it
-- [ ] The published certification status is reported and asserted not recomputed from a solution
-- [ ] A directory with no manifest is rejected and left unchanged
-- [ ] `Csharp2Md.Cli` is asserted to still declare no `Csharp2Md.Domain` reference
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] `validate` runs to completion in a process with no access to the original solution directory
+- [x] No Roslyn or MSBuild type is loaded during `validate`; a test asserts it
+- [x] The published certification status is reported and asserted not recomputed from a solution
+- [x] A directory with no manifest is rejected and left unchanged
+- [x] `Csharp2Md.Cli` is asserted to still declare no `Csharp2Md.Domain` reference
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; total ≥ previous task's total — **1969 tests, 0 failed** (Domain 563, Analysis 788, Storage 364, Cli 39, Projection 215), up from the 1963 baseline (Cli 33 → 39: six new tests in `tests/Csharp2Md.Cli.Tests/ValidateCommandTests.cs`)
 
 **Tests**: unit
 **Gate**: build
+
+**Deviation** (beyond this task's named `Where`, all forced by the deferred items the orchestrator folded into this batch and by bugs this task's own end-to-end exercise of pre-existing code newly surfaced):
+
+1. `src/Csharp2Md.Storage/Mapping/PublicationPipeline.cs` -- closes the T47 deferred item (`RetrievalScenarioRunner` wiring): when the real `PackageProjector` publishes a `retrieval.md` (gated on its presence, so every projector test double across Storage/Projection that has no `retrieval.md` is untouched), the pipeline now walks the documented scenarios against the fragments it is about to write and folds `ToMeasurementRecords()` into `measurements.json` before publication, re-planning only that one envelope's count. `PublishedPackageView.From(report.Document, plan)` / `projector.Project(view, source)` / `PackagePublisher.ToPublicationOrder` literal call sites are unchanged (a pre-existing test, `ProjectorPublicationTests.PublicationPipeline_ProjectsFromValidatedDocumentBeforeOrdering`, asserts their exact source text and ordering).
+2. `src/Csharp2Md.Storage/Validation/PackageValidator.cs` -- two pre-existing bugs, both invisible until `validate` became the first caller to exercise `ValidatePackageDirectory` and content-scanning of real `source/` fragments end to end: (a) `ValidatePackageDirectory` never told `ValidatePublishedManifest` which manifest entries are deferred artifacts (raw source copies always publish `ByteSize: 0`), so every real package with a `source/` projection failed its own re-validation with a false `manifest-size-mismatch` -- fixed by deriving `deferredKeys` from entries whose declared `ByteSize` is `0`, the same signal `ManifestBuilder` used to write it. (b) `IsAbsoluteFilesystemPath`'s `text.StartsWith("//")` branch flagged a bare `//` or `///` token -- an ordinary C# comment marker or an empty XML doc-comment line, universal in this codebase's own fixtures -- as a UNC-style absolute path, because content-scanning of deferred `source/*.cs` fragments is skipped at publish time (`ProjectionValidator.Validate`'s `IsDeferred` guard) and had therefore never run against real C# source before `validate` re-hydrates those same fragments as ordinary (non-deferred) bytes. Fixed by requiring a real segment after the leading slashes/backslash before treating it as a path; neither existing `InlineData` case in `PackageValidatorTests`/`ProjectionValidatorTests` used a bare `//`/`///` token, so no existing test changed.
 
 **Commit**: `feat(cli): add the validate subcommand`
 

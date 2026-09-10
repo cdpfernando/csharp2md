@@ -25,7 +25,7 @@ public sealed class AnalyzeOptionSurfaceTests
     public void AnalyzeAndRoot_DoNotExposeRemovedMarkdownEraOptions()
     {
         var root = CommandFactory.CreateRootCommand();
-        var analyze = Assert.Single(root.Subcommands);
+        var analyze = Assert.Single(root.Subcommands, static command => command.Name == "analyze");
 
         var rootNames = OptionNames(root.Options);
         var analyzeNames = OptionNames(analyze.Options);

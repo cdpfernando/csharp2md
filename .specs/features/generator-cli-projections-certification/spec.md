@@ -568,11 +568,11 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-060 | P1: Provenance | Standing determinism constraint | Design | Verified |
 | GCPC-061 | P1: Provenance | Audit I5 | Design | Verified |
 | GCPC-062 | P1: Provenance | AD-007 | Design | Verified |
-| GCPC-063 | P1: CLI surface | Roadmap row 8; D-03 | Design | Pending |
-| GCPC-064 | P1: CLI surface | User constraint on validate | Design | Pending |
+| GCPC-063 | P1: CLI surface | Roadmap row 8; D-03 | Design | Verified |
+| GCPC-064 | P1: CLI surface | User constraint on validate | Design | Verified |
 | GCPC-065 | P1: CLI surface | quality-and-security.md zero-tolerance gates | Design | Pending |
-| GCPC-066 | P1: CLI surface | quality-and-security.md degradation | Design | Pending |
-| GCPC-067 | P1: CLI surface | AD-009 | Design | Pending |
+| GCPC-066 | P1: CLI surface | quality-and-security.md degradation | Design | Verified |
+| GCPC-067 | P1: CLI surface | AD-009 | Design | Verified |
 | GCPC-068 | P1: CLI surface | Workstream 7 deferred compose idea | Design | Pending |
 | GCPC-069 | P1: CLI surface | Roadmap row 8 | Design | Pending |
 | GCPC-070 | P1: CLI surface | AD-009 status vocabulary | Design | Pending |

@@ -1,4 +1,5 @@
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Storage.Retrieval;
 using Csharp2Md.Storage.Validation;
 using Csharp2Md.Storage.Wire;
 
@@ -27,12 +28,13 @@ internal static class PublicationPipeline
         var document = DomainMapper.ToWire(snapshot, context);
         var report = PackageValidator.Validate(document);
         // An effectively unbounded ceiling: activating the derived, real ceiling for every live analysis
-        // is a later task's own change (it touches a wide swath of existing Analysis-layer expectations
-        // that this batch's own scope, Storage and Projection, is not meant to move). LayoutPlanner's
+        // is T52's own change (it touches a wide swath of existing Analysis-layer expectations that this
+        // batch's own scope, Storage and Projection, is not meant to move on its own). LayoutPlanner's
         // adaptive sharding itself is fully implemented and tested against an explicit ceiling.
         var plan = LayoutPlanner.Plan(report.Document, int.MaxValue);
         var projections = ImmutableArray<StagedFragment>.Empty;
         SolutionContribution? contribution = null;
+        var publishedDocument = report.Document;
         if (projector is not null || composer is not null)
         {
             var view = createView is null
@@ -54,6 +56,37 @@ internal static class PublicationPipeline
                 }
 
                 ProjectionValidator.Validate(view, projections);
+
+                // Deferred item (context.md, found at T47): a real `retrieval.md` (the real PackageProjector
+                // -- not every projector test double emits one) means GCPC-052..GCPC-054's documented
+                // scenarios can actually be walked against exactly what this publication is about to write,
+                // so their measured records reach a real `measurements.json` instead of staying proven only
+                // in the runner's own tests. Gated on the guide's presence so every existing caller with a
+                // projector that has no retrieval.md (unit-test doubles across Storage/Projection) is
+                // unaffected -- this only ever activates for the real, end-to-end `analyze` pipeline.
+                if (projections.Any(static fragment => fragment.CanonicalKey == "retrieval.md"))
+                {
+                    var candidateFragments = PackagePublisher.ToPublicationOrder(report.Document, plan, projections);
+                    var scenarioRecords = RetrievalScenarioRunner
+                        .Run(new StagedFragmentArtifactSource(candidateFragments))
+                        .ToMeasurementRecords();
+                    if (!scenarioRecords.IsEmpty)
+                    {
+                        publishedDocument = report.Document with
+                        {
+                            Measurements = new MeasurementsEnvelope(
+                                report.Document.Measurements.Records.AddRange(scenarioRecords)),
+                        };
+
+                        // Re-plan: the fact/relation families are unchanged (measurements.json carries no
+                        // fact or relation identity, so it never participates in their sharding), only
+                        // measurements.json's own declared record count moves. The already-built `view`
+                        // keeps flowing to `composer.Contribute` below unchanged, so a caller depending on
+                        // exactly one `createView` invocation per publish (a same-instance-to-projector-
+                        // and-composer guarantee) still sees exactly that.
+                        plan = LayoutPlanner.Plan(publishedDocument, int.MaxValue);
+                    }
+                }
             }
 
             if (composer is not null)
@@ -62,7 +95,7 @@ internal static class PublicationPipeline
             }
         }
 
-        var fragments = PackagePublisher.ToPublicationOrder(report.Document, plan, projections);
+        var fragments = PackagePublisher.ToPublicationOrder(publishedDocument, plan, projections);
         ValidateManifestCardinality(fragments);
         return new PublicationOutcome(fragments, contribution);
     }

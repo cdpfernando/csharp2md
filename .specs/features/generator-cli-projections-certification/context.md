@@ -148,3 +148,15 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   *published* certification-corpus package) and the Definition of Done bullet about
   `retrieval.md` scenarios being "executed automatically" both need this wiring to be live
   before the Completion Gate — do not let T66 close the roadmap with this still open either.
+  **Resolved** in T48's commit: `PublicationPipeline.Publish` now runs `RetrievalScenarioRunner`
+  against the fragments a real `analyze` is about to write (gated on a real `retrieval.md` being
+  among them, so no projector test double across Storage/Projection regresses) and folds its
+  measurement records into `measurements.json`; `validate` runs the same scenarios read-only from
+  the package on disk and reports them without republishing anything. Proven by
+  `tests/Csharp2Md.Cli.Tests/ValidateCommandTests.cs`'s
+  `Analyze_FoldsRetrievalScenarioMeasurementsIntoMeasurementsJson_AndValidateReportsThem`. Closing
+  this end-to-end also surfaced and fixed two independent pre-existing `PackageValidator` bugs
+  (deferred-artifact byte-size cardinality, and a false-positive `//`/`///` comment-marker match in
+  `IsAbsoluteFilesystemPath`) that had never been exercised before `validate` became the first
+  caller to re-scan a real published package's own `source/` fragments end to end — see T48's
+  deviation note in `tasks.md` for both.

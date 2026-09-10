@@ -187,7 +187,19 @@ public static class PackageValidator
             artifactsByKey[relative] = File.ReadAllBytes(absolutePath).ToImmutableArray();
         }
 
-        ValidatePublishedManifest(manifest, artifactsByKey);
+        // A deferred artifact (a raw source copy -- see ManifestBuilder) is published with a placeholder
+        // zero byte size, because its bytes could be read only once, at write time, and are gone by the
+        // time this re-validation runs. A declared zero byte size is otherwise never legitimate for a real
+        // record-bearing artifact (even an empty envelope still serializes to a non-empty JSON object), so
+        // it is the one signal this on-disk re-hydration has to recognize a deferred entry by and skip its
+        // size comparison the same way live publication's own ValidateManifestCardinality does from the
+        // in-memory StagedFragment.IsDeferred flag, which no longer exists once the package is on disk.
+        var deferredKeys = manifest.Artifacts
+            .Where(static entry => entry.ByteSize == 0)
+            .Select(static entry => entry.Path)
+            .ToHashSet(StringComparer.Ordinal);
+
+        ValidatePublishedManifest(manifest, artifactsByKey, deferredKeys);
     }
 
     private static void EnsureRegisteredKinds(WireDocument document)
@@ -589,7 +601,15 @@ public static class PackageValidator
             return false;
         }
 
-        if (text[0] == '\\' || text.StartsWith("//", StringComparison.Ordinal))
+        // A bare "\\", "//" or "///" with nothing after it is punctuation, not a path -- most commonly a
+        // C# comment marker (`//`) or an empty XML doc-comment line (`///`), tokenized in isolation by
+        // EnsureNoAbsolutePathTokens's fallback scan of non-JSON payloads (a raw `source/*.cs` copy).
+        // Before this fixed a real end-to-end failure (T48: `validate` re-scanning a package's own
+        // committed `source/` fragments, which publish-time skips for deferred fragments never exercised),
+        // every ordinary C# comment line falsely aborted publication the moment content-scanning actually
+        // ran against it. A real UNC-style path still requires a host/share segment after the slashes.
+        if ((text[0] == '\\' || text.StartsWith("//", StringComparison.Ordinal))
+            && HasSegmentAfterLeadingSeparators(text))
         {
             return true;
         }
@@ -600,6 +620,17 @@ public static class PackageValidator
         }
 
         return text[0] == '/' && UnixFilesystemRoots.Contains(FirstPathSegment(text));
+    }
+
+    private static bool HasSegmentAfterLeadingSeparators(string text)
+    {
+        var start = 0;
+        while (start < text.Length && text[start] is '/' or '\\')
+        {
+            start++;
+        }
+
+        return start < text.Length;
     }
 
     private static string FirstPathSegment(string path)
