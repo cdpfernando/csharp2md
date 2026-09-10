@@ -1164,11 +1164,12 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Every fact and relation in a document is asserted to have exactly one planned location
-- [ ] The plan is asserted identical across two runs over the same document
-- [ ] The plan is asserted to be computed without writing or reading any file
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every fact and relation in a document is asserted to have exactly one planned location
+- [x] The plan is asserted identical across two runs over the same document
+- [x] The plan is asserted to be computed without writing or reading any file
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; Storage 320 pass; total 1888 (Domain 563, Analysis 788, Storage 320, Cli 33, Projection 184)
+- Deviation: none beyond scope. `LayoutPlan`/`LayoutPlanner.Plan(WireDocument)` plans every family (compound fact bundles get one unsplit artifact each; confirmed relations, candidates, unresolved records, open frontiers and observations get a real per-record `PlannedRecord` list) but this task does not yet split anything -- that is T35's own named `Where`. GCPC-040 and GCPC-041 are both conditioned on "WHEN an artifact IS split", which cannot happen yet, so neither is marked Verified here; GCPC-040 is revisited at T35 (which actually produces splits) and GCPC-041 at T36 (whose own "Done when" is its literal text), even though this task's `Requirement` field names both.
 
 **Tests**: unit
 **Gate**: quick
