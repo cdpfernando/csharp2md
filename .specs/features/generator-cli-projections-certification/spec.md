@@ -583,8 +583,8 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-075 | P1: Engine certification | quality-and-security.md ground truth | Design | Verified |
 | GCPC-076 | P1: Engine certification | quality-and-security.md corpora | Design | Verified |
 | GCPC-077 | P1: Engine certification | AD-009 | Design | Verified |
-| GCPC-078 | P1: Engine certification | quality-and-security.md engine gates | Design | Pending |
-| GCPC-079 | P1: Engine certification | Roadmap completion condition | Design | Pending |
+| GCPC-078 | P1: Engine certification | quality-and-security.md engine gates | Design | Verified |
+| GCPC-079 | P1: Engine certification | Roadmap completion condition | Design | Verified |
 | GCPC-080 | P1: Engine certification | AD-009 | Design | Verified |
 | GCPC-081 | P1: Engine certification | D-03 | Design | Pending |
 | GCPC-082 | P1: Security and fidelity | AD-021 | Design | Pending |

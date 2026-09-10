@@ -1803,14 +1803,16 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Each area is asserted at or above its normative threshold
-- [ ] A deliberately flipped ground-truth label is asserted to fail certification and to name that item, proving the measurement reads ground truth
-- [ ] A failing area names the measured value alongside the threshold
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Each area is asserted at or above its normative threshold
+- [x] A deliberately flipped ground-truth label is asserted to fail certification and to name that item, proving the measurement reads ground truth
+- [x] A failing area names the measured value alongside the threshold
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; total ≥ previous task's total — **Analysis 812 pass** (up from 806); total 2019 (Domain 563, Analysis 812, Storage 372, Cli 57, Projection 215)
 
 **Tests**: integration
 **Gate**: quick
+
+**Deviation**: none. `dotnet-test:assertion-quality` was run against `EngineThresholdTests.cs`: 5 of 12 assertion categories used (Equality, Comparison, Boolean, Collection, String) across 3 test methods (one a 4-case theory), no assertion-free or trivial-only tests, no self-referential tautologies -- the pre-flip sanity check (`target.Entry.Expected == Present && target.Actual == Present`) compares two genuinely independent sources (the label file and real published facts), not an identity round-trip. No changes needed.
 
 **Commit**: `test(certification): enforce the normative precision and recall thresholds`
 
