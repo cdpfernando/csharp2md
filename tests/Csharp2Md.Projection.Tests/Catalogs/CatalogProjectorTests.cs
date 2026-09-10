@@ -1,9 +1,14 @@
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Facets;
+using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Literals;
 using Csharp2Md.Projection.Catalogs;
+using Csharp2Md.Projection.Labels;
+using Csharp2Md.Domain.Relations;
 using Csharp2Md.Projection.Source;
 using Csharp2Md.Projection.Tests.Source;
 using Csharp2Md.Storage.Mapping;
+using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Projection.Tests.Catalogs;
 
@@ -469,6 +474,168 @@ public sealed class CatalogProjectorTests
 
         Assert.Equal("catalogs/data-stores-objects-and-fields.json", catalogs[^2].CanonicalKey);
         Assert.Equal("catalogs/unknowns.json", catalogs[^1].CanonicalKey);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-093")]
+    [Trait("Requirement", "GCPC-094")]
+    public void Project_EntryPoints_EntryLabelsResolveToTheCitationsOfTheirProvenValues()
+    {
+        var symbol = CatalogProjectionFactory.Callable("Run");
+        var component = CatalogProjectionFactory.CreateComponent("Orders.Api");
+        var entryPoint = EntryPoint.Create(symbol.Reference, component.Reference);
+        var view = CatalogProjectionFactory.ViewOf(component, symbol, entryPoint);
+
+        var entries = CatalogProjectionFactory.ReadCatalog(CatalogProjector.Project(view), "catalogs/entry-points.json");
+        var entry = Assert.Single(entries);
+
+        Assert.Equal(3, entry.Labels.Length);
+        AssertLabelResolves(view, entry.Labels, LabelProjector.Component, "Orders.Api", component.Reference.Id.Value);
+        AssertLabelResolves(view, entry.Labels, LabelProjector.Type, "global::Acme.Orders.Host", symbol.Reference.Id.Value);
+        AssertLabelResolves(view, entry.Labels, LabelProjector.Method, "Run", symbol.Reference.Id.Value);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-093")]
+    [Trait("Requirement", "GCPC-094")]
+    public void Project_BoundaryOperations_EntryLabelsIncludeProtocolVerbAndRouteCitingTheOperationItself()
+    {
+        var symbol = CatalogProjectionFactory.Callable("Charge");
+        var component = CatalogProjectionFactory.CreateComponent("Payments.Api");
+        var operation = BoundaryOperation.Create(
+            symbol.Reference,
+            component.Reference,
+            BoundaryDirection.Inbound,
+            protocol: BoundaryProtocol.Http,
+            httpMethod: "GET",
+            route: StructuralLiteral.Create(LiteralRole.Route, "/orders/{id}", "route"),
+            protocolOperationKey: StructuralLiteral.Create(LiteralRole.ProtocolName, "GET /orders/{id}", "protocolOperationKey"));
+        var view = CatalogProjectionFactory.ViewOf(component, symbol, operation);
+
+        var entries = CatalogProjectionFactory.ReadCatalog(
+            CatalogProjector.Project(view),
+            "catalogs/boundary-operations.json");
+        var entry = Assert.Single(entries);
+
+        Assert.Equal(6, entry.Labels.Length);
+        Assert.True(view.TryLocate(entry.FactId, out var self));
+        foreach (var label in entry.Labels.Where(label =>
+            label.Kind is LabelProjector.Protocol or LabelProjector.Verb or LabelProjector.Route))
+        {
+            Assert.Equal(self.ArtifactKey, label.ArtifactKey);
+            Assert.Equal(self.Ordinal, label.Ordinal);
+        }
+
+        Assert.Contains(entry.Labels, label => label.Kind == LabelProjector.Protocol && label.Value == "http");
+        Assert.Contains(entry.Labels, label => label.Kind == LabelProjector.Verb && label.Value == "GET");
+        Assert.Contains(entry.Labels, label => label.Kind == LabelProjector.Route && label.Value == "/orders/{id}");
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-093")]
+    [Trait("Requirement", "GCPC-098")]
+    public void Project_ComponentsAndDeploymentUnits_EntryLabelsResolveToTheirOwnNameCitation()
+    {
+        var component = CatalogProjectionFactory.CreateComponent("Orders.Api");
+        var unit = CatalogProjectionFactory.CreateDeploymentUnit("Orders.Container");
+        var view = CatalogProjectionFactory.ViewOf(component, unit);
+
+        var entries = CatalogProjectionFactory.ReadCatalog(
+            CatalogProjector.Project(view),
+            "catalogs/components-and-deployment-units.json");
+
+        var componentEntry = Assert.Single(entries, entry => entry.FactId == component.Reference.Id.Value);
+        AssertLabelResolves(view, componentEntry.Labels, LabelProjector.Component, "Orders.Api", component.Reference.Id.Value);
+
+        var unitEntry = Assert.Single(entries, entry => entry.FactId == unit.Reference.Id.Value);
+        AssertLabelResolves(view, unitEntry.Labels, LabelProjector.Name, "Orders.Container", unit.Reference.Id.Value);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-093")]
+    public void Project_Contracts_EntryLabelResolvesToItsOwnNameCitation()
+    {
+        var contract = CatalogProjectionFactory.CreateContract("orders.v1.OrderPlaced");
+        var view = CatalogProjectionFactory.ViewOf(contract);
+
+        var entries = CatalogProjectionFactory.ReadCatalog(CatalogProjector.Project(view), "catalogs/contracts.json");
+        var entry = Assert.Single(entries);
+
+        AssertLabelResolves(view, entry.Labels, LabelProjector.Name, "orders.v1.OrderPlaced", contract.Reference.Id.Value);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-093")]
+    [Trait("Requirement", "GCPC-098")]
+    public void Project_PersistenceCatalog_DataStoreAndDataObjectCarryNameLabelsAndDataFieldCarriesNone()
+    {
+        var store = CatalogProjectionFactory.CreateStore("OrdersDb");
+        var dataObject = CatalogProjectionFactory.CreateObject(store, "order_headers");
+        var field = CatalogProjectionFactory.CreateField(dataObject, "order_status");
+        var view = CatalogProjectionFactory.ViewOf(store, dataObject, field);
+
+        var entries = CatalogProjectionFactory.ReadCatalog(
+            CatalogProjector.Project(view),
+            "catalogs/data-stores-objects-and-fields.json");
+
+        var storeEntry = Assert.Single(entries, entry => entry.FactId == store.Reference.Id.Value);
+        AssertLabelResolves(view, storeEntry.Labels, LabelProjector.Name, "OrdersDb", store.Reference.Id.Value);
+
+        var objectEntry = Assert.Single(entries, entry => entry.FactId == dataObject.Reference.Id.Value);
+        AssertLabelResolves(view, objectEntry.Labels, LabelProjector.Name, "order_headers", dataObject.Reference.Id.Value);
+
+        var fieldEntry = Assert.Single(entries, entry => entry.FactId == field.Reference.Id.Value);
+        Assert.Empty(fieldEntry.Labels);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-093")]
+    public void Project_Unknowns_EntryLabelIsDerivedFromTheUnresolvedOccurrencesOwnerIdentity()
+    {
+        var component = CatalogProjectionFactory.CreateComponent("Orders.Api");
+        var unresolved = CatalogProjectionFactory.CreateUnresolved(RelationKind.Invokes, component.Reference);
+        var view = CatalogProjectionFactory.ViewOf([component], unresolved: [unresolved]);
+
+        var entries = CatalogProjectionFactory.ReadCatalog(CatalogProjector.Project(view), "catalogs/unknowns.json");
+        var entry = Assert.Single(entries);
+
+        AssertLabelResolves(view, entry.Labels, LabelProjector.Component, "Orders.Api", component.Reference.Id.Value);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-095")]
+    public void Project_EntryPoints_OrderingStaysKeyedOnFactIdAndCanonicalIdRemainsTheIdentity()
+    {
+        var component = CatalogProjectionFactory.CreateComponent("Orders.Api");
+        var first = CatalogProjectionFactory.CreateEntryPoint("Run", "Orders.Api");
+        var second = CatalogProjectionFactory.CreateEntryPoint("Main", "Orders.Worker");
+        var view = CatalogProjectionFactory.ViewOf(component, first, second);
+
+        var entries = CatalogProjectionFactory.ReadCatalog(
+            CatalogProjector.Project(view),
+            "catalogs/entry-points.json");
+
+        var expectedOrder = new[] { first.Reference.Id.Value, second.Reference.Id.Value }
+            .OrderBy(static id => id, StringComparer.Ordinal)
+            .ToArray();
+        Assert.Equal(2, entries.Length);
+        Assert.Equal(expectedOrder, entries.Select(static entry => entry.FactId).ToArray());
+    }
+
+    /// <summary>
+    /// Finds the single label of <paramref name="kind"/> on <paramref name="labels"/>, asserts its value,
+    /// and proves its citation is exactly the one <see cref="PublishedPackageView.TryLocate"/> assigns
+    /// <paramref name="expectedFactId"/> -- the same resolution proof <c>LabelProjectorTests</c> uses,
+    /// applied here to the label collection the catalog entry now carries (GCPC-093, GCPC-094).
+    /// </summary>
+    private static void AssertLabelResolves(
+        PublishedPackageView view, ImmutableArray<LabelDto> labels, string kind, string expectedValue, string expectedFactId)
+    {
+        var label = Assert.Single(labels, candidate => candidate.Kind == kind);
+        Assert.Equal(expectedValue, label.Value);
+        Assert.True(view.TryLocate(expectedFactId, out var citation));
+        Assert.Equal(citation.ArtifactKey, label.ArtifactKey);
+        Assert.Equal(citation.Ordinal, label.Ordinal);
     }
 }
 

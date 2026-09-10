@@ -1427,11 +1427,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Every catalog entry's labels are asserted resolvable to the artifact and ordinal they cite
-- [ ] Catalog ordering is asserted unchanged, still keyed on the fact id
-- [ ] The canonical id is asserted still present as the identity
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every catalog entry's labels are asserted resolvable to the artifact and ordinal they cite
+- [x] Catalog ordering is asserted unchanged, still keyed on the fact id
+- [x] The canonical id is asserted still present as the identity
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Projection: 193 -> 200; total 1931 -> 1938
 
 **Tests**: unit
 **Gate**: quick

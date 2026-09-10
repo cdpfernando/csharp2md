@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Projection.Labels;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
 
@@ -63,7 +64,12 @@ internal static class CatalogProjector
                 continue;
             }
 
-            entries.Add(new CatalogEntryDto(identity.Id, citation.ArtifactKey, citation.Ordinal, identity.FactType));
+            entries.Add(new CatalogEntryDto(
+                identity.Id,
+                citation.ArtifactKey,
+                citation.Ordinal,
+                identity.FactType,
+                LabelProjector.For(identity, view)));
         }
 
         if (entries.Count == 0)
@@ -93,7 +99,8 @@ internal static class CatalogProjector
                 item.Record.Source.Id,
                 artifactKey,
                 item.Ordinal,
-                item.Record.Source.FactType))
+                item.Record.Source.FactType,
+                LabelProjector.For(item.Record.Source, view)))
             .ToArray();
         fragments.AddRange(ShardWriter.Write(UnknownsKey, Nodes(entries), ceilingBytes));
     }
