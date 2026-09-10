@@ -557,9 +557,9 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-049 | P1: Retrieval guide | Audit B5; AD-010 | Design | Verified |
 | GCPC-050 | P1: Retrieval guide | Audit B4 | Design | Verified |
 | GCPC-051 | P1: Retrieval guide | output-and-retrieval.md scenario 7 | Design | Verified |
-| GCPC-052 | P1: Retrieval guide | Audit gate 9; output-and-retrieval.md | Design | Pending |
-| GCPC-053 | P1: Retrieval guide | D-02 budget | Design | Pending |
-| GCPC-054 | P1: Retrieval guide | Audit gate 9 | Design | Pending |
+| GCPC-052 | P1: Retrieval guide | Audit gate 9; output-and-retrieval.md | Design | Verified |
+| GCPC-053 | P1: Retrieval guide | D-02 budget | Design | Verified |
+| GCPC-054 | P1: Retrieval guide | Audit gate 9 | Design | Verified |
 | GCPC-055 | P1: Retrieval guide | RP-42 extended to the guide | Design | Verified |
 | GCPC-056 | P1: Provenance | Audit scope note and gate 8 | Design | Verified |
 | GCPC-057 | P1: Provenance | taxonomy.md version axes | Design | Verified |

@@ -1544,18 +1544,19 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Every scenario documented in the published guide is executed and asserted to reach its stated endpoint
-- [ ] Each scenario's measured reads, bytes and tokens are asserted within the declared budget and published to `measurements.json`
-- [ ] Both artifact sources are asserted to produce the same report for the same package
-- [ ] A documented path that does not resolve is asserted to fail the run
-- [ ] A scenario with no instance in the input is asserted reported not exercised, never passed
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every scenario documented in the published guide is executed and asserted to reach its stated endpoint
+- [x] Each scenario's measured reads, bytes and tokens are asserted within the declared budget and published to `measurements.json`
+- [x] Both artifact sources are asserted to produce the same report for the same package
+- [x] A documented path that does not resolve is asserted to fail the run
+- [x] A scenario with no instance in the input is asserted reported not exercised, never passed
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Storage: 357 -> 364; Projection: 215 (unchanged); total 1956 -> 1963 (Domain 563, Analysis 788, Storage 364, Cli 33, Projection 215)
 
 **Tests**: integration
 **Gate**: full
 
 **Commit**: `feat(storage): execute and measure the documented retrieval scenarios`
+- Deviation (two files beyond this task's named `Where`, both forced and minimal): (1) `src/Csharp2Md.Storage/Wire/EnvelopeDtos.cs`'s `MeasurementRecordDto` gained nine nullable, `WhenWritingNull`-suppressed fields (`Exercised`, `Reached`, `FailureReason`, `FilesRead`, `Hops`, `Bytes`, `Tokens`, `RelevantFacts`, `NoiseRecordsRead`) -- GCPC-052's own measured quantities had no home in the pre-existing `(Name, Timestamp, DurationMilliseconds)` shape, and every existing record stays byte-identical on serialization since the new fields are all optional and omitted when null. (2) `contracts/json-schema/envelopes/measurements.json` was regenerated via the existing `JsonSchemaEmitter.WriteCommitted` (a pre-existing test-side tool, not new code) to match, keeping the AD-013-style drift gate (`JsonSchemaDriftTests.CommittedSchemas_MatchFreshEmission_ByteForByte`) green. Wiring `RetrievalScenarioRunner` into the live `analyze`/`validate` CLI pipeline (so `measurements.json` carries these records on a real run) is Phase 9 CLI-surface work, not this task's file scope; noted in `context.md`'s Deferred Ideas alongside the T37/T52 ceiling-wiring precedent it mirrors. This task's own scope -- the runner, both artifact sources, and the measured report -- is fully implemented and tested against real published packages, both in memory and on disk.
 
 ---
 

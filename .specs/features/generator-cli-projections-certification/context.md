@@ -126,3 +126,25 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   rather than leaving it implicit. If that turns out too large for one task, split it into its
   own follow-up task before the Completion Gate — do not let T66 close the roadmap with this
   still open.
+- **`RetrievalScenarioRunner` is not wired into the live `analyze`/`validate` pipeline** (found
+  in Phase 8 batch, T47, 2026-09-10): `RetrievalScenarioRunner.Run` (GCPC-052..GCPC-054) is
+  fully implemented and tested against real published packages through both
+  `StagedFragmentArtifactSource` (in-memory, matching the fragments an `analyze` run stages)
+  and `PackageDirectoryArtifactSource` (on disk, matching what `validate` will read), and
+  `ScenarioReport.ToMeasurementRecords()` round-trips correctly through the `measurements.json`
+  envelope shape (`MeasurementRecordDto` gained nine nullable fields for this — see T47's
+  deviation note in `tasks.md`). But nothing in `PublicationPipeline.Publish` or
+  `CommandFactory` actually calls `RetrievalScenarioRunner.Run` and folds its
+  `ToMeasurementRecords()` into the `measurements.json` a real `analyze` run publishes, or into
+  what a real `validate` run reports. This mirrors the T37 ceiling-wiring gap exactly: the
+  component is correct and proven in isolation, but nothing in this batch's file scope
+  (`src/Csharp2Md.Storage/Retrieval/RetrievalScenarioRunner.cs`) reaches the CLI. Phase 9's CLI
+  work (`analyze`/`validate`/`compose`, `CommandFactory`) is the natural place to wire this in —
+  fold "run the scenario runner during `analyze` publication and during `validate`, publishing
+  its records into `measurements.json`" into that batch's dispatch, the same way T37's gap was
+  folded into T52. GCPC-052..GCPC-054 are marked `Verified` on the strength of the runner's own
+  tests (the requirement text is about the runner's behavior, not the CLI verb), but the
+  Independent Test for "Executable retrieval guide" (running every scenario against the
+  *published* certification-corpus package) and the Definition of Done bullet about
+  `retrieval.md` scenarios being "executed automatically" both need this wiring to be live
+  before the Completion Gate — do not let T66 close the roadmap with this still open either.
