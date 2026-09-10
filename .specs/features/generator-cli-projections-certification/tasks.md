@@ -1104,12 +1104,13 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] An artifact's interned form is asserted to round-trip to the same records as the inlined form
-- [ ] Table ordering is asserted deterministic and independent of record order
-- [ ] The corpus's `contains` payload byte size is recorded and asserted reduced against the T20 figure
-- [ ] An artifact with no repeats is asserted to publish no wasteful table
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] An artifact's interned form is asserted to round-trip to the same records as the inlined form
+- [x] Table ordering is asserted deterministic and independent of record order
+- [x] The corpus's `contains` payload byte size is recorded and asserted reduced against the T20 figure
+- [x] An artifact with no repeats is asserted to publish no wasteful table
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Storage 311 pass; Projection 184 pass; total 1879 (Domain 563, Analysis 788, Storage 311, Cli 33, Projection 184)
+- Deviation: none. `InternTable` is a standalone, generic JSON-array transform (works on any repeated string leaf, not only the four named families) proven against a hand-built round-trip fixture and the real certification-corpus `contains.json`; it is not yet wired into `PackagePublisher` or `LayoutPlanner` — that wiring is out of this task's named `Where` and no T33-T41 "Done when" bullet requires it, so GCPC-039 stays partially closed (canonical/wire payload families only, catalogs/postings are Phase 8) and GCPC-044 stays Pending per the traceability note (the scale input hasn't run yet).
 
 **Tests**: unit
 **Gate**: full
