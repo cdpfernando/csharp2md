@@ -1224,10 +1224,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Every citation is asserted to resolve to the record it claims, on both a split and an unsplit payload
-- [ ] Existing projector callers are asserted to compile and behave unchanged against the new view
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every citation is asserted to resolve to the record it claims, on both a split and an unsplit payload
+- [x] Existing projector callers are asserted to compile and behave unchanged against the new view
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Storage 328 pass; Projection 184 pass; total 1896 (Domain 563, Analysis 788, Storage 328, Cli 33, Projection 184)
+- Deviation: `LayoutPlanner.cs` (not this task's named `Where`) needed a fix, not only `PublishedPackageView.cs`. T34/T35's `LayoutPlan` never carried the envelope artifacts (`contracts/taxonomy-registry.json`, `coverage.json`, `diagnostics.json`, `measurements.json`, `run-certification.json`) or the final alphabetical sort that the pre-T36 `PublishedPackageView.From` applied to its whole slot list -- rebuilding the view straight off `Plan.Slots` without this would have silently dropped those five artifacts from every publication and reordered the rest, breaking `PackagePublisher`/`ManifestBuilder` the moment T36 landed, before T37 even runs. Fixed minimally in `LayoutPlanner.Plan` (add the five envelope artifacts unconditionally, sort the complete list ordinally) rather than reintroducing them in `PublishedPackageView` itself, so the plan stays the single source of the artifact list AD-023 calls for. `PublishedPackageView.From(WireDocument)` (the existing single-argument overload every current caller uses) now delegates to `LayoutPlanner.Plan(document, int.MaxValue)` -- an effectively unbounded ceiling -- so it keeps producing the exact unsplit shape those callers already depend on; a new `From(WireDocument, LayoutPlan)` overload lets a caller (T37) supply an already-computed, possibly-sharded plan so the writer and its citations are always built from the same one plan object. Verified by running the full existing Storage (328), Projection (184) and Analysis (788, informal extra check beyond this task's own gate) suites unmodified and green. Traceability: GCPC-041 is this task's own field and is now Verified; GCPC-040 (attached to T34's field, deferred there since nothing split yet) is also flipped Verified here, since its "WHEN an artifact is split" text needs both T35's preservation-under-split and this task's citation-resolvability-under-split together, and both now exist.
 
 **Tests**: unit
 **Gate**: full

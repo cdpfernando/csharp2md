@@ -78,6 +78,13 @@ public static class LayoutPlanner
         var artifacts = ImmutableArray.CreateBuilder<PlannedArtifact>();
         var degradations = ImmutableArray.CreateBuilder<DegradationReasonDto>();
 
+        // Envelope artifacts: always published, regardless of count, and never split.
+        artifacts.Add(new PlannedArtifact(PackagePublisher.RegistryKey, ArtifactRole.Payload, 1, []));
+        artifacts.Add(new PlannedArtifact("coverage.json", ArtifactRole.Payload, 1, []));
+        artifacts.Add(new PlannedArtifact("diagnostics.json", ArtifactRole.Payload, document.Diagnostics.Records.Length, []));
+        artifacts.Add(new PlannedArtifact("measurements.json", ArtifactRole.Payload, document.Measurements.Records.Length, []));
+        artifacts.Add(new PlannedArtifact("run-certification.json", ArtifactRole.Payload, 1, []));
+
         AddCompoundFamily(
             artifacts,
             "facts/structural.json",
@@ -157,7 +164,9 @@ public static class LayoutPlanner
 
         AddCompoundFamily(artifacts, "quarantine/records.json", document.Quarantine.Length);
 
-        return new LayoutPlan(artifacts.ToImmutable(), factLocations, relationLocations.ToImmutable(), degradations.ToImmutable());
+        var sorted = artifacts.ToImmutable().Sort(
+            static (left, right) => string.CompareOrdinal(left.ArtifactKey, right.ArtifactKey));
+        return new LayoutPlan(sorted, factLocations, relationLocations.ToImmutable(), degradations.ToImmutable());
     }
 
     private readonly record struct RecordSource(string Identity, ImmutableArray<byte> Entry);
