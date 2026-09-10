@@ -586,7 +586,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-078 | P1: Engine certification | quality-and-security.md engine gates | Design | Verified |
 | GCPC-079 | P1: Engine certification | Roadmap completion condition | Design | Verified |
 | GCPC-080 | P1: Engine certification | AD-009 | Design | Verified |
-| GCPC-081 | P1: Engine certification | D-03 | Design | Pending |
+| GCPC-081 | P1: Engine certification | D-03 | Design | Verified |
 | GCPC-082 | P1: Security and fidelity | AD-021 | Design | Pending |
 | GCPC-083 | P1: Security and fidelity | quality-and-security.md zero-tolerance gates | Design | Pending |
 | GCPC-084 | P1: Security and fidelity | AD-021 plus the new label surface | Design | Verified |

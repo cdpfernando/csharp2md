@@ -63,7 +63,12 @@ BenchmarkDotNet.Artifacts/
 # .NET
 project.lock.json
 project.fragment.lock.json
-artifacts/
+# GCPC-081: artifacts/* (not artifacts/) so git still recurses into it, letting the negation below
+# re-include artifacts/verifications/ -- the versioned repository artifacts (e.g. the engine-
+# certification report) -- while everything else under artifacts/ (analyze output, local audit
+# scratch) stays ignored.
+artifacts/*
+!artifacts/verifications/
 
 # Local-only analysis corpora. Never version these apps; the in-repo fixture is SyntheticSolution.
 fixtures/eShop/
