@@ -788,11 +788,12 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Each adopting pass asserts its relation cites only justifying evidence, with one negative assertion naming an observation that must not appear
-- [ ] `belongs-to`'s published byte size is recorded and asserted reduced against the pre-fix figure
-- [ ] No relation is left with an empty `derived_from`
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Each adopting pass asserts its relation cites only justifying evidence, with one negative assertion naming an observation that must not appear
+- [x] `belongs-to`'s published byte size is recorded and asserted reduced against the pre-fix figure
+- [x] No relation is left with an empty `derived_from`
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; Analysis 745 pass; Storage 289 pass; total 1811 (Domain 560, Analysis 745, Storage 289, Cli 33, Projection 184). Corpus `belongs-to.json`: 110,874 bytes pre-fix -> 100,409 bytes post-fix.
+- Deviation: the only remaining unscoped `EvidenceChain.Create(context.ObservationsByOwner(...))` call was `TopologyEmitter.cs`'s `belongs-to` construction, not `RelationPass.cs` (whose own broad-lookup fallbacks are protocol-scoped via `IsEvidenceKind` and legitimately need `Invocation`/`DataAccess` for outbound-HTTP/messaging evidence, so narrowing them would be a regression, not a fix). Fixed in `TopologyEmitter.cs` instead; `RelationPass.cs` is unchanged.
 
 **Tests**: unit
 **Gate**: build

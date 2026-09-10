@@ -2,6 +2,7 @@ using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
+using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Domain.Relations;
@@ -40,7 +41,7 @@ internal static class TopologyEmitter
                         symbol.Reference,
                         component.Reference,
                         EmptyFacets,
-                        EvidenceChain.Create(context.ObservationsByOwner(symbol.Reference).Select(static observation => observation.Identity)),
+                        BelongsToEvidence(context, symbol, component),
                         Identity,
                         context.AnalysisVariants,
                         EvidenceMethod.Semantic,
@@ -123,6 +124,28 @@ internal static class TopologyEmitter
             $"components with no deployment unit: {model.Coverage.ComponentsWithoutDeployment}; " +
             $"unreached component ids: {unreachedIds}";
         context.Accumulator.AddDiagnostic(new DiagnosticRecord("component-coverage", message, identityOrKey));
+    }
+
+    /// <summary>
+    /// GCPC-039 (partial): a `belongs-to` edge is justified by the symbol's own declaration-shape
+    /// evidence, not every observation the symbol carries -- most of which (its invocations, its data
+    /// access) has nothing to do with which component owns it. A symbol with no declaration-shape
+    /// observation of its own falls back to its full (still non-empty, per <see cref="OwnersFor"/>)
+    /// observation set, so a `belongs-to` edge is never left without evidence.
+    /// </summary>
+    private static EvidenceChain BelongsToEvidence(ClassifierContext context, Symbol symbol, Component component)
+    {
+        var ownObservations = context.ObservationsByOwner(symbol.Reference).ToArray();
+        var declarationShape = Array.FindAll(
+            ownObservations,
+            static observation => observation.Identity.Kind is not (ObservationKind.Invocation or ObservationKind.DataAccess));
+
+        // EvidenceScope.For would strip Invocation/DataAccess from the fallback pool too, which is
+        // exactly the behavioral evidence being fallen back to -- so the fallback bypasses it and uses
+        // the symbol's full observation set directly, unfiltered, as a last resort.
+        return declarationShape.Length > 0
+            ? EvidenceScope.For(symbol.Reference, component.Reference, RelationKind.BelongsTo, declarationShape)
+            : EvidenceChain.Create(ownObservations.Select(static observation => observation.Identity));
     }
 
     private static Symbol[] OwnersFor(ComponentGroup group, ClassifierContext context)

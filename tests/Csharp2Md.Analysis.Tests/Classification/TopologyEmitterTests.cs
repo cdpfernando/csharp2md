@@ -91,6 +91,54 @@ public sealed class TopologyEmitterTests
     }
 
     [Fact]
+    [Trait("Requirement", "GCPC-039")]
+    public void Emit_BelongsTo_ExcludesInvocationAndDataAccessButKeepsDeclarationShapeEvidence()
+    {
+        var pipeline = Arrange();
+        var app = AddProject(pipeline, "App/App.csproj");
+        var host = AddSymbol(pipeline, app, "Host");
+        var declaration = AddObservation(pipeline, host, 1);
+        var invocation = AddObservation(pipeline, host, ObservationKind.Invocation, 2);
+        var model = Deployable(app, Chain(pipeline, host));
+        var context = Context(pipeline);
+
+        TopologyEmitter.Emit(model, context);
+
+        var relation = Assert.Single(
+            pipeline.Accumulator.ToSnapshot().ConfirmedRelations,
+            candidate => candidate.Kind is RelationKind.BelongsTo && candidate.Source.Equals(host.Reference));
+
+        // GCPC-039 (partial): declaration-shape evidence (Configuration here) is cited; the
+        // behavioral occurrence (Invocation) that has nothing to do with component ownership is not.
+        Assert.Contains(declaration.Identity, relation.DerivedFrom.DerivedFrom.ToArray());
+        Assert.DoesNotContain(relation.DerivedFrom.DerivedFrom, identity => identity.Kind is ObservationKind.Invocation);
+        Assert.DoesNotContain(invocation.Identity, relation.DerivedFrom.DerivedFrom.ToArray());
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-039")]
+    public void Emit_BelongsTo_SymbolWithOnlyBehavioralObservations_StillCitesNonEmptyEvidence()
+    {
+        var pipeline = Arrange();
+        var app = AddProject(pipeline, "App/App.csproj");
+        var host = AddSymbol(pipeline, app, "Host");
+        var invocation = AddObservation(pipeline, host, ObservationKind.Invocation, 1);
+        var model = Deployable(app, EvidenceChain.Create([invocation.Identity]));
+        var context = Context(pipeline);
+
+        TopologyEmitter.Emit(model, context);
+
+        var relation = Assert.Single(
+            pipeline.Accumulator.ToSnapshot().ConfirmedRelations,
+            candidate => candidate.Kind is RelationKind.BelongsTo && candidate.Source.Equals(host.Reference));
+
+        // No relation is left with an empty derived_from: with no declaration-shape observation of
+        // its own, the edge falls back to whatever the symbol does have rather than failing to publish.
+        Assert.NotEmpty(relation.DerivedFrom.DerivedFrom);
+        Assert.Contains(invocation.Identity, relation.DerivedFrom.DerivedFrom.ToArray());
+    }
+
+    [Fact]
     [Trait("Requirement", "CDC-20")]
     public void Emit_IncludedIn_IsConfiguredFromReachEvidence()
     {
@@ -306,6 +354,22 @@ public sealed class TopologyEmitterTests
             new EvidenceLocator(DocumentId.Create("doc"), "App/App.csproj", new SourceSpan(1, 1, 1, 8)),
             EvidenceMethod.Configured,
             new BindingDiagnostic("configured", "configured"),
+            DocumentHash.Create(new string('a', 64)),
+            new ExtractorVersion(1));
+        pipeline.Accumulator.AddObservation(observation);
+        return observation;
+    }
+
+    private static Observation AddObservation(PipelineContext pipeline, IFact owner, ObservationKind kind, int ordinal)
+    {
+        var observation = Observation.Create(
+            owner.Reference,
+            kind,
+            NormalizedPayload.Create([]),
+            ordinal,
+            new EvidenceLocator(DocumentId.Create("doc"), "App/App.csproj", new SourceSpan(1, 1, 1, 8)),
+            EvidenceMethod.Semantic,
+            new BindingDiagnostic("bound", "bound"),
             DocumentHash.Create(new string('a', 64)),
             new ExtractorVersion(1));
         pipeline.Accumulator.AddObservation(observation);
