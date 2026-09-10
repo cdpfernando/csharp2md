@@ -4,11 +4,115 @@ using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Identity;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Validation;
+using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage.Tests.Validation;
 
 public sealed class BatchValidatorTests
 {
+    [Fact]
+    [Trait("Requirement", "GCPC-112")]
+    public void Certify_EveryRequiredSolutionPublishedCompatibleAndCertifiable_ReturnsCertified()
+    {
+        var batch = View(Record("Orders.slnx"), Record("Payments.slnx"));
+        var provenance = Provenance();
+        var solutions = ImmutableArray.Create(
+            Status(batch.Solutions[0], "passed", provenance),
+            Status(batch.Solutions[1], "degraded", provenance));
+
+        var result = BatchValidator.Certify(batch, solutions);
+
+        Assert.True(result.Certified);
+        Assert.Null(result.Reason);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-112")]
+    public void Certify_NoSolutions_ReturnsCertifiedVacuously()
+    {
+        var batch = new BatchView([], []);
+
+        var result = BatchValidator.Certify(batch, []);
+
+        Assert.True(result.Certified);
+        Assert.Null(result.Reason);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-113")]
+    public void Certify_AnUnpublishedRequiredSolution_ReturnsUncertifiedNamingTheReason()
+    {
+        var published = Record("Orders.slnx");
+        var unpublished = Record("Payments.slnx", PublicationStatus.Unpublished);
+        var batch = View(published, unpublished);
+        var solutions = ImmutableArray.Create(
+            Status(published, "passed", Provenance()),
+            Status(unpublished, null, null));
+
+        var result = BatchValidator.Certify(batch, solutions);
+
+        Assert.False(result.Certified);
+        // GCPC-113/GCPC-114: an unpublished solution is caught by the pre-existing
+        // BatchView.Complete/IncompleteScopeReason shape before Certify's own two additional
+        // conditions are even evaluated -- Certify defers to that reason verbatim, it does not
+        // re-derive or re-word it.
+        Assert.Equal("solution-unpublished", result.Reason);
+        Assert.Equal(batch.IncompleteScopeReason, result.Reason);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-113")]
+    public void Certify_AProvenanceIncompatibleSolution_ReturnsUncertifiedNamingTheOffendingSolution()
+    {
+        var orders = Record("Orders.slnx");
+        var payments = Record("Payments.slnx");
+        var batch = View(orders, payments);
+        var solutions = ImmutableArray.Create(
+            Status(orders, "passed", Provenance(schemaVersion: 1)),
+            Status(payments, "passed", Provenance(schemaVersion: 2)));
+
+        var result = BatchValidator.Certify(batch, solutions);
+
+        Assert.False(result.Certified);
+        Assert.Equal($"provenance-incompatible:{payments.Identity.Value}", result.Reason);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-113")]
+    public void Certify_ASolutionWhoseOwnRunCertificationFailed_ReturnsUncertifiedNamingTheOffendingSolution()
+    {
+        var orders = Record("Orders.slnx");
+        var payments = Record("Payments.slnx");
+        var batch = View(orders, payments);
+        var provenance = Provenance();
+        var solutions = ImmutableArray.Create(
+            Status(orders, "passed", provenance),
+            Status(payments, "failed", provenance));
+
+        var result = BatchValidator.Certify(batch, solutions);
+
+        Assert.False(result.Certified);
+        Assert.Equal($"solution-not-certifiable:{payments.Identity.Value}", result.Reason);
+    }
+
+    private static BatchSolutionCertificationStatus Status(
+        BatchSolutionRecord record, string? runCertificationStatus, ProvenanceDto? provenance) =>
+        new(record.Identity.Value, runCertificationStatus, provenance);
+
+    private static ProvenanceDto Provenance(int schemaVersion = 2) =>
+        new(
+            GeneratorVersion: "1.0.0.0",
+            BuildIdentity: "00000000-0000-0000-0000-000000000000",
+            SchemaVersion: schemaVersion,
+            TaxonomyVersion: 2,
+            ObservationSchemaVersion: 1,
+            ExtractorSetVersion: 2,
+            ClassifierSetVersion: 2,
+            ArtifactCeilingBytes: 32768,
+            TokenEstimatorId: "bytes-over-four",
+            DocumentPolicyVersion: "supported-document-policy/1",
+            AllowlistDigest: ProvenanceDto.EmptyAllowlistDigest);
+
     [Fact]
     [Trait("Requirement", "MSC-17")]
     [Trait("Requirement", "MSC-15")]
@@ -126,11 +230,11 @@ public sealed class BatchValidatorTests
                 Contribution(records[1], ordinals: [0]),
             ]);
 
-    private static BatchSolutionRecord Record(string fileName) =>
+    private static BatchSolutionRecord Record(string fileName, PublicationStatus status = PublicationStatus.Committed) =>
         new(
             SolutionId.Create(WorkspaceIdentity.Create("default"), fileName),
             fileName,
-            PublicationStatus.Committed,
+            status,
             null);
 
     private static SolutionContribution Contribution(BatchSolutionRecord record, int[] ordinals)

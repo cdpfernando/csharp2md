@@ -2,8 +2,24 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Mapping;
+using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage.Validation;
+
+/// <summary>
+/// One required solution's certification-relevant facts, gathered from its own already-published
+/// package: its own run-certification status (<see cref="RunCertificationEnvelope.Status"/>, or
+/// <c>null</c> when unknown) and its provenance (or <c>null</c> when unknown). Publication status
+/// itself is not repeated here -- <see cref="BatchView.Complete"/> already decides it from
+/// <c>BatchSolutionRecord.Status</c>, and <see cref="Certify"/> defers to that existing check first.
+/// </summary>
+public sealed record BatchSolutionCertificationStatus(
+    string Identity,
+    string? RunCertificationStatus,
+    ProvenanceDto? Provenance);
+
+/// <summary>Whether the batch is certified and, when it is not, the single reason that disqualified it.</summary>
+public sealed record BatchCertificationResult(bool Certified, string? Reason);
 
 public static class BatchValidator
 {
@@ -49,6 +65,81 @@ public static class BatchValidator
             }
         }
     }
+
+    /// <summary>
+    /// GCPC-112..GCPC-114: extends <see cref="BatchView.Complete"/> and <see
+    /// cref="BatchView.IncompleteScopeReason"/>'s own shape -- a boolean plus a named reason -- with
+    /// the two additional conditions a certified batch requires beyond every solution being published:
+    /// every required solution's provenance must agree with every other solution's in the batch (the
+    /// same generator build, comparable version axes), and every required solution must itself be
+    /// individually certifiable (its own published run-certification status is not <c>"failed"</c>;
+    /// <c>"passed"</c> and <c>"degraded"</c> both qualify, matching the run-certification vocabulary in
+    /// GCPC-001). Publication status is checked first, by deferring to <see cref="BatchView.Complete"/>
+    /// exactly as it already reports it -- this method does not re-derive or re-word that reason. The
+    /// first disqualifying condition beyond that wins and names the offending solution, checked in the
+    /// fixed order provenance-incompatible then not-certifiable, so a batch failing more than one
+    /// condition still reports one deterministic reason. This method only decides and reports; it never
+    /// writes, and GCPC-114 (committed per-solution packages stay untouched by an incomplete batch) is a
+    /// publication invariant enforced by the write path, not by this pure computation.
+    /// </summary>
+    public static BatchCertificationResult Certify(
+        BatchView batch,
+        ImmutableArray<BatchSolutionCertificationStatus> solutions)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+
+        if (!batch.Complete)
+        {
+            return new BatchCertificationResult(false, batch.IncompleteScopeReason);
+        }
+
+        if (solutions.IsDefaultOrEmpty)
+        {
+            return new BatchCertificationResult(true, null);
+        }
+
+        ProvenanceDto? reference = null;
+        foreach (var solution in solutions)
+        {
+            if (solution.Provenance is not { } provenance)
+            {
+                continue;
+            }
+
+            if (reference is null)
+            {
+                reference = provenance;
+                continue;
+            }
+
+            if (!ProvenanceCompatible(reference, provenance))
+            {
+                return new BatchCertificationResult(false, $"provenance-incompatible:{solution.Identity}");
+            }
+        }
+
+        foreach (var solution in solutions)
+        {
+            if (solution.RunCertificationStatus == "failed")
+            {
+                return new BatchCertificationResult(false, $"solution-not-certifiable:{solution.Identity}");
+            }
+        }
+
+        return new BatchCertificationResult(true, null);
+    }
+
+    /// <summary>Two solutions in the same batch are provenance-compatible when they were produced by the
+    /// same generator build over the same contract version axes -- the values a consumer would use to
+    /// decide whether two packages are comparable (GCPC-056, GCPC-057).</summary>
+    private static bool ProvenanceCompatible(ProvenanceDto left, ProvenanceDto right) =>
+        string.Equals(left.GeneratorVersion, right.GeneratorVersion, StringComparison.Ordinal)
+        && string.Equals(left.BuildIdentity, right.BuildIdentity, StringComparison.Ordinal)
+        && left.SchemaVersion == right.SchemaVersion
+        && left.TaxonomyVersion == right.TaxonomyVersion
+        && left.ObservationSchemaVersion == right.ObservationSchemaVersion
+        && left.ExtractorSetVersion == right.ExtractorSetVersion
+        && left.ClassifierSetVersion == right.ClassifierSetVersion;
 
     private static void ValidateEntry(
         JsonObject entry,

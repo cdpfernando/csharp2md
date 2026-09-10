@@ -617,9 +617,9 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-109 | P2: Determinism and batch | ROSE-52; MSC-05 | Design | Verified |
 | GCPC-110 | P2: Determinism and batch | ROSE-54; MSC-06 | Design | Verified |
 | GCPC-111 | P2: Determinism and batch | AD-008 | Design | Verified |
-| GCPC-112 | P2: Determinism and batch | output-and-retrieval.md composition | Design | Pending |
-| GCPC-113 | P2: Determinism and batch | output-and-retrieval.md partial composition | Design | Pending |
-| GCPC-114 | P2: Determinism and batch | MSC-09 and MSC-15 | Design | Pending |
+| GCPC-112 | P2: Determinism and batch | output-and-retrieval.md composition | Design | Verified |
+| GCPC-113 | P2: Determinism and batch | output-and-retrieval.md partial composition | Design | Verified |
+| GCPC-114 | P2: Determinism and batch | MSC-09 and MSC-15 | Design | Verified |
 | GCPC-115 | P1: Completion gate | Audit readiness matrix | Design | Pending |
 | GCPC-116 | P1: Completion gate | Audit verdict; D-01 | Design | Pending |
 | GCPC-117 | P1: Completion gate | D-01 | Design | Verified |

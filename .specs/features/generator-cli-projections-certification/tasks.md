@@ -2022,14 +2022,16 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A batch whose solutions are all published, compatible and certifiable is asserted certified
-- [ ] An unpublished solution, a provenance-incompatible solution and a non-certifiable solution are each asserted to produce an uncertified batch with its own named reason
-- [ ] Every committed per-solution package is asserted byte-identical to the fully successful run after an incomplete batch
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A batch whose solutions are all published, compatible and certifiable is asserted certified
+- [x] An unpublished solution, a provenance-incompatible solution and a non-certifiable solution are each asserted to produce an uncertified batch with its own named reason
+- [x] Every committed per-solution package is asserted byte-identical to the fully successful run after an incomplete batch
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; total ≥ previous task's total — **Storage 377 pass** (up from 372), **Cli 58 pass** (unchanged); total 2046 (Domain 563, Analysis 822, Storage 377, Cli 58, Projection 226)
 
 **Tests**: integration
 **Gate**: build
+
+**Deviation**: none in production code, but the "unpublished solution... its own named reason" bullet is satisfied by the pre-existing `BatchView.Complete`/`IncompleteScopeReason` shape verbatim (the fixed string `"solution-unpublished"`, with no per-solution identity), not a new per-solution reason -- `Certify` defers to it as the first check exactly as the task's own "Reuses" note directs, rather than re-deriving or re-wording it. The bullet's third clause "every committed per-solution package is asserted byte-identical to the fully successful run after an incomplete batch" is proven by the pre-existing `Composition/BatchIsolationTests`/`BatchDeterminismTests` (GCPC-114 is a publication invariant on the write path, unchanged by this task) and by T61's own isolation proof; `Certify` itself is a pure decision function with no write path, so it cannot be the thing that proves byte-identity -- it only decides and names a reason. `BatchSolutionCertificationStatus` carries no `Published` flag: `BatchView.Complete` already fully determines that condition from `BatchSolutionRecord.Status`, so a redundant per-solution "unpublished" branch in `Certify` would have been unreachable dead code.
 
 **Commit**: `feat(storage): certify a batch only when every required solution qualifies`
 
