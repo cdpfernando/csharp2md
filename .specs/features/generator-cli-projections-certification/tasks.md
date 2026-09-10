@@ -1193,13 +1193,14 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] An over-ceiling payload is asserted split, and every shard asserted within the ceiling
-- [ ] Bucket assignment is asserted derived from the fact id and never from a display name
-- [ ] Two runs are asserted to assign every record to the same shard
-- [ ] A single record larger than the ceiling is asserted published in its own shard with a recorded degradation reason, never truncated
-- [ ] No directory is named after a fact identity
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] An over-ceiling payload is asserted split, and every shard asserted within the ceiling
+- [x] Bucket assignment is asserted derived from the fact id and never from a display name
+- [x] Two runs are asserted to assign every record to the same shard
+- [x] A single record larger than the ceiling is asserted published in its own shard with a recorded degradation reason, never truncated
+- [x] No directory is named after a fact identity
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Storage 325 pass; Projection 184 pass; total 1893 (Domain 563, Analysis 788, Storage 325, Cli 33, Projection 184)
+- Deviation: scope is confined to the flat record-array families (confirmed relations per kind, candidates, unresolved records, open frontiers, observations per kind) -- the compound fact-family bundles (`facts/structural.json` etc.) are not split by this task, staying single unsharded artifacts regardless of ceiling, because splitting them would change their JSON shape from an object of sub-arrays to a flat array, a wire-schema break outside this task's named `Where`. GCPC-042 and GCPC-043 are fully satisfied for every family this planner shards (deterministic SHA-256-of-identity bucketing, no new directory, only a filename suffix mirroring `ShardWriter`'s existing pattern) and are marked Verified. GCPC-038 stays Pending: the degradation-reason escape hatch is the documented exception for an irreducible single record (design.md's Risks & Concerns table), but the compound fact-family bundles remain wholly unenforced against the ceiling, so "no artifact exceeds the ceiling" is not yet universally true. GCPC-039 stays Pending per the batch's own partial-closure note.
 
 **Tests**: unit
 **Gate**: full

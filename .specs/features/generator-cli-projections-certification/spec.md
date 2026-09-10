@@ -547,8 +547,8 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-039 | P1: Bounded payloads | Audit B4; output-and-retrieval.md | Design | Pending |
 | GCPC-040 | P1: Bounded payloads | Audit gate 4 | Design | Pending |
 | GCPC-041 | P1: Bounded payloads | RP-20 and RP-27 preserved after split | Design | Pending |
-| GCPC-042 | P1: Bounded payloads | RP-53 and RP-54 | Design | Pending |
-| GCPC-043 | P1: Bounded payloads | output-and-retrieval.md scale constraints | Design | Pending |
+| GCPC-042 | P1: Bounded payloads | RP-53 and RP-54 | Design | Verified |
+| GCPC-043 | P1: Bounded payloads | output-and-retrieval.md scale constraints | Design | Verified |
 | GCPC-044 | P1: Bounded payloads | Audit inventory: contains, belongs-to, invocation | Design | Pending |
 | GCPC-045 | P1: Bounded payloads | quality-and-security.md performance | Design | Pending |
 | GCPC-046 | P1: Retrieval guide | Audit B5 | Design | Pending |

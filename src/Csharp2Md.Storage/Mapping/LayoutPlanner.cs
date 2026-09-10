@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Storage.Wire;
@@ -35,17 +38,25 @@ public sealed class LayoutPlan
     /// </summary>
     public ImmutableDictionary<string, ImmutableArray<ArtifactCitation>> RelationLocations { get; }
 
+    /// <summary>
+    /// One entry per record that could not be reduced to fit the ceiling by further splitting -- it is
+    /// published in a shard of its own rather than truncated (GCPC-038's edge case).
+    /// </summary>
+    public ImmutableArray<DegradationReasonDto> DegradationReasons { get; }
+
     public ImmutableArray<ArtifactSlot> Slots =>
         [.. Artifacts.Select(static artifact => new ArtifactSlot(artifact.ArtifactKey, artifact.Role, artifact.Count))];
 
     internal LayoutPlan(
         ImmutableArray<PlannedArtifact> artifacts,
         ImmutableDictionary<string, ArtifactCitation> factLocations,
-        ImmutableDictionary<string, ImmutableArray<ArtifactCitation>> relationLocations)
+        ImmutableDictionary<string, ImmutableArray<ArtifactCitation>> relationLocations,
+        ImmutableArray<DegradationReasonDto> degradationReasons)
     {
         Artifacts = artifacts;
         FactLocations = factLocations;
         RelationLocations = relationLocations;
+        DegradationReasons = degradationReasons;
     }
 }
 
@@ -56,11 +67,16 @@ public sealed class LayoutPlan
 /// </summary>
 public static class LayoutPlanner
 {
-    public static LayoutPlan Plan(WireDocument document)
+    /// <summary>Plans using the derived default ceiling (<see cref="CeilingCalculator.Derive()"/>).</summary>
+    public static LayoutPlan Plan(WireDocument document) => Plan(document, CeilingCalculator.Derive().CeilingBytes);
+
+    public static LayoutPlan Plan(WireDocument document, int ceilingBytes)
     {
         ArgumentNullException.ThrowIfNull(document);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(ceilingBytes);
 
         var artifacts = ImmutableArray.CreateBuilder<PlannedArtifact>();
+        var degradations = ImmutableArray.CreateBuilder<DegradationReasonDto>();
 
         AddCompoundFamily(
             artifacts,
@@ -98,24 +114,31 @@ public static class LayoutPlanner
             var baseKey = "relations/confirmed/" + relation.WireName + ".json";
             var sources = records.Select(static dto =>
                 new RecordSource(RelationIdentity(dto.Kind, dto.Source.Id, dto.Target.Id), CanonicalJson.Write(dto)));
-            var (planned, citations) = PlanFamily(baseKey, sources);
+            var (planned, citations, planDegradations) = PlanFamily(baseKey, sources, ceilingBytes);
             artifacts.AddRange(planned);
+            degradations.AddRange(planDegradations);
             relationLocations[relation.WireName] = citations;
         }
 
         PlanAndAdd(
             artifacts,
+            degradations,
             "relations/candidates.json",
             document.Candidates.Select(static dto =>
-                new RecordSource(RelationIdentity(dto.Kind, dto.Source.Id, dto.ProposedTarget.Id), CanonicalJson.Write(dto))));
+                new RecordSource(RelationIdentity(dto.Kind, dto.Source.Id, dto.ProposedTarget.Id), CanonicalJson.Write(dto))),
+            ceilingBytes);
         PlanAndAdd(
             artifacts,
+            degradations,
             "relations/unresolved.json",
-            document.Unresolved.Select(static dto => new RecordSource(dto.Source.Id, CanonicalJson.Write(dto))));
+            document.Unresolved.Select(static dto => new RecordSource(dto.Source.Id, CanonicalJson.Write(dto))),
+            ceilingBytes);
         PlanAndAdd(
             artifacts,
+            degradations,
             "relations/frontiers.json",
-            document.Frontiers.Select(static dto => new RecordSource(dto.Occurrence.Owner.Id, CanonicalJson.Write(dto))));
+            document.Frontiers.Select(static dto => new RecordSource(dto.Occurrence.Owner.Id, CanonicalJson.Write(dto))),
+            ceilingBytes);
 
         foreach (var kind in TaxonomyTables.Default.ObservationKinds)
         {
@@ -126,43 +149,151 @@ public static class LayoutPlanner
 
             PlanAndAdd(
                 artifacts,
+                degradations,
                 "observations/" + kind.WireName + ".json",
-                records.Select(static dto => new RecordSource(ObservationIdentity(dto), CanonicalJson.Write(dto))));
+                records.Select(static dto => new RecordSource(ObservationIdentity(dto), CanonicalJson.Write(dto))),
+                ceilingBytes);
         }
 
         AddCompoundFamily(artifacts, "quarantine/records.json", document.Quarantine.Length);
 
-        return new LayoutPlan(artifacts.ToImmutable(), factLocations, relationLocations.ToImmutable());
+        return new LayoutPlan(artifacts.ToImmutable(), factLocations, relationLocations.ToImmutable(), degradations.ToImmutable());
     }
 
     private readonly record struct RecordSource(string Identity, ImmutableArray<byte> Entry);
 
     private static void PlanAndAdd(
         ImmutableArray<PlannedArtifact>.Builder artifacts,
+        ImmutableArray<DegradationReasonDto>.Builder degradations,
         string baseKey,
-        IEnumerable<RecordSource> sources)
+        IEnumerable<RecordSource> sources,
+        int ceilingBytes)
     {
-        var (planned, _) = PlanFamily(baseKey, sources);
+        var (planned, _, planDegradations) = PlanFamily(baseKey, sources, ceilingBytes);
         artifacts.AddRange(planned);
+        degradations.AddRange(planDegradations);
     }
 
     /// <summary>
-    /// Plans one flat record-array family as a single, unsplit artifact. T35 extends this to split the
-    /// family across shards once its serialized size exceeds the derived ceiling.
+    /// Plans one flat record-array family: a single artifact when its serialized bytes fit the ceiling,
+    /// otherwise split by an adaptive SHA-256 prefix of each record's identity (never its display name --
+    /// GCPC-043) that extends until every bucket fits, or until a bucket is irreducible (one record that
+    /// alone still exceeds the ceiling, published in its own shard with a degradation reason rather than
+    /// truncated -- GCPC-038's edge case). Bucketing depends only on identity and content, so two runs
+    /// over the same document always agree (GCPC-042).
     /// </summary>
-    private static (ImmutableArray<PlannedArtifact> Artifacts, ImmutableArray<ArtifactCitation> Citations) PlanFamily(
+    private static (ImmutableArray<PlannedArtifact> Artifacts, ImmutableArray<ArtifactCitation> Citations, ImmutableArray<DegradationReasonDto> Degradations) PlanFamily(
         string baseKey,
-        IEnumerable<RecordSource> sources)
+        IEnumerable<RecordSource> sourceSequence,
+        int ceilingBytes)
     {
-        var ordered = sources.ToImmutableArray();
-        if (ordered.IsEmpty)
+        var original = sourceSequence as RecordSource[] ?? sourceSequence.ToArray();
+        if (original.Length == 0)
         {
-            return ([], []);
+            return ([], [], []);
         }
 
-        var records = ordered.Select(static source => new PlannedRecord(source.Identity, source.Entry)).ToImmutableArray();
-        var citations = ordered.Select((_, index) => new ArtifactCitation(baseKey, index)).ToImmutableArray();
-        return ([new PlannedArtifact(baseKey, ArtifactRole.Payload, ordered.Length, records)], citations);
+        var indices = Enumerable.Range(0, original.Length).ToArray();
+        Array.Sort(indices, (a, b) => string.CompareOrdinal(original[a].Identity, original[b].Identity));
+
+        var inlineBytes = SerializeRecords(indices.Select(i => original[i].Entry)).Length;
+        var citationByIndex = new ArtifactCitation[original.Length];
+        if (inlineBytes <= ceilingBytes)
+        {
+            var records = indices.Select(i => new PlannedRecord(original[i].Identity, original[i].Entry)).ToImmutableArray();
+            for (var ordinal = 0; ordinal < indices.Length; ordinal++)
+            {
+                citationByIndex[indices[ordinal]] = new ArtifactCitation(baseKey, ordinal);
+            }
+
+            return (
+                [new PlannedArtifact(baseKey, ArtifactRole.Payload, original.Length, records)],
+                [.. citationByIndex],
+                []);
+        }
+
+        var depthBytes = 1;
+        Dictionary<string, List<int>> buckets;
+        while (true)
+        {
+            buckets = new Dictionary<string, List<int>>(StringComparer.Ordinal);
+            foreach (var index in indices)
+            {
+                var bucket = BucketKey(original[index].Identity, depthBytes);
+                if (!buckets.TryGetValue(bucket, out var items))
+                {
+                    items = [];
+                    buckets[bucket] = items;
+                }
+
+                items.Add(index);
+            }
+
+            var allFit = buckets.Values.All(items =>
+                items.Count == 1 || SerializeRecords(items.Select(i => original[i].Entry)).Length <= ceilingBytes);
+            if (allFit || depthBytes >= 32)
+            {
+                break;
+            }
+
+            depthBytes++;
+        }
+
+        var artifacts = ImmutableArray.CreateBuilder<PlannedArtifact>();
+        var degradations = ImmutableArray.CreateBuilder<DegradationReasonDto>();
+        foreach (var (bucket, items) in buckets.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
+        {
+            var shardKey = ShardKey(baseKey, bucket);
+            var sortedItems = items.OrderBy(i => original[i].Identity, StringComparer.Ordinal).ToArray();
+            var shardRecords = sortedItems.Select(i => new PlannedRecord(original[i].Identity, original[i].Entry)).ToImmutableArray();
+            artifacts.Add(new PlannedArtifact(shardKey, ArtifactRole.Payload, sortedItems.Length, shardRecords));
+            for (var ordinal = 0; ordinal < sortedItems.Length; ordinal++)
+            {
+                citationByIndex[sortedItems[ordinal]] = new ArtifactCitation(shardKey, ordinal);
+            }
+
+            if (sortedItems.Length == 1)
+            {
+                var soleBytes = SerializeRecords([original[sortedItems[0]].Entry]).Length;
+                if (soleBytes > ceilingBytes)
+                {
+                    degradations.Add(new DegradationReasonDto(
+                        "record-exceeds-ceiling",
+                        $"Record '{original[sortedItems[0]].Identity}' ({soleBytes} bytes) exceeds the "
+                        + $"{ceilingBytes}-byte ceiling in '{baseKey}' and is published in its own shard, never truncated.",
+                        1));
+                }
+            }
+        }
+
+        return (artifacts.ToImmutable(), [.. citationByIndex], degradations.ToImmutable());
+    }
+
+    /// <summary>The exact bytes <see cref="PackagePublisher"/> writes for a planned record-array
+    /// artifact: its records, in the given order, as one canonical JSON array.</summary>
+    internal static ImmutableArray<byte> SerializeRecords(IEnumerable<ImmutableArray<byte>> entries)
+    {
+        var array = new JsonArray();
+        foreach (var entry in entries)
+        {
+            array.Add(JsonNode.Parse(entry.AsSpan()));
+        }
+
+        return CanonicalJson.Write((JsonNode)array);
+    }
+
+    private static string BucketKey(string identity, int depthBytes)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(identity));
+        return Convert.ToHexStringLower(hash.AsSpan(0, depthBytes));
+    }
+
+    private static string ShardKey(string baseKey, string bucket)
+    {
+        var dot = baseKey.LastIndexOf('.');
+        return dot < 0
+            ? baseKey + "." + bucket
+            : string.Concat(baseKey.AsSpan(0, dot), ".", bucket, baseKey.AsSpan(dot));
     }
 
     private static void AddCompoundFamily(ImmutableArray<PlannedArtifact>.Builder artifacts, string artifactKey, int count)
