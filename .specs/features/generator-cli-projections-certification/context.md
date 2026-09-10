@@ -219,3 +219,22 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   `output-and-retrieval.md`'s scale scenario already uses) that forces a confirmed-relation,
   candidate, unresolved or frontier family to shard, assert the guide's prose for that family is
   still correct, watch it fail against the current code, then fix the four call sites.
+- **`ContractPass` never promotes a same-project handled event to a `Contract` fact** (found in T54,
+  2026-09-10): `ContractPass.IsSharedAcrossProjects` (pre-existing code, not touched by any task in
+  this feature) requires a message type to cross a project boundary via its producer or its consumer
+  before minting a `Contract` fact. T4's fixture (`Certification.Messaging/ContractShapes.cs`)
+  deliberately keeps `OrderCreated`'s publisher (`OrderPublisher`) and handler
+  (`OrderCreatedEventHandler`) both inside `Certification.Messaging` — matching T4's own "Done when"
+  description, "a published event with a handler in the same solution" — so under the current rule it
+  never becomes a `Contract` fact at all: a real `analyze` run of the certification corpus publishes
+  no `facts/contract.json` whatsoever (confirmed by direct inspection of the published package, not
+  inferred from source reading alone). T54 worked around this for its own labeled corpus by using
+  `fixtures/SyntheticSolution/Acme.Orders`'s already cross-project `OrderPlaced`
+  (`OrderService.PlaceOrderAsync` -> `OrderPlacedWorker`, proven by the pre-existing
+  `ContractRelationIntegrationTests`) as the "positive" contract label instead — see T54's deviation
+  note in `tasks.md`. T57 (GCPC-091, in this same batch) explicitly requires "the T4 fixture's handled
+  event... to reach both its producer and its consumer in one posting hop from the contract identity",
+  which is unsatisfiable while this gap stands. This is now T57's problem to resolve when reached
+  (likely requiring a scoped `ContractPass.cs` change, or a reassessment of whether the same-project
+  restriction is intentional pre-existing behavior this feature should leave alone) — not folded into
+  T54 because it is outside T54's own file scope and Done-when.
