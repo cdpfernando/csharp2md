@@ -7,12 +7,14 @@ using Csharp2Md.Storage.Wire;
 namespace Csharp2Md.Analysis.Tests.Fixtures;
 
 /// <summary>
-/// GCPC-103, GCPC-104, GCPC-105: reproduces the audit's solution-folder and configuration-parsing
-/// findings (finding I4, design.md F2 and F3) in the versioned certification corpus. GCPC-103/104
-/// (solution-folder filtering) are fixed by T13: <c>SolutionFileReader</c> filters solution-folder
-/// entries by project type GUID, so "Docs" never reaches the missing-project branch, while the
-/// genuinely missing "ConfigurationShapes.Ghost" project is still diagnosed. GCPC-105..107
-/// (configuration-parsing policy) land in T14; those cases still document the pre-fix baseline.
+/// GCPC-103, GCPC-104, GCPC-105..107: reproduces the audit's solution-folder and
+/// configuration-parsing findings (finding I4, design.md F2 and F3) in the versioned certification
+/// corpus, and proves the T13/T14 fixes: <c>SolutionFileReader</c> filters solution-folder entries by
+/// project type GUID, so "Docs" never reaches the missing-project branch, while the genuinely
+/// missing "ConfigurationShapes.Ghost" project is still diagnosed; and
+/// <c>ConfigurationDocumentReader</c> tolerates the syntax the .NET configuration provider accepts
+/// (comments, a trailing comma, a UTF-8 BOM) while still rejecting an unterminated document and a
+/// duplicate key.
 /// </summary>
 public sealed class CertificationCorpusConfigurationTests
 {
@@ -68,16 +70,15 @@ public sealed class CertificationCorpusConfigurationTests
     [InlineData("appsettings.Comments.json")]
     [InlineData("appsettings.TrailingComma.json")]
     [InlineData("appsettings.Bom.json")]
-    public async Task AnalyzeAsync_ConfigurationShapes_CurrentlyDiagnosesProviderToleratedSyntaxAsMalformed(
+    public async Task AnalyzeAsync_ConfigurationShapes_ProviderToleratedSyntaxIsNotDiagnosedAsMalformed(
         string relativeAppsettingsName)
     {
         var diagnostics = await AnalyzeAndReadDiagnosticsAsync();
 
-        // Documented pre-fix baseline (F2, GCPC-105): JsonDocument.Parse's strict default options
-        // reject comments, a trailing comma and a UTF-8 BOM that the .NET configuration provider
-        // accepts, so each is currently a false "malformed-configuration-document" diagnostic. T14 (a
-        // later phase) is what aligns parsing with the provider.
-        Assert.Contains(
+        // T14 (GCPC-105): comments, a trailing comma and a UTF-8 BOM are accepted by the .NET
+        // configuration provider, so ConfigurationDocumentReader's tolerant JsonDocumentOptions and
+        // BOM stripping now accept them too — no false "malformed-configuration-document" diagnostic.
+        Assert.DoesNotContain(
             diagnostics.Records,
             record => record.Code == "malformed-configuration-document"
                 && record.IdentityOrKey is not null
@@ -85,13 +86,13 @@ public sealed class CertificationCorpusConfigurationTests
     }
 
     [Fact]
-    [Trait("Requirement", "GCPC-105")]
-    public async Task AnalyzeAsync_ConfigurationShapes_CurrentlyDiagnosesTheUnterminatedDocumentAsMalformed()
+    [Trait("Requirement", "GCPC-106")]
+    public async Task AnalyzeAsync_ConfigurationShapes_StillDiagnosesTheUnterminatedDocumentAsMalformed()
     {
         var diagnostics = await AnalyzeAndReadDiagnosticsAsync();
 
-        // Both today and after T14: the .NET configuration provider also rejects an unterminated
-        // object, so this stays diagnosed as malformed.
+        // Both before and after T14: the .NET configuration provider also rejects an unterminated
+        // object, so this stays diagnosed as malformed (GCPC-106).
         Assert.Contains(
             diagnostics.Records,
             record => record.Code == "malformed-configuration-document"
@@ -100,16 +101,15 @@ public sealed class CertificationCorpusConfigurationTests
     }
 
     [Fact]
-    [Trait("Requirement", "GCPC-105")]
-    public async Task AnalyzeAsync_ConfigurationShapes_CurrentlyPromotesTheDuplicateKeyDocumentWithNoDiagnostic()
+    [Trait("Requirement", "GCPC-107")]
+    public async Task AnalyzeAsync_ConfigurationShapes_NowDiagnosesTheDuplicateKeyDocumentAndPromotesNoBinding()
     {
         var diagnostics = await AnalyzeAndReadDiagnosticsAsync();
 
-        // Documented pre-fix baseline (F2, GCPC-105/GCPC-107): JsonDocument.Parse accepts a duplicate
-        // top-level key (last one wins), unlike the .NET configuration provider, which rejects it. So
-        // today this ambiguous document is silently promoted with no diagnostic at all — the opposite
-        // divergence from the comments/trailing-comma/BOM cases above. T14 closes this by rejecting it.
-        Assert.DoesNotContain(
+        // T14 (GCPC-107): the .NET configuration provider rejects a duplicate key, so
+        // ConfigurationDocumentReader now detects the collision (case-insensitively) and diagnoses it
+        // as malformed instead of silently promoting an ambiguous binding.
+        Assert.Contains(
             diagnostics.Records,
             record => record.Code == "malformed-configuration-document"
                 && record.IdentityOrKey is not null

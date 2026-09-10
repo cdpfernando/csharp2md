@@ -591,12 +591,12 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Comments, trailing comma and BOM documents each yield configuration bindings and no malformed diagnostic
-- [ ] The unterminated document is still diagnosed and yields no binding
-- [ ] The duplicate-key document is diagnosed and yields no binding, matching the provider's own rejection
-- [ ] The accepted syntax is documented as a stated policy string carried into provenance
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Comments, trailing comma and BOM documents each yield configuration bindings and no malformed diagnostic
+- [x] The unterminated document is still diagnosed and yields no binding
+- [x] The duplicate-key document is diagnosed and yields no binding, matching the provider's own rejection
+- [x] The accepted syntax is documented as a stated policy string carried into provenance
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 724 pass; total 1785 (Domain 555, Analysis 724, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: build

@@ -610,9 +610,9 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-102 | P2: HTTP verb and route | AD-010 | Design | Pending |
 | GCPC-103 | P2: Configuration triage | Audit I4 | Design | Verified |
 | GCPC-104 | P2: Configuration triage | ROSE-11; CDC missing-project | Design | Verified |
-| GCPC-105 | P2: Configuration triage | Audit I4 | Design | Pending |
-| GCPC-106 | P2: Configuration triage | Audit I4 | Design | Pending |
-| GCPC-107 | P2: Configuration triage | AD-004 | Design | Pending |
+| GCPC-105 | P2: Configuration triage | Audit I4 | Design | Verified |
+| GCPC-106 | P2: Configuration triage | Audit I4 | Design | Verified |
+| GCPC-107 | P2: Configuration triage | AD-004 | Design | Verified |
 | GCPC-108 | P2: Determinism and batch | Standing determinism constraint | Design | Pending |
 | GCPC-109 | P2: Determinism and batch | ROSE-52; MSC-05 | Design | Pending |
 | GCPC-110 | P2: Determinism and batch | ROSE-54; MSC-06 | Design | Pending |
