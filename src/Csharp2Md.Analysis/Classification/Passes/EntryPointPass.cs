@@ -4,6 +4,7 @@ using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
+using Csharp2Md.Domain.Relations;
 
 namespace Csharp2Md.Analysis.Classification.Passes;
 
@@ -59,8 +60,17 @@ internal sealed class EntryPointPass : IClassifierPass
         }
 
         var factCount = 0;
+        var unresolvedCount = 0;
         foreach (var method in methods.OrderBy(static method => method.Reference.Id.Value, StringComparer.Ordinal))
         {
+            // GCPC-020: a declaration that is not externally reachable never becomes an EntryPoint,
+            // regardless of its declaring type -- this is what stops a private controller helper
+            // (e.g. CatalogController.ChangeUriPlaceholder) from being promoted.
+            if (!method.Facets.Facets.Contains(SymbolFacet.ExternallyReachable))
+            {
+                continue;
+            }
+
             var declaringType = FindDeclaringType(method, typesById.Values);
             if (declaringType is null)
             {
@@ -71,11 +81,21 @@ internal sealed class EntryPointPass : IClassifierPass
             var isHandler = handlerTypes.Contains(declaringType.Reference.Id.Value) && IsHandleAsync(method);
             if (!isControllerAction && !isHandler)
             {
+                // GCPC-021: a reachable helper on a framework-recognized type but with no framework
+                // entry evidence of its own is not an EntryPoint candidate at all.
                 continue;
             }
 
             if (context.ComponentForSymbol(method.Reference) is not { } component)
             {
+                // GCPC-024: entry capability is otherwise positively indicated (reachable, and either
+                // a controller action or a handler dispatch method), but the owning component cannot
+                // be determined -- publish unresolved instead of silently dropping the callable.
+                if (TryPublishUndeterminedCapability(context, method))
+                {
+                    unresolvedCount++;
+                }
+
                 continue;
             }
 
@@ -93,7 +113,32 @@ internal sealed class EntryPointPass : IClassifierPass
             }
         }
 
-        return new ClassifierPassResult(factCount, 0, 0, 0);
+        return new ClassifierPassResult(factCount, 0, 0, unresolvedCount);
+    }
+
+    /// <summary>
+    /// GCPC-024: a callable whose entry capability cannot be determined is published as an unresolved
+    /// record instead of a confirmed <see cref="EntryPoint"/>. When the callable carries no observation
+    /// at all there is nothing to cite as available evidence, so no record is published for it either --
+    /// <see cref="EvidenceChain.Create"/> requires at least one.
+    /// </summary>
+    private static bool TryPublishUndeterminedCapability(ClassifierContext context, Symbol method)
+    {
+        var identities = context.ObservationsByOwner(method.Reference)
+            .Select(static observation => observation.Identity)
+            .ToArray();
+        if (identities.Length == 0)
+        {
+            return false;
+        }
+
+        context.Accumulator.AddUnresolved(
+            UnresolvedRecord.Create(
+                RelationKind.Executes,
+                method.Reference,
+                UnresolvedCause.NoCandidateFound,
+                EvidenceChain.Create(identities)));
+        return true;
     }
 
     private static bool IsHandleAsync(Symbol method) =>

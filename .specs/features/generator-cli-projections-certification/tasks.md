@@ -676,12 +676,12 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] The T2 fixture asserts exactly two `EntryPoint` facts and that neither names the private helper
-- [ ] The conventional action with no route attribute is asserted still published, with its missing-route diagnostic preserved
-- [ ] A callable with undeterminable capability is asserted published as candidate or unresolved, never as a confirmed entry point
-- [ ] `fixtures/SyntheticSolution`'s entry-point expectations are asserted unchanged
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The T2 fixture asserts exactly two `EntryPoint` facts and that neither names the private helper
+- [x] The conventional action with no route attribute is asserted still published, with its missing-route diagnostic preserved
+- [x] A callable with undeterminable capability is asserted published as candidate or unresolved, never as a confirmed entry point
+- [x] `fixtures/SyntheticSolution`'s entry-point expectations are asserted unchanged
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 733 pass; total 1799 (Domain 560, Analysis 733, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: build

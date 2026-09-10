@@ -525,11 +525,11 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-017 | P1: Invocation accounting | CONTEXT.md Open Frontier; CLLF-11 | Design | Pending |
 | GCPC-018 | P1: Invocation accounting | CLLF-07 and CLLF-09; audit B3 | Design | Pending |
 | GCPC-019 | P1: Entry capability | Audit B2; CONTEXT.md Entry Point | Design | Pending |
-| GCPC-020 | P1: Entry capability | Audit B2; supersedes EBC-05 | Design | Pending |
-| GCPC-021 | P1: Entry capability | Audit B2; supersedes EBC-05 | Design | Pending |
-| GCPC-022 | P1: Entry capability | Preserves EBC-08 | Design | Pending |
+| GCPC-020 | P1: Entry capability | Audit B2; supersedes EBC-05 | Design | Verified |
+| GCPC-021 | P1: Entry capability | Audit B2; supersedes EBC-05 | Design | Verified |
+| GCPC-022 | P1: Entry capability | Preserves EBC-08 | Design | Verified |
 | GCPC-023 | P1: Entry capability | AD-004 evidence before promotion | Design | Pending |
-| GCPC-024 | P1: Entry capability | AD-010 proof states | Design | Pending |
+| GCPC-024 | P1: Entry capability | AD-010 proof states | Design | Verified |
 | GCPC-025 | P1: Entry capability | Audit gate 3; D-01 | Design | Verified |
 | GCPC-026 | P1: Document policy | D-04; audit I4 | Design | Verified |
 | GCPC-027 | P1: Document policy | D-04; supersedes ROSE-04 | Design | Verified |

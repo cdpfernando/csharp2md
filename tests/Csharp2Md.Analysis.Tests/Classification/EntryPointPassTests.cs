@@ -8,6 +8,7 @@ using Csharp2Md.Domain.Identity;
 using Csharp2Md.Domain.Literals;
 using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
+using Csharp2Md.Domain.Relations;
 
 namespace Csharp2Md.Analysis.Tests.Classification;
 
@@ -129,6 +130,63 @@ public sealed class EntryPointPassTests
     }
 
     [Fact]
+    [Trait("Requirement", "GCPC-020")]
+    public void Execute_PrivateHelperOnRecognizedController_DoesNotCreateEntryPoint()
+    {
+        var pipeline = ArrangeOrders();
+        var controller = AddNamedType(pipeline, "OrdersController", "global::Acme.Orders.Api", OrdersProject);
+        var helper = AddMethod(
+            pipeline, "BuildUri", "global::Acme.Orders.Api.OrdersController", OrdersProject, externallyReachable: false);
+        AddBaseType(
+            pipeline,
+            controller.Reference,
+            NormalizedPayload.Create(
+            [
+                new PayloadEntry(
+                    EntryPointPass.TargetTypeKey,
+                    StructuralLiteral.Create(LiteralRole.ProtocolName, EntryPointPass.ControllerBaseTypeName, "target-type")),
+            ]));
+        AddComponent(pipeline, [controller.Reference, helper.Reference]);
+        var context = new ClassifierContext(pipeline);
+
+        // GCPC-020: not externally reachable -- private, regardless of the declaring type -- so it
+        // never becomes an EntryPoint, exactly the audit's ChangeUriPlaceholder regression.
+        var result = new EntryPointPass().Execute(context, CancellationToken.None);
+
+        Assert.Equal(0, result.FactCount);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Facts.OfType<EntryPoint>());
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Unresolved);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Diagnostics);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-024")]
+    public void Execute_ControllerActionWithNoResolvableOwningComponent_PublishesUnresolvedNotEntryPoint()
+    {
+        var pipeline = ArrangeOrders();
+        var controller = AddNamedType(pipeline, "OrdersController", "global::Acme.Orders.Api", OrdersProject);
+        var action = AddMethod(pipeline, "GetOrderStatus", "global::Acme.Orders.Api.OrdersController", OrdersProject);
+        AddBaseType(pipeline, controller.Reference);
+        pipeline.Accumulator.AddObservation(CreateObservation(action.Reference, ObservationKind.RouteDeclaration, ordinal: 1));
+        // Deliberately no AddComponent call: the action is a reachable, routed controller action --
+        // positive entry evidence -- but no Component fact covers it, so ownership cannot be resolved.
+        var context = new ClassifierContext(pipeline);
+
+        var result = new EntryPointPass().Execute(context, CancellationToken.None);
+
+        // GCPC-024: capability is otherwise positively indicated, but the unresolved ownership means
+        // it is published as unresolved instead of a confirmed EntryPoint.
+        Assert.Equal(0, result.FactCount);
+        Assert.Empty(pipeline.Accumulator.ToSnapshot().Facts.OfType<EntryPoint>());
+        Assert.Equal(1, result.UnresolvedCount);
+        var unresolved = Assert.Single(pipeline.Accumulator.ToSnapshot().Unresolved.ToArray());
+        Assert.Equal(action.Reference, unresolved.Source);
+        Assert.Equal(RelationKind.Executes, unresolved.Kind);
+        Assert.Equal(UnresolvedCause.NoCandidateFound, unresolved.Cause);
+        Assert.Contains(unresolved.Available.DerivedFrom, identity => identity.Kind is ObservationKind.RouteDeclaration);
+    }
+
+    [Fact]
     [Trait("Requirement", "EBC-05")]
     public void Identity_IsEntrypointClassifierVersion1()
     {
@@ -187,12 +245,19 @@ public sealed class EntryPointPassTests
         return symbol;
     }
 
-    private static Symbol AddMethod(PipelineContext pipeline, string metadata, string container, ProjectId project)
+    private static Symbol AddMethod(PipelineContext pipeline, string metadata, string container, ProjectId project) =>
+        AddMethod(pipeline, metadata, container, project, externallyReachable: true);
+
+    private static Symbol AddMethod(
+        PipelineContext pipeline, string metadata, string container, ProjectId project, bool externallyReachable)
     {
+        var facets = externallyReachable
+            ? new[] { SymbolFacet.Callable, SymbolFacet.ExternallyReachable }
+            : new[] { SymbolFacet.Callable };
         var symbol = Symbol.Create(
             CanonicalSymbolSignature.Create("method", container, metadata, 0, "global::System.Void"),
             project,
-            SymbolFacetSet.Create([SymbolFacet.Callable]));
+            SymbolFacetSet.Create(facets));
         pipeline.Accumulator.AddFact(symbol);
         return symbol;
     }

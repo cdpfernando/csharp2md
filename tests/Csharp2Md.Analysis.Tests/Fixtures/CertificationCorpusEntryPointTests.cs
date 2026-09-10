@@ -1,4 +1,5 @@
 using Csharp2Md.Analysis;
+using Csharp2Md.Analysis.Classification.Passes;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Wire;
@@ -8,8 +9,9 @@ namespace Csharp2Md.Analysis.Tests.Fixtures;
 /// <summary>
 /// GCPC-025: reproduces the audit's private-helper entry-point regression
 /// (<c>CatalogController.ChangeUriPlaceholder</c>) in the versioned certification corpus, with no
-/// dependency on the local eShop clone. The classifier fix that stops promoting the private helper
-/// lands in a later phase; this task only proves the regression is present and reproducible in CI.
+/// dependency on the local eShop clone. T17 closes the regression: <see cref="EntryPointPass"/> now
+/// requires positive entry capability (<c>SymbolFacet.ExternallyReachable</c>, GCPC-020) before
+/// promoting a callable, so the private helper is inventoried but never published as an EntryPoint.
 /// </summary>
 public sealed class CertificationCorpusEntryPointTests
 {
@@ -27,8 +29,8 @@ public sealed class CertificationCorpusEntryPointTests
     }
 
     [Fact]
-    [Trait("Requirement", "GCPC-025")]
-    public async Task AnalyzeAsync_CertificationCorpus_CurrentlyPromotesThePrivateHelperAsAFabricatedEntryPoint()
+    [Trait("Requirement", "GCPC-020")]
+    public async Task AnalyzeAsync_CertificationCorpus_PromotesExactlyTheTwoReachableWidgetsActionsNotThePrivateHelper()
     {
         var publication = await AnalyzeCorpusAsync();
 
@@ -37,15 +39,37 @@ public sealed class CertificationCorpusEntryPointTests
             .Where(entry => entry.Symbol.Id.Contains("WidgetsController", StringComparison.Ordinal))
             .ToArray();
 
-        // Documented pre-fix baseline: EntryPointPass currently has no accessibility check, so it
-        // promotes every callable declared on a ControllerBase descendant, private helper included.
-        // GCPC-020/GCPC-021 close this in a later phase (T17); this count is exactly what T17 inverts.
-        Assert.Equal(3, widgetsEntryPoints.Length);
+        // Post-fix: only the two externally reachable actions are published. The private static
+        // helper (ChangeUriPlaceholder) is inventoried as a Symbol (asserted above) but is never
+        // promoted, because it carries no SymbolFacet.ExternallyReachable evidence (GCPC-020).
+        Assert.Equal(2, widgetsEntryPoints.Length);
         Assert.Contains(widgetsEntryPoints, entry => entry.Symbol.Id.Contains("GetWidget", StringComparison.Ordinal));
         Assert.Contains(widgetsEntryPoints, entry => entry.Symbol.Id.Contains("Index", StringComparison.Ordinal));
-        Assert.Contains(
+        Assert.DoesNotContain(
             widgetsEntryPoints,
             entry => entry.Symbol.Id.Contains("ChangeUriPlaceholder", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-022")]
+    public async Task AnalyzeAsync_CertificationCorpus_IndexConventionalActionStaysPublishedWithMissingRouteDiagnostic()
+    {
+        var publication = await AnalyzeCorpusAsync();
+
+        var architecture = ReadShard<ArchitectureFactsShard>(publication, "facts/architecture.json");
+        var diagnostics = ReadShard<DiagnosticsEnvelope>(publication, "diagnostics.json");
+
+        // EBC-08 preserved: Index() carries sufficient entry evidence (a real ControllerBase
+        // descendant) but no explicit route, so it is still published as an EntryPoint and its
+        // missing-route diagnostic is preserved rather than silently dropped.
+        Assert.Contains(
+            architecture.EntryPoints,
+            entry => entry.Symbol.Id.Contains("WidgetsController", StringComparison.Ordinal)
+                && entry.Symbol.Id.Contains("Index", StringComparison.Ordinal));
+        Assert.Contains(
+            diagnostics.Records,
+            record => record.Code == "missing-route-declaration"
+                && record.Message.Contains("Index", StringComparison.Ordinal));
     }
 
     private static void AssertHasCallable(StructuralFactsShard structural, string methodName) =>
