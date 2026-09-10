@@ -1,0 +1,26 @@
+[
+  {
+    "id": "call-getwidget-changeuriplaceholder",
+    "kind": "positive",
+    "expected": "present",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Api/EntryPointShapes.cs",
+    "symbol": "ChangeUriPlaceholder",
+    "rationale": "GetWidget calls ChangeUriPlaceholder directly: a same-type, same-solution call with exactly one possible target. Must resolve to a confirmed `invokes` relation."
+  },
+  {
+    "id": "call-getorderstatus-ok-notfound",
+    "kind": "negative",
+    "expected": "absent",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Api/InvocationChain.cs",
+    "symbol": "NotFound",
+    "rationale": "Ok and NotFound are calls bound to a framework callable outside the analyzed solution scope. Recorded as a counted exclusion (GCPC-016): never a confirmed `invokes`, never a candidate, never a per-occurrence diagnostic."
+  },
+  {
+    "id": "call-getorderstatus-iorderqueries",
+    "kind": "lookalike",
+    "expected": "unresolved",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Api/InvocationChain.cs",
+    "symbol": "GetOrderStatus",
+    "rationale": "Interface dispatch to IOrderQueries.GetOrderStatus with a single concrete implementation (Certification.Queries.OrderQueries) in another project. Syntactically identical to a direct call, but must resolve to exactly one CandidateLink at the concrete implementation and never a confirmed `invokes` to the interface member (GCPC-018) -- the audit's dropped-invocation regression."
+  }
+]

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "contract-ordercreated",
+    "kind": "positive",
+    "expected": "present",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Messaging/ContractShapes.cs",
+    "symbol": "OrderCreated",
+    "rationale": "Published by OrderPublisher and handled by OrderCreatedEventHandler in the same solution. Contract identity is proven, so both the producer and the consumer must be recoverable from postings in one hop from that identity (GCPC-091)."
+  },
+  {
+    "id": "contract-ordershipped",
+    "kind": "negative",
+    "expected": "unresolved",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Messaging/ContractShapes.cs",
+    "symbol": "OrderShipped",
+    "rationale": "Published with deliberately no handler anywhere in the corpus. Must publish an explicit unresolved or excluded outcome, never a contract, and must never be presented in any envelope as 'no messaging' (GCPC-089, GCPC-092)."
+  },
+  {
+    "id": "contract-receipt-not-merged",
+    "kind": "lookalike",
+    "expected": "absent",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Messaging/ContractShapes.cs",
+    "relatedSourceFile": "fixtures/CertificationCorpus/Certification.Api/DuplicatePayloadName.cs",
+    "symbol": "Receipt",
+    "rationale": "Certification.Messaging.Receipt and Certification.Api.Receipt share a name but nothing else -- no project reference either way. The classifier must never create a shared contract identity from name similarity, structural similarity, path or prefix alone (GCPC-090); the expected 'absent' is the absence of a shared contract across the pair, not the absence of either individual type."
+  }
+]

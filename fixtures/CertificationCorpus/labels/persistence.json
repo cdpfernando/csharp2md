@@ -1,0 +1,58 @@
+[
+  {
+    "id": "persist-selectorder",
+    "kind": "positive",
+    "expected": "present",
+    "sourceFile": "fixtures/SyntheticSolution/Acme.Orders/Data/OrderSqlQueries.cs",
+    "symbol": "SelectOrder",
+    "rationale": "`SELECT Id, Status FROM Orders WHERE Id = @id` through FromSqlRaw: a readable statement with a resolvable target table (Orders). Must resolve to a data-access operation."
+  },
+  {
+    "id": "persist-insertorder",
+    "kind": "positive",
+    "expected": "present",
+    "sourceFile": "fixtures/SyntheticSolution/Acme.Orders/Data/OrderSqlQueries.cs",
+    "symbol": "InsertOrder",
+    "rationale": "`INSERT INTO Orders (...)` through ExecuteSqlRaw, with a resolvable target table and column list. Must resolve to a data-access operation."
+  },
+  {
+    "id": "persist-updateorderstatus",
+    "kind": "positive",
+    "expected": "present",
+    "sourceFile": "fixtures/SyntheticSolution/Acme.Orders/Data/OrderSqlQueries.cs",
+    "symbol": "UpdateOrderStatus",
+    "rationale": "`UPDATE Orders SET Status = @status WHERE Id = @id` through ExecuteSqlRaw, with a resolvable target table. Must resolve to a data-access operation."
+  },
+  {
+    "id": "persist-rebuildtotals",
+    "kind": "positive",
+    "expected": "present",
+    "sourceFile": "fixtures/SyntheticSolution/Acme.Orders/Data/OrderSqlQueries.cs",
+    "symbol": "RebuildTotals",
+    "rationale": "`EXEC usp_RebuildOrderTotals` through ExecuteSqlRaw: a stored-procedure call naming a resolvable operation target. Must resolve to a data-access operation."
+  },
+  {
+    "id": "persist-deletearchived",
+    "kind": "positive",
+    "expected": "present",
+    "sourceFile": "fixtures/SyntheticSolution/Acme.Orders/Data/OrderSqlQueries.cs",
+    "symbol": "DeleteArchived",
+    "rationale": "`DELETE FROM [Orders] WHERE Status = 'Archived'`; the bracketed identifier unquotes to the same Orders target SelectOrder reads. Must resolve to a data-access operation."
+  },
+  {
+    "id": "persist-selectallfrom",
+    "kind": "lookalike",
+    "expected": "unresolved",
+    "sourceFile": "fixtures/SyntheticSolution/Acme.Orders/Data/OrderSqlQueries.cs",
+    "symbol": "SelectAllFrom",
+    "rationale": "FromSqlInterpolated with a run-time table name; syntactically a SQL data-access call exactly like the five resolvable statements above, but no node may be minted for a target only known at run time. Must publish as unresolved, never as a confirmed operation naming a fabricated target."
+  },
+  {
+    "id": "persist-connection",
+    "kind": "negative",
+    "expected": "absent",
+    "sourceFile": "fixtures/SyntheticSolution/Acme.Orders/Data/OrderSqlQueries.cs",
+    "symbol": "Connection",
+    "rationale": "A plain property returning the connection-string constant; not a data-access operation at all, even though it sits beside real SQL statements in the same class. An unambiguous negative for the persistence classifier."
+  }
+]

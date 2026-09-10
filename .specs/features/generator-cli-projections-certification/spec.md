@@ -579,9 +579,9 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-071 | P1: CLI surface | quality-and-security.md corruption path | Design | Verified |
 | GCPC-072 | P1: CLI surface | MSC-09 and MSC-15 | Design | Verified |
 | GCPC-073 | P1: CLI surface | Existing CLI contract | Design | Verified |
-| GCPC-074 | P1: Engine certification | quality-and-security.md corpora | Design | Pending |
-| GCPC-075 | P1: Engine certification | quality-and-security.md ground truth | Design | Pending |
-| GCPC-076 | P1: Engine certification | quality-and-security.md corpora | Design | Pending |
+| GCPC-074 | P1: Engine certification | quality-and-security.md corpora | Design | Verified |
+| GCPC-075 | P1: Engine certification | quality-and-security.md ground truth | Design | Verified |
+| GCPC-076 | P1: Engine certification | quality-and-security.md corpora | Design | Verified |
 | GCPC-077 | P1: Engine certification | AD-009 | Design | Pending |
 | GCPC-078 | P1: Engine certification | quality-and-security.md engine gates | Design | Pending |
 | GCPC-079 | P1: Engine certification | Roadmap completion condition | Design | Pending |

@@ -1739,14 +1739,16 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Positives, negatives and lookalikes exist for each certified classifier
-- [ ] Every label carries a source reference and a written rationale
-- [ ] A test asserts each labeled item's construct still exists in the fixture, so a stale label fails rather than silently dropping
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Positives, negatives and lookalikes exist for each certified classifier
+- [x] Every label carries a source reference and a written rationale
+- [x] A test asserts each labeled item's construct still exists in the fixture, so a stale label fails rather than silently dropping
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; total ≥ previous task's total — **Analysis 801 pass** (up from 788); total 2008 (Domain 563, Analysis 801, Storage 372, Cli 57, Projection 215)
 
 **Tests**: integration
 **Gate**: quick
+
+**Deviation**: none — persistence has no fixture inside `fixtures/CertificationCorpus`, so its labeled items cite `fixtures/SyntheticSolution/Acme.Orders/Data/OrderSqlQueries.cs` instead (the file's own header comment already describes it as built for exactly this: "Six statement shapes the persistence classifier has to read differently"). This is reading an existing regression fixture as a labeled subject, per this task's own `Reuses` field, not a new file outside scope.
 
 **Commit**: `test(certification): author the labeled corpora`
 
