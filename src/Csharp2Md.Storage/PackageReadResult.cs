@@ -7,4 +7,5 @@ public sealed record PackageReadResult(
     FactualSnapshot Snapshot,
     ImmutableArray<QuarantineRecord> Quarantine,
     CoverageEnvelope Coverage,
-    RunCertificationEnvelope Certification);
+    RunCertificationEnvelope Certification,
+    ImmutableArray<StagedFragment> Projections);

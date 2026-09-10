@@ -1339,12 +1339,13 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A sharded package is asserted to read back to the same document as its unsharded equivalent
-- [ ] The reader is asserted to open no file the manifest does not list
-- [ ] Projection fragments are returned alongside the document
-- [ ] The `not_evaluated` and zero-coverage read defaults are removed
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A sharded package is asserted to read back to the same document as its unsharded equivalent
+- [x] The reader is asserted to open no file the manifest does not list
+- [x] Projection fragments are returned alongside the document
+- [x] The `not_evaluated` and zero-coverage read defaults are removed
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; Storage 346 pass; Projection 184 pass; total 1914 (Domain 563, Analysis 788, Storage 346, Cli 33, Projection 184)
+- Deviation: `PackageReadResult` (`src/Csharp2Md.Storage/PackageReadResult.cs`, not this task's named `Where`) needed a new `Projections` field to carry the returned fragments -- there was nowhere else to put them, and its only construction site is `FactualPackageReader.Read` itself, so the change is source-compatible everywhere else. The reader no longer trusts `File.Exists` as a proxy for "the manifest lists this": every read (`ReadOptionalObject`/`ReadRequiredObject`/`ReadShardedArray`) now checks manifest membership first and only then opens the file, and the corpus of every artifact actually opened is exactly the manifest's own `Artifacts` list (proved by the stray-file test: an undeclared, deliberately malformed JSON file sitting in the package directory is never touched). A record-array family is merged from every shard the manifest lists for it (its base key plus any `base.<bucket>.json` alongside it, concatenated in path order) -- proven equivalent to the unsplit case by content (relation target ids), not by position, since sharding is free to reorder records across files. `coverage.json` and `run-certification.json` are now required (`ReadRequiredObject`, throwing `PublicationRejectedException("missing-artifact", path)` if the manifest omits them) rather than silently defaulting to the removed `not_evaluated`/all-zero placeholder -- every package this pipeline actually publishes always carries both (T31/T35), so this only changes behavior for a hand-corrupted package, which is exactly what T41's own validation work will formalize. Any manifest-listed artifact the core document does not consume (a catalog, a posting, a label, a source copy, or anything Projection ever adds) is returned in `PackageReadResult.Projections`, generically -- Storage does not need to know Projection's key names to do this. GCPC-064 stays Pending: this closes the reader half only; the `validate` CLI verb that would let a caller invoke it without a solution present is Phase 9's own task (T48), per the traceability note.
 
 **Tests**: unit
 **Gate**: full
