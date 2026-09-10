@@ -424,10 +424,10 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Each registered pass declares its consumed extensions; a pass declaring none contributes none
-- [ ] The registry's result is asserted to change when a pass is added or removed, not hardcoded
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Each registered pass declares its consumed extensions; a pass declaring none contributes none
+- [x] The registry's result is asserted to change when a pass is added or removed, not hardcoded
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 685 pass; total 1746 (Domain 555, Analysis 685, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: quick
