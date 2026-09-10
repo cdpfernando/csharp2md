@@ -28,6 +28,15 @@ public sealed class AnalysisPublicSurfaceTests
         "DocumentPolicyReport",
         "DocumentPolicyCategoryTotal",
         "DocumentPolicyCategory",
+        "CoverageMetricState",
+        "DegradationReason",
+        "CoverageMetric",
+        "CoverageReport",
+        "RunCertificationStatus",
+        "RunCertificationReport",
+        "ExclusionCategoryCount",
+        "InvocationAccountingReport",
+        "ContractAccountingReport",
     ];
 
     private static readonly string[] ForbiddenSurfaceTokens =

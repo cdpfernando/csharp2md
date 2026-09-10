@@ -932,10 +932,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] `Merge` is asserted to combine the new slots without double counting
-- [ ] A snapshot constructed without the new slots is asserted to keep its existing behaviour
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] `Merge` is asserted to combine the new slots without double counting
+- [x] A snapshot constructed without the new slots is asserted to keep its existing behaviour
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; Analysis 762 pass; Storage 304 pass; total 1846 (Domain 563, Analysis 762, Storage 304, Cli 33, Projection 184)
+- Deviation: also touched `src/Csharp2Md.Analysis/Pipeline/SnapshotAccumulator.cs` (the same set-and-collect companion T11 already needed for `DocumentPolicyReport`, not newly introduced here) and added the four new report type names to `tests/Csharp2Md.Analysis.Tests/Isolation/AnalysisPublicSurfaceTests.cs`'s allowlist -- an existing gate that fails closed on any new public Analysis type, so it had to be updated in the same commit as the type it allowlists. Bundled all four new slots (coverage, certification, invocation accounting, contract accounting) in one pass per AD-024's own wording ("coverage, certification and the accounting ledgers ... travel on FactualSnapshot"), so T29/T30 only add computation, not further FactualSnapshot surgery.
 
 **Tests**: unit
 **Gate**: build

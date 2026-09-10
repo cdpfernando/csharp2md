@@ -18,6 +18,10 @@ internal sealed class SnapshotAccumulator
     private readonly List<DiagnosticRecord> _diagnostics = [];
     private readonly List<SuspectedSecretEvidence> _secrets = [];
     private DocumentPolicyReport _documentPolicy = DocumentPolicyReport.Empty;
+    private CoverageReport? _coverage;
+    private RunCertificationReport? _certification;
+    private InvocationAccountingReport? _invocationAccounting;
+    private ContractAccountingReport? _contractAccounting;
 
     public bool StructuralCorruption { get; private set; }
 
@@ -101,6 +105,30 @@ internal sealed class SnapshotAccumulator
         _documentPolicy = _documentPolicy.Merge(report);
     }
 
+    public void SetCoverage(CoverageReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+        _coverage = report;
+    }
+
+    public void SetCertification(RunCertificationReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+        _certification = report;
+    }
+
+    public void SetInvocationAccounting(InvocationAccountingReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+        _invocationAccounting = report;
+    }
+
+    public void SetContractAccounting(ContractAccountingReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+        _contractAccounting = report;
+    }
+
     public FactualSnapshot ToSnapshot() =>
         new(
             [.. _facts.Values],
@@ -111,7 +139,11 @@ internal sealed class SnapshotAccumulator
             [.. _frontiers],
             [.. _diagnostics],
             [.. _secrets],
-            _documentPolicy);
+            _documentPolicy,
+            _coverage,
+            _certification,
+            _invocationAccounting,
+            _contractAccounting);
 
     private static bool IsBound(Observation observation) =>
         string.Equals(observation.Diagnostic.Code, "bound", StringComparison.Ordinal);
