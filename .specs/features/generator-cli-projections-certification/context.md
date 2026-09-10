@@ -103,6 +103,26 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   callable with positive evidence") is actually closed by T17's promotion-predicate change.
   T17's own `**Requirement**:` field doesn't re-list GCPC-019, so per the per-task marking
   rule the traceability table still shows it `Pending` even though the behavior is live and
-  tested. This is a `tasks.md` authoring gap, not a functional gap — resolve by flipping
-  GCPC-019 to `Verified` at the Completion Gate task (T66) once the Verifier confirms T17's
-  tests actually cover it, or correct now if convenient.
+  tested. This is a `tasks.md` authoring gap, not a functional gap. **Resolved** by the
+  orchestrator in commit `0fd25b4` (flipped to `Verified` on the strength of T17's tests).
+- **The live `analyze` pipeline does not enforce the real byte ceiling** (found in Phase 6+7
+  batch, T37, 2026-09-09): `CeilingCalculator` (T33) derives a real ~32 KiB ceiling and
+  `LayoutPlanner`/`PublishedPackageView` (T34-T36) can shard against any ceiling passed in,
+  fully proven under an explicit test ceiling. But `PublishedPackageView.From(WireDocument)`'s
+  single-argument overload — the one `PublicationPipeline.Publish` and `PackagePublisher`
+  actually call for every live `analyze` run — passes `int.MaxValue`, not the derived value,
+  because passing the real ceiling broke a wide swath of pre-existing Analysis-layer tests
+  that assume every family stays a single unsplit artifact. `design.md` line 234 lists
+  `LayoutPlanner`'s dependencies as `CeilingCalculator, InternTableBuilder` — i.e. the design
+  intends the real ceiling to always be live, not an opt-in. No task in `tasks.md` explicitly
+  says "wire the derived ceiling as the enforced default" — T52 ("Expose the allowlist and
+  budget options on analyze") is the closest fit (it depends on T33 and touches
+  `CommandFactory.cs`) but its own Done-when only checks that a *supplied* budget reaches
+  provenance and rejects bad input, not that the default pipeline enforces it. **This is the
+  literal defect the feature exists to fix** (the audit's 169 MiB `contains.json`) — GCPC-038
+  stays `Pending` until it's closed for real. The orchestrator is folding "make the derived
+  ceiling the live default, fixing whatever Analysis-layer fallout results by rewriting those
+  tests to be shard-aware rather than assuming one flat file" into the T52 batch dispatch
+  rather than leaving it implicit. If that turns out too large for one task, split it into its
+  own follow-up task before the Completion Gate — do not let T66 close the roadmap with this
+  still open.
