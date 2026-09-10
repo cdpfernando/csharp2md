@@ -451,11 +451,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Every accepted category and every excluded category has its own assertion, by category rather than by one sample
-- [ ] A conditional extension is asserted accepted only when a classifier declares it, and excluded when none does
-- [ ] The policy carries a version string used later by provenance
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every accepted category and every excluded category has its own assertion, by category rather than by one sample
+- [x] A conditional extension is asserted accepted only when a classifier declares it, and excluded when none does
+- [x] The policy carries a version string used later by provenance
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 702 pass; total 1763 (Domain 555, Analysis 702, Storage 289, Cli 33, Projection 184)
 
 **Tests**: unit
 **Gate**: quick
