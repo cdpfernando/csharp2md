@@ -760,11 +760,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A `Document contains Symbol` edge is asserted to cite the symbol's own declaration evidence and no unrelated observation
-- [ ] A `Project contains Document` edge is asserted to cite different evidence from the edges beneath it
-- [ ] The published `contains` payload's byte size for the corpus is recorded, and asserted to be a large reduction against the pre-fix figure recorded in the test
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A `Document contains Symbol` edge is asserted to cite the symbol's own declaration evidence and no unrelated observation
+- [x] A `Project contains Document` edge is asserted to cite different evidence from the edges beneath it
+- [x] The published `contains` payload's byte size for the corpus is recorded, and asserted to be a large reduction against the pre-fix figure recorded in the test
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [x] Test count reported; Analysis 742 pass; Storage 289 pass; total 1808 (Domain 560, Analysis 742, Storage 289, Cli 33, Projection 184). Corpus `contains.json`: 952,956 bytes pre-fix -> 390,576 bytes post-fix (~59% reduction).
 
 **Tests**: integration
 **Gate**: build

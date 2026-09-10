@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Classification;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Semantics;
@@ -46,16 +47,24 @@ internal static class ContainsRelationEmitter
                 continue;
             }
 
-            var derivedFrom = EvidenceChain.Create(observations.Select(static observation => observation.Identity));
             if (projects.TryGetValue(document.OwningProject.Value, out var project))
             {
-                Add(context, project.Reference, document.Reference, facets, derivedFrom, classifier);
+                // GCPC-039/044 (partial): the project-to-document edge is justified by the document's
+                // own declaration-shape evidence, not every behavioral occurrence inside it.
+                var documentEvidence = EvidenceScope.For(project.Reference, document.Reference, RelationKind.Contains, observations);
+                Add(context, project.Reference, document.Reference, facets, documentEvidence, classifier);
                 count++;
             }
 
             foreach (var symbol in SymbolsDeclaredIn(context, document, symbolsBySignature, cancellationToken))
             {
-                Add(context, document.Reference, symbol.Reference, facets, derivedFrom, classifier);
+                // The symbol's own declaration evidence is preferred; a symbol with none of its own
+                // (e.g. a bare interface with no base list) falls back to the document's pool, still
+                // scoped by EvidenceScope to exclude unrelated behavioral occurrences.
+                var ownObservations = Array.FindAll(observations, observation => observation.Identity.Owner.Equals(symbol.Reference));
+                var candidates = ownObservations.Length > 0 ? ownObservations : observations;
+                var symbolEvidence = EvidenceScope.For(document.Reference, symbol.Reference, RelationKind.Contains, candidates);
+                Add(context, document.Reference, symbol.Reference, facets, symbolEvidence, classifier);
                 count++;
             }
         }
