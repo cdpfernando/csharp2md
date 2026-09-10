@@ -524,7 +524,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-016 | P1: Invocation accounting | Supersedes CLLF-20 silence | Design | Verified |
 | GCPC-017 | P1: Invocation accounting | CONTEXT.md Open Frontier; CLLF-11 | Design | Verified |
 | GCPC-018 | P1: Invocation accounting | CLLF-07 and CLLF-09; audit B3 | Design | Verified |
-| GCPC-019 | P1: Entry capability | Audit B2; CONTEXT.md Entry Point | Design | Pending |
+| GCPC-019 | P1: Entry capability | Audit B2; CONTEXT.md Entry Point | Design | Verified |
 | GCPC-020 | P1: Entry capability | Audit B2; supersedes EBC-05 | Design | Verified |
 | GCPC-021 | P1: Entry capability | Audit B2; supersedes EBC-05 | Design | Verified |
 | GCPC-022 | P1: Entry capability | Preserves EBC-08 | Design | Verified |
