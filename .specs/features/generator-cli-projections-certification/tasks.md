@@ -1993,13 +1993,15 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Every fact in each package is asserted to carry its own solution's identity, with no identity from the sibling solution present
-- [ ] A single-solution run and the same solution inside a batch are asserted to produce byte-identical package contents
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every fact in each package is asserted to carry its own solution's identity, with no identity from the sibling solution present
+- [x] A single-solution run and the same solution inside a batch are asserted to produce byte-identical package contents
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; total ≥ previous task's total — **Analysis 822 pass** (up from 820); total 2041 (Domain 563, Analysis 822, Storage 372, Cli 58, Projection 226)
 
 **Tests**: integration
 **Gate**: build
+
+**Deviation**: none in production code. Each nested fact identity (`SymbolId` nests `ProjectId` nests `SolutionId` nests `WorkspaceIdentity`) is percent-encoded once per nesting level crossed, so a deeply nested identity carries its owning solution's identity encoded more than once. Comparing single-encoded substrings directly would depend on the fact's nesting depth, so the assertion helper recursively unescapes both the candidate identity and the two solution identities to a fixed point before the substring check, making the comparison nesting-depth-independent. `Composition/BatchIsolationTests.cs` (pre-existing, MSC-08/MSC-24) already proved solo-vs-batch byte equality and the absence of `composition/` keys for the SyntheticSolution fixture; this suite adds the identity-carrying proof over the certification corpus's own batch and re-confirms byte equality there too.
 
 **Commit**: `test(analysis): prove semantic isolation between batched solutions`
 
