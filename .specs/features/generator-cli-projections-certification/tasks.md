@@ -342,11 +342,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A test asserts the `.sln` parses and names the solution folder entry separately from the missing project entry
-- [ ] The test records the current diagnostic set as the documented pre-fix baseline for T13 and T14
-- [ ] The BOM and duplicate-key documents are byte-exact, committed with their encoding preserved
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A test asserts the `.sln` parses and names the solution folder entry separately from the missing project entry
+- [x] The test records the current diagnostic set as the documented pre-fix baseline for T13 and T14
+- [x] The BOM and duplicate-key documents are byte-exact, committed with their encoding preserved
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 677 pass; total 1738 (Domain 555, Analysis 677, Storage 289, Cli 33, Projection 184)
 
 **Tests**: integration
 **Gate**: quick
