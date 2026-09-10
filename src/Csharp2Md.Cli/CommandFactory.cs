@@ -80,7 +80,9 @@ internal static class CommandFactory
 
             WriteDiagnostics(result, error);
             stdout.WriteLine(FormatSummary(result));
-            return result.HasUnpublishedSolution || result.HasBatchPublicationFailure ? 2 : 0;
+            return result.HasUnpublishedSolution || result.HasBatchPublicationFailure
+                ? ExitCodes.PartialComposition
+                : ExitCodes.Success;
         });
 
         rootCommand.Subcommands.Add(analyze);
@@ -143,7 +145,10 @@ internal static class CommandFactory
             catch (PublicationRejectedException exception)
             {
                 error.WriteLine($"csharp2md: {exception.Message}");
-                return Task.FromResult(exception.Gate == "incompatible-provenance" ? 6 : 5);
+                return Task.FromResult(
+                    exception.Gate == "incompatible-provenance"
+                        ? ExitCodes.IncompatibleProvenance
+                        : ExitCodes.StructuralCorruption);
             }
 
             stdout.WriteLine($"Certification: {result.Certification.Status}");
@@ -151,9 +156,9 @@ internal static class CommandFactory
 
             return Task.FromResult(result.Certification.Status switch
             {
-                "passed" => 0,
-                "degraded" => 3,
-                _ => 4,
+                "passed" => ExitCodes.Success,
+                "degraded" => ExitCodes.Degraded,
+                _ => ExitCodes.CertificationFailed,
             });
         };
 
@@ -191,7 +196,7 @@ internal static class CommandFactory
     internal static int Invalid(ParseResult parseResult, string message)
     {
         parseResult.InvocationConfiguration.Error.WriteLine($"csharp2md: {message}");
-        return 1;
+        return ExitCodes.InvalidInvocation;
     }
 
     private static void WriteDiagnostics(AnalysisResult result, TextWriter error)

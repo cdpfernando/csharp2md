@@ -1640,11 +1640,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Each of `0`, `1`, `2`, `3`, `4`, `5` and `6` is asserted on an invocation that produces only that outcome
-- [ ] The existing `0`, `1` and `2` meanings are asserted unchanged against the current CLI tests
-- [ ] An invalid invocation is asserted to publish nothing
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Each of `0`, `1`, `2`, `3`, `4`, `5` and `6` is asserted on an invocation that produces only that outcome
+- [x] The existing `0`, `1` and `2` meanings are asserted unchanged against the current CLI tests
+- [x] An invalid invocation is asserted to publish nothing
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; total ≥ previous task's total — **1985 tests, 0 failed** (Domain 563, Analysis 788, Storage 372, Cli 47, Projection 215), up from T49's 1977 (Cli 39 → 47: eight new tests in `tests/Csharp2Md.Cli.Tests/ExitCodeTests.cs`)
 
 **Tests**: unit
 **Gate**: build
