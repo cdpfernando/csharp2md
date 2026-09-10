@@ -287,11 +287,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A test asserts three `Invocation` observations exist for the action
-- [ ] The test asserts the interface symbol and the concrete implementation are both inventoried, in different projects
-- [ ] The test records the current disposition set as the documented pre-fix baseline for T23
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A test asserts three `Invocation` observations exist for the action
+- [x] The test asserts the interface symbol and the concrete implementation are both inventoried, in different projects
+- [x] The test records the current disposition set as the documented pre-fix baseline for T23
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 668 pass; total 1729 (Domain 555, Analysis 668, Storage 289, Cli 33, Projection 184)
 
 **Tests**: integration
 **Gate**: quick
