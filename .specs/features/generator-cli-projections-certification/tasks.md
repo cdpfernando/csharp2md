@@ -315,10 +315,10 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A test asserts `MessageOperation` observations exist for both published events
-- [ ] The test asserts the two same-named payload types are distinct `Symbol` facts in different projects
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A test asserts `MessageOperation` observations exist for both published events
+- [x] The test asserts the two same-named payload types are distinct `Symbol` facts in different projects
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Analysis 670 pass; total 1731 (Domain 555, Analysis 670, Storage 289, Cli 33, Projection 184)
 
 **Tests**: integration
 **Gate**: quick
