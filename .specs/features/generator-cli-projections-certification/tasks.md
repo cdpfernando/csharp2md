@@ -2085,14 +2085,16 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] Every criterion the audit rated PARTIAL or FAIL — semantic legibility, scale, factual coverage, run certification, classification reliability, overall readiness — reports PASS on a package built from the certification corpus
-- [ ] Each criterion's verdict cites the evidence that produced it
-- [ ] The evaluator runs with the eShop clones absent
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] Every criterion the audit rated PARTIAL or FAIL — semantic legibility, scale, factual coverage, run certification, classification reliability, overall readiness — reports PASS on a package built from the certification corpus
+- [x] Each criterion's verdict cites the evidence that produced it
+- [x] The evaluator runs with the eShop clones absent
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; total ≥ previous task's total — **Analysis 823 pass** (up from 822); total 2050 (Domain 563, Analysis 823, Storage 380, Cli 58, Projection 226)
 
 **Tests**: integration
 **Gate**: build
+
+**Deviation**: none in production code (test-only task, as scoped). Before writing the evaluator, per the batch prompt's explicit instruction, investigated whether the outstanding GCPC-092 deferred item (context.md, found at T57 — `ContractPass`/`RelationPass` publish no discrete candidate or unresolved record for a simply-unhandled message operation) blocks any of the six readiness criteria. It does not: read the real audit in full (`artifacts/verifications/llm-readiness-s-cb7a4be0b1a084f3b59e9c2f1e3906f1.md`, the file spec.md's Problem Statement names) and confirmed its contract-coverage finding (I2) is filed under "Achados importantes não bloqueadores isoladamente" (explicitly non-blocking), not any FAIL row; none of the six PASS-required rows' own cited evidence mentions contracts; and `ContractAccounting`'s aggregate (GCPC-088) already reconciles correctly today (T57-confirmed). Full reasoning recorded as an addendum to the existing GCPC-092 entry in context.md. `LlmReadinessChecklist.Evaluate` maps one-to-one to the audit's own "Matriz de aptidão" table (read in full, in Portuguese, to source the six criteria and their original FAIL evidence): semantic legibility (catalog labels + no fact-type-only Markdown titles, GCPC-093..098), scale (derived ceiling published and respected by every record-bearing artifact, reusing T63's own "compound fact-family bundles and singleton envelopes are deliberately unsplit" exclusion list), factual coverage (no metric publishes a silent 0/0, and numerator+exclusions+unknowns never exceeds denominator, GCPC-001..010), run certification (status is passed or degraded, never failed, on a healthy corpus run), and classification reliability (no `EntryPoint` for `ChangeUriPlaceholder`, reproducing audit finding B2, plus `linked_call` coverage's own arithmetic reconciles, reproducing the audit's B3 check). All six passed on the certification corpus on the first run, with no additional fix needed — confirming T1-T59 already closed the audit's underlying defects for real.
 
 **Commit**: `test(readiness): evaluate the LLM-readiness checklist on the corpus`
 

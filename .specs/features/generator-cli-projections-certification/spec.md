@@ -620,8 +620,8 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-112 | P2: Determinism and batch | output-and-retrieval.md composition | Design | Verified |
 | GCPC-113 | P2: Determinism and batch | output-and-retrieval.md partial composition | Design | Verified |
 | GCPC-114 | P2: Determinism and batch | MSC-09 and MSC-15 | Design | Verified |
-| GCPC-115 | P1: Completion gate | Audit readiness matrix | Design | Pending |
-| GCPC-116 | P1: Completion gate | Audit verdict; D-01 | Design | Pending |
+| GCPC-115 | P1: Completion gate | Audit readiness matrix | Design | Verified |
+| GCPC-116 | P1: Completion gate | Audit verdict; D-01 | Design | Verified |
 | GCPC-117 | P1: Completion gate | D-01 | Design | Verified |
 | GCPC-118 | P1: Completion gate | Standing LocalCorpus constraint | Design | Pending |
 | GCPC-119 | P1: Completion gate | Standing LocalCorpus constraint | Design | Pending |

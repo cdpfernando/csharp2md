@@ -315,3 +315,27 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   `ContractPass` itself, for "published, zero inbound handlers, not already anonymous/null") that is
   out of T57's own file scope (`PostingProjector.cs`). A follow-up task should add this branch and
   prove it against T4's real `OrderShipped` end to end.
+  **Investigated and left deferred at T64** (2026-09-10, per the batch prompt's explicit instruction to
+  check whether the audit's readiness matrix actually depends on this gap before starting T64): read
+  the real audit, `artifacts/verifications/llm-readiness-s-cb7a4be0b1a084f3b59e9c2f1e3906f1.md` (the
+  file spec.md's Problem Statement names), in full. Its "Matriz de aptidão" table has exactly ten rows;
+  the six T64 must move to PASS are the ones rated PARCIAL or FAIL: Navegação orientada por LLM,
+  Legibilidade semântica, Escala/contexto, Cobertura factual, Certificação da execução, Confiabilidade
+  de classificação, and the roll-up Prontidão geral. The audit's own contract-coverage finding --
+  "Cobertura de contratos não demonstrada" (I2), the finding this exact gap is the last sliver of -- is
+  filed under "Achados importantes não bloqueadores isoladamente" (important findings, explicitly *not*
+  blocking in isolation), not under any FAIL row. None of the six PASS-required rows' own cited evidence
+  mentions contracts: "Cobertura factual" FAILED because the audit's four *mandatory* metrics
+  (entry_point, linked_call, contract, persistence) were `0/0` -- a computation-existence problem
+  `ValidationAndCoverageStage` (T25-T31) already closed, independent of whether any one contract
+  population member has a discrete per-item record; "Certificação da execução" FAILED on
+  `not_evaluated` (GCPC-001, also already closed); "Confiabilidade de classificação" FAILED on the
+  `EntryPoint` false positive and the unaccounted invocation chain (GCPC-019..025, GCPC-011..018,
+  both already closed), not on contracts. GCPC-088's own Independent Test only requires the recognized
+  message-operation count to equal the sum of the per-outcome counts -- an aggregate reconciliation
+  `ContractAccounting` already satisfies correctly today (T57 confirmed this by direct inspection).
+  GCPC-092's own text does ask for a discrete candidate-or-unresolved *record*, which is real and still
+  open, but it is P2 scope (the "Contract and message-operation accounting" story), not one of the six
+  P1 readiness rows T64's own Done-when names. Conclusion: this gap does not block T64, and T64
+  proceeds without closing it. Left deferred, not silently dropped -- the follow-up description above
+  stands unchanged.
