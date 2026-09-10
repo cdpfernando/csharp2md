@@ -8,9 +8,6 @@ namespace Csharp2Md.Storage.Mapping;
 
 public static class DomainMapper
 {
-    private static readonly CoverageMetricDto UnevaluatedCoverage =
-        CoverageMetricDto.NotApplicable("Coverage is not yet computed by this pipeline stage.");
-
     public static WireDocument ToWire(FactualSnapshot snapshot, ManifestContext context)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
@@ -153,8 +150,8 @@ public static class DomainMapper
             unresolvedDtos,
             frontierDtos,
             [],
-            new CoverageEnvelope(UnevaluatedCoverage, UnevaluatedCoverage, UnevaluatedCoverage, UnevaluatedCoverage),
-            new RunCertificationEnvelope("degraded", ["Coverage and certification are not yet computed by this pipeline stage."]),
+            MapCoverage(snapshot.Coverage),
+            MapCertification(snapshot.Certification),
             new DiagnosticsEnvelope(MapDiagnostics(snapshot)),
             new MeasurementsEnvelope([]));
     }
@@ -214,6 +211,56 @@ public static class DomainMapper
             unresolvedArr,
             frontiersArr);
     }
+
+    /// <summary>
+    /// Maps the computed coverage report (GCPC-002) onto the wire envelope. A missing report means the
+    /// snapshot never reached <c>ValidationAndCoverageStage</c> (a hand-built snapshot in a test, for
+    /// example, rather than a genuine analysis run) -- each metric then publishes its own
+    /// <c>not_applicable</c> reason instead of a fabricated ratio, exactly as GCPC-009 requires when
+    /// nothing was actually evaluated.
+    /// </summary>
+    private static CoverageEnvelope MapCoverage(CoverageReport? coverage) =>
+        coverage is null
+            ? new CoverageEnvelope(
+                UnevaluatedMetric, UnevaluatedMetric, UnevaluatedMetric, UnevaluatedMetric)
+            : new CoverageEnvelope(
+                ToDto(coverage.EntryPointCoverage),
+                ToDto(coverage.LinkedCallCoverage),
+                ToDto(coverage.ContractCoverage),
+                ToDto(coverage.PersistenceCoverage));
+
+    private static readonly CoverageMetricDto UnevaluatedMetric =
+        CoverageMetricDto.NotApplicable("Coverage was not computed for this snapshot.");
+
+    private static CoverageMetricDto ToDto(CoverageMetric metric)
+    {
+        var degradationReasons = Ordered(
+            metric.DegradationReasons.Select(static reason => new DegradationReasonDto(reason.Code, reason.Detail, reason.AffectedCount)),
+            static dto => $"{dto.Code}:{dto.Detail}");
+
+        return metric.State == CoverageMetricState.NotApplicable
+            ? CoverageMetricDto.NotApplicable(metric.NotApplicableReason!, degradationReasons)
+            : CoverageMetricDto.Evaluated(metric.Numerator, metric.Denominator, metric.Exclusions, metric.Unknowns, degradationReasons);
+    }
+
+    /// <summary>
+    /// Maps the computed run-certification report (GCPC-001, GCPC-006..GCPC-010) onto the wire envelope.
+    /// A missing report (a snapshot that never reached <c>ValidationAndCoverageStage</c>) publishes
+    /// <c>degraded</c> rather than a fabricated <c>passed</c> -- <c>not_evaluated</c> is not a status
+    /// this envelope can construct at all (GCPC-001).
+    /// </summary>
+    private static RunCertificationEnvelope MapCertification(RunCertificationReport? certification) =>
+        certification is null
+            ? new RunCertificationEnvelope("degraded", ["Run certification was not computed for this snapshot."])
+            : new RunCertificationEnvelope(WireStatus(certification.Status), certification.Reasons);
+
+    private static string WireStatus(RunCertificationStatus status) => status switch
+    {
+        RunCertificationStatus.Passed => "passed",
+        RunCertificationStatus.Degraded => "degraded",
+        RunCertificationStatus.Failed => "failed",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, $"'{status}' is not a defined run-certification status."),
+    };
 
     private static ImmutableArray<DiagnosticRecordDto> MapDiagnostics(FactualSnapshot snapshot)
     {

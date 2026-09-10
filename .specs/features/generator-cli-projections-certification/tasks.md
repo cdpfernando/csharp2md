@@ -1076,10 +1076,11 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] A committed package's `coverage.json` and `run-certification.json` are read from disk and asserted to carry the computed values
-- [ ] `ZeroCoverage` and the `not_evaluated` literal are asserted absent from the assembly
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] A committed package's `coverage.json` and `run-certification.json` are read from disk and asserted to carry the computed values
+- [x] `ZeroCoverage` and the `not_evaluated` literal are asserted absent from the assembly
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; Storage 306 pass; Analysis 788 pass; total 1874 (Domain 563, Analysis 788, Storage 306, Cli 33, Projection 184)
+- Deviation: none beyond `DomainMapper.cs` itself (the `UnevaluatedCoverage` field is removed and replaced with `MapCoverage`/`MapCertification`, which fall back to a per-field `not_applicable`/`degraded` reason only when `snapshot.Coverage`/`.Certification` are literally absent -- a hand-built snapshot in an unrelated test, never a genuine analysis run). Note for the traceability record: GCPC-001 and GCPC-002 were marked Verified after T30 and T28 respectively on the strength of `ValidationAndCoverageStage`'s in-memory computation, but both ACs are phrased as "WHEN the system publishes ... coverage" / "WHEN a run publishes a package" -- until this task, `DomainMapper` still overwrote every computed value with the old hardcoded placeholder on the way to `coverage.json`/`run-certification.json`, so the published package did not actually carry them. This task is what makes those two verifications true end-to-end; no status change was needed since both rows already read Verified, but the gap is recorded here rather than left implicit.
 
 **Tests**: integration
 **Gate**: build
