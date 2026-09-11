@@ -97,6 +97,47 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   outside T23's file scope — and T23's tests were written to not silently accept it as
   correct. Candidate for a follow-up `fix(analysis)` task if a future workstream needs exact
   implementor-set precision.
+  **Re-confirmed, still open** (iteration-3 Verifier, 2026-09-11): the same spurious
+  self-referencing `invokes` candidate is live on the corpus today
+  (`OrderQueriesController.GetOrderStatus` → itself), root-caused to the same
+  `InvokesPass.ConcreteImplementors` (`src/Csharp2Md.Analysis/Classification/Passes/InvokesPass.cs:303-317`)
+  matching on metadata+parameters+arity with no implements/overrides check and no return-type
+  check. GCPC-018's traceability status was wrongly left `Verified` through T23–T66 despite this
+  known-open item; corrected to `⚠️ Deferred` (AD-028). Fix task shape (What/Where/Verify/Done-when)
+  recorded as Fix 2 in `validation.md`'s iteration-3 report — require a published implements/overrides
+  relationship (or a `base-type` observation) before proposing a candidate, and match on return type
+  too; route the occurrence to an unresolved record or open frontier when the relationship can't be
+  proven, never to a candidate.
+- **Three computed envelopes never cross the Storage boundary** (found by the iteration-3
+  Verifier, 2026-09-11): `InvocationAccountingReport`, `ContractAccountingReport`
+  (`src/Csharp2Md.Analysis/Storage/FactualSnapshot.cs:135-154`) and `DocumentPolicyReport`
+  (`src/Csharp2Md.Analysis/Inventory/DocumentPolicyReport.cs:19`) are all built and consumed by
+  `RunCertifier`, but `src/Csharp2Md.Storage/Mapping/DomainMapper.cs` never maps any of them onto
+  the wire — a live published package has zero bytes naming `external-framework-callable`,
+  `recognized_occurrences`, `accepted_count` or any other field these reports carry. GCPC-012,
+  GCPC-016 (partially — the count and no-diagnostic halves hold; only the exclusion category is
+  missing) GCPC-034 and GCPC-088 all say *publish*, not *compute*. Not fixed — outside the
+  Verifier's own remit — and left for a follow-up workstream per AD-028. Fix task shape (What:
+  map all three onto new or existing wire envelopes with real counts/categories/bytes; Where:
+  `DomainMapper.cs`, `PublicationPipeline.cs`, new `Storage/Wire/` DTOs, `ManifestBuilder.cs`;
+  Verify: assert on bytes read back from a published package, not on the in-memory
+  `FactualSnapshot`) recorded as Fix 1 in `validation.md`'s iteration-3 report.
+- **`SyntheticSolution`'s immutability digest is not reproducible from a clean checkout** (found
+  by the iteration-3 Verifier, 2026-09-11): the committed
+  `tests/Csharp2Md.Analysis.Tests/Fixtures/SyntheticSolutionManifest.json` was generated from a
+  working tree with mixed line endings (17 CRLF entries, 24 LF), so
+  `SyntheticSolutionImmutabilityTests.cs:64`'s raw-byte hash mismatches under either
+  `core.autocrlf` setting on a fresh clone or worktree. Minor — no published-package behavior is
+  affected, only the guard's own CI reproducibility. Fix task shape (normalize line endings
+  before hashing, or pin `fixtures/SyntheticSolution/** text eol=lf` in `.gitattributes` and
+  regenerate the digest) recorded as Fix 3 in `validation.md`'s iteration-3 report.
+- **Ceiling ratio and largest-artifact measurement are derivable but never published as fields**
+  (found by the iteration-3 Verifier, 2026-09-11): GCPC-037's bytes-per-token ratio (8.192,
+  `src/Csharp2Md.Storage/Mapping/CeilingCalculator.cs:39`) and GCPC-045's largest-artifact byte
+  size/token estimate per role are both reconstructible from the published ceiling, provenance
+  and manifest, but no field states either directly. Cosmetic. Fix task shape (add
+  `bytes_per_token` etc. to `ProvenanceDto`, add a `largest-artifact:<role>` measurement record)
+  recorded as Fix 4 in `validation.md`'s iteration-3 report.
 - **Requirement traceability gap for GCPC-019** (found during Phase 3+4 batch, 2026-09-09):
   T15 (`SymbolFacets.cs`) is the only task listing GCPC-019 in its `**Requirement**:` field,
   but T15 only adds the facet — the behavioral AC ("publish an `EntryPoint` fact only for a

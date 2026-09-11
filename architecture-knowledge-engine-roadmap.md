@@ -4,7 +4,7 @@
 
 This roadmap replaces every prior csharp2md/LLMWiki implementation queue. It defines ordering only; it does not create a feature spec or authorize implementation by itself.
 
-The target architecture is documented in [`docs/architecture/`](docs/architecture/README.md). Workstreams 1 through 7 are complete. Workstream 8 (final CLI, corpora, coverage gates, performance and migration completion) is Execute-complete (T1–T66); its feature-level Verifier has not yet run — see `.specs/STATE.md`'s Handoff.
+The target architecture is documented in [`docs/architecture/`](docs/architecture/README.md). Workstreams 1 through 8 are complete. Workstream 8 (final CLI, corpora, coverage gates, performance and migration completion) closed on its Verifier's iteration-3 report with two known Major gaps deferred to a follow-up workstream (AD-028 in `.specs/STATE.md`) rather than a clean PASS — see `.specs/STATE.md`'s Handoff and `generator-cli-projections-certification/context.md`'s Deferred Ideas.
 
 ## Delivery rules
 
@@ -48,7 +48,7 @@ The four classifier workstreams may proceed in parallel after the observation co
 | 5D | `components-deployments-configuration` | Complete on `master` (PR #14) | Components, deployment units, DI/options/clients/configuration and secure overrides |
 | 6 | `retrieval-projections` | In progress | Directly navigable catalogs, postings, source locators, Markdown and retrieval scenarios |
 | 7 | `multi-solution-composition` | Blocked by 6 | `1..N` isolated solution outputs, batch manifest and proven global correlations |
-| 8 | `generator-cli-projections-certification` | Execute complete (T1–T66); Verifier pending | Final analyze/validate/compose CLI, corpora, coverage gates, performance and migration completion |
+| 8 | `generator-cli-projections-certification` | Closed (AD-028: two Major gaps deferred, see below) | Final analyze/validate/compose CLI, corpora, coverage gates, performance and migration completion |
 
 ## Completion
 
@@ -63,18 +63,42 @@ The replacement is complete only when:
 - `1..N` solution analysis and composition are deterministic;
 - the repository documents only the new contract.
 
-Workstream 8's Execute phase (T1–T66) closes every condition above: the legacy pipeline and taxonomy
-were already gone by workstream 2; the registry drift gate stays green through the `symbol-facet`
-extension; run certification and the four coverage areas publish computed content with no `0/0`
-(P1 "Certified execution"); engine certification measures precision and recall against independently
-authored labeled corpora with a normative-threshold gate (P1 "Engine certification"); the certification
-corpus's own `analyze` completes without structural corruption and the generated over-ceiling scale
-input proves the derived byte ceiling holds (T63); the documented retrieval scenarios execute
-automatically against the published package with no query engine (P1 "Executable retrieval guide");
-and whole-package determinism plus batch isolation and certification are proven across runs, absolute
-paths, input order and multi-solution batches (T60–T62). This status is Execute-complete, not yet
-Verifier-confirmed — see `.specs/STATE.md`'s Handoff for what remains before workstream 8, and this
-roadmap, can be marked fully closed.
+Workstream 8's Execute phase (T1–T66, plus fix rounds T67–T75) closes every condition above: the legacy
+pipeline and taxonomy were already gone by workstream 2; the registry drift gate stays green through the
+`symbol-facet` extension; run certification and the four coverage areas publish computed content with no
+`0/0` (P1 "Certified execution"); engine certification measures precision and recall against
+independently authored labeled corpora with a normative-threshold gate (P1 "Engine certification"); the
+certification corpus's own `analyze` completes without structural corruption and the generated
+over-ceiling scale input proves the derived byte ceiling holds (T63); the documented retrieval scenarios
+execute automatically against the published package with no query engine (P1 "Executable retrieval
+guide"); and whole-package determinism plus batch isolation and certification are proven across runs,
+absolute paths, input order and multi-solution batches (T60–T62).
+
+The feature's Verifier ran three fix→re-verify iterations (the skill's bound); iteration 3 still found two
+pre-existing Major gaps — computed invocation/contract/document-policy envelopes that never cross the
+Storage boundary onto the wire (GCPC-012/016/034/088), and a fabricated self-referencing `invokes`
+candidate (GCPC-018) — plus a minor fixture-reproducibility gap and a cosmetic one. Per AD-028 in
+`.specs/STATE.md`, the user chose to close workstream 8 now rather than take a 4th round, deferring these
+to a future workstream. `generator-cli-projections-certification/context.md`'s Deferred Ideas carries the
+root cause and fix-task shape for each.
+
+## Workstream 8 follow-up (not yet started)
+
+Correctness debt inside the generator's own scope, deliberately deferred rather than fixed in workstream
+8 (AD-028). Not a new roadmap row — starts as its own `.specs/features/<name>/` through Specify only when
+explicitly picked up, per the Delivery rules above and CLAUDE.md's standing rule against pre-creating a
+feature spec before its workstream starts.
+
+- Publish the invocation-accounting, contract-accounting and document-policy envelopes onto the wire
+  (GCPC-012, GCPC-016, GCPC-034, GCPC-088) — currently computed and consumed only in-memory by
+  `RunCertifier`, never mapped by `DomainMapper`.
+- Stop `InvokesPass.ConcreteImplementors` from publishing a candidate to a non-implementing symbol
+  (GCPC-018) — a fabricated-fact defect, the same class the generator exists to eliminate.
+- Make `fixtures/SyntheticSolution`'s immutability digest reproducible from a clean checkout (GCPC-117).
+- Publish the ceiling's bytes-per-token ratio and the largest-artifact-per-role measurement as their own
+  fields rather than leaving them only derivable (GCPC-037, GCPC-045).
+
+Full root cause and fix-task shape (What/Where/Verify/Done-when) for each: `.specs/features/generator-cli-projections-certification/context.md`'s Deferred Ideas, and `validation.md`'s Fix Plans (iteration 3).
 
 ## Deferred after generator completion
 

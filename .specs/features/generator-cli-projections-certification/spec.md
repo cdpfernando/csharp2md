@@ -517,13 +517,13 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-009 | P1: Certified execution | Audit B1 zero denominators | Design | Verified |
 | GCPC-010 | P1: Certified execution | Audit B1 zero denominators | Design | Verified |
 | GCPC-011 | P1: Invocation accounting | Audit B3; audit gate 2 | Design | Verified |
-| GCPC-012 | P1: Invocation accounting | Audit gate 2 | Design | Verified |
+| GCPC-012 | P1: Invocation accounting | Audit gate 2 | Design | ⚠️ Deferred — computed, never mapped onto the wire (context.md Deferred Ideas; AD-028) |
 | GCPC-013 | P1: Invocation accounting | Audit B3 | Design | Verified |
 | GCPC-014 | P1: Invocation accounting | CLLF-13; taxonomy.md evidence dimensions | Design | Verified |
 | GCPC-015 | P1: Invocation accounting | AD-009 | Design | Verified |
-| GCPC-016 | P1: Invocation accounting | Supersedes CLLF-20 silence | Design | Verified |
+| GCPC-016 | P1: Invocation accounting | Supersedes CLLF-20 silence | Design | ⚠️ Deferred — counted correctly, exclusion category not published (context.md Deferred Ideas; AD-028) |
 | GCPC-017 | P1: Invocation accounting | CONTEXT.md Open Frontier; CLLF-11 | Design | Verified |
-| GCPC-018 | P1: Invocation accounting | CLLF-07 and CLLF-09; audit B3 | Design | Verified |
+| GCPC-018 | P1: Invocation accounting | CLLF-07 and CLLF-09; audit B3 | Design | ⚠️ Deferred — `InvokesPass` publishes a fabricated self-referencing candidate (context.md Deferred Ideas; AD-028) |
 | GCPC-019 | P1: Entry capability | Audit B2; CONTEXT.md Entry Point | Design | Verified |
 | GCPC-020 | P1: Entry capability | Audit B2; supersedes EBC-05 | Design | Verified |
 | GCPC-021 | P1: Entry capability | Audit B2; supersedes EBC-05 | Design | Verified |
@@ -539,10 +539,10 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-031 | P1: Document policy | D-04 redefinition | Design | Verified |
 | GCPC-032 | P1: Document policy | D-04; supersedes RP-07 | Design | Verified |
 | GCPC-033 | P1: Document policy | D-04; audit I4 | Design | Verified |
-| GCPC-034 | P1: Document policy | D-04 measurement | Design | Verified |
+| GCPC-034 | P1: Document policy | D-04 measurement | Design | ⚠️ Deferred — computed, never mapped onto the wire (context.md Deferred Ideas; AD-028) |
 | GCPC-035 | P1: Document policy | D-04 safeguard | Design | Verified |
 | GCPC-036 | P1: Bounded payloads | D-02; output-and-retrieval.md scale constraints | Design | Verified |
-| GCPC-037 | P1: Bounded payloads | D-02 | Design | Verified |
+| GCPC-037 | P1: Bounded payloads | D-02 | Design | ⚠️ Deferred — ratio derivable, not published as a field (context.md Deferred Ideas; AD-028) |
 | GCPC-038 | P1: Bounded payloads | Audit B4; calibrates RP-52 | Design | Verified |
 | GCPC-039 | P1: Bounded payloads | Audit B4; output-and-retrieval.md | Design | Verified |
 | GCPC-040 | P1: Bounded payloads | Audit gate 4 | Design | Verified |
@@ -550,7 +550,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-042 | P1: Bounded payloads | RP-53 and RP-54 | Design | Verified |
 | GCPC-043 | P1: Bounded payloads | output-and-retrieval.md scale constraints | Design | Verified |
 | GCPC-044 | P1: Bounded payloads | Audit inventory: contains, belongs-to, invocation | Design | Verified |
-| GCPC-045 | P1: Bounded payloads | quality-and-security.md performance | Design | Verified |
+| GCPC-045 | P1: Bounded payloads | quality-and-security.md performance | Design | ⚠️ Deferred — derivable, not published as a field (context.md Deferred Ideas; AD-028) |
 | GCPC-046 | P1: Retrieval guide | Audit B5 | Design | Verified |
 | GCPC-047 | P1: Retrieval guide | Audit B4 and B5 | Design | Verified |
 | GCPC-048 | P1: Retrieval guide | Audit B5; output-and-retrieval.md scenarios | Design | Verified |
@@ -593,7 +593,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-085 | P1: Security and fidelity | AD-003 | Design | Verified |
 | GCPC-086 | P1: Security and fidelity | quality-and-security.md security | Design | Verified |
 | GCPC-087 | P2: Contract accounting | Audit I2 | Design | Verified |
-| GCPC-088 | P2: Contract accounting | Audit I2; AD-009 | Design | Verified |
+| GCPC-088 | P2: Contract accounting | Audit I2; AD-009 | Design | ⚠️ Deferred — computed, never mapped onto the wire (context.md Deferred Ideas; AD-028) |
 | GCPC-089 | P2: Contract accounting | Audit I2 | Design | Verified |
 | GCPC-090 | P2: Contract accounting | taxonomy.md contracts | Design | Verified |
 | GCPC-091 | P2: Contract accounting | output-and-retrieval.md postings | Design | Verified |
@@ -621,11 +621,11 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-113 | P2: Determinism and batch | output-and-retrieval.md partial composition | Design | Verified |
 | GCPC-114 | P2: Determinism and batch | MSC-09 and MSC-15 | Design | Verified |
 | GCPC-115 | P1: Completion gate | Audit readiness matrix | Design | Verified |
-| GCPC-116 | P1: Completion gate | Audit verdict; D-01 | Design | ⚠️ Partial (Scale criterion exempts the over-ceiling artifact) |
-| GCPC-117 | P1: Completion gate | D-01 | Design | Verified |
+| GCPC-116 | P1: Completion gate | Audit verdict; D-01 | Design | Verified — F6 removed the last exemption; the criterion passes on its own terms |
+| GCPC-117 | P1: Completion gate | D-01 | Design | ⚠️ Deferred — fixture digest not reproducible from a clean checkout (context.md Deferred Ideas; AD-028) |
 | GCPC-118 | P1: Completion gate | Standing LocalCorpus constraint | Design | Verified |
 | GCPC-119 | P1: Completion gate | Standing LocalCorpus constraint | Design | Verified |
-| GCPC-120 | P1: Completion gate | Roadmap completion section | Design | ⚠️ Partial (budgets condition) |
+| GCPC-120 | P1: Completion gate | Roadmap completion section | Design | ⚠️ Deferred — rests on GCPC-012/016/018/034/088, closed with those gaps as a follow-up (AD-028) |
 
 **ID format:** `GCPC-NNN`
 
