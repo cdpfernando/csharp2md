@@ -576,7 +576,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-068 | P1: CLI surface | Workstream 7 deferred compose idea | Design | Verified |
 | GCPC-069 | P1: CLI surface | Roadmap row 8 | Design | Verified |
 | GCPC-070 | P1: CLI surface | AD-009 status vocabulary | Design | Verified |
-| GCPC-071 | P1: CLI surface | quality-and-security.md corruption path | Design | ⚠️ Partial |
+| GCPC-071 | P1: CLI surface | quality-and-security.md corruption path | Design | Verified |
 | GCPC-072 | P1: CLI surface | MSC-09 and MSC-15 | Design | Verified |
 | GCPC-073 | P1: CLI surface | Existing CLI contract | Design | Verified |
 | GCPC-074 | P1: Engine certification | quality-and-security.md corpora | Design | Verified |

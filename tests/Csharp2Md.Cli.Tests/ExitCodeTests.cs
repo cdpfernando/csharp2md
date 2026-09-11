@@ -121,6 +121,36 @@ public sealed class ExitCodeTests
         }
     }
 
+    /// <summary>
+    /// F3: exit 6 covers a newer contract version, not only a newer generator build -- a package whose
+    /// SchemaVersion exceeds the running generator's is refused the same way a newer GeneratorVersion
+    /// already was, and GeneratorVersion stays untouched here so this proves the schema-version axis
+    /// specifically, not a restatement of the generator-version case above.
+    /// </summary>
+    [Fact]
+    [Trait("Requirement", "GCPC-071")]
+    public async Task IncompatibleSchemaVersion_MapsToSix()
+    {
+        var (child, outputPath) = await AnalyzeFixtureAsync();
+        try
+        {
+            var manifestPath = Path.Combine(child, "manifest.json");
+            var manifest = CanonicalJson.Read<ManifestEnvelope>(File.ReadAllBytes(manifestPath));
+            Assert.NotNull(manifest.Provenance);
+            var mutated = manifest with { Provenance = manifest.Provenance! with { SchemaVersion = manifest.Provenance.SchemaVersion + 1 } };
+            File.WriteAllBytes(manifestPath, CanonicalJson.Write(mutated).ToArray());
+
+            var (exitCode, _, _) = await CliInvoke.RunAsync(["validate", "--package", child]);
+
+            Assert.Equal(ExitCodes.IncompatibleProvenance, exitCode);
+            Assert.Equal(6, exitCode);
+        }
+        finally
+        {
+            CliTestPaths.TryDeleteDirectory(outputPath);
+        }
+    }
+
     [Fact]
     [Trait("Requirement", "GCPC-073")]
     public async Task InvalidInvocation_MapsToOneAndPublishesNothing()

@@ -2232,11 +2232,11 @@ package whose `SchemaVersion` or `TaxonomyVersion` exceeds the running generator
 
 **Done when**:
 
-- [ ] `TaxonomyVersionsTests.cs:66`'s `TaxonomyTables_Default_MovesOnlyTaxonomyVersionToTwo` is rewritten for the new expected values and asserts `schema_version`, `extractor_set_version` and `classifier_set_version` are each 2
-- [ ] An exit-code test mutates `SchemaVersion` (not `GeneratorVersion`) to a value higher than the running generator's and asserts `validate` exits `6`
-- [ ] The existing `GeneratorVersion`-newer-than-running case (`ExitCodeTests.cs:102`) still exits `6` unchanged
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] `TaxonomyVersionsTests.cs:66`'s `TaxonomyTables_Default_MovesOnlyTaxonomyVersionToTwo` is rewritten for the new expected values and asserts `schema_version`, `extractor_set_version` and `classifier_set_version` are each 2 — renamed to `TaxonomyTables_Default_MovesSchemaTaxonomyExtractorAndClassifierVersionsToTwo`; `TaxonomyTables_Default_EnumeratesEveryDeclaredTableFromOnePlace`'s inline expected `Versions` value updated too. `contracts/taxonomy-registry.json` regenerated in this commit (AD-013 drift gate) and `RegistryDriftGateTests`' hand-edit fixture retargeted from `schema_version` (no longer a valid hand-edit distinguisher once it's genuinely 2) to `observation_schema_version` (still 1, untouched by this bump)
+- [x] An exit-code test mutates `SchemaVersion` (not `GeneratorVersion`) to a value higher than the running generator's and asserts `validate` exits `6` — `ExitCodeTests.cs`'s new `IncompatibleSchemaVersion_MapsToSix`
+- [x] The existing `GeneratorVersion`-newer-than-running case (`ExitCodeTests.cs:102`) still exits `6` unchanged
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"` — also ran Analysis (unaffected, still 826) to check for fallout from the global version-axis change
+- [x] Test count reported; total 2058 (Domain 563, Analysis 826, Storage 384, Cli 59, Projection 226) — up from 2057 after F2 (+1 Cli)
 
 **Tests**: unit
 **Gate**: build

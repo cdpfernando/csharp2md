@@ -142,7 +142,13 @@ public static class PackageValidator
         }
     }
 
-    /// <summary>Rejects provenance naming a generator version newer than the one currently running.</summary>
+    /// <summary>
+    /// Rejects provenance naming a generator version, a schema version or a taxonomy version newer than
+    /// the one currently running (GCPC-071's "incompatible provenance or contract version" half). A newer
+    /// schema or taxonomy version means the package's wire encoding or classification taxonomy moved past
+    /// what this build understands -- reading it anyway risks silently misinterpreting it, exactly the
+    /// failure mode a newer generator build already refuses.
+    /// </summary>
     public static void EnsureProvenanceCompatible(ProvenanceDto provenance)
     {
         ArgumentNullException.ThrowIfNull(provenance);
@@ -155,6 +161,20 @@ public static class PackageValidator
             throw new PublicationRejectedException(
                 "incompatible-provenance",
                 $"Package generator version {provenance.GeneratorVersion} is newer than the running generator version {running.GeneratorVersion}.");
+        }
+
+        if (provenance.SchemaVersion > running.SchemaVersion)
+        {
+            throw new PublicationRejectedException(
+                "incompatible-provenance",
+                $"Package schema version {provenance.SchemaVersion} is newer than the running generator's schema version {running.SchemaVersion}.");
+        }
+
+        if (provenance.TaxonomyVersion > running.TaxonomyVersion)
+        {
+            throw new PublicationRejectedException(
+                "incompatible-provenance",
+                $"Package taxonomy version {provenance.TaxonomyVersion} is newer than the running generator's taxonomy version {running.TaxonomyVersion}.");
         }
     }
 
