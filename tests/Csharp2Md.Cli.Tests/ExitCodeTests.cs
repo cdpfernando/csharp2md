@@ -1,6 +1,9 @@
 using Csharp2Md.Analysis;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Projection;
+using Csharp2Md.Projection.Composition;
 using Csharp2Md.Storage;
+using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Cli.Tests;
@@ -11,6 +14,61 @@ namespace Csharp2Md.Cli.Tests;
 /// </summary>
 public sealed class ExitCodeTests
 {
+    [Theory]
+    [InlineData("passed", ExitCodes.Success)]
+    [InlineData("failed", ExitCodes.CertificationFailed)]
+    [Trait("Requirement", "GCPC-069")]
+    [Trait("Requirement", "GCPC-070")]
+    public async Task Analyze_PublishedCertification_MapsToItsExitCode(string status, int expectedExitCode)
+    {
+        var solutionPath = AcmeOrdersSolutionPath();
+        var outputPath = CliTestPaths.UniqueOutputPath();
+        try
+        {
+            var engine = RewritingEngine(outputPath, status);
+
+            var (exitCode, _, stderr) = await CliInvoke.RunAsync(
+                ["analyze", "--solution", solutionPath, "--output", outputPath],
+                engine);
+
+            Assert.Equal(expectedExitCode, exitCode);
+            var child = SinglePackageDirectory(outputPath);
+            Assert.Equal(
+                status,
+                CanonicalJson.Read<RunCertificationEnvelope>(
+                    File.ReadAllBytes(Path.Combine(child, "run-certification.json"))).Status);
+            Assert.True(File.Exists(Path.Combine(child, "manifest.json")), stderr);
+        }
+        finally
+        {
+            CliTestPaths.TryDeleteDirectory(outputPath);
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-070")]
+    public async Task Analyze_RealDegradedFixture_MapsToThree()
+    {
+        var outputPath = CliTestPaths.UniqueOutputPath();
+        try
+        {
+            var (exitCode, _, stderr) = await CliInvoke.RunAsync(
+                ["analyze", "--solution", AcmeOrdersSolutionPath(), "--output", outputPath]);
+
+            Assert.Equal(ExitCodes.Degraded, exitCode);
+            Assert.Equal(3, exitCode);
+            Assert.Equal(
+                "degraded",
+                CanonicalJson.Read<RunCertificationEnvelope>(
+                    File.ReadAllBytes(Path.Combine(SinglePackageDirectory(outputPath), "run-certification.json"))).Status);
+            Assert.DoesNotContain("csharp2md:", stderr, StringComparison.Ordinal);
+        }
+        finally
+        {
+            CliTestPaths.TryDeleteDirectory(outputPath);
+        }
+    }
+
     [Fact]
     [Trait("Requirement", "GCPC-069")]
     public async Task Certification_Passed_MapsToZero()
@@ -200,6 +258,32 @@ public sealed class ExitCodeTests
     }
 
     [Fact]
+    [Trait("Requirement", "GCPC-072")]
+    public async Task PartialComposition_TakesPrecedenceOverPublishedDegradedStatus()
+    {
+        var solutionPath = AcmeOrdersSolutionPath();
+        var outputPath = CliTestPaths.UniqueOutputPath();
+        try
+        {
+            var engine = new AppendingUnpublishedOutcomeEngine(RewritingEngine(outputPath, "degraded"));
+
+            var (exitCode, _, _) = await CliInvoke.RunAsync(
+                ["analyze", "--solution", solutionPath, "--output", outputPath],
+                engine);
+
+            Assert.Equal(ExitCodes.PartialComposition, exitCode);
+            Assert.Equal(
+                "degraded",
+                CanonicalJson.Read<RunCertificationEnvelope>(
+                    File.ReadAllBytes(Path.Combine(SinglePackageDirectory(outputPath), "run-certification.json"))).Status);
+        }
+        finally
+        {
+            CliTestPaths.TryDeleteDirectory(outputPath);
+        }
+    }
+
+    [Fact]
     [Trait("Requirement", "GCPC-069")]
     [Trait("Requirement", "GCPC-070")]
     [Trait("Requirement", "GCPC-071")]
@@ -243,14 +327,13 @@ public sealed class ExitCodeTests
 
     private static async Task<(string Child, string OutputPath)> AnalyzeFixtureAsync()
     {
-        var solutionPath = Path.Combine(
-            CliTestPaths.RepoRoot, "fixtures", "SyntheticSolution", "Acme.Orders", "Acme.Orders.slnx");
+        var solutionPath = AcmeOrdersSolutionPath();
         Assert.True(Path.Exists(solutionPath), $"Fixture solution was not found at '{solutionPath}'.");
 
         var outputPath = CliTestPaths.UniqueOutputPath();
         var (exitCode, _, stderr) = await CliInvoke.RunAsync(
             ["analyze", "--solution", solutionPath, "--output", outputPath]);
-        Assert.True(exitCode == 0, $"analyze failed with exit {exitCode}: {stderr}");
+        Assert.True(exitCode == ExitCodes.Degraded, $"analyze failed with exit {exitCode}: {stderr}");
 
         // GCPC-068 (T51) wired a BatchComposer into the real analyze store, so this fixture's own
         // composition facts also produce a top-level composition/ directory under --output -- filter for
@@ -258,6 +341,27 @@ public sealed class ExitCodeTests
         var child = Directory.GetDirectories(outputPath)
             .Single(static path => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(path), "^s-[0-9a-f]{32}$"));
         return (child, outputPath);
+    }
+
+    private static string AcmeOrdersSolutionPath()
+    {
+        var solutionPath = Path.Combine(
+            CliTestPaths.RepoRoot, "fixtures", "SyntheticSolution", "Acme.Orders", "Acme.Orders.slnx");
+        Assert.True(Path.Exists(solutionPath), $"Fixture solution was not found at '{solutionPath}'.");
+        return solutionPath;
+    }
+
+    private static string SinglePackageDirectory(string outputPath) =>
+        Directory.GetDirectories(outputPath)
+            .Single(static path => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(path), "^s-[0-9a-f]{32}$"));
+
+    private static IAnalysisEngine RewritingEngine(string outputPath, string status)
+    {
+        var inner = new AnalysisEngine(new FilesystemTransactionalStore(
+            outputPath,
+            new PackageProjector(CeilingCalculator.Derive().CeilingBytes),
+            new BatchComposer()));
+        return new RewritingAnalysisEngine(inner, outputPath, status);
     }
 
     private sealed class FakeAnalysisEngine : IAnalysisEngine
@@ -268,5 +372,39 @@ public sealed class ExitCodeTests
 
         public Task<AnalysisResult> AnalyzeAsync(AnalysisRequest request, CancellationToken cancellationToken) =>
             Task.FromResult(_result);
+    }
+
+    private sealed class RewritingAnalysisEngine(
+        IAnalysisEngine inner,
+        string outputPath,
+        string status) : IAnalysisEngine
+    {
+        public async Task<AnalysisResult> AnalyzeAsync(
+            AnalysisRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await inner.AnalyzeAsync(request, cancellationToken);
+            RewriteCertification(SinglePackageDirectory(outputPath), status);
+            return result;
+        }
+    }
+
+    private sealed class AppendingUnpublishedOutcomeEngine(IAnalysisEngine inner) : IAnalysisEngine
+    {
+        public async Task<AnalysisResult> AnalyzeAsync(
+            AnalysisRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await inner.AnalyzeAsync(request, cancellationToken);
+            var unpublished = new SolutionOutcome(
+                Path.Combine(CliTestPaths.RepoRoot, "fixtures", "unpublished.slnx"),
+                "fixtures/unpublished.slnx",
+                PublicationStatus.Unpublished,
+                failingStage: "Inventory",
+                structuralCorruption: false,
+                hasUnknownsOrCandidatesOrFrontiers: false,
+                stages: []);
+            return new AnalysisResult(result.Solutions.Add(unpublished));
+        }
     }
 }

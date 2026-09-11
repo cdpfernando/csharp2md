@@ -21,7 +21,7 @@ public sealed class ComposeCommandTests
 
             var (analyzeExit, _, analyzeStderr) = await CliInvoke.RunAsync(
                 ["analyze", "--solution", firstSolution, "--solution", secondSolution, "--output", outputPath]);
-            Assert.True(analyzeExit == 0, $"analyze failed with exit {analyzeExit}: {analyzeStderr}");
+            Assert.True(analyzeExit == ExitCodes.Degraded, $"analyze failed with exit {analyzeExit}: {analyzeStderr}");
 
             var originalBatchArtifacts = ReadBatchArtifacts(outputPath);
             Assert.True(originalBatchArtifacts.ContainsKey("batch-manifest.json"));
@@ -83,7 +83,7 @@ public sealed class ComposeCommandTests
         {
             var (analyzeExit, _, _) = await CliInvoke.RunAsync(
                 ["analyze", "--solution", solutionPath, "--output", outputPath]);
-            Assert.Equal(0, analyzeExit);
+            Assert.Equal(ExitCodes.Degraded, analyzeExit);
 
             var packageDirectory = SinglePackageDirectory(outputPath);
             var manifestBefore = File.ReadAllBytes(Path.Combine(packageDirectory, "manifest.json"));

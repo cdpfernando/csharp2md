@@ -99,15 +99,15 @@ internal static class CommandFactory
                 return Invalid(parseResult, exception.Message);
             }
 
+            var outputPath = parseResult.GetValue(outputOption);
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                return Invalid(parseResult, "--output");
+            }
+
             var analysisEngine = engine;
             if (analysisEngine is null)
             {
-                var outputPath = parseResult.GetValue(outputOption);
-                if (string.IsNullOrWhiteSpace(outputPath))
-                {
-                    return Invalid(parseResult, "--output");
-                }
-
                 // A BatchComposer alongside the projector: without it, FilesystemTransactionalStore's own
                 // composer field stays null, PublicationPipeline.Publish's composer.Contribute branch never
                 // runs, and PublishBatch's composer?.Compose(view) is permanently []. That left cross-
@@ -144,9 +144,12 @@ internal static class CommandFactory
 
             WriteDiagnostics(result, error);
             stdout.WriteLine(FormatSummary(result));
-            return result.HasUnpublishedSolution || result.HasBatchPublicationFailure
-                ? ExitCodes.PartialComposition
-                : ExitCodes.Success;
+            if (result.HasUnpublishedSolution || result.HasBatchPublicationFailure)
+            {
+                return ExitCodes.PartialComposition;
+            }
+
+            return PublishedCertificationExitCode(outputPath, result);
         });
 
         rootCommand.Subcommands.Add(analyze);
@@ -338,6 +341,57 @@ internal static class CommandFactory
     {
         parseResult.InvocationConfiguration.Error.WriteLine($"csharp2md: {message}");
         return ExitCodes.InvalidInvocation;
+    }
+
+    /// <summary>
+    /// GCPC-069/GCPC-070: maps the certification status from the package this invocation just published.
+    /// The batch manifest supplies the exact solution-to-package mapping, avoiding both directory-name
+    /// assumptions and unrelated packages that may already exist under the output root. Injected engines
+    /// that intentionally publish nothing retain the historical success result used by the CLI seam tests.
+    /// </summary>
+    private static int PublishedCertificationExitCode(string outputPath, AnalysisResult result)
+    {
+        var batchManifestPath = Path.Combine(outputPath, "batch-manifest.json");
+        if (!File.Exists(batchManifestPath))
+        {
+            return ExitCodes.Success;
+        }
+
+        var requestedIdentities = result.Solutions
+            .Where(static outcome => outcome.Status == PublicationStatus.Committed)
+            .Select(static outcome => SolutionCoordinate.For(outcome.SolutionPath).Identity.Value)
+            .ToHashSet(StringComparer.Ordinal);
+        var batch = PackageValidator.ReadPayloadOrThrow<BatchManifestEnvelope>(
+            File.ReadAllBytes(batchManifestPath), "batch-manifest.json");
+
+        var exitCode = ExitCodes.Success;
+        foreach (var solution in batch.Solutions)
+        {
+            if (!requestedIdentities.Contains(solution.Identity) || solution.Status != "committed")
+            {
+                continue;
+            }
+
+            var certificationPath = Path.Combine(outputPath, solution.PackageDirectory, "run-certification.json");
+            if (!File.Exists(certificationPath))
+            {
+                continue;
+            }
+
+            var certification = PackageValidator.ReadPayloadOrThrow<RunCertificationEnvelope>(
+                File.ReadAllBytes(certificationPath), "run-certification.json");
+            if (certification.Status == "failed")
+            {
+                return ExitCodes.CertificationFailed;
+            }
+
+            if (certification.Status == "degraded")
+            {
+                exitCode = ExitCodes.Degraded;
+            }
+        }
+
+        return exitCode;
     }
 
     private static void WriteDiagnostics(AnalysisResult result, TextWriter error)

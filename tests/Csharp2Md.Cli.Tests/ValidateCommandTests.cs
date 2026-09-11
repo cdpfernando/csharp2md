@@ -95,7 +95,7 @@ public sealed class ValidateCommandTests
             var solutionPath = Path.Combine(tempSolutionRoot, "Acme.Orders", "Acme.Orders.slnx");
             var (analyzeExit, _, _) = await CliInvoke.RunAsync(
                 ["analyze", "--solution", solutionPath, "--output", outputPath]);
-            Assert.Equal(0, analyzeExit);
+            Assert.Equal(ExitCodes.Degraded, analyzeExit);
 
             var child = SinglePackageDirectory(outputPath);
 
@@ -210,7 +210,7 @@ public sealed class ValidateCommandTests
         var outputPath = CliTestPaths.UniqueOutputPath();
         var (exitCode, _, stderr) = await CliInvoke.RunAsync(
             ["analyze", "--solution", solutionPath, "--output", outputPath]);
-        Assert.True(exitCode == 0, $"analyze failed with exit {exitCode}: {stderr}");
+        Assert.True(exitCode == ExitCodes.Degraded, $"analyze failed with exit {exitCode}: {stderr}");
 
         var child = SinglePackageDirectory(outputPath);
         return (child, outputPath);

@@ -150,7 +150,7 @@ public sealed class AnalyzeExitCodeTests
                 ["analyze", "--solution", solutionPath, "--output", outputPath],
                 engine);
 
-            Assert.Equal(0, exitCode);
+            Assert.Equal(ExitCodes.Degraded, exitCode);
             Assert.Equal(
                 "manifest.json",
                 Path.GetFileName(Assert.Single(

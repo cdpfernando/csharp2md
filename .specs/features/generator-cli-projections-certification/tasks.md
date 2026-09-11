@@ -2354,13 +2354,13 @@ precedence per GCPC-072.
 
 **Done when**:
 
-- [ ] An exit-code test runs **`analyze`** (not `validate`) over a fixture whose published status is `degraded` and asserts exit `3`; live today both `fixtures/CertificationCorpus` and `fixtures/SyntheticSolution/Acme.Orders` publish `degraded` and exit `0`
-- [ ] An exit-code test runs `analyze` over a fixture whose published status is `passed` and asserts exit `0`
-- [ ] A `failed` status from `analyze` asserts exit `4`, with the package still published
-- [ ] `ExitCodeTests.cs:258`'s helper, which currently asserts `analyze` of `Acme.Orders` exits `0` on a `degraded` run, is corrected — this is a correction to an assertion encoding wrong behaviour, not a weakening
-- [ ] GCPC-072's partial-composition case still exits `2` and takes precedence over a status-derived code
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total >= 2063
+- [x] An exit-code test runs **`analyze`** (not `validate`) over a fixture whose published status is `degraded` and asserts exit `3` — `Analyze_RealDegradedFixture_MapsToThree`
+- [x] An exit-code test runs `analyze` over a fixture whose published status is `passed` and asserts exit `0` — `Analyze_PublishedCertification_MapsToItsExitCode("passed", 0)`
+- [x] A `failed` status from `analyze` asserts exit `4`, with the package still published — `Analyze_PublishedCertification_MapsToItsExitCode("failed", 4)` also asserts both `manifest.json` and the rewritten published status
+- [x] `ExitCodeTests.cs`'s package helper now expects `Acme.Orders`' real `degraded` result to exit `3`; every other real-fixture assertion in the CLI suite was corrected to the same published truth rather than weakened to a range
+- [x] GCPC-072's partial-composition case still exits `2` and takes precedence over a status-derived code — the original case remains green and `PartialComposition_TakesPrecedenceOverPublishedDegradedStatus` proves the collision directly
+- [x] Gate check passes: clean `dotnet build --no-restore` (0 warnings, 0 errors) and `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --no-restore --filter "Category!=LocalCorpus"`
+- [x] Test count reported; total 2069 (Domain 563, Analysis 827, Storage 387, Cli 63, Projection 229), up from 2065 after F6 (+4 Cli)
 
 **Tests**: integration
 **Gate**: build

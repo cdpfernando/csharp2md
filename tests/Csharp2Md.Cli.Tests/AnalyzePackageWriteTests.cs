@@ -44,7 +44,7 @@ public sealed class AnalyzePackageWriteTests
                 ["analyze", "--solution", solutionPath, "--output", outputPath]);
             var after = FileSetHash(outputPath);
 
-            Assert.Equal(0, exitCode);
+            Assert.Equal(ExitCodes.Degraded, exitCode);
             Assert.Equal(before, after);
 
             // GCPC-068 (T51) wired a BatchComposer into the real `analyze` store, so a run whose solution
