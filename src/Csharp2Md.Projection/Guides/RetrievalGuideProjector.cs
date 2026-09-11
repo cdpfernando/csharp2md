@@ -144,7 +144,12 @@ internal static class RetrievalGuideProjector
             + "at the cited ordinal, never the whole canonical payload:\n\n");
         foreach (var (key, hint) in PostingHints(postingKeys))
         {
-            text.Append("- `").Append(key).Append("` -- ").Append(hint).Append('\n');
+            text.Append("- ");
+            text.Append(
+                postingKeys.Contains(key)
+                    ? "`" + key + "`"
+                    : key + " (bucketed by fact id across shards)");
+            text.Append(" -- ").Append(hint).Append('\n');
         }
 
         if (postingKeys.Count == 0)
@@ -155,15 +160,20 @@ internal static class RetrievalGuideProjector
         text.Append('\n');
     }
 
+    /// <summary>
+    /// One hint per posting family (GCPC-047), not one per shard: a family that split under the ceiling
+    /// still has exactly one line here, naming its base key without backticks (the caller decides whether
+    /// to cite it literally) -- printing one line per <c>ShardWriter</c> bucket is what previously let
+    /// this section itself grow past the publication ceiling under scale (T63's second symptom).
+    /// </summary>
     private static IEnumerable<(string Key, string Hint)> PostingHints(HashSet<string> postingKeys)
     {
         foreach (var (marker, hint) in PostingFamilies)
         {
-            foreach (var key in postingKeys
-                .Where(candidate => candidate.Contains(marker, StringComparison.Ordinal))
-                .OrderBy(static candidate => candidate, StringComparer.Ordinal))
+            var baseKey = "postings/" + marker + ".json";
+            if (HasFamily(postingKeys, baseKey))
             {
-                yield return (key, hint);
+                yield return (baseKey, hint);
             }
         }
     }
@@ -181,6 +191,16 @@ internal static class RetrievalGuideProjector
                 text.Append("select its posting bucket in step 2, then read `")
                     .Append(artifactKey)
                     .Append("` at the cited ordinal.\n");
+            }
+            else if (HasFamily(slots, artifactKey))
+            {
+                // Named without backticks on purpose, same reason as AppendSourceSection below: a split
+                // family has no artifact at this exact key, only at relations/confirmed/<kind>.<bucket>.json
+                // shards, and ValidateNoAbsentKeys rejects any backtick-quoted key this publication does
+                // not actually hold.
+                text.Append("select its posting bucket in step 2, then read the matching ")
+                    .Append(artifactKey)
+                    .Append(" shard at the cited ordinal.\n");
             }
             else
             {
@@ -200,31 +220,46 @@ internal static class RetrievalGuideProjector
             slots,
             "candidate link",
             "relations/candidates.json",
-            key => "scan `" + key + "` directly by source or proposed target fact id -- candidates carry no posting bucket");
+            key => "scan `" + key + "` directly by source or proposed target fact id -- candidates carry no posting bucket",
+            key => "scan its " + key + " shards directly by source or proposed target fact id -- candidates carry no posting bucket");
         AppendDisposition(
             text,
             slots,
             "unresolved record",
             "relations/unresolved.json",
-            key => "select its bucket in `postings/unknowns.json`, then read `" + key + "` at the cited ordinal");
+            key => "select its bucket in `postings/unknowns.json`, then read `" + key + "` at the cited ordinal",
+            key => "select its bucket in `postings/unknowns.json`, then read the matching " + key + " shard at the cited ordinal");
         AppendDisposition(
             text,
             slots,
             "open frontier",
             "relations/frontiers.json",
-            key => "select its bucket in `postings/frontiers.json`, then read `" + key + "` at the cited ordinal");
+            key => "select its bucket in `postings/frontiers.json`, then read `" + key + "` at the cited ordinal",
+            key => "select its bucket in `postings/frontiers.json`, then read the matching " + key + " shard at the cited ordinal");
         text.Append('\n');
     }
 
+    /// <summary>
+    /// <paramref name="how"/> renders the exact-match case (the family's own key, quotable with backticks);
+    /// <paramref name="howSharded"/> renders the split case, naming the family without backticks -- a split
+    /// family has no artifact at that exact key, only at <c>&lt;stem&gt;.&lt;bucket&gt;.json</c> shards,
+    /// and <see cref="ValidateNoAbsentKeys"/> rejects any backtick-quoted key this publication does not
+    /// actually hold.
+    /// </summary>
     private static void AppendDisposition(
         StringBuilder text,
         HashSet<string> slots,
         string label,
         string artifactKey,
-        Func<string, string> how)
+        Func<string, string> how,
+        Func<string, string> howSharded)
     {
         text.Append("- ").Append(label).Append(": ");
-        text.Append(slots.Contains(artifactKey) ? how(artifactKey) : "none is recognized in this package").Append('\n');
+        text.Append(
+            slots.Contains(artifactKey) ? how(artifactKey)
+            : HasFamily(slots, artifactKey) ? howSharded(artifactKey)
+            : "none is recognized in this package");
+        text.Append('\n');
     }
 
     private static void AppendSourceSection(StringBuilder text, HashSet<string> slots)

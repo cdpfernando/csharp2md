@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Domain.Facets;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Projection.Guides;
 using Csharp2Md.Projection.Markdown;
@@ -118,6 +119,62 @@ public sealed class RetrievalGuideProjectorTests
         }
 
         Assert.DoesNotContain("no such relation is recognized", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-048")]
+    public void Project_RelationsSection_ShardedInvokesFamily_IsRecognizedNotReportedAbsent()
+    {
+        // A real LayoutPlanner-driven split (not the hand-built ViewWithConfirmedRelationKinds fixture,
+        // which never shards) -- eight Invokes relations under an 8-byte ceiling so each lands in its own
+        // over-ceiling shard, matching LayoutPlannerShardingTests' established pattern.
+        var view = ShardedInvokesView(count: 8, ceilingBytes: 8);
+
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view)), "## 3. Follow a confirmed relation");
+
+        Assert.DoesNotContain("`invokes` -- no such relation is recognized in this package", section, StringComparison.Ordinal);
+        Assert.Contains(
+            "`invokes` -- select its posting bucket in step 2, then read the matching relations/confirmed/invokes.json shard at the cited ordinal.",
+            section,
+            StringComparison.Ordinal);
+
+        // The sharded family's guide text never names an exact key this publication does not hold --
+        // ValidateNoAbsentKeys would already have thrown inside RetrievalGuideProjector.Project above, but
+        // assert the class of names explicitly too.
+        Assert.DoesNotContain("`relations/confirmed/invokes.json`", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-049")]
+    public void Project_DispositionsSection_ShardedUnresolvedFamily_IsRecognizedNotReportedAbsent()
+    {
+        var view = ShardedUnresolvedView(count: 8, ceilingBytes: 24);
+
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view)), "## 4. Follow an unproven disposition");
+
+        Assert.DoesNotContain("unresolved record: none is recognized in this package", section, StringComparison.Ordinal);
+        Assert.Contains(
+            "unresolved record: select its bucket in `postings/unknowns.json`, then read the matching relations/unresolved.json shard at the cited ordinal",
+            section,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("`relations/unresolved.json`", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-047")]
+    public void Project_PostingsSection_ShardedOutgoingFamily_DescribesBucketingOnceNotOncePerShard()
+    {
+        // The view's own LayoutPlan ceiling only governs RelationsSection/DispositionsSection's `slots`;
+        // PostingProjector shards independently under the ceilingBytes passed to Project itself (T63's
+        // ShardWriter, a separate fixed-depth bucketer) -- both need to be tiny to reproduce the guide's
+        // own "one line per shard" size bug.
+        var view = ShardedInvokesView(count: 40, ceilingBytes: 8);
+
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view, ceilingBytes: 8)), "## 2. Select a postings bucket");
+
+        Assert.Single(Regex.Matches(section, "postings/outgoing").Cast<Match>());
+        Assert.Contains("postings/outgoing.json (bucketed by fact id across shards)", section, StringComparison.Ordinal);
+        Assert.DoesNotContain("`postings/outgoing.json`", section, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -348,6 +405,70 @@ public sealed class RetrievalGuideProjectorTests
                 Csharp2Md.Domain.Observations.NormalizedPayload.Create([]),
                 1),
         ]);
+
+    /// <summary>
+    /// A real, LayoutPlanner-sharded <c>relations/confirmed/invokes.json</c> family: <paramref name="count"/>
+    /// distinct callee <see cref="Symbol"/>s each invoked once by a shared caller, planned under
+    /// <paramref name="ceilingBytes"/> so the family splits into per-record shards (mirrors
+    /// <c>LayoutPlannerShardingTests</c>' established pattern), unlike <see cref="ViewWithConfirmedRelationKinds"/>
+    /// which never shards.
+    /// </summary>
+    private static PublishedPackageView ShardedInvokesView(int count, int ceilingBytes)
+    {
+        var caller = CatalogProjectionFactory.Callable("Caller");
+        var facts = new List<IFact> { caller };
+        var relations = new List<Csharp2Md.Domain.Relations.ConfirmedRelation>();
+        for (var i = 0; i < count; i++)
+        {
+            var callee = Symbol.Create(
+                Csharp2Md.Domain.Identity.CanonicalSymbolSignature.Create(
+                    "method", $"global::Acme.Orders.Handler{i:D3}", "HandleAsync", 0, "global::System.Void"),
+                CatalogProjectionFactory.Project,
+                SymbolFacetSet.Create([SymbolFacet.Callable]));
+            facts.Add(callee);
+            relations.Add(Invokes(caller, callee.Reference));
+        }
+
+        var document = DomainMapper.ToWire(
+            new FactualSnapshot([.. facts], [], [.. relations], [], [], []),
+            CatalogProjectionFactory.Context);
+        return PublishedPackageView.From(document, LayoutPlanner.Plan(document, ceilingBytes));
+    }
+
+    private static Csharp2Md.Domain.Relations.ConfirmedRelation Invokes(
+        Symbol source, Csharp2Md.Domain.Identity.FactReference target) =>
+        Csharp2Md.Domain.Relations.ConfirmedRelation.Create(
+            Csharp2Md.Domain.Relations.RelationKind.Invokes,
+            source.Reference,
+            target,
+            Csharp2Md.Domain.Relations.FacetBinding.Create(Csharp2Md.Domain.Registry.TaxonomyTables.Default.FacetAxes, [], []),
+            Evidence(source.Reference),
+            Csharp2Md.Domain.Proof.ClassifierIdentity.Create("csharp2md.structural.invokes", 1),
+            [Csharp2Md.Domain.Identity.AnalysisVariantId.Create("net10.0", "Release", [], "ci")],
+            Csharp2Md.Domain.Proof.EvidenceMethod.Semantic,
+            sourceFact: source);
+
+    /// <summary>A real, LayoutPlanner-sharded <c>relations/unresolved.json</c> family: <paramref name="count"/>
+    /// unresolved records, each owned by a distinct component so they hash into distinct shards, planned
+    /// under <paramref name="ceilingBytes"/>.</summary>
+    private static PublishedPackageView ShardedUnresolvedView(int count, int ceilingBytes)
+    {
+        var records = new List<Csharp2Md.Domain.Relations.UnresolvedRecord>();
+        for (var i = 0; i < count; i++)
+        {
+            var owner = CatalogProjectionFactory.CreateComponent($"Orders.Shard{i:D3}").Reference;
+            records.Add(Csharp2Md.Domain.Relations.UnresolvedRecord.Create(
+                Csharp2Md.Domain.Relations.RelationKind.Invokes,
+                owner,
+                Csharp2Md.Domain.Relations.UnresolvedCause.NoCandidateFound,
+                Evidence(owner)));
+        }
+
+        var document = DomainMapper.ToWire(
+            new FactualSnapshot([], [], [], [], [.. records], []),
+            CatalogProjectionFactory.Context);
+        return PublishedPackageView.From(document, LayoutPlanner.Plan(document, ceilingBytes));
+    }
 
     /// <summary>
     /// Builds a view whose <c>ConfirmedRelations</c> carries one wire-level record per named kind --

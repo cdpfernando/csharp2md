@@ -2282,14 +2282,16 @@ family's bucketing once instead of enumerating every shard, so the guide never c
 
 **Done when**:
 
-- [ ] `ScaleInputGenerator`'s reproducing fixture is asserted to no longer trigger a "not recognized" false negative for a sharded family
-- [ ] The guide's own published byte size is asserted within the published ceiling on the scale input
-- [ ] The unsplit case's existing guide text is asserted unchanged
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] `ScaleInputGenerator`'s reproducing fixture is asserted to no longer trigger a "not recognized" false negative for a sharded family — `tests/Csharp2Md.Storage.Tests/Scale/ScaleInputGenerator.cs`'s `retrieval.md` exclusion is deleted from `Publish_ScaleInput_SplitsEachNamedFamilyAndEveryFileFitsThePublishedCeiling`'s `unshardableEnvelopeArtifacts` set, and the test still passes end to end (the fixture's `contains`/`belongs-to` families are outside GCPC-048's seven kinds, so it exercises `PostingHints`' size fix directly, not `AppendRelationsSection`/`AppendDisposition`'s recognition fix — those two are proven by two new dedicated unit tests instead, since no existing fixture shards a GCPC-048 relation kind or a disposition family): `tests/Csharp2Md.Projection.Tests/Guides/RetrievalGuideProjectorTests.cs`'s `Project_RelationsSection_ShardedInvokesFamily_IsRecognizedNotReportedAbsent` (new, real `LayoutPlanner`-driven split of eight `Invokes` relations under an 8-byte ceiling — not the hand-built `ViewWithConfirmedRelationKinds` fixture, which never shards) asserts the section text names the sharded family's retrieval path and never claims `invokes` "is not recognized"; `Project_DispositionsSection_ShardedUnresolvedFamily_IsRecognizedNotReportedAbsent` (new, same technique for a sharded `relations/unresolved.json`) asserts the same for the unresolved disposition
+- [x] The guide's own published byte size is asserted within the published ceiling on the scale input — `ScaleInputGeneratorTests.Publish_ScaleInput_SplitsEachNamedFamilyAndEveryFileFitsThePublishedCeiling`'s existing per-file ceiling loop now covers `retrieval.md` too (the exclusion removed above), proven against the real end-to-end `FilesystemTransactionalStore` + `PackageProjector` publish path under the real derived ~32 KiB ceiling; `RetrievalGuideProjectorTests.cs`'s new `Project_PostingsSection_ShardedOutgoingFamily_DescribesBucketingOnceNotOncePerShard` isolates the mechanism directly (40 sharded `Invokes` relations under an 8-byte ceiling produce exactly one `postings/outgoing` line, not one per `ShardWriter` bucket)
+- [x] The unsplit case's existing guide text is asserted unchanged — all 18 pre-existing `RetrievalGuideProjectorTests` assertions (unsplit relations, dispositions and postings sections, exact backtick-quoted keys) pass unmodified against the fixed code, proving `slots.Contains(artifactKey)`'s exact-match branch (still checked first, before the new `HasFamily` fallback) keeps its original wording and backticks when a family is not split
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj` — also ran the full multi-project gate (Domain/Analysis/Storage/Cli/Projection) as a final cross-check since F4 also touched `Csharp2Md.Storage`
+- [x] Test count reported; total 2063 (Domain 563, Analysis 826, Storage 386, Cli 59, Projection 229) — up from 2060 after F4 (+3 Projection)
 
 **Tests**: unit
 **Gate**: full
+
+**Deviation**: None beyond what's noted above (the `ScaleInputGenerator` fixture proving `PostingHints`' size fix rather than `AppendRelationsSection`/`AppendDisposition`'s recognition fix, which needed two purpose-built tests instead — not a change to any production file outside `RetrievalGuideProjector.cs`, the fix's own listed file).
 
 **Commit**: `fix(projection): recognize sharded families in the retrieval guide`
 

@@ -241,6 +241,21 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   backtick-quoted key the publication does not actually hold). `AppendRelationsSection`,
   `AppendDisposition` and `PostingHints` -- the original four call sites, now sharing the same helper --
   remain open and are routed to the Verifier's Fix 5.
+  **Resolved by the Verifier's Fix 5** (2026-09-11): the three remaining call sites now share the same
+  `HasFamily`/`IsShardOf` stem-prefix helper F1 introduced -- `AppendRelationsSection` and
+  `AppendDisposition` each fall back to a no-backticks "matching ... shard" sentence when the exact key is
+  absent but a shard of it exists, instead of "no such relation is recognized"/"none is recognized".
+  `PostingHints` (the second, size symptom T63 found: one line per `ShardWriter` bucket) now yields one
+  hint per posting family regardless of shard count, so `retrieval.md` itself stays within the ceiling
+  under scale -- proven by removing the `retrieval.md` exclusion from `ScaleInputGeneratorTests.Publish_
+  ScaleInput_SplitsEachNamedFamilyAndEveryFileFitsThePublishedCeiling`'s per-file ceiling check, which now
+  passes end to end. The recognition fix itself needed two new dedicated unit tests
+  (`Project_RelationsSection_ShardedInvokesFamily_IsRecognizedNotReportedAbsent`,
+  `Project_DispositionsSection_ShardedUnresolvedFamily_IsRecognizedNotReportedAbsent`) rather than
+  `ScaleInputGenerator`: that fixture's own sharded families (`contains`, `belongs-to`) fall outside
+  GCPC-048's seven relation kinds and it carries no candidate/unresolved/frontier records, so it never
+  exercised `AppendRelationsSection`/`AppendDisposition`'s absent-vs-sharded branch -- only `PostingHints`'
+  size bug, which aggregates postings across every relation kind including those two.
 - **`Csharp2Md.Projection.ShardWriter`'s bucketing is a single fixed-depth 256-bucket hash, not
   adaptive like `LayoutPlanner`'s own family splitting** (found in T63, 2026-09-10, while calibrating
   `ScaleInputGenerator`): design.md F9 already named this precisely -- "`ShardWriter` buckets on the

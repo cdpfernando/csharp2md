@@ -211,7 +211,11 @@ public sealed class ScaleInputGeneratorTests
             // facts/configuration.json, quarantine/records.json) are no longer excluded: F1 gave them
             // the same adaptive sharding PlanFamily already applies to flat record-array families, so
             // this scale input's Document and Symbol facts driving facts/structural.json over the
-            // ceiling now split it instead of publishing one oversized artifact.
+            // ceiling now split it instead of publishing one oversized artifact. retrieval.md is no
+            // longer excluded either: F5 rewrote RetrievalGuideProjector's PostingHints to describe a
+            // posting family's bucketing once instead of enumerating every ShardWriter shard, so the
+            // guide itself now stays within the ceiling under this same scale input's sharded
+            // outgoing/incoming postings.
             var unshardableEnvelopeArtifacts = new HashSet<string>(StringComparer.Ordinal)
             {
                 "manifest.json",
@@ -220,18 +224,6 @@ public sealed class ScaleInputGeneratorTests
                 "diagnostics.json",
                 "measurements.json",
                 "run-certification.json",
-                // retrieval.md: a pre-existing, documented gap (context.md's "RetrievalGuideProjector's
-                // own prose assumes no family is ever sharded" Deferred Idea, found at T52) that this
-                // scale input is the first fixture to actually trigger a *size* symptom for, not only
-                // the prose-correctness symptom that entry originally described --
-                // RetrievalGuideProjector's own "## 2. Select a postings bucket" section
-                // (PostingHints, over view.Slots) lists one line per *shard key*, not one line per
-                // posting family, so once a posting family splits into many shards under the real
-                // ceiling, the guide itself grows past the ceiling it documents. F5 (depends on F1)
-                // reworks RetrievalGuideProjector's remaining call sites (AppendRelationsSection,
-                // AppendDisposition and PostingHints) to recognize a family by stem/prefix and describe
-                // its bucketing once, not enumerate every shard, and removes this exclusion.
-                "retrieval.md",
             };
             foreach (var file in Directory.EnumerateFiles(packageDirectory, "*", SearchOption.AllDirectories))
             {
