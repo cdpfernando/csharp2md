@@ -2159,6 +2159,138 @@ T62 -> T66
 
 ---
 
+## Verifier Fix Tasks (iteration 1)
+
+Routed from `.specs/features/generator-cli-projections-certification/validation.md`'s first-iteration
+FAIL. Each fix carries its own gate and atomic commit, same discipline as T1-T66. Execute in priority
+order (F1, F2, F3 first — Blocker/Major; F4, F5 after — Minor).
+
+### F1: Shard compound fact families and bound manifest/retrieval-guide size
+
+**What**: Give compound fact families (`facts/structural.json`, `facts/architecture.json`,
+`facts/contract.json`, `facts/persistence.json`, `facts/configuration.json`, `quarantine/records.json`)
+the same adaptive sharding `PlanFamily` already applies to flat record arrays, or split each compound
+bundle into per-fact-type flat families `PlanFamily` can shard. Bound `manifest.json` and `retrieval.md`
+too, or state and test their exemption explicitly.
+**Where**: `src/Csharp2Md.Storage/Mapping/LayoutPlanner.cs`, `src/Csharp2Md.Storage/Mapping/PackagePublisher.cs`, `src/Csharp2Md.Storage/FactualPackageReader.cs`
+**Depends on**: T66
+**Requirement**: GCPC-038, GCPC-039, GCPC-044
+
+**Done when**:
+
+- [ ] The exclusion lists at `tests/Csharp2Md.Storage.Tests/Scale/ScaleInputGenerator.cs:219-247` and `tests/Csharp2Md.Analysis.Tests/Readiness/LlmReadinessChecklist.cs:157-170` are deleted, the loops fail against pre-fix code, then pass against the fix
+- [ ] A corpus-level test walks every file of a real `fixtures/CertificationCorpus` `analyze` and asserts none exceeds the published `artifact_ceiling_bytes` — no exclusion list anywhere
+- [ ] A sharded compound family round-trips through `FactualPackageReader` to the same document as its unsplit equivalent
+- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [ ] Test count reported; total ≥ previous task's total
+
+**Tests**: integration
+**Gate**: full
+
+**Commit**: `fix(storage): shard compound fact families and bound manifest and guide size`
+
+---
+
+### F2: Emit a discrete unresolved record for an unhandled, nameable message operation
+
+**What**: Add a branch in `RelationPass.EmitUnresolved` for "published message operation, nameable
+payload, zero inbound handlers" that emits `UnresolvedRecord(kind: UsesContract, cause: NoCandidateFound)`
+carrying the operation as source and the message-operation observation as evidence, so every recognized
+message operation reaches exactly one of contract binding / candidate / unresolved record / declared
+exclusion.
+**Where**: `src/Csharp2Md.Analysis/Classification/Passes/RelationPass.cs`, `tests/Csharp2Md.Analysis.Tests/Certification/EngineCertificationRunner.cs`
+**Depends on**: T66
+**Requirement**: GCPC-087, GCPC-092
+
+**Done when**:
+
+- [ ] T4's `OrderShipped` fixture is asserted to reach exactly one of the four outcomes end to end via a real `analyze`, not a hand-built record
+- [ ] `EngineCertificationRunner.ResolveContract` is strengthened so `Unresolved` is returned only when a real `UnresolvedRecord` or `CandidateLink` names the payload, never inferred from the message-operation observation alone
+- [ ] `MessagingContractPostingTests.cs:75,102`'s hand-built `UnresolvedRecord` constructions are replaced with (or supplemented by) a corpus-level assertion driven by the classifier's real output
+- [ ] An invariant test asserts every recognized message operation in the corpus reaches exactly one outcome
+- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [ ] Test count reported; total ≥ previous task's total
+
+**Tests**: integration
+**Gate**: full
+
+**Commit**: `fix(analysis): publish a discrete unresolved record for an unhandled message operation`
+
+---
+
+### F3: Advance the version axes and compare them in validate
+
+**What**: Advance `schema_version`, `extractor_set_version` and `classifier_set_version` to 2 (alongside
+`taxonomy_version`, already 2), and extend `PackageValidator.EnsureProvenanceCompatible` to reject a
+package whose `SchemaVersion` or `TaxonomyVersion` exceeds the running generator's, not only a newer
+`GeneratorVersion`.
+**Where**: `src/Csharp2Md.Domain/Registry/TaxonomyVersions.cs`, `src/Csharp2Md.Storage/Validation/PackageValidator.cs`, `tests/Csharp2Md.Domain.Tests/Registry/TaxonomyVersionsTests.cs`, `tests/Csharp2Md.Cli.Tests/ExitCodeTests.cs`
+**Depends on**: T66
+**Requirement**: GCPC-071
+
+**Done when**:
+
+- [ ] `TaxonomyVersionsTests.cs:66`'s `TaxonomyTables_Default_MovesOnlyTaxonomyVersionToTwo` is rewritten for the new expected values and asserts `schema_version`, `extractor_set_version` and `classifier_set_version` are each 2
+- [ ] An exit-code test mutates `SchemaVersion` (not `GeneratorVersion`) to a value higher than the running generator's and asserts `validate` exits `6`
+- [ ] The existing `GeneratorVersion`-newer-than-running case (`ExitCodeTests.cs:102`) still exits `6` unchanged
+- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
+- [ ] Test count reported; total ≥ previous task's total
+
+**Tests**: unit
+**Gate**: build
+
+**Commit**: `fix(domain): advance the schema and extractor/classifier version axes`
+
+---
+
+### F4: Publish degradation reasons onto affected coverage metrics
+
+**What**: Route `LayoutPlan.DegradationReasons` (and any analysis-side degradation, e.g. an unreadable
+accepted document) onto the affected `CoverageMetric` so `coverage.json` carries a real reason with its
+affected count in at least one live path, closing the vacuous-satisfaction gap in GCPC-004.
+**Where**: `src/Csharp2Md.Analysis/Pipeline/ValidationAndCoverageStage.cs`, `src/Csharp2Md.Storage/Mapping/DomainMapper.cs`
+**Depends on**: F1
+**Requirement**: GCPC-004
+
+**Done when**:
+
+- [ ] An end-to-end test forces a degradation (e.g. a record exceeding the ceiling, or an unreadable accepted document) and asserts the published `coverage.json` carries a non-empty `reasons` array with a correct `AffectedCount`
+- [ ] The existing zero-degradation case still publishes an empty reasons array
+- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [ ] Test count reported; total ≥ previous task's total
+
+**Tests**: integration
+**Gate**: build
+
+**Commit**: `fix(analysis): publish degradation reasons onto their affected coverage metric`
+
+---
+
+### F5: Make the retrieval guide recognize sharded families and stay within the ceiling
+
+**What**: Rewrite `RetrievalGuideProjector`'s `AppendRelationsSection`, `AppendDisposition` and
+`PostingHints` to recognize a family by stem/prefix rather than exact slot equality, and to describe a
+family's bucketing once instead of enumerating every shard, so the guide never claims a sharded family
+"is not recognized in this package" and never itself exceeds the ceiling.
+**Where**: `src/Csharp2Md.Projection/Guides/RetrievalGuideProjector.cs`
+**Depends on**: F1
+**Requirement**: GCPC-048
+
+**Done when**:
+
+- [ ] `ScaleInputGenerator`'s reproducing fixture is asserted to no longer trigger a "not recognized" false negative for a sharded family
+- [ ] The guide's own published byte size is asserted within the published ceiling on the scale input
+- [ ] The unsplit case's existing guide text is asserted unchanged
+- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [ ] Test count reported; total ≥ previous task's total
+
+**Tests**: unit
+**Gate**: full
+
+**Commit**: `fix(projection): recognize sharded families in the retrieval guide`
+
+---
+
 ## Phase Execution Map
 
 ```
