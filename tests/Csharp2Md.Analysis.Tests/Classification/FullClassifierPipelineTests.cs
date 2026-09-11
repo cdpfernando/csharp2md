@@ -109,10 +109,7 @@ public sealed class FullClassifierPipelineTests
             candidates,
             link => link.Kind == "targets" && link.Source.Id == outboundHttp.Identity.Id);
 
-        var manifest = CanonicalJson.Read<ManifestEnvelope>(
-            Assert.Single(
-                publication.ArtifactsInPublicationOrder,
-                artifact => artifact.CanonicalKey == "manifest.json").Payload.AsSpan());
+        var manifest = PublishedManifestTestData.Read(publication);
         var unresolvedEntry = Assert.Single(manifest.Artifacts, entry => entry.CanonicalKey == "relations/unresolved");
         var unresolvedFragment = publication.ArtifactsInPublicationOrder
             .SingleOrDefault(artifact => artifact.CanonicalKey == "relations/unresolved.json");

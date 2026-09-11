@@ -235,15 +235,10 @@ public sealed class ExitCodeTests
         var certificationBytes = CanonicalJson.Write(mutated);
         File.WriteAllBytes(certificationPath, certificationBytes.ToArray());
 
-        var manifestPath = Path.Combine(packageDirectory, "manifest.json");
-        var manifest = CanonicalJson.Read<ManifestEnvelope>(File.ReadAllBytes(manifestPath));
-        var index = manifest.Artifacts.IndexOf(
-            manifest.Artifacts.Single(static entry => entry.Path == "run-certification.json"));
-        var updatedManifest = manifest with
-        {
-            Artifacts = manifest.Artifacts.SetItem(index, manifest.Artifacts[index] with { ByteSize = certificationBytes.Length }),
-        };
-        File.WriteAllBytes(manifestPath, CanonicalJson.Write(updatedManifest).ToArray());
+        PublishedManifestTestFile.RewriteEntry(
+            packageDirectory,
+            static entry => entry.Path == "run-certification.json",
+            entry => entry with { ByteSize = certificationBytes.Length });
     }
 
     private static async Task<(string Child, string OutputPath)> AnalyzeFixtureAsync()

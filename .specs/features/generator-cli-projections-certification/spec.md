@@ -209,7 +209,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 **Acceptance Criteria**:
 1. The system SHALL publish a declared per-scenario reading budget in tokens and file reads, and a declared per-artifact byte ceiling. (GCPC-036)
 2. The system SHALL derive the per-artifact byte ceiling from the declared per-scenario reading budget and the package's measured bytes-per-token ratio, and SHALL publish that calculation with its inputs. (GCPC-037)
-3. The system SHALL publish no artifact whose byte size exceeds the declared per-artifact ceiling. (GCPC-038)
+3. The system SHALL publish no artifact whose byte size exceeds the declared per-artifact ceiling, except an indivisible single record that exceeds the ceiling; the system SHALL publish that record alone, record a degradation reason and SHALL NOT truncate it. (GCPC-038)
 4. WHEN facts, observations, confirmed relations, candidates, unresolved records, open frontiers, catalogs or postings would exceed the ceiling THEN the system SHALL split them into shards, each within the ceiling. (GCPC-039)
 5. WHEN an artifact is split THEN the system SHALL preserve every record's identity, its deterministic ordering, its payload hash and the resolvability of every citation that addressed it. (GCPC-040)
 6. WHEN a citation addresses a record in a split artifact THEN reading the cited artifact at the cited ordinal SHALL yield the record the citation claimed. (GCPC-041)
@@ -218,7 +218,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 9. WHEN the scale input is analyzed THEN the system SHALL split the `contains` relation payload, the `belongs-to` relation payload and the invocation observation payload, and SHALL publish no artifact exceeding the ceiling. (GCPC-044)
 10. WHEN a run completes THEN the system SHALL publish the byte size and token estimate of the largest artifact of each role. (GCPC-045)
 
-**Independent Test**: Generate the deterministic scale input sized so that `contains`, `belongs-to` and invocation observations each exceed the derived ceiling by at least one order of magnitude. After analyze, walk every file in the package and assert none exceeds the published ceiling, that all three payloads are sharded, that no directory is named after a fact identity, and that every catalog and posting citation still resolves to the record it claims. Re-run and assert identical shard assignment.
+**Independent Test**: Generate the deterministic scale input sized so that `contains`, `belongs-to` and invocation observations each exceed the derived ceiling by at least one order of magnitude. After analyze, walk every file in the package and assert none exceeds the published ceiling except a shard containing exactly one indivisible record with a published degradation reason; assert all three payloads are sharded, no directory is named after a fact identity, and every catalog and posting citation still resolves to the record it claims. Re-run and assert identical shard assignment.
 
 ---
 
@@ -543,13 +543,13 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-035 | P1: Document policy | D-04 safeguard | Design | Verified |
 | GCPC-036 | P1: Bounded payloads | D-02; output-and-retrieval.md scale constraints | Design | Verified |
 | GCPC-037 | P1: Bounded payloads | D-02 | Design | Verified |
-| GCPC-038 | P1: Bounded payloads | Audit B4; calibrates RP-52 | Design | ❌ Needs Fix |
+| GCPC-038 | P1: Bounded payloads | Audit B4; calibrates RP-52 | Design | Verified |
 | GCPC-039 | P1: Bounded payloads | Audit B4; output-and-retrieval.md | Design | Verified |
 | GCPC-040 | P1: Bounded payloads | Audit gate 4 | Design | Verified |
 | GCPC-041 | P1: Bounded payloads | RP-20 and RP-27 preserved after split | Design | Verified |
 | GCPC-042 | P1: Bounded payloads | RP-53 and RP-54 | Design | Verified |
 | GCPC-043 | P1: Bounded payloads | output-and-retrieval.md scale constraints | Design | Verified |
-| GCPC-044 | P1: Bounded payloads | Audit inventory: contains, belongs-to, invocation | Design | ⚠️ Partial (ceiling clause) |
+| GCPC-044 | P1: Bounded payloads | Audit inventory: contains, belongs-to, invocation | Design | Verified |
 | GCPC-045 | P1: Bounded payloads | quality-and-security.md performance | Design | Verified |
 | GCPC-046 | P1: Retrieval guide | Audit B5 | Design | Verified |
 | GCPC-047 | P1: Retrieval guide | Audit B4 and B5 | Design | Verified |

@@ -201,12 +201,11 @@ public sealed class ScaleInputGeneratorTests
             Assert.Equal(CeilingCalculator.Derive().CeilingBytes, ceilingBytes);
 
             // GCPC-038: every published *record-bearing, shardable* file fits the declared ceiling.
-            // Only the fixed one-per-package singleton envelopes (manifest, registry, coverage,
+            // Only the fixed one-per-package singleton envelopes (registry, coverage,
             // diagnostics, measurements, run-certification) are excluded -- LayoutPlanner.Plan never
             // splits them (out of GCPC-039's explicit list of shardable families, and each one's own
-            // size in this input is bounded by a fixed metric/reason count or, for manifest.json, by the
-            // shard count this run itself produced -- not by any one record's content, so splitting it
-            // would be self-referential). The compound fact-family bundles (facts/structural.json,
+            // size in this input is bounded by a fixed metric/reason count. The manifest is included:
+            // F6 shards its entry list when necessary. The compound fact-family bundles (facts/structural.json,
             // facts/architecture.json, facts/contract.json, facts/persistence.json,
             // facts/configuration.json, quarantine/records.json) are no longer excluded: F1 gave them
             // the same adaptive sharding PlanFamily already applies to flat record-array families, so
@@ -218,7 +217,6 @@ public sealed class ScaleInputGeneratorTests
             // outgoing/incoming postings.
             var unshardableEnvelopeArtifacts = new HashSet<string>(StringComparer.Ordinal)
             {
-                "manifest.json",
                 PackagePublisher.RegistryKey,
                 "coverage.json",
                 "diagnostics.json",
@@ -345,8 +343,16 @@ public sealed class ScaleInputGeneratorTests
         return Directory.GetDirectories(outputRoot).Single();
     }
 
-    private static ManifestEnvelope ReadManifest(string packageDirectory) =>
-        CanonicalJson.Read<ManifestEnvelope>(File.ReadAllBytes(Path.Combine(packageDirectory, "manifest.json")));
+    private static ManifestEnvelope ReadManifest(string packageDirectory)
+    {
+        var manifest = CanonicalJson.Read<ManifestEnvelope>(
+            File.ReadAllBytes(Path.Combine(packageDirectory, "manifest.json")));
+        return ManifestSharder.Resolve(
+            manifest,
+            path => File.ReadAllBytes(Path.Combine(
+                packageDirectory,
+                path.Replace('/', Path.DirectorySeparatorChar))).ToImmutableArray());
+    }
 
     private static string[] ShardFiles(string packageDirectory, string familyDirectory, string stem)
     {

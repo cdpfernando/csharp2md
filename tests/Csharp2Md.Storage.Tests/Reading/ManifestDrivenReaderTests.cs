@@ -8,6 +8,7 @@ using Csharp2Md.Domain.Relations;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Tests.Filesystem;
+using Csharp2Md.Storage.Validation;
 using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage.Tests.Reading;
@@ -30,9 +31,14 @@ public sealed class ManifestDrivenReaderTests
         PackageDirectoryWriter.Write(unshardedPath, document, LayoutPlanner.Plan(document, int.MaxValue));
 
         var shardedPath = Path.Combine(output.DirectoryPath, "sharded");
-        var shardedPlan = LayoutPlanner.Plan(document, ceilingBytes: 512);
+        var shardedPlan = LayoutPlanner.Plan(document, ceilingBytes: 4096);
         PackageDirectoryWriter.Write(shardedPath, document, shardedPlan);
         Assert.True(shardedPlan.Artifacts.Count(a => a.ArtifactKey.StartsWith("relations/confirmed/contains", StringComparison.Ordinal)) > 1);
+        var manifestRoot = CanonicalJson.Read<ManifestEnvelope>(
+            File.ReadAllBytes(Path.Combine(shardedPath, "manifest.json")));
+        Assert.Contains(manifestRoot.Artifacts, static entry => entry.Role == ManifestSharder.PartRole);
+
+        PackageValidator.ValidatePackageDirectory(shardedPath);
 
         var unsharded = FactualPackageReader.Read(unshardedPath);
         var sharded = FactualPackageReader.Read(shardedPath);

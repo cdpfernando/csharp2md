@@ -155,6 +155,15 @@ internal static class PublicationPipeline
             }
         }
 
-        PackageValidator.ValidatePublishedManifest(manifest, artifactsByKey, deferredKeys);
+        // F6: the manifest fragment about to be written may itself be a small root pointing at
+        // manifest/parts.*.json shards -- those shards are already among the Payload fragments above (and
+        // therefore in artifactsByKey), so resolving here needs no extra plumbing.
+        var resolved = ManifestSharder.Resolve(
+            manifest,
+            path => artifactsByKey.TryGetValue(path, out var bytes)
+                ? bytes
+                : throw new PublicationRejectedException("manifest-file-missing", path));
+
+        PackageValidator.ValidatePublishedManifest(resolved, artifactsByKey, deferredKeys);
     }
 }

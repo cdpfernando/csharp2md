@@ -54,7 +54,7 @@ public sealed class PersistenceManifestTests
         var expectedRegistry = DomainMapper.ToWire(FactualSnapshot.Empty, new ManifestContext("s", "s")).TaxonomyRegistryCopy;
         Assert.True(registry.Payload.AsSpan().SequenceEqual(expectedRegistry.AsSpan()));
 
-        var manifest = CanonicalJson.Read<ManifestEnvelope>(artifacts[^1].Payload.AsSpan());
+        var manifest = PublishedManifestTestData.Read(publication);
         Assert.Contains(
             manifest.Artifacts,
             entry => (entry.CanonicalKey == "facts/structural" || entry.CanonicalKey.StartsWith("facts/structural.", StringComparison.Ordinal))

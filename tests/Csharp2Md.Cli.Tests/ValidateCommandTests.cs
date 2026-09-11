@@ -63,6 +63,7 @@ public sealed class ValidateCommandTests
         var (child, outputPath) = await AnalyzeFixtureAsync();
         try
         {
+            Assert.True(PublishedManifestTestFile.HasParts(child));
             var certification = CanonicalJson.Read<RunCertificationEnvelope>(
                 File.ReadAllBytes(Path.Combine(child, "run-certification.json")));
             var expectedExit = certification.Status switch

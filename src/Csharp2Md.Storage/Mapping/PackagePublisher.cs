@@ -56,7 +56,7 @@ internal static class PackagePublisher
 
         var context = new ManifestContext(document.Manifest.SolutionKey, document.Manifest.SolutionFileName);
         var manifest = ManifestBuilder.From(context, fragments, view, provenance);
-        return fragments.Add(new StagedFragment(ArtifactRole.Manifest, ManifestKey, CanonicalJson.Write(manifest)));
+        return fragments.AddRange(ManifestSharder.ToFragments(manifest, plan.CeilingBytes));
     }
 
     /// <summary>

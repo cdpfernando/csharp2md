@@ -79,7 +79,7 @@ public sealed class CertificationCorpusExcludedAssetTests
     {
         var publication = await AnalyzeCorpusAsync();
 
-        var manifest = ReadShard<ManifestEnvelope>(publication, "manifest.json");
+        var manifest = PublishedManifestTestData.Read(publication);
         var manifestPaths = manifest.Artifacts.Select(entry => entry.Path).ToArray();
 
         Assert.All(

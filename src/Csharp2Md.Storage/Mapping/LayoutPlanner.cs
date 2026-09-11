@@ -98,6 +98,14 @@ public sealed class LayoutPlan
     public ImmutableArray<ArtifactSlot> Slots =>
         [.. Artifacts.Select(static artifact => new ArtifactSlot(artifact.ArtifactKey, artifact.Role, artifact.Count))];
 
+    /// <summary>
+    /// The per-artifact byte ceiling this plan was computed under (F6/GCPC-038): carried alongside the
+    /// plan so a caller that shards something outside <see cref="Artifacts"/>' own family list -- the
+    /// manifest itself, see <see cref="ManifestSharder"/> -- uses the exact same ceiling the rest of this
+    /// publication was planned against, rather than re-deriving or hardcoding a second one.
+    /// </summary>
+    public int CeilingBytes { get; }
+
     internal LayoutPlan(
         ImmutableArray<PlannedArtifact> artifacts,
         ImmutableDictionary<string, ArtifactCitation> factLocations,
@@ -106,7 +114,8 @@ public sealed class LayoutPlan
         ImmutableArray<ArtifactCitation> unresolvedLocations,
         ImmutableArray<ArtifactCitation> frontierLocations,
         ImmutableArray<DegradationReasonDto> degradationReasons,
-        ImmutableDictionary<CoverageMetricKind, ImmutableArray<DegradationReasonDto>> coverageMetricDegradations)
+        ImmutableDictionary<CoverageMetricKind, ImmutableArray<DegradationReasonDto>> coverageMetricDegradations,
+        int ceilingBytes)
     {
         Artifacts = artifacts;
         FactLocations = factLocations;
@@ -116,6 +125,7 @@ public sealed class LayoutPlan
         FrontierLocations = frontierLocations;
         DegradationReasons = degradationReasons;
         CoverageMetricDegradations = coverageMetricDegradations;
+        CeilingBytes = ceilingBytes;
     }
 }
 
@@ -226,7 +236,8 @@ public static class LayoutPlanner
             frontierLocations,
             degradations.ToImmutable(),
             metricDegradations.ToImmutableDictionary(
-                static pair => pair.Key, static pair => pair.Value.ToImmutable()));
+                static pair => pair.Key, static pair => pair.Value.ToImmutable()),
+            ceilingBytes);
     }
 
     /// <summary>Which coverage metric a confirmed-relation family's degradation reason affects (see

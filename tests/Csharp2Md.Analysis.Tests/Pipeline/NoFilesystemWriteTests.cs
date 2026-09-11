@@ -54,7 +54,7 @@ public sealed class NoFilesystemWriteTests
         Assert.NotEmpty(structural.Symbols);
 
         Assert.Contains(artifacts, fragment => fragment.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal));
-        var manifest = CanonicalJson.Read<ManifestEnvelope>(artifacts[^1].Payload.AsSpan());
+        var manifest = PublishedManifestTestData.Read(publication);
         Assert.Contains(
             manifest.Artifacts,
             entry => (entry.CanonicalKey == "facts/structural" || entry.CanonicalKey.StartsWith("facts/structural.", StringComparison.Ordinal))

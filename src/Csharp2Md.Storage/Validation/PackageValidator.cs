@@ -207,6 +207,15 @@ public static class PackageValidator
             artifactsByKey[relative] = File.ReadAllBytes(absolutePath).ToImmutableArray();
         }
 
+        // F6: a manifest too large to fit the ceiling shards into manifest/parts.*.json, with the root
+        // (just read above) carrying only small part-pointer entries. Resolve to the real, full entry list
+        // before doing anything else with it -- every check below assumes it already has one.
+        var resolved = ManifestSharder.Resolve(
+            manifest,
+            path => artifactsByKey.TryGetValue(path, out var bytes)
+                ? bytes
+                : throw new PublicationRejectedException("manifest-file-missing", path));
+
         // A deferred artifact (a raw source copy -- see ManifestBuilder) is published with a placeholder
         // zero byte size, because its bytes could be read only once, at write time, and are gone by the
         // time this re-validation runs. A declared zero byte size is otherwise never legitimate for a real
@@ -214,12 +223,12 @@ public static class PackageValidator
         // it is the one signal this on-disk re-hydration has to recognize a deferred entry by and skip its
         // size comparison the same way live publication's own ValidateManifestCardinality does from the
         // in-memory StagedFragment.IsDeferred flag, which no longer exists once the package is on disk.
-        var deferredKeys = manifest.Artifacts
+        var deferredKeys = resolved.Artifacts
             .Where(static entry => entry.ByteSize == 0)
             .Select(static entry => entry.Path)
             .ToHashSet(StringComparer.Ordinal);
 
-        ValidatePublishedManifest(manifest, artifactsByKey, deferredKeys);
+        ValidatePublishedManifest(resolved, artifactsByKey, deferredKeys);
     }
 
     private static void EnsureRegisteredKinds(WireDocument document)

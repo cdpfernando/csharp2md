@@ -85,20 +85,20 @@ public sealed class AnalyzePackageWriteTests
 
             var manifestPath = Path.Combine(child, "manifest.json");
             Assert.True(File.Exists(manifestPath), $"manifest was not found at '{manifestPath}'.");
-            var manifest = CanonicalJson.Read<ManifestEnvelope>(File.ReadAllBytes(manifestPath));
+            var manifestEntries = PublishedManifestTestFile.ReadEntries(child);
             Assert.Contains(
-                manifest.Artifacts,
+                manifestEntries,
                 static entry => (entry.CanonicalKey == "facts/structural" || entry.CanonicalKey.StartsWith("facts/structural.", StringComparison.Ordinal))
                     && entry.Count > 0);
             Assert.Contains(
-                manifest.Artifacts,
+                manifestEntries,
                 static entry => entry.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal) && entry.Count > 0);
             // T52 made the derived ~32 KiB ceiling the live default: "contains" is one of the families
             // that can now legitimately split into shards ("relations/confirmed/contains.<bucket>") rather
             // than staying a single "relations/confirmed/contains" artifact, so this checks the family by
             // prefix, matching the "observations/" assertion just above it.
             Assert.Contains(
-                manifest.Artifacts,
+                manifestEntries,
                 static entry => entry.CanonicalKey.StartsWith("relations/confirmed/contains", StringComparison.Ordinal) && entry.Count > 0);
         }
         finally

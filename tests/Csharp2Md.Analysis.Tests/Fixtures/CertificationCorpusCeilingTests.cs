@@ -1,4 +1,5 @@
 using Csharp2Md.Analysis.Tests.Readiness;
+using Csharp2Md.Projection;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
@@ -9,17 +10,13 @@ namespace Csharp2Md.Analysis.Tests.Fixtures;
 /// GCPC-038 (the F1 fix for audit blocker B4): a real `analyze` of the mandatory certification corpus
 /// publishes no artifact over the declared per-artifact ceiling. This is the spec's own Independent Test
 /// for the "Bounded payloads and measured budgets" story -- run against the real corpus, with no
-/// exclusion list of any kind other than the fixed one-per-package envelope artifacts (manifest,
-/// registry, coverage, diagnostics, measurements, run-certification), whose own size is bounded by a
-/// fixed metric/reason count or, for manifest.json, by this run's own shard count -- never by any one
-/// record's content, so splitting them is a self-referential concern outside GCPC-039's family list, not
-/// evidence of the ceiling violation this test exists to catch.
+/// exclusion list other than the remaining fixed one-per-package envelopes whose size is bounded by a
+/// fixed metric/reason count. The manifest is included: F6 shards its entry list when necessary.
 /// </summary>
 public sealed class CertificationCorpusCeilingTests
 {
     private static readonly HashSet<string> UnshardableEnvelopeArtifacts = new(StringComparer.Ordinal)
     {
-        "manifest.json",
         "contracts/taxonomy-registry.json",
         "coverage.json",
         "diagnostics.json",
@@ -77,5 +74,67 @@ public sealed class CertificationCorpusCeilingTests
         {
             tree.Delete(recursive: true);
         }
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-038")]
+    [Trait("Requirement", "GCPC-044")]
+    public async Task AnalyzeAsync_AcmeOrders_PublishesNoAvoidableArtifactOverTheDeclaredCeiling()
+    {
+        var tree = Directory.CreateTempSubdirectory("csharp2md-acmeorders-ceiling-");
+        try
+        {
+            var solutionPath = Path.Combine(
+                AnalysisTestPaths.RepoRoot,
+                "fixtures",
+                "SyntheticSolution",
+                "Acme.Orders",
+                "Acme.Orders.slnx");
+            var store = new FilesystemTransactionalStore(
+                tree.FullName,
+                new PackageProjector(CeilingCalculator.Derive().CeilingBytes));
+            var result = await new AnalysisEngine(store).AnalyzeAsync(
+                AnalysisRequest.Create([solutionPath]),
+                CancellationToken.None);
+            Assert.Equal(PublicationStatus.Committed, Assert.Single(result.Solutions).Status);
+
+            var packageDirectory = Directory.GetDirectories(tree.FullName).Single();
+            var manifest = CanonicalJson.Read<ManifestEnvelope>(
+                File.ReadAllBytes(Path.Combine(packageDirectory, "manifest.json")));
+            Assert.NotNull(manifest.Provenance);
+            var ceilingBytes = manifest.Provenance.ArtifactCeilingBytes;
+
+            var offenders = Directory.EnumerateFiles(packageDirectory, "*", SearchOption.AllDirectories)
+                .Select(file => new
+                {
+                    Path = Path.GetRelativePath(packageDirectory, file).Replace(Path.DirectorySeparatorChar, '/'),
+                    Bytes = new FileInfo(file).Length,
+                })
+                .Where(file => file.Bytes > ceilingBytes)
+                .ToArray();
+
+            var offender = Assert.Single(offenders);
+            Assert.StartsWith("facts/architecture.", offender.Path, StringComparison.Ordinal);
+            Assert.True(
+                IsSingleRecordShard(Path.Combine(packageDirectory, offender.Path.Replace('/', Path.DirectorySeparatorChar))),
+                $"'{offender.Path}' exceeds the ceiling but is not the permitted indivisible single-record shard.");
+        }
+        finally
+        {
+            tree.Delete(recursive: true);
+        }
+    }
+
+    private static bool IsSingleRecordShard(string path)
+    {
+        var node = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllBytes(path));
+        return node switch
+        {
+            System.Text.Json.Nodes.JsonArray array => array.Count == 1,
+            System.Text.Json.Nodes.JsonObject { Count: > 0 } obj
+                when obj.All(static property => property.Value is System.Text.Json.Nodes.JsonArray) =>
+                obj.Sum(static property => ((System.Text.Json.Nodes.JsonArray)property.Value!).Count) == 1,
+            _ => false,
+        };
     }
 }

@@ -31,6 +31,10 @@ public sealed class ComposeCommandTests
                 .OrderBy(static path => path, StringComparer.Ordinal)
                 .ToArray();
             Assert.Equal(2, packageDirectories.Length);
+            Assert.Contains(
+                packageDirectories,
+                static package => PublishedManifestTestFile.ReadRoot(package).SolutionFileName == "Acme.Orders.slnx"
+                    && PublishedManifestTestFile.HasParts(package));
 
             // No solution present: the temp copy compose could otherwise have opened is gone entirely.
             Directory.Delete(solutionRoot, recursive: true);

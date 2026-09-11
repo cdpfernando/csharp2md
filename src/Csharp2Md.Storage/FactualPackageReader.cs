@@ -28,6 +28,13 @@ public static class FactualPackageReader
         var manifest = PackageValidator.ReadPayloadOrThrow<ManifestEnvelope>(manifestBytes, PackagePublisher.ManifestKey);
 
         var consumed = new HashSet<string>(StringComparer.Ordinal) { PackagePublisher.ManifestKey };
+        manifest = ManifestSharder.Resolve(
+            manifest, path => File.ReadAllBytes(ShardPath(packageDirectory, path)).ToImmutableArray());
+        foreach (var pointer in manifest.Artifacts.Where(static entry => entry.Role == ManifestSharder.PartRole))
+        {
+            consumed.Add(pointer.Path);
+        }
+
         var document = LoadDocument(packageDirectory, manifest, consumed);
         var report = PackageValidator.Validate(document);
 

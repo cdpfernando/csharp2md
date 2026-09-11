@@ -15,9 +15,18 @@ internal static class MarkdownProjector
 {
     private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
-    public static ImmutableArray<StagedFragment> Project(PublishedPackageView view)
+    /// <summary>
+    /// Reserved bytes at the end of a page's ceiling budget for the "N more direct relation(s)" note
+    /// itself (F6/GCPC-038) -- generous enough for a handful of posting citations against a long fact id,
+    /// so the note that describes the truncation never itself becomes the thing that overflows the page.
+    /// </summary>
+    private const int TruncationNoteReserveBytes = 4096;
+
+    public static ImmutableArray<StagedFragment> Project(
+        PublishedPackageView view, int ceilingBytes = ShardWriter.DefaultCeilingBytes)
     {
         ArgumentNullException.ThrowIfNull(view);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(ceilingBytes);
 
         var catalogs = IndexCatalogs(view);
         var postings = IndexPostings(view);
@@ -28,49 +37,56 @@ internal static class MarkdownProjector
             "entry-point",
             view.Document.EntryPoints.Select(static dto => PageSubject.From(dto)),
             catalogs,
-            postings);
+            postings,
+            ceilingBytes);
         AddFamily(
             fragments,
             view,
             "boundary-operation",
             view.Document.BoundaryOperations.Select(static dto => PageSubject.From(dto)),
             catalogs,
-            postings);
+            postings,
+            ceilingBytes);
         AddFamily(
             fragments,
             view,
             "component",
             view.Document.Components.Select(static dto => PageSubject.From(dto)),
             catalogs,
-            postings);
+            postings,
+            ceilingBytes);
         AddFamily(
             fragments,
             view,
             "deployment-unit",
             view.Document.DeploymentUnits.Select(static dto => PageSubject.From(dto)),
             catalogs,
-            postings);
+            postings,
+            ceilingBytes);
         AddFamily(
             fragments,
             view,
             "contract",
             view.Document.Contracts.Select(static dto => PageSubject.From(dto)),
             catalogs,
-            postings);
+            postings,
+            ceilingBytes);
         AddFamily(
             fragments,
             view,
             "data-store",
             view.Document.DataStores.Select(static dto => PageSubject.From(dto)),
             catalogs,
-            postings);
+            postings,
+            ceilingBytes);
         AddFamily(
             fragments,
             view,
             "data-object",
             view.Document.DataObjects.Select(static dto => PageSubject.From(dto)),
             catalogs,
-            postings);
+            postings,
+            ceilingBytes);
         return fragments.ToImmutable();
     }
 
@@ -80,7 +96,8 @@ internal static class MarkdownProjector
         string type,
         IEnumerable<PageSubject> subjects,
         ImmutableDictionary<string, ArtifactCitation> catalogs,
-        IReadOnlyDictionary<string, ImmutableArray<ArtifactCitation>> postings)
+        IReadOnlyDictionary<string, ImmutableArray<ArtifactCitation>> postings,
+        int ceilingBytes)
     {
         foreach (var subject in subjects.OrderBy(static page => page.FactId, StringComparer.Ordinal))
         {
@@ -92,7 +109,7 @@ internal static class MarkdownProjector
             fragments.Add(new StagedFragment(
                 ArtifactRole.Payload,
                 PageKey(type, subject.FactId),
-                Utf8NoBom.GetBytes(Render(view, subject, citation, catalogs, postings)).ToImmutableArray()));
+                Utf8NoBom.GetBytes(Render(view, subject, citation, catalogs, postings, ceilingBytes)).ToImmutableArray()));
         }
     }
 
@@ -107,54 +124,101 @@ internal static class MarkdownProjector
         PageSubject subject,
         ArtifactCitation citation,
         ImmutableDictionary<string, ArtifactCitation> catalogs,
-        IReadOnlyDictionary<string, ImmutableArray<ArtifactCitation>> postings)
+        IReadOnlyDictionary<string, ImmutableArray<ArtifactCitation>> postings,
+        int ceilingBytes)
     {
         var labels = LabelProjector.For(new FactReferenceDto(subject.FactId, subject.FactType), view);
-        var text = new StringBuilder();
-        text.Append("# ").Append(Title(labels, subject.FactType, citation)).Append('\n');
-        text.Append('\n');
-        text.Append("Fact id: ").Append(Cite(subject.FactId, citation)).Append(" (").Append(subject.FactType).Append(")\n");
-        text.Append('\n');
-        text.Append("## Facets").Append('\n');
+        var header = new StringBuilder();
+        header.Append("# ").Append(Title(labels, subject.FactType, citation)).Append('\n');
+        header.Append('\n');
+        header.Append("Fact id: ").Append(Cite(subject.FactId, citation)).Append(" (").Append(subject.FactType).Append(")\n");
+        header.Append('\n');
+        header.Append("## Facets").Append('\n');
         foreach (var (axis, value) in subject.Facets)
         {
-            text.Append("- ").Append(Cite(axis, citation)).Append(": ").Append(Cite(value, citation)).Append('\n');
+            header.Append("- ").Append(Cite(axis, citation)).Append(": ").Append(Cite(value, citation)).Append('\n');
         }
 
-        text.Append('\n');
-        text.Append("## Relations").Append('\n');
-        foreach (var relation in DirectRelations(view, subject.FactId))
-        {
-            text.Append("- ")
-                .Append(Cite(relation.Record.Kind, relation.Citation))
-                .Append(' ')
-                .Append(Cite(relation.Record.Source.Id, relation.Citation))
-                .Append(" -> ")
-                .Append(Cite(relation.Record.Target.Id, relation.Citation))
-                .Append('\n');
-        }
+        header.Append('\n');
+        header.Append("## Relations").Append('\n');
 
-        text.Append('\n');
-        text.Append("## Evidence").Append('\n');
+        postings.TryGetValue(subject.FactId, out var postingCitations);
+
+        var evidence = new StringBuilder();
+        evidence.Append('\n');
+        evidence.Append("## Evidence").Append('\n');
         if (catalogs.TryGetValue(subject.FactId, out var catalog))
         {
-            text.Append("- ").Append(Cite(subject.FactId, catalog)).Append('\n');
+            evidence.Append("- ").Append(Cite(subject.FactId, catalog)).Append('\n');
         }
 
-        if (postings.TryGetValue(subject.FactId, out var postingCitations))
+        if (!postingCitations.IsDefaultOrEmpty)
         {
             foreach (var posting in postingCitations)
             {
-                text.Append("- ").Append(Cite(subject.FactId, posting)).Append('\n');
+                evidence.Append("- ").Append(Cite(subject.FactId, posting)).Append('\n');
             }
         }
 
         if (SourceCitation(view, subject.SymbolId) is { } source)
         {
-            text.Append("- ").Append(Cite(source.ArtifactKey, source)).Append('\n');
+            evidence.Append("- ").Append(Cite(source.ArtifactKey, source)).Append('\n');
         }
 
-        return text.ToString();
+        // F6/GCPC-038: a fact with a large fan-in (e.g. a Component many Symbols belong to) can carry
+        // enough direct relations to push the whole page past the ceiling on its own -- a real, live-
+        // measured case (markdown/component/....md at 71,495 bytes on fixtures/SyntheticSolution/
+        // Acme.Orders, ~2.2x the published ceiling). Rather than enumerate every direct relation inline,
+        // include as many as fit the remaining budget and point the rest at the same posting artifact(s)
+        // the ## Evidence section below already cites for this fact -- the postings family exists
+        // precisely to hold a fact's full relation set without a whole-payload read (GCPC-047).
+        var relations = DirectRelations(view, subject.FactId);
+        var budget = Math.Max(
+            0,
+            ceilingBytes - Utf8NoBom.GetByteCount(header.ToString()) - Utf8NoBom.GetByteCount(evidence.ToString())
+                - TruncationNoteReserveBytes);
+        var relationsSection = new StringBuilder();
+        var usedBytes = 0;
+        var included = 0;
+        foreach (var relation in relations)
+        {
+            var line = "- "
+                + Cite(relation.Record.Kind, relation.Citation) + " "
+                + Cite(relation.Record.Source.Id, relation.Citation) + " -> "
+                + Cite(relation.Record.Target.Id, relation.Citation) + "\n";
+            var lineBytes = Utf8NoBom.GetByteCount(line);
+            if (usedBytes + lineBytes > budget)
+            {
+                break;
+            }
+
+            relationsSection.Append(line);
+            usedBytes += lineBytes;
+            included++;
+        }
+
+        if (included < relations.Length)
+        {
+            var remaining = relations.Length - included;
+            relationsSection.Append("- ").Append(remaining).Append(" more direct relation(s); see ");
+            if (!postingCitations.IsDefaultOrEmpty)
+            {
+                relationsSection.Append(string.Join(
+                    ", ", postingCitations.Select(posting => Cite(subject.FactId, posting))));
+            }
+            else
+            {
+                var families = relations
+                    .Select(static relation => relation.Citation.ArtifactKey)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(static key => key, StringComparer.Ordinal);
+                relationsSection.Append(string.Join(", ", families.Select(static key => "`" + key + "`")));
+            }
+
+            relationsSection.Append('\n');
+        }
+
+        return header.ToString() + relationsSection + evidence;
     }
 
     private static string Cite(string value, ArtifactCitation citation) =>

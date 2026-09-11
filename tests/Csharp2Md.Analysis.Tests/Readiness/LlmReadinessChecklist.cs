@@ -136,11 +136,9 @@ internal static class LlmReadinessChecklist
     }
 
     /// <summary>GCPC-036..GCPC-038: the derived ceiling and its token estimator are published, and no
-    /// record-bearing, shardable artifact exceeds it. Only the fixed one-per-package envelopes are
-    /// excluded from the per-file check -- LayoutPlanner.Plan never splits them (out of GCPC-039's
-    /// explicit list of shardable families; each one's size is bounded by a fixed metric/reason count
-    /// or, for manifest.json, by this run's own shard count, never by any one record's content), so
-    /// their size is not evidence of a ceiling violation. The compound fact-family bundles
+    /// record-bearing, shardable artifact exceeds it. Only fixed one-per-package envelopes with a
+    /// bounded metric/reason count are excluded. The manifest is included because F6 shards its entries.
+    /// The compound fact-family bundles
     /// (facts/structural.json and its siblings, quarantine/records.json) are no longer excluded: F1 gave
     /// them the same adaptive sharding flat record-array families already had.</summary>
     private static ReadinessVerdict EvaluateScale(string packageDirectory, ManifestEnvelope manifest)
@@ -160,7 +158,6 @@ internal static class LlmReadinessChecklist
 
         var unshardable = new HashSet<string>(StringComparer.Ordinal)
         {
-            "manifest.json",
             "contracts/taxonomy-registry.json", // PackagePublisher.RegistryKey; internal to Csharp2Md.Storage
             "coverage.json",
             "diagnostics.json",
