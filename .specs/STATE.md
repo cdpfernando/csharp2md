@@ -194,6 +194,47 @@ Normative documentation:
 - **Date**: 2026-08-26
 - **Status**: active.
 
+### AD-023 — Package layout is planned before it is written
+
+- **Decision**: `LayoutPlanner` computes every artifact key, every record ordinal, the intern tables and the shard split from the validated wire document, before payload writing, projection, manifest building or the reader touch it. All four consume that one plan. `FactualPackageReader` becomes manifest-driven.
+- **Reason**: a citation must be shard-aware at the moment it is minted; patching it afterwards is the two-ordinal indirection the audit criticized (design.md's Architecture Overview seam 2).
+- **Scope**: `Csharp2Md.Storage.Mapping.LayoutPlanner`, `PackagePublisher`, `ManifestBuilder`, `PublishedPackageView`, `FactualPackageReader`.
+- **Date**: 2026-09-10.
+- **Status**: active.
+
+### AD-024 — Run coverage, certification and accounting travel on `FactualSnapshot`
+
+- **Decision**: run coverage, the run-certification status and the invocation/contract accounting ledgers are produced by Analysis (`ValidationAndCoverageStage`, pipeline index 4) and ship on `FactualSnapshot`. Storage maps them into `coverage.json` and `run-certification.json` and never computes them.
+- **Reason**: only Analysis knows the denominators — recognized occurrences, framework exclusions, policy decisions; Storage computing them would make Storage classify, which AD-006 forbids. Extends AD-017's precedent for diagnostics.
+- **Scope**: `Csharp2Md.Analysis.Pipeline.ValidationAndCoverageStage`, `FactualSnapshot`, `Csharp2Md.Storage.Mapping.DomainMapper`.
+- **Date**: 2026-09-10.
+- **Status**: active.
+
+### AD-025 — `validate` re-hydrates and re-runs the publication-time validators; no second auditor
+
+- **Decision**: `validate` re-hydrates a published package through `FactualPackageReader` and re-runs the exact validators `Commit()` already runs (`PackageValidator`, `ProjectionValidator`). There is no separate package auditor.
+- **Reason**: one definition of "valid" cannot drift from itself, and a rule added for publication is enforced on `validate` for free. Detection strength is proven by a corpus of deliberately corrupted packages (one per defect class) rather than by a second implementation.
+- **Trade-off**: a validator defect invisible to `Commit()` is equally invisible to `validate` — the accepted cost of removing the separate auditor, mitigated by the corrupted-package corpus.
+- **Scope**: `Csharp2Md.Storage.FactualPackageReader`, `Csharp2Md.Storage.Validation.PackageValidator`, `ProjectionValidator`, `Csharp2Md.Cli.CommandFactory`.
+- **Date**: 2026-09-10.
+- **Status**: active.
+
+### AD-026 — `fixtures/CertificationCorpus` joins `fixtures/SyntheticSolution` as a versioned fixture
+
+- **Decision**: `fixtures/CertificationCorpus` is a second versioned analysis fixture, amending the standing constraint that `fixtures/SyntheticSolution` is the only one. `fixtures/SyntheticSolution` stays byte-identical — the new corpus is a sibling tree, not a modification of the existing one.
+- **Reason**: D-01. A new, versioned, C#-only corpus reproduces every audit regression (B1–B5, I1–I5) and runs in CI as the mandatory gate, while the eShop/eShopOnContainers clones stay optional (`LocalCorpus`) since they are gitignored and unreproducible in CI.
+- **Scope**: `fixtures/CertificationCorpus`, the standing engineering constraints below, every task in `generator-cli-projections-certification` that reads the corpus.
+- **Date**: 2026-09-10.
+- **Status**: active.
+
+### AD-027 — `derived_from` carries only the evidence that justifies its own promotion
+
+- **Decision**: a structural relation's evidence chain cites the observations that justify that specific promotion, not every observation inside the owning document. `ContainsRelationEmitter`'s per-promotion `EvidenceScope` replaces the document-wide chain it built before.
+- **Reason**: design.md F1 measured a `contains` edge citing 449 unrelated observations across `invocation`, `data-access`, `assignment` and `type-usage` — 96.3% of the audited `contains.json`'s bytes and, worse, a correctness defect: an LLM reading `derived_from` was actively misled about what justified the edge.
+- **Scope**: `Csharp2Md.Analysis.Classification.EvidenceScope`, `ContainsRelationEmitter`.
+- **Date**: 2026-09-10.
+- **Status**: active.
+
 ## Standing engineering constraints
 
 - Retrieval-led reasoning is mandatory for .NET/Roslyn work; never invent a Roslyn API.
@@ -201,17 +242,19 @@ Normative documentation:
 - Structural corruption aborts atomic publication; legitimate unknowns and candidates do not.
 - Secrets are never duplicated into facts, observations, indexes or diagnostics.
 - The tlc-spec-driven discrimination sensor remains skipped; the user runs Stryker manually. All other verifier steps remain required when feature execution begins.
-- The only versioned analysis fixture is `fixtures/SyntheticSolution`. `fixtures/eShop` and `fixtures/eShopOnContainers` are local clones (gitignored). After each feature Verifier, run `LocalCorpus` analyze tests when those clones exist; skip when they do not. Never add those apps to git.
+- The versioned analysis fixtures are `fixtures/SyntheticSolution` and, as of `generator-cli-projections-certification` (AD-026), `fixtures/CertificationCorpus`. `fixtures/SyntheticSolution` stays byte-identical; the new corpus is a sibling tree, not a modification. `fixtures/eShop` and `fixtures/eShopOnContainers` are local clones (gitignored). After each feature Verifier, run `LocalCorpus` analyze tests when those clones exist; skip when they do not (the skip also applies when the clone directory exists but the expected `.sln`/`.slnx` path inside it is missing). Never add those apps to git.
 
 ## Handoff
 
-- **Feature**: 7 `multi-solution-composition` — Execute complete, Verifier PASS (iteration 2). Report: `.specs/features/multi-solution-composition/validation.md`.
-- **Phase / Task**: T1–T28 done (`f4360d3` … `228fb8e`). F1 MSC-39 `7c2c7dc`. Verifier report committed as `d1eaae6`.
-- **Completed**: 40/40 ACs matched; 1723 tests passing (Domain 555, Analysis 662 excluding LocalCorpus, Storage 289, Cli 33, Projection 184). Two spec-precision gaps distilled as L-018–L-019; MSC-39 ac_gap as L-017. LocalCorpus skipped (`fixtures/eShop` absent; `eShopOnContainers` dir present but `eShopOnContainers-ServicesAndWebApps.sln` missing). Discrimination sensor skipped (standing skip).
+- **Feature**: 8 `generator-cli-projections-certification` — Execute complete (T1–T66, all seven phase-batches), Verifier not yet dispatched.
+- **Phase / Task**: T1–T59 done in prior batches. This batch (Phase 12 + 13, the feature's last): T60 `98c00cd`, T61 `50a786c`, T62 `2775fcc`, T63 `57dd22a`, T64 `b6843c4`, T65 `edb5ee7`, T66 (this commit — decisions, fixture-constraint amendment and roadmap closure only).
+- **Completed**: whole-package determinism across runs/paths/order (T60), batch semantic isolation (T61), batch certification (T62), sharding and budgets proven under a generated over-ceiling scale input (T63), the LLM-readiness checklist evaluating PASS on all six audit-flagged criteria against the certification corpus (T64), the same checklist wired as an optional `LocalCorpus` re-run (T65). AD-023 through AD-027 recorded above; the versioned-fixture constraint amended to admit `fixtures/CertificationCorpus` (AD-026); `architecture-knowledge-engine-roadmap.md` workstream 8 marked complete. Test total at T65: 2050 (Domain 563, Analysis 823, Storage 380, Cli 58, Projection 226), 0 failed, `Category=LocalCorpus` excluded. T66 itself adds no tests (a documentation/decision-log task).
 - **In-progress** (file:line): none.
-- **Next step**: Workstream 8 certification is unblocked. Start it only through `tlc-spec-driven` Specify when explicitly requested. Do not treat this Handoff as authorization to create that spec.
-- **Measured gate** (`d1eaae6`, 2026-08-27): `validate_state.py multi-solution-composition` clean. 1723 passed, 0 failed.
-- **Blockers**: none.
-- **Carry-forward**: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run each test project separately. Discrimination sensor remains skipped. `TreatWarningsAsErrors` is on. Spec-precision: MSC-27 multi-entry shared-contract order is via ShardWriter FactId, not a two-id list assertion; MSC-32 Independent Test `ordering-api` pair is synthetic contributions, not the Orders/Shipping fixture. LocalCorpus skip also applies when the clone directory exists but the expected `.sln` path is missing.
-- **Uncommitted files**: none after this snapshot commit.
-- **Branch**: `feature/multi-solution-composition`.
+- **Deferred item resolved (as "investigated, left deferred")**: the outstanding GCPC-092 gap (`ContractPass`/`RelationPass` publish no discrete candidate/unresolved record for a simply-unhandled message operation, e.g. T4's `OrderShipped`) was investigated before T64 per the batch's instructions. Conclusion: it does not block any of the six readiness criteria — the real audit files its own contract-coverage finding (I2) as explicitly non-blocking, none of the six PASS-required rows' cited evidence mentions contracts, and `ContractAccounting`'s aggregate already reconciles correctly (T57-confirmed). Full reasoning recorded as an addendum to the existing GCPC-092 entry in `context.md`; the underlying gap itself stays open as a follow-up, not silently dropped.
+- **Two new gaps found and recorded, not fixed (both outside a test-only task's file scope)**: (1) `RetrievalGuideProjector`'s `retrieval.md` grows past the derived ceiling once a posting family actually shards (its "select a postings bucket" section lists one line per shard key, not per family) — confirms, with a concrete size symptom, the pre-existing T52 Deferred Idea about the guide assuming no family is ever sharded. (2) `Csharp2Md.Projection.ShardWriter`'s bucketing is a single fixed-depth 256-bucket hash, never adaptive like `LayoutPlanner`'s own family splitting, so one fact id with very large fan-in or fan-out cannot have its own posting group split further. Both recorded as new/amended Deferred Ideas in `context.md` (found while building T63's `ScaleInputGenerator`), each with a concrete reproducing fixture now in the tree, each explicitly out of scope for this batch.
+- **Next step**: dispatch a fresh Verifier sub-agent for `generator-cli-projections-certification` (author ≠ verifier — implement.md step 9). On PASS, run `python3 .claude/skills/tlc-spec-driven/scripts/validate_state.py generator-cli-projections-certification` and confirm the full suite (excluding `Category=LocalCorpus`) is green, then check the two remaining T66 boxes in `tasks.md` and update `architecture-knowledge-engine-roadmap.md`'s Completion section. Do not treat this Handoff as the Verifier's PASS.
+- **Measured gate** (T65, `edb5ee7`, 2026-09-10): `dotnet build` clean, 0 warnings, 0 errors. 2050 tests passing, 0 failed, `Category=LocalCorpus` excluded (Domain 563, Analysis 823, Storage 380, Cli 58, Projection 226). `validate_state.py` not yet run for this feature — deliberately left for the orchestrator after the Verifier, per this batch's explicit instructions; T66's own two matching checkboxes in `tasks.md` are left unchecked with a note.
+- **Blockers**: none for closing this batch. The two newly recorded Deferred Ideas (RetrievalGuideProjector's per-shard-key prose/size, ShardWriter's fixed-depth bucketing) are real, open, unaddressed gaps that do not block any Done-when in this batch or GCPC-120's completion condition as currently scoped, but are worth the Verifier's attention.
+- **Carry-forward**: Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run each test project separately. Discrimination sensor remains skipped (standing skip). `TreatWarningsAsErrors` is on. `PackageProjector()`'s parameterless constructor defaults to `ShardWriter.DefaultCeilingBytes` (1 MiB), not the derived ~32 KiB ceiling — always pass `new PackageProjector(CeilingCalculator.Derive().CeilingBytes)` explicitly when publishing through `FilesystemTransactionalStore`/`InMemoryTransactionalStore` in a test, mirroring `CommandFactory`'s real `analyze` wiring (T60/T61's `Composition/CompositionBatch.AnalyzeAsync` helper still uses the parameterless form, latent and harmless only because those fixtures are too small to trigger it).
+- **Uncommitted files**: none of substance. Pre-existing untracked files from earlier sessions remain untouched by this batch: `artifacts/verifications/llm-readiness-s-cb7a4be0b1a084f3b59e9c2f1e3906f1.md` (the real audit report itself — referenced and read by this batch, never modified), `docs/specs/` and two `fixtures/csharp2md-analyze-out-*/` directories (unrelated stray test-run output, not part of this batch's file scope).
+- **Branch**: `feature/generator-cli-projections-certification`.

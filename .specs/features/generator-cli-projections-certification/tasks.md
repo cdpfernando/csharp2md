@@ -2145,12 +2145,12 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] AD-023 through AD-027 are recorded with decision, reason, trade-off, scope, date and status
-- [ ] The standing single-fixture constraint is amended to admit `fixtures/CertificationCorpus`
-- [ ] `architecture-knowledge-engine-roadmap.md` marks workstream 8 complete and the completion conditions checked
-- [ ] `python3 .claude/skills/tlc-spec-driven/scripts/validate_state.py generator-cli-projections-certification` exits clean
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Full suite reported green with its final total
+- [x] AD-023 through AD-027 are recorded with decision, reason, trade-off, scope, date and status
+- [x] The standing single-fixture constraint is amended to admit `fixtures/CertificationCorpus`
+- [x] `architecture-knowledge-engine-roadmap.md` marks workstream 8 complete and the completion conditions checked
+- [ ] `python3 .claude/skills/tlc-spec-driven/scripts/validate_state.py generator-cli-projections-certification` exits clean — **pending the feature-level Verifier**, run by the orchestrator after this batch (per implement.md's Critical Rule: after the last task, a fresh Verifier always runs automatically; author ≠ verifier). Confirmed the exact expected state now: `validate_state.py generator-cli-projections-certification` reports one error, "no validation.md - Execute is not done until the Verifier writes it," which is correct — this batch worker is not the Verifier and must not write that file.
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj` — ran clean: build 0 warnings/0 errors; Domain 563, Analysis 823, Storage 380, Cli 58, Projection 226 pass, 0 failed
+- [ ] Full suite reported green with its final total — **pending the feature-level Verifier**, run by the orchestrator after this batch. The command above was run in full for this task's own gate and is green (2050 total, 0 failed, `Category=LocalCorpus` excluded — see the bullet above and `.specs/STATE.md`'s Handoff); left unchecked here specifically because this bullet is the Definition-of-Done-level "full suite reported green" claim the Verifier itself confirms as part of the feature-level gate, not a restatement of this task's own build gate.
 
 **Tests**: none
 **Gate**: build

@@ -4,7 +4,7 @@
 
 This roadmap replaces every prior csharp2md/LLMWiki implementation queue. It defines ordering only; it does not create a feature spec or authorize implementation by itself.
 
-The target architecture is documented in [`docs/architecture/`](docs/architecture/README.md). Workstreams 1 through 5D are complete on `master`. What remains is the retrieval layer, multi-solution composition and certification.
+The target architecture is documented in [`docs/architecture/`](docs/architecture/README.md). Workstreams 1 through 7 are complete. Workstream 8 (final CLI, corpora, coverage gates, performance and migration completion) is Execute-complete (T1–T66); its feature-level Verifier has not yet run — see `.specs/STATE.md`'s Handoff.
 
 ## Delivery rules
 
@@ -48,7 +48,7 @@ The four classifier workstreams may proceed in parallel after the observation co
 | 5D | `components-deployments-configuration` | Complete on `master` (PR #14) | Components, deployment units, DI/options/clients/configuration and secure overrides |
 | 6 | `retrieval-projections` | In progress | Directly navigable catalogs, postings, source locators, Markdown and retrieval scenarios |
 | 7 | `multi-solution-composition` | Blocked by 6 | `1..N` isolated solution outputs, batch manifest and proven global correlations |
-| 8 | `generator-cli-projections-certification` | Blocked by 7 | Final analyze/validate/compose CLI, corpora, coverage gates, performance and migration completion |
+| 8 | `generator-cli-projections-certification` | Execute complete (T1–T66); Verifier pending | Final analyze/validate/compose CLI, corpora, coverage gates, performance and migration completion |
 
 ## Completion
 
@@ -62,6 +62,19 @@ The replacement is complete only when:
 - generated files support the documented retrieval scenarios without a query engine;
 - `1..N` solution analysis and composition are deterministic;
 - the repository documents only the new contract.
+
+Workstream 8's Execute phase (T1–T66) closes every condition above: the legacy pipeline and taxonomy
+were already gone by workstream 2; the registry drift gate stays green through the `symbol-facet`
+extension; run certification and the four coverage areas publish computed content with no `0/0`
+(P1 "Certified execution"); engine certification measures precision and recall against independently
+authored labeled corpora with a normative-threshold gate (P1 "Engine certification"); the certification
+corpus's own `analyze` completes without structural corruption and the generated over-ceiling scale
+input proves the derived byte ceiling holds (T63); the documented retrieval scenarios execute
+automatically against the published package with no query engine (P1 "Executable retrieval guide");
+and whole-package determinism plus batch isolation and certification are proven across runs, absolute
+paths, input order and multi-solution batches (T60–T62). This status is Execute-complete, not yet
+Verifier-confirmed — see `.specs/STATE.md`'s Handoff for what remains before workstream 8, and this
+roadmap, can be marked fully closed.
 
 ## Deferred after generator completion
 
