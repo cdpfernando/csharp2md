@@ -349,3 +349,17 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   P1 readiness rows T64's own Done-when names. Conclusion: this gap does not block T64, and T64
   proceeds without closing it. Left deferred, not silently dropped -- the follow-up description above
   stands unchanged.
+  **Resolved by the Verifier's Fix 2** (2026-09-10): `RelationPass.EmitUnresolved` (the follow-up this
+  entry already scoped) now publishes a discrete `UnresolvedRecord(kind: UsesContract, cause:
+  NoCandidateFound)` for a nameable, published event type with no `Contract` fact -- the exact branch
+  this entry named. Its `Source` is the outbound payload slot's `BoundaryOperation` reference
+  (GCPC-092's own unit) when `BoundaryPass` recognized one, falling back to the publishing callable
+  otherwise. `EngineCertificationRunner.ResolveContract` (the test-side resolver this entry's own
+  parent gap flagged as unfalsifiable) no longer infers `Unresolved` from a message-operation
+  observation's mere presence -- it now requires a real `UnresolvedRecord` or `CandidateLink` whose own
+  evidence names the event type. Proven against T4's real `OrderShipped` end to end by
+  `CertificationCorpusContractTests.AnalyzeAsync_CertificationCorpus_OrderShippedReachesExactlyOneOfTheFourOutcomes`
+  and an invariant test that every recognized `Publish`/`PublishAsync` operation in the corpus reaches
+  at least one outcome. `ContractAccounting.Build`'s arithmetic residual is untouched (still the
+  published `contract_coverage` numbers) but now reconciles against real records instead of being the
+  only account of "unresolved" that exists.

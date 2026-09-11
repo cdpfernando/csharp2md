@@ -31,6 +31,104 @@ public sealed class CertificationCorpusContractTests
     }
 
     [Fact]
+    [Trait("Requirement", "GCPC-087")]
+    [Trait("Requirement", "GCPC-092")]
+    public async Task AnalyzeAsync_CertificationCorpus_OrderShippedReachesExactlyOneOfTheFourOutcomes()
+    {
+        var publication = await AnalyzeCorpusAsync();
+
+        var isContracted = HasFamily(publication, "facts/contract.json")
+            && ShardedFactsReader.Read<ContractFactsShard>(publication.ArtifactsInPublicationOrder, "facts/contract.json")
+                .Contracts.Any(contract => contract.Proof.Value.Contains("OrderShipped", StringComparison.Ordinal));
+        var candidates = ReadShardedArray<CandidateLinkDto>(publication, "relations/candidates.json");
+        var isCandidate = candidates.Any(link =>
+            link.Kind == "uses-contract" && ReferencesOrderShipped(link.DerivedFrom));
+        var unresolved = ReadShardedArray<UnresolvedRecordDto>(publication, "relations/unresolved.json");
+        var unresolvedMatches = unresolved
+            .Where(record => record.Kind == "uses-contract" && ReferencesOrderShipped(record.Available))
+            .ToArray();
+
+        // T4's OrderShipped has zero handlers anywhere in the corpus, so it can never become a Contract
+        // (GCPC-090's no-name-similarity rule aside, ContractPass.Execute skips any group with no
+        // inbound operations) and no CandidateLink names an implementor either -- the only outcome the
+        // taxonomy leaves is an UnresolvedRecord, and exactly one, never zero and never more than one
+        // (GCPC-087).
+        Assert.False(isContracted, "OrderShipped has no handler anywhere in the corpus and must never become a Contract.");
+        Assert.False(isCandidate, "OrderShipped has no candidate implementor to propose.");
+        var match = Assert.Single(unresolvedMatches);
+        Assert.Equal("NoCandidateFound", match.Cause);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-087")]
+    public async Task AnalyzeAsync_CertificationCorpus_EveryRecognizedPublishOperationReachesExactlyOneOutcome()
+    {
+        var publication = await AnalyzeCorpusAsync();
+
+        var messageOperations = ReadShard<ImmutableArray<ObservationDto>>(publication, "observations/message-operation.json");
+        var publishOperations = messageOperations
+            .Where(observation => observation.Identity.Payload.Any(entry =>
+                entry.Key == "method-name" && (entry.Value.Value == "PublishAsync" || entry.Value.Value == "Publish")))
+            .ToArray();
+        Assert.NotEmpty(publishOperations);
+
+        var contractedTypeNames = HasFamily(publication, "facts/contract.json")
+            ? ShardedFactsReader.Read<ContractFactsShard>(publication.ArtifactsInPublicationOrder, "facts/contract.json")
+                .Contracts.Select(static contract => contract.Proof.Value).ToHashSet(StringComparer.Ordinal)
+            : [];
+        var candidates = ReadShardedArray<CandidateLinkDto>(publication, "relations/candidates.json");
+        var unresolved = ReadShardedArray<UnresolvedRecordDto>(publication, "relations/unresolved.json");
+
+        foreach (var operation in publishOperations)
+        {
+            var typeArgument = operation.Identity.Payload
+                .FirstOrDefault(entry => entry.Key == "type-argument")?.Value.Value;
+
+            var contracted = typeArgument is not null && contractedTypeNames.Contains(typeArgument);
+            var candidateCount = candidates.Count(link =>
+                link.Kind == "uses-contract" && link.DerivedFrom.Any(evidence => IsSameOccurrence(evidence, operation)));
+            var unresolvedCount = unresolved.Count(record =>
+                record.Kind == "uses-contract" && record.Available.Any(evidence => IsSameOccurrence(evidence, operation)));
+
+            var outcomes = (contracted ? 1 : 0) + candidateCount + unresolvedCount;
+            Assert.True(
+                outcomes >= 1,
+                $"Message operation on '{operation.Identity.Owner.Id}' (occurrence {operation.Identity.OccurrenceOrdinal}) "
+                    + "reached none of contract binding, candidate or unresolved record.");
+        }
+    }
+
+    private static bool IsSameOccurrence(ObservationIdentityDto evidence, ObservationDto operation) =>
+        evidence.Owner.Id == operation.Identity.Owner.Id
+        && evidence.Kind == operation.Identity.Kind
+        && evidence.OccurrenceOrdinal == operation.Identity.OccurrenceOrdinal;
+
+    private static bool ReferencesOrderShipped(ImmutableArray<ObservationIdentityDto> evidence) =>
+        evidence.Any(observation => observation.Owner.Id.Contains("PublishOrderShippedAsync", StringComparison.Ordinal));
+
+    private static bool HasFamily(CommittedPublication publication, string baseKey) =>
+        publication.ArtifactsInPublicationOrder.Any(artifact => ShardedFactsReader.IsFamilyMember(artifact.CanonicalKey, baseKey));
+
+    private static ImmutableArray<T> ReadShardedArray<T>(CommittedPublication publication, string canonicalKey)
+    {
+        var stem = canonicalKey.EndsWith(".json", StringComparison.Ordinal) ? canonicalKey[..^".json".Length] : canonicalKey;
+        var shardKeys = publication.ArtifactsInPublicationOrder
+            .Select(static artifact => artifact.CanonicalKey)
+            .Where(key => key == canonicalKey
+                || (key.StartsWith(stem + ".", StringComparison.Ordinal) && key.EndsWith(".json", StringComparison.Ordinal)))
+            .OrderBy(static key => key, StringComparer.Ordinal);
+
+        var records = ImmutableArray.CreateBuilder<T>();
+        foreach (var key in shardKeys)
+        {
+            var fragment = publication.ArtifactsInPublicationOrder.Single(artifact => artifact.CanonicalKey == key);
+            records.AddRange(CanonicalJson.Read<ImmutableArray<T>>(fragment.Payload.AsSpan()));
+        }
+
+        return records.ToImmutable();
+    }
+
+    [Fact]
     [Trait("Requirement", "GCPC-090")]
     public async Task AnalyzeAsync_CertificationCorpus_SameNamedPayloadTypesAreDistinctSymbolsInDifferentProjects()
     {

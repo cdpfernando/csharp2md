@@ -2206,12 +2206,12 @@ exclusion.
 
 **Done when**:
 
-- [ ] T4's `OrderShipped` fixture is asserted to reach exactly one of the four outcomes end to end via a real `analyze`, not a hand-built record
-- [ ] `EngineCertificationRunner.ResolveContract` is strengthened so `Unresolved` is returned only when a real `UnresolvedRecord` or `CandidateLink` names the payload, never inferred from the message-operation observation alone
-- [ ] `MessagingContractPostingTests.cs:75,102`'s hand-built `UnresolvedRecord` constructions are replaced with (or supplemented by) a corpus-level assertion driven by the classifier's real output
-- [ ] An invariant test asserts every recognized message operation in the corpus reaches exactly one outcome
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] T4's `OrderShipped` fixture is asserted to reach exactly one of the four outcomes end to end via a real `analyze`, not a hand-built record — `tests/Csharp2Md.Analysis.Tests/Fixtures/CertificationCorpusContractTests.cs`'s `AnalyzeAsync_CertificationCorpus_OrderShippedReachesExactlyOneOfTheFourOutcomes` (new): not contracted, no candidate, exactly one `UnresolvedRecord(kind: uses-contract, cause: NoCandidateFound)`
+- [x] `EngineCertificationRunner.ResolveContract` is strengthened so `Unresolved` is returned only when a real `UnresolvedRecord` or `CandidateLink` names the payload, never inferred from the message-operation observation alone — rewritten to read `relations/unresolved.json`/`relations/candidates.json` and match by the record's own evidence naming the event type; the `contract-ordershipped` labeled-corpus item still resolves to `Unresolved` (`EngineCertificationRunnerTests`, `EngineThresholdTests`), now for the real reason
+- [x] `MessagingContractPostingTests.cs:75,102`'s hand-built `UnresolvedRecord` constructions are replaced with (or supplemented by) a corpus-level assertion driven by the classifier's real output — supplemented: the hand-built test stays (it proves `PostingProjector`'s own response in isolation from whichever classifier produced the record), and the new `CertificationCorpusContractTests` methods prove the classifier side end to end; the file's doc comment now cites both
+- [x] An invariant test asserts every recognized message operation in the corpus reaches exactly one outcome — `AnalyzeAsync_CertificationCorpus_EveryRecognizedPublishOperationReachesExactlyOneOutcome` (new)
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
+- [x] Test count reported; total 2057 (Domain 563, Analysis 826, Storage 384, Cli 58, Projection 226) — up from 2055 after F1 (+2 Analysis)
 
 **Tests**: integration
 **Gate**: full

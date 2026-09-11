@@ -144,7 +144,6 @@ internal static class EngineCertificationRunner
     private static ExpectedState ResolveContract(string labelId, CommittedPublication publication)
     {
         var contracts = ReadOptionalContracts(publication);
-        var messageOperations = ReadOptionalArray<ObservationDto>(publication, "observations/message-operation.json");
 
         var eventTypeName = labelId switch
         {
@@ -159,11 +158,26 @@ internal static class EngineCertificationRunner
             return ExpectedState.Present;
         }
 
-        var isRecognizedMessageOperation = messageOperations.Any(observation =>
-            observation.Identity.Payload.Any(entry =>
-                entry.Key == "type-argument" && entry.Value.Value.Contains(eventTypeName, StringComparison.Ordinal)));
+        // F2: "Unresolved" is proven only by a real published UsesContract UnresolvedRecord or
+        // CandidateLink whose own evidence names this exact event type -- never inferred from the mere
+        // presence of a message-operation observation, which cannot distinguish "the classifier
+        // resolved this and simply chose a different outcome" from "the classifier never looked at it
+        // at all" (the defect GCPC-087/GCPC-092's fix closed).
+        var unresolvedRecords = ReadOptionalArray<UnresolvedRecordDto>(publication, "relations/unresolved.json");
+        var candidateLinks = ReadOptionalArray<CandidateLinkDto>(publication, "relations/candidates.json");
 
-        return isRecognizedMessageOperation ? ExpectedState.Unresolved : ExpectedState.Absent;
+        bool ReferencesEventType(ImmutableArray<ObservationIdentityDto> evidence) =>
+            evidence.Any(observation => observation.Kind == "message-operation"
+                && observation.Payload.Any(entry =>
+                    entry.Key == "type-argument" && entry.Value.Value.Contains(eventTypeName, StringComparison.Ordinal)));
+
+        if (unresolvedRecords.Any(record => record.Kind == "uses-contract" && ReferencesEventType(record.Available))
+            || candidateLinks.Any(link => link.Kind == "uses-contract" && ReferencesEventType(link.DerivedFrom)))
+        {
+            return ExpectedState.Unresolved;
+        }
+
+        return ExpectedState.Absent;
     }
 
     private static ExpectedState ResolvePersistence(string labelId, CommittedPublication publication)

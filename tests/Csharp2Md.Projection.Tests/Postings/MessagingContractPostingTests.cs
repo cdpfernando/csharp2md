@@ -25,8 +25,15 @@ namespace Csharp2Md.Projection.Tests.Postings;
 /// <c>ContractPassTests.Execute_EventTypeDeclaredInSameProjectAsPublisherAndHandler_DoesNotCreateContract</c>)
 /// means that pair can never become a <c>Contract</c> fact at all -- confirmed by a real
 /// <c>analyze</c> run of the certification corpus publishing no <c>facts/contract.json</c> whatsoever
-/// (see T54's deviation note in <c>tasks.md</c>). See <c>context.md</c>'s Deferred Ideas for the
-/// discrete candidate/unresolved-record gap this leaves for a future task.
+/// (see T54's deviation note in <c>tasks.md</c>). The GCPC-087/GCPC-092 discrete-record gap this
+/// deferred (a nameable, unhandled published message -- <c>OrderShipped</c> -- reaching none of
+/// contract binding, candidate or unresolved record) is closed by the Verifier's Fix 2:
+/// <c>RelationPass.EmitUnresolved</c> now publishes a real <c>UnresolvedRecord</c> for it, proven end
+/// to end against the real corpus by
+/// <c>Csharp2Md.Analysis.Tests.Fixtures.CertificationCorpusContractTests.AnalyzeAsync_CertificationCorpus_OrderShippedReachesExactlyOneOfTheFourOutcomes</c>.
+/// The hand-built <see cref="UnresolvedRecord"/> below still stands: it proves
+/// <see cref="PostingProjector"/>'s own response to an unresolved contract identity in isolation from
+/// whichever classifier produced it.
 /// </summary>
 public sealed class MessagingContractPostingTests
 {
