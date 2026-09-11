@@ -2418,10 +2418,10 @@ it as a run-level reason with its affected count. Either satisfies the edge case
 **Done when**:
 
 - [x] `AnalyzeAsync_AcmeOrders_PublishesNoAvoidableArtifactOverTheDeclaredCeiling` now reads the real default-ceiling package's `run-certification.json` and asserts a non-empty `record-exceeds-ceiling` reason whose `affected_count=1`
-- [x] `Publish_SameSnapshotUnderTheRealDefaultCeiling_PublishesAnEmptyReasonsArray` stays green and now also proves the run-level reasons contain no `record-exceeds-ceiling`
+- [x] `Publish_SameSnapshotUnderTheRealDefaultCeiling_PublishesAnEmptyReasonsArray` stays green, publishes no layout reason, and keeps `passed`; the degraded case proves `passed` becomes `degraded`, while `Publish_LayoutDegradation_PreservesAnAlreadyFailedCertification` proves `failed` is never downgraded
 - [x] The Acme.Orders test walks every over-ceiling artifact, proves each is an irreducible singleton, derives its unsharded family key, and requires a consumer-readable run-level reason naming that family
-- [x] Gate check passes: clean build (0 warnings, 0 errors), Analysis 827/827 with `Category!=LocalCorpus`, Storage 388/388
-- [x] Test count reported; total 2071 (Domain 563, Analysis 827, Storage 388, Cli 64, Projection 229); F9 strengthens two existing tests without inflating the count
+- [x] Gate check passes: clean build (0 warnings, 0 errors), Analysis 827/827 with `Category!=LocalCorpus`, Storage 389/389
+- [x] Test count reported; total 2072 (Domain 563, Analysis 827, Storage 389, Cli 64, Projection 229), including the added failed-status preservation case
 
 **Tests**: integration
 **Gate**: build

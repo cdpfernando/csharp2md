@@ -55,6 +55,7 @@ public sealed class CoverageDegradationRoutingTests
         Assert.Empty(coverage.PersistenceCoverage.DegradationReasons);
 
         var certification = ReadCertification(outcome);
+        Assert.Equal("degraded", certification.Status);
         var runReasons = certification.Reasons
             .Where(static reason => reason.StartsWith("record-exceeds-ceiling;", StringComparison.Ordinal))
             .ToArray();
@@ -90,6 +91,31 @@ public sealed class CoverageDegradationRoutingTests
         Assert.DoesNotContain(
             ReadCertification(outcome).Reasons,
             static reason => reason.StartsWith("record-exceeds-ceiling;", StringComparison.Ordinal));
+        Assert.Equal("passed", ReadCertification(outcome).Status);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-004")]
+    public void Publish_LayoutDegradation_PreservesAnAlreadyFailedCertification()
+    {
+        var coordinate = SolutionCoordinate.For(SolutionKey);
+        var outcome = PublicationPipeline.Publish(
+            ManyInvokesSnapshot(count: 3, RunCertificationStatus.Failed),
+            new ManifestContext(coordinate.Identity.Value, coordinate.SolutionFileName),
+            coordinate,
+            "s-test",
+            projector: null,
+            composer: null,
+            EmptySourceDocumentReader.Instance,
+            createView: null,
+            readingBudgetTokens: 1,
+            maxFileReadsPerScenario: 1);
+
+        var certification = ReadCertification(outcome);
+        Assert.Equal("failed", certification.Status);
+        Assert.Contains(
+            certification.Reasons,
+            static reason => reason.StartsWith("record-exceeds-ceiling;", StringComparison.Ordinal));
     }
 
     private static CoverageEnvelope ReadCoverage(PublicationOutcome outcome)
@@ -104,7 +130,9 @@ public sealed class CoverageDegradationRoutingTests
         return CanonicalJson.Read<RunCertificationEnvelope>(fragment.Payload.AsSpan());
     }
 
-    private static FactualSnapshot ManyInvokesSnapshot(int count)
+    private static FactualSnapshot ManyInvokesSnapshot(
+        int count,
+        RunCertificationStatus certificationStatus = RunCertificationStatus.Passed)
     {
         var workspace = WorkspaceIdentity.Create("acme");
         var solutionId = SolutionId.Create(workspace, "src/Acme.sln");
@@ -127,7 +155,15 @@ public sealed class CoverageDegradationRoutingTests
         var notApplicable = CoverageMetric.NotApplicable("No recognizable population in this fixture.");
         var coverage = new CoverageReport(notApplicable, linkedCallCoverage, notApplicable, notApplicable);
 
-        return new FactualSnapshot([.. facts], [], [.. relations], [], [], [], coverage: coverage);
+        return new FactualSnapshot(
+            [.. facts],
+            [],
+            [.. relations],
+            [],
+            [],
+            [],
+            coverage: coverage,
+            certification: new RunCertificationReport(certificationStatus, []));
     }
 
     private static Symbol CallerSymbol(ProjectId projectId) =>
