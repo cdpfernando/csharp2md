@@ -2386,11 +2386,11 @@ let provenance be the single declaration.
 
 **Done when**:
 
-- [ ] `tests/Csharp2Md.Storage.Tests/Mapping/ManifestRealCardinalityTests.cs` walks **every** entry of a real certification-corpus package and asserts `byte_size` equals the file's length on disk, `source/` entries included
-- [ ] `PackageValidator` rejects a manifest entry declaring `byte_size: 0` for a non-empty file, naming the artifact key and both values (GCPC-066), and `validate` maps it to exit `5`
-- [ ] A test asserts the manifest's top-level `schema_version`, `taxonomy_version` and `observation_schema_version` equal its own `provenance`'s, on a real published package
-- [ ] Gate check passes: full multi-project gate
-- [ ] Test count reported; total >= 2063
+- [x] `ManifestRealCardinalityTests.AnalyzeAsync_CertificationCorpus_EveryManifestSizeMatchesDiskAndVersionAxesMatchProvenance` walks **every** resolved entry of a real certification-corpus package and asserts `byte_size` equals the file's length on disk, including every `source/` entry
+- [x] `Validate_NonEmptySourceDeclaredAsZeroBytes_Exits5AndNamesBothSizes` proves `PackageValidator` rejects `byte_size: 0` for a non-empty source, names its artifact key plus declared and actual sizes, and `validate` maps the rejection to exit `5`
+- [x] The real-corpus cardinality test also asserts the manifest's top-level `schema_version`, `taxonomy_version` and `observation_schema_version` equal its own provenance; `ManifestBuilder` now derives both from that one provenance object and `DomainMapper` uses `TaxonomyTables.Default.Versions`
+- [x] Gate check passes: clean build (0 warnings, 0 errors), then all five test projects green sequentially with `Category!=LocalCorpus` where applicable
+- [x] Test count reported; total 2071 (Domain 563, Analysis 827, Storage 388, Cli 64, Projection 229), up from 2069 after F7 (+1 Storage, +1 Cli)
 
 **Tests**: integration
 **Gate**: build

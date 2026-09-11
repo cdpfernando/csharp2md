@@ -45,23 +45,45 @@ internal static class PublishedManifestTestFile
             return;
         }
 
-        foreach (var pointer in ReadEntries(packageDirectory).Where(static entry => entry.Role == PartRole))
+        if (TryRewriteNested(root.Artifacts, out rootEntries))
         {
-            var partPath = Path.Combine(packageDirectory, pointer.Path.Replace('/', Path.DirectorySeparatorChar));
-            var partBytes = File.ReadAllBytes(partPath);
-            var part = CanonicalJson.Read<ImmutableArray<ManifestEntry>>(partBytes);
-            if (!TryRewrite(part, out var rewritten))
-            {
-                continue;
-            }
-
-            var rewrittenBytes = CanonicalJson.Write(rewritten);
-            Assert.Equal(partBytes.Length, rewrittenBytes.Length);
-            File.WriteAllBytes(partPath, rewrittenBytes.ToArray());
+            File.WriteAllBytes(manifestPath, CanonicalJson.Write(root with { Artifacts = rootEntries }).ToArray());
             return;
         }
 
         throw new InvalidOperationException("The requested manifest entry was not found.");
+
+        bool TryRewriteNested(
+            ImmutableArray<ManifestEntry> entries,
+            out ImmutableArray<ManifestEntry> rewritten)
+        {
+            for (var index = 0; index < entries.Length; index++)
+            {
+                var pointer = entries[index];
+                if (pointer.Role != PartRole)
+                {
+                    continue;
+                }
+
+                var partPath = Path.Combine(
+                    packageDirectory,
+                    pointer.Path.Replace('/', Path.DirectorySeparatorChar));
+                var part = CanonicalJson.Read<ImmutableArray<ManifestEntry>>(File.ReadAllBytes(partPath));
+                if (!TryRewrite(part, out var rewrittenPart)
+                    && !TryRewriteNested(part, out rewrittenPart))
+                {
+                    continue;
+                }
+
+                var rewrittenBytes = CanonicalJson.Write(rewrittenPart);
+                File.WriteAllBytes(partPath, rewrittenBytes.ToArray());
+                rewritten = entries.SetItem(index, pointer with { ByteSize = rewrittenBytes.Length });
+                return true;
+            }
+
+            rewritten = default;
+            return false;
+        }
 
         bool TryRewrite(ImmutableArray<ManifestEntry> entries, out ImmutableArray<ManifestEntry> rewritten)
         {

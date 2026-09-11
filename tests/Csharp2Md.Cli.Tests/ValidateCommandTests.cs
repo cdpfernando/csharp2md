@@ -195,6 +195,52 @@ public sealed class ValidateCommandTests
         }
     }
 
+    [Fact]
+    [Trait("Requirement", "GCPC-061")]
+    [Trait("Requirement", "GCPC-066")]
+    public async Task Validate_NonEmptySourceDeclaredAsZeroBytes_Exits5AndNamesBothSizes()
+    {
+        var solutionPath = Path.Combine(
+            CliTestPaths.RepoRoot, "fixtures", "SyntheticSolution", "Acme.Payments", "Acme.Payments.slnx");
+        var outputPath = CliTestPaths.UniqueOutputPath();
+        try
+        {
+            var (analyzeExit, _, analyzeStderr) = await CliInvoke.RunAsync(
+                ["analyze", "--solution", solutionPath, "--output", outputPath]);
+            Assert.True(
+                analyzeExit is ExitCodes.Success or ExitCodes.Degraded or ExitCodes.CertificationFailed,
+                $"analyze did not publish; exit {analyzeExit}: {analyzeStderr}");
+
+            var child = SinglePackageDirectory(outputPath);
+            var sourceEntries = PublishedManifestTestFile.ReadEntries(child)
+                .Where(static entry => entry.Path.StartsWith("source/", StringComparison.Ordinal))
+                .ToArray();
+            Assert.NotEmpty(sourceEntries);
+            var sourceEntry = sourceEntries[0];
+            var actualBytes = new FileInfo(Path.Combine(
+                child,
+                sourceEntry.Path.Replace('/', Path.DirectorySeparatorChar))).Length;
+            Assert.True(actualBytes > 0);
+
+            PublishedManifestTestFile.RewriteEntry(
+                child,
+                entry => entry.Path == sourceEntry.Path,
+                entry => entry with { ByteSize = 0 });
+
+            var (exitCode, _, stderr) = await CliInvoke.RunAsync(["validate", "--package", child]);
+
+            Assert.Equal(ExitCodes.StructuralCorruption, exitCode);
+            Assert.Contains("manifest-size-mismatch", stderr, StringComparison.Ordinal);
+            Assert.Contains(sourceEntry.Path, stderr, StringComparison.Ordinal);
+            Assert.Contains("manifest declares 0 bytes", stderr, StringComparison.Ordinal);
+            Assert.Contains($"artifact is {actualBytes} bytes", stderr, StringComparison.Ordinal);
+        }
+        finally
+        {
+            CliTestPaths.TryDeleteDirectory(outputPath);
+        }
+    }
+
     /// <summary>The one package directory ("s-&lt;hash&gt;") under an output root that may also hold a
     /// top-level composition/ directory (GCPC-068 wired a BatchComposer into the real analyze store).</summary>
     private static string SinglePackageDirectory(string outputPath) =>

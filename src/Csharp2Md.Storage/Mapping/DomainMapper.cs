@@ -117,7 +117,7 @@ public static class DomainMapper
             snapshot.Frontiers.Select(WireRelationMapping.ToDto),
             static dto => $"{dto.Occurrence.Owner.Id}:{dto.Occurrence.Kind}:{dto.Occurrence.OccurrenceOrdinal}");
 
-        var versions = TaxonomyVersions.Initial;
+        var versions = TaxonomyTables.Default.Versions;
         return new WireDocument(
             new ManifestEnvelope(
                 versions.SchemaVersion,

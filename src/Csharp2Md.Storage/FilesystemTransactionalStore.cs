@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Mapping;
+using Csharp2Md.Storage.Validation;
 using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage;
@@ -424,6 +425,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
                     _store._allowlist);
                 var artifacts = outcome.Fragments.AddRange(_deferred);
                 WriteStaging(artifacts);
+                RewriteManifestWithWrittenByteSizes();
                 SwapStagingIntoChild();
                 if (outcome.Contribution is not null)
                 {
@@ -472,6 +474,58 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
                 stream.Write(fragment.ReadPayload().AsSpan());
             }
         }
+
+        /// <summary>
+        /// GCPC-057/GCPC-061: deferred source fragments must remain single-read, so their real size is
+        /// unknowable when <see cref="Mapping.ManifestBuilder"/> first constructs the manifest. Once all
+        /// fragments have been written into the still-private staging directory, rebuild the manifest
+        /// from those actual file lengths and re-shard it under the same published ceiling. Any failure
+        /// still aborts staging before the atomic directory swap.
+        /// </summary>
+        private void RewriteManifestWithWrittenByteSizes()
+        {
+            var manifestPath = Path.Combine(_stagingPath, PackagePublisher.ManifestKey);
+            var root = PackageValidator.ReadPayloadOrThrow<ManifestEnvelope>(
+                File.ReadAllBytes(manifestPath), PackagePublisher.ManifestKey);
+            var resolved = ManifestSharder.Resolve(root, path => ReadStagedFile(path));
+            var entries = resolved.Artifacts
+                .Where(static entry => entry.Role != ManifestSharder.PartRole)
+                .Select(entry => WithWrittenCardinality(entry, ReadStagedFile(entry.Path)))
+                .ToImmutableArray();
+            var rewritten = root with { Artifacts = entries };
+            var ceilingBytes = root.Provenance?.ArtifactCeilingBytes ?? int.MaxValue;
+            var fragments = ManifestSharder.ToFragments(rewritten, ceilingBytes);
+
+            File.Delete(manifestPath);
+            FilesystemIo.DeleteDirectory(Path.Combine(_stagingPath, "manifest"), _retry);
+            foreach (var fragment in fragments)
+            {
+                var destination = Path.Combine(
+                    _stagingPath,
+                    fragment.CanonicalKey.Replace('/', Path.DirectorySeparatorChar));
+                var directory = Path.GetDirectoryName(destination);
+                ArgumentException.ThrowIfNullOrEmpty(directory);
+                Directory.CreateDirectory(directory);
+                using var stream = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None);
+                stream.Write(fragment.Payload.AsSpan());
+            }
+        }
+
+        private ImmutableArray<byte> ReadStagedFile(string relativePath) =>
+            File.ReadAllBytes(Path.Combine(
+                _stagingPath,
+                relativePath.Replace('/', Path.DirectorySeparatorChar))).ToImmutableArray();
+
+        private static ManifestEntry WithWrittenCardinality(
+            ManifestEntry entry,
+            ImmutableArray<byte> bytes) =>
+            entry with
+            {
+                ByteSize = bytes.Length,
+                Count = entry.Path == PackagePublisher.RegistryKey
+                    ? entry.Count
+                    : ManifestBuilder.CountTopLevelEntries(bytes.AsSpan()),
+            };
 
         private void SwapStagingIntoChild()
         {

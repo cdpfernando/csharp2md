@@ -77,7 +77,7 @@ public sealed class ManifestBuilderTests
 
         Assert.Equal(Context.SolutionKey, manifest.SolutionKey);
         Assert.Equal(Context.SolutionFileName, manifest.SolutionFileName);
-        Assert.Equal(TaxonomyVersions.Initial.SchemaVersion, manifest.SchemaVersion);
+        Assert.Equal(TaxonomyTables.Default.Versions.SchemaVersion, manifest.SchemaVersion);
     }
 
     [Fact]

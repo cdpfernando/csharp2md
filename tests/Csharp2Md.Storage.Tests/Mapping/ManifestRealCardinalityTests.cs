@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Csharp2Md.Analysis;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
@@ -7,6 +8,7 @@ using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Domain.Relations;
+using Csharp2Md.Projection;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
 
@@ -17,6 +19,59 @@ namespace Csharp2Md.Storage.Tests.Mapping;
 public sealed class ManifestRealCardinalityTests
 {
     private static readonly ManifestContext Context = new("s-test", "Acme.sln");
+
+    [Fact]
+    [Trait("Requirement", "GCPC-057")]
+    [Trait("Requirement", "GCPC-061")]
+    public async Task AnalyzeAsync_CertificationCorpus_EveryManifestSizeMatchesDiskAndVersionAxesMatchProvenance()
+    {
+        var output = Directory.CreateTempSubdirectory("csharp2md-manifest-cardinality-");
+        try
+        {
+            var solutionPath = Path.Combine(RepoRoot(), "fixtures", "CertificationCorpus", "CertificationCorpus.slnx");
+            var ceilingBytes = CeilingCalculator.Derive().CeilingBytes;
+            var engine = new AnalysisEngine(new FilesystemTransactionalStore(
+                output.FullName,
+                new PackageProjector(ceilingBytes)));
+
+            var result = await engine.AnalyzeAsync(
+                AnalysisRequest.Create([solutionPath]),
+                CancellationToken.None);
+
+            Assert.Equal(PublicationStatus.Committed, Assert.Single(result.Solutions).Status);
+            var packageDirectory = Assert.Single(Directory.GetDirectories(output.FullName));
+            var root = CanonicalJson.Read<ManifestEnvelope>(
+                File.ReadAllBytes(Path.Combine(packageDirectory, PackagePublisher.ManifestKey)));
+            var manifest = ManifestSharder.Resolve(
+                root,
+                path => File.ReadAllBytes(Path.Combine(
+                    packageDirectory,
+                    path.Replace('/', Path.DirectorySeparatorChar))).ToImmutableArray());
+
+            Assert.NotNull(root.Provenance);
+            Assert.Equal(root.Provenance.SchemaVersion, root.SchemaVersion);
+            Assert.Equal(root.Provenance.TaxonomyVersion, root.TaxonomyVersion);
+            Assert.Equal(root.Provenance.ObservationSchemaVersion, root.ObservationSchemaVersion);
+
+            Assert.NotEmpty(manifest.Artifacts);
+            foreach (var entry in manifest.Artifacts)
+            {
+                var path = Path.Combine(packageDirectory, entry.Path.Replace('/', Path.DirectorySeparatorChar));
+                Assert.True(File.Exists(path), $"Manifest entry '{entry.Path}' does not exist on disk.");
+                Assert.Equal(new FileInfo(path).Length, entry.ByteSize);
+            }
+
+            var sourceEntries = manifest.Artifacts
+                .Where(static entry => entry.Path.StartsWith("source/", StringComparison.Ordinal))
+                .ToArray();
+            Assert.NotEmpty(sourceEntries);
+            Assert.All(sourceEntries, static entry => Assert.True(entry.ByteSize > 0, entry.Path));
+        }
+        finally
+        {
+            output.Delete(recursive: true);
+        }
+    }
 
     [Fact]
     public void From_EveryManifestEntry_RealCountAndByteSizeMatchTheCitedArtifact()
@@ -133,4 +188,16 @@ public sealed class ManifestRealCardinalityTests
             ClassifierIdentity.Create("csharp2md.structural.contains", 1),
             [AnalysisVariantId.Create("net10.0", "Release", [], "ci")],
             EvidenceMethod.Syntactic);
+
+    private static string RepoRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "csharp2md.slnx")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName
+            ?? throw new InvalidOperationException("Could not locate the repository root.");
+    }
 }

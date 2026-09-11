@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
-using Csharp2Md.Domain.Registry;
 using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage.Mapping;
@@ -62,15 +61,15 @@ internal static class ManifestBuilder
                 fragment.CanonicalKey));
         }
 
-        var versions = TaxonomyVersions.Initial;
+        var effectiveProvenance = provenance ?? ProvenanceDto.Current();
         return new ManifestEnvelope(
-            versions.SchemaVersion,
-            versions.TaxonomyVersion,
-            versions.ObservationSchemaVersion,
+            effectiveProvenance.SchemaVersion,
+            effectiveProvenance.TaxonomyVersion,
+            effectiveProvenance.ObservationSchemaVersion,
             context.SolutionKey,
             context.SolutionFileName,
             artifacts.ToImmutable(),
-            provenance ?? ProvenanceDto.Current());
+            effectiveProvenance);
     }
 
     /// <summary>
@@ -84,24 +83,23 @@ internal static class ManifestBuilder
     /// </summary>
     internal static int CountTopLevelEntries(ReadOnlySpan<byte> payload)
     {
-        JsonNode? node;
         try
         {
-            node = JsonNode.Parse(payload);
+            var node = JsonNode.Parse(payload);
+            return node switch
+            {
+                JsonArray array => array.Count,
+                JsonObject { Count: > 0 } obj when obj.All(static property => property.Value is JsonArray) =>
+                    obj.Sum(static property => ((JsonArray)property.Value!).Count),
+                _ => 1,
+            };
         }
-        catch (JsonException)
+        catch (Exception exception) when (exception is JsonException or ArgumentException)
         {
+            // Source documents are indivisible artifacts, not package JSON. JsonNode can defer duplicate-
+            // property validation until object enumeration, so treat either parse shape failure as the
+            // same singleton-document case.
             return 1;
-        }
-
-        switch (node)
-        {
-            case JsonArray array:
-                return array.Count;
-            case JsonObject { Count: > 0 } obj when obj.All(static property => property.Value is JsonArray):
-                return obj.Sum(static property => ((JsonArray)property.Value!).Count);
-            default:
-                return 1;
         }
     }
 

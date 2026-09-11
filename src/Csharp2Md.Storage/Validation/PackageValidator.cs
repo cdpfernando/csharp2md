@@ -75,10 +75,9 @@ public static class PackageValidator
     /// <summary>
     /// Checks a manifest against the artifact bytes it describes: every declared entry exists with the
     /// declared count and byte size (GCPC-061), and every artifact is declared -- nothing is reachable
-    /// that the manifest does not name (GCPC-062). A deferred artifact (a raw source copy, published with
-    /// a placeholder zero count and size because its bytes cannot be read twice -- see
-    /// <c>ManifestBuilder</c>) is skipped rather than compared, since there is nothing genuine to compare
-    /// it against. Also checks the manifest's own provenance for compatibility with the running generator
+    /// that the manifest does not name (GCPC-062). A deferred artifact may be skipped only by the
+    /// pre-write validation pass, where its single-read payload has deliberately not been materialized;
+    /// an on-disk package has no exemption. Also checks the manifest's own provenance for compatibility with the running generator
     /// (GCPC-071's rejection reason; the exit-code mapping itself is Phase 9's CLI work).
     /// </summary>
     public static void ValidatePublishedManifest(
@@ -216,19 +215,7 @@ public static class PackageValidator
                 ? bytes
                 : throw new PublicationRejectedException("manifest-file-missing", path));
 
-        // A deferred artifact (a raw source copy -- see ManifestBuilder) is published with a placeholder
-        // zero byte size, because its bytes could be read only once, at write time, and are gone by the
-        // time this re-validation runs. A declared zero byte size is otherwise never legitimate for a real
-        // record-bearing artifact (even an empty envelope still serializes to a non-empty JSON object), so
-        // it is the one signal this on-disk re-hydration has to recognize a deferred entry by and skip its
-        // size comparison the same way live publication's own ValidateManifestCardinality does from the
-        // in-memory StagedFragment.IsDeferred flag, which no longer exists once the package is on disk.
-        var deferredKeys = resolved.Artifacts
-            .Where(static entry => entry.ByteSize == 0)
-            .Select(static entry => entry.Path)
-            .ToHashSet(StringComparer.Ordinal);
-
-        ValidatePublishedManifest(resolved, artifactsByKey, deferredKeys);
+        ValidatePublishedManifest(resolved, artifactsByKey);
     }
 
     private static void EnsureRegisteredKinds(WireDocument document)
