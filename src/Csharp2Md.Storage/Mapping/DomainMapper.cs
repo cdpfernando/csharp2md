@@ -232,6 +232,54 @@ public static class DomainMapper
     private static readonly CoverageMetricDto UnevaluatedMetric =
         CoverageMetricDto.NotApplicable("Coverage was not computed for this snapshot.");
 
+    /// <summary>
+    /// Merges layout-time degradation reasons (GCPC-004) -- e.g. a record <see cref="LayoutPlanner"/>
+    /// could not reduce to fit the publication ceiling and published in a shard of its own instead --
+    /// onto the coverage metric each reason's family feeds (<see cref="LayoutPlan.CoverageMetricDegradations"/>),
+    /// keeping any reasons the metric already carried. A metric absent from <paramref name="byMetric"/> is
+    /// returned unchanged. <see cref="PublicationPipeline"/> calls this after planning so a real
+    /// degradation is never silently dropped from <c>coverage.json</c>.
+    /// </summary>
+    internal static CoverageEnvelope WithCoverageDegradations(
+        CoverageEnvelope coverage,
+        ImmutableDictionary<CoverageMetricKind, ImmutableArray<DegradationReasonDto>> byMetric)
+    {
+        ArgumentNullException.ThrowIfNull(coverage);
+        ArgumentNullException.ThrowIfNull(byMetric);
+
+        if (byMetric.IsEmpty)
+        {
+            return coverage;
+        }
+
+        return coverage with
+        {
+            EntryPointCoverage = AppendDegradations(coverage.EntryPointCoverage, byMetric, CoverageMetricKind.EntryPoint),
+            LinkedCallCoverage = AppendDegradations(coverage.LinkedCallCoverage, byMetric, CoverageMetricKind.LinkedCall),
+            ContractCoverage = AppendDegradations(coverage.ContractCoverage, byMetric, CoverageMetricKind.Contract),
+            PersistenceCoverage = AppendDegradations(coverage.PersistenceCoverage, byMetric, CoverageMetricKind.Persistence),
+        };
+    }
+
+    private static CoverageMetricDto AppendDegradations(
+        CoverageMetricDto metric,
+        ImmutableDictionary<CoverageMetricKind, ImmutableArray<DegradationReasonDto>> byMetric,
+        CoverageMetricKind kind)
+    {
+        if (!byMetric.TryGetValue(kind, out var additional) || additional.IsEmpty)
+        {
+            return metric;
+        }
+
+        var merged = Ordered(
+            metric.DegradationReasons.AddRange(additional),
+            static dto => $"{dto.Code}:{dto.Detail}");
+
+        return metric.NotApplicableReason is not null
+            ? CoverageMetricDto.NotApplicable(metric.NotApplicableReason, merged)
+            : CoverageMetricDto.Evaluated(metric.Numerator, metric.Denominator, metric.Exclusions, metric.Unknowns, merged);
+    }
+
     private static CoverageMetricDto ToDto(CoverageMetric metric)
     {
         var degradationReasons = Ordered(

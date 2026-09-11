@@ -106,6 +106,20 @@ internal static class PublicationPipeline
             }
         }
 
+        // F4 (GCPC-004): a layout-time degradation (LayoutPlanner's `record-exceeds-ceiling`, e.g. a
+        // solitary oversized `invokes`/`accesses-data`/`uses-contract` relation) is computed only once
+        // `plan` exists, after the coverage envelope DomainMapper.ToWire already baked from the analysis
+        // snapshot -- so it is merged onto the document actually serialized here, right before ordering,
+        // rather than staying silently unread as it did before this fix. Applied last so it reflects
+        // whichever `plan` (original or the retrieval-scenario re-plan above) is about to be written.
+        if (!plan.CoverageMetricDegradations.IsEmpty)
+        {
+            publishedDocument = publishedDocument with
+            {
+                Coverage = DomainMapper.WithCoverageDegradations(publishedDocument.Coverage, plan.CoverageMetricDegradations),
+            };
+        }
+
         var fragments = PackagePublisher.ToPublicationOrder(publishedDocument, plan, projections, provenance);
         ValidateManifestCardinality(fragments);
         return new PublicationOutcome(fragments, contribution);

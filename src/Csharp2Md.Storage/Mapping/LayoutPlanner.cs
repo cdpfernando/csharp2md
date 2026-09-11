@@ -7,6 +7,18 @@ using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage.Mapping;
 
+/// <summary>
+/// One of the four mandatory coverage metrics (GCPC-002), used to route a layout-time degradation reason
+/// (GCPC-004) onto the metric whose numerator the degraded family feeds.
+/// </summary>
+internal enum CoverageMetricKind
+{
+    EntryPoint,
+    LinkedCall,
+    Contract,
+    Persistence,
+}
+
 /// <summary>One record's identity and its canonical JSON entry, placed at a specific ordinal inside its
 /// planned artifact.</summary>
 public sealed record PlannedRecord(string Identity, ImmutableArray<byte> Entry);
@@ -68,6 +80,21 @@ public sealed class LayoutPlan
     /// </summary>
     public ImmutableArray<DegradationReasonDto> DegradationReasons { get; }
 
+    /// <summary>
+    /// The subset of <see cref="DegradationReasons"/> (GCPC-004) whose family feeds one of the four
+    /// mandatory coverage metrics' numerator -- <c>invokes</c> confirmed relations feed
+    /// <see cref="CoverageMetricKind.LinkedCall"/>, <c>accesses-data</c> feed
+    /// <see cref="CoverageMetricKind.Persistence"/>, <c>uses-contract</c> feed
+    /// <see cref="CoverageMetricKind.Contract"/>. <see cref="CoverageMetricKind.EntryPoint"/> has no
+    /// routable source today: its numerator (<c>EntryPoint</c> facts) shares the
+    /// <c>facts/architecture.json</c> compound family with unrelated fact types this planner does not
+    /// distinguish by sub-type when recording a degradation, so an architecture-family degradation is
+    /// never attributed to it rather than attributed on an unproven guess. A caller
+    /// (<see cref="PublicationPipeline"/>) merges these onto the published <c>coverage.json</c> so a real
+    /// degradation is never silently dropped from the metric it actually affects.
+    /// </summary>
+    internal ImmutableDictionary<CoverageMetricKind, ImmutableArray<DegradationReasonDto>> CoverageMetricDegradations { get; }
+
     public ImmutableArray<ArtifactSlot> Slots =>
         [.. Artifacts.Select(static artifact => new ArtifactSlot(artifact.ArtifactKey, artifact.Role, artifact.Count))];
 
@@ -78,7 +105,8 @@ public sealed class LayoutPlan
         ImmutableArray<ArtifactCitation> candidateLocations,
         ImmutableArray<ArtifactCitation> unresolvedLocations,
         ImmutableArray<ArtifactCitation> frontierLocations,
-        ImmutableArray<DegradationReasonDto> degradationReasons)
+        ImmutableArray<DegradationReasonDto> degradationReasons,
+        ImmutableDictionary<CoverageMetricKind, ImmutableArray<DegradationReasonDto>> coverageMetricDegradations)
     {
         Artifacts = artifacts;
         FactLocations = factLocations;
@@ -87,6 +115,7 @@ public sealed class LayoutPlan
         UnresolvedLocations = unresolvedLocations;
         FrontierLocations = frontierLocations;
         DegradationReasons = degradationReasons;
+        CoverageMetricDegradations = coverageMetricDegradations;
     }
 }
 
@@ -107,6 +136,7 @@ public static class LayoutPlanner
 
         var artifacts = ImmutableArray.CreateBuilder<PlannedArtifact>();
         var degradations = ImmutableArray.CreateBuilder<DegradationReasonDto>();
+        var metricDegradations = new Dictionary<CoverageMetricKind, ImmutableArray<DegradationReasonDto>.Builder>();
         var factLocations = ImmutableDictionary.CreateBuilder<string, ArtifactCitation>(StringComparer.Ordinal);
 
         // Envelope artifacts: always published, regardless of count, and never split. Each is a single
@@ -141,6 +171,11 @@ public static class LayoutPlanner
             artifacts.AddRange(planned);
             degradations.AddRange(planDegradations);
             relationLocations[relation.WireName] = citations;
+
+            if (!planDegradations.IsEmpty && CoverageMetricForRelation(relation.WireName) is { } metric)
+            {
+                AddMetricDegradations(metricDegradations, metric, planDegradations);
+            }
         }
 
         var candidateLocations = PlanAndAdd(
@@ -189,7 +224,34 @@ public static class LayoutPlanner
             candidateLocations,
             unresolvedLocations,
             frontierLocations,
-            degradations.ToImmutable());
+            degradations.ToImmutable(),
+            metricDegradations.ToImmutableDictionary(
+                static pair => pair.Key, static pair => pair.Value.ToImmutable()));
+    }
+
+    /// <summary>Which coverage metric a confirmed-relation family's degradation reason affects (see
+    /// <see cref="LayoutPlan.CoverageMetricDegradations"/>), or <see langword="null"/> when the relation
+    /// kind feeds none of the four mandatory metrics.</summary>
+    private static CoverageMetricKind? CoverageMetricForRelation(string wireName) => wireName switch
+    {
+        "invokes" => CoverageMetricKind.LinkedCall,
+        "accesses-data" => CoverageMetricKind.Persistence,
+        "uses-contract" => CoverageMetricKind.Contract,
+        _ => null,
+    };
+
+    private static void AddMetricDegradations(
+        Dictionary<CoverageMetricKind, ImmutableArray<DegradationReasonDto>.Builder> metricDegradations,
+        CoverageMetricKind kind,
+        ImmutableArray<DegradationReasonDto> reasons)
+    {
+        if (!metricDegradations.TryGetValue(kind, out var builder))
+        {
+            builder = ImmutableArray.CreateBuilder<DegradationReasonDto>();
+            metricDegradations[kind] = builder;
+        }
+
+        builder.AddRange(reasons);
     }
 
     private readonly record struct RecordSource(string Identity, ImmutableArray<byte> Entry);
