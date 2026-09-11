@@ -85,13 +85,8 @@ public sealed class TopologyIsolationTests
         return (outcome, publication);
     }
 
-    private static T ReadShard<T>(CommittedPublication publication, string canonicalKey)
-    {
-        var fragment = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == canonicalKey);
-        return CanonicalJson.Read<T>(fragment.Payload.AsSpan());
-    }
+    private static T ReadShard<T>(CommittedPublication publication, string canonicalKey) =>
+        ShardedFactsReader.Read<T>(publication.ArtifactsInPublicationOrder, canonicalKey);
 
     /// <summary>
     /// T52 made the derived ~32 KiB ceiling the live default, so a flat record-array family (unlike the

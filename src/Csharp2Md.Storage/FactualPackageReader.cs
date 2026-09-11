@@ -50,11 +50,11 @@ public static class FactualPackageReader
 
     private static WireDocument LoadDocument(string packageDirectory, ManifestEnvelope manifest, HashSet<string> consumed)
     {
-        var structural = ReadOptionalObject<StructuralFactsShard>(packageDirectory, manifest, consumed, "facts/structural.json");
-        var architecture = ReadOptionalObject<ArchitectureFactsShard>(packageDirectory, manifest, consumed, "facts/architecture.json");
-        var contract = ReadOptionalObject<ContractFactsShard>(packageDirectory, manifest, consumed, "facts/contract.json");
-        var persistence = ReadOptionalObject<PersistenceFactsShard>(packageDirectory, manifest, consumed, "facts/persistence.json");
-        var configuration = ReadOptionalObject<ConfigurationFactsShard>(packageDirectory, manifest, consumed, "facts/configuration.json");
+        var structural = ReadStructural(packageDirectory, manifest, consumed);
+        var architecture = ReadArchitecture(packageDirectory, manifest, consumed);
+        var contract = ReadContract(packageDirectory, manifest, consumed);
+        var persistence = ReadPersistence(packageDirectory, manifest, consumed);
+        var configuration = ReadConfiguration(packageDirectory, manifest, consumed);
 
         var observations = ImmutableDictionary.CreateBuilder<string, ImmutableArray<ObservationDto>>(StringComparer.Ordinal);
         foreach (var kind in TaxonomyTables.Default.ObservationKinds)
@@ -77,7 +77,7 @@ public static class FactualPackageReader
             }
         }
 
-        var quarantineEnvelope = ReadOptionalObject<QuarantineEnvelope>(packageDirectory, manifest, consumed, "quarantine/records.json");
+        var quarantineEnvelope = ReadQuarantine(packageDirectory, manifest, consumed);
         var coverage = ReadRequiredObject<CoverageEnvelope>(packageDirectory, manifest, consumed, "coverage.json");
         var certification = ReadRequiredObject<RunCertificationEnvelope>(packageDirectory, manifest, consumed, "run-certification.json");
         var diagnostics = ReadOptionalObject<DiagnosticsEnvelope>(packageDirectory, manifest, consumed, "diagnostics.json")
@@ -176,14 +176,7 @@ public static class FactualPackageReader
     private static ImmutableArray<T> ReadShardedArray<T>(
         string packageDirectory, ManifestEnvelope manifest, HashSet<string> consumed, string baseKey)
     {
-        var stem = baseKey.EndsWith(".json", StringComparison.Ordinal) ? baseKey[..^".json".Length] : baseKey;
-        var shardPaths = manifest.Artifacts
-            .Select(static entry => entry.Path)
-            .Where(path => path == baseKey
-                || (path.StartsWith(stem + ".", StringComparison.Ordinal) && path.EndsWith(".json", StringComparison.Ordinal)))
-            .OrderBy(static path => path, StringComparer.Ordinal)
-            .ToArray();
-
+        var shardPaths = ResolveShardPaths(manifest, baseKey);
         if (shardPaths.Length == 0)
         {
             return [];
@@ -198,6 +191,121 @@ public static class FactualPackageReader
         }
 
         return records.ToImmutable();
+    }
+
+    /// <summary>
+    /// Reads every shard the manifest lists for one compound fact family (its base key, or any
+    /// <c>base.&lt;bucket&gt;.json</c> shard alongside it -- GCPC-039, GCPC-041), deserialized as
+    /// <typeparamref name="T"/>. Unlike a flat family's records, a compound family's shards are objects
+    /// with several named arrays, so the caller merges each named array across shards itself.
+    /// </summary>
+    private static List<T> ReadCompoundShards<T>(
+        string packageDirectory, ManifestEnvelope manifest, HashSet<string> consumed, string baseKey)
+        where T : class
+    {
+        var shardPaths = ResolveShardPaths(manifest, baseKey);
+        var shards = new List<T>(shardPaths.Length);
+        foreach (var path in shardPaths)
+        {
+            consumed.Add(path);
+            var bytes = File.ReadAllBytes(ShardPath(packageDirectory, path));
+            shards.Add(PackageValidator.ReadPayloadOrThrow<T>(bytes, path));
+        }
+
+        return shards;
+    }
+
+    private static string[] ResolveShardPaths(ManifestEnvelope manifest, string baseKey)
+    {
+        var stem = baseKey.EndsWith(".json", StringComparison.Ordinal) ? baseKey[..^".json".Length] : baseKey;
+        return manifest.Artifacts
+            .Select(static entry => entry.Path)
+            .Where(path => path == baseKey
+                || (path.StartsWith(stem + ".", StringComparison.Ordinal) && path.EndsWith(".json", StringComparison.Ordinal)))
+            .OrderBy(static path => path, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static StructuralFactsShard? ReadStructural(string packageDirectory, ManifestEnvelope manifest, HashSet<string> consumed)
+    {
+        var shards = ReadCompoundShards<StructuralFactsShard>(packageDirectory, manifest, consumed, "facts/structural.json");
+        if (shards.Count == 0)
+        {
+            return null;
+        }
+
+        return new StructuralFactsShard(
+            [.. shards.SelectMany(static shard => shard.Solutions)],
+            [.. shards.SelectMany(static shard => shard.Projects)],
+            [.. shards.SelectMany(static shard => shard.Documents)],
+            [.. shards.SelectMany(static shard => shard.Symbols)]);
+    }
+
+    private static ArchitectureFactsShard? ReadArchitecture(string packageDirectory, ManifestEnvelope manifest, HashSet<string> consumed)
+    {
+        var shards = ReadCompoundShards<ArchitectureFactsShard>(packageDirectory, manifest, consumed, "facts/architecture.json");
+        if (shards.Count == 0)
+        {
+            return null;
+        }
+
+        return new ArchitectureFactsShard(
+            [.. shards.SelectMany(static shard => shard.Components)],
+            [.. shards.SelectMany(static shard => shard.DeploymentUnits)],
+            [.. shards.SelectMany(static shard => shard.EntryPoints)],
+            [.. shards.SelectMany(static shard => shard.BoundaryOperations)],
+            [.. shards.SelectMany(static shard => shard.ExternalSystems)]);
+    }
+
+    private static ContractFactsShard? ReadContract(string packageDirectory, ManifestEnvelope manifest, HashSet<string> consumed)
+    {
+        var shards = ReadCompoundShards<ContractFactsShard>(packageDirectory, manifest, consumed, "facts/contract.json");
+        if (shards.Count == 0)
+        {
+            return null;
+        }
+
+        return new ContractFactsShard(
+            [.. shards.SelectMany(static shard => shard.Contracts)],
+            [.. shards.SelectMany(static shard => shard.ContractBindings)],
+            [.. shards.SelectMany(static shard => shard.ContractRevisions)]);
+    }
+
+    private static PersistenceFactsShard? ReadPersistence(string packageDirectory, ManifestEnvelope manifest, HashSet<string> consumed)
+    {
+        var shards = ReadCompoundShards<PersistenceFactsShard>(packageDirectory, manifest, consumed, "facts/persistence.json");
+        if (shards.Count == 0)
+        {
+            return null;
+        }
+
+        return new PersistenceFactsShard(
+            [.. shards.SelectMany(static shard => shard.DataStores)],
+            [.. shards.SelectMany(static shard => shard.DataObjects)],
+            [.. shards.SelectMany(static shard => shard.DataFields)],
+            [.. shards.SelectMany(static shard => shard.DataOperations)]);
+    }
+
+    private static ConfigurationFactsShard? ReadConfiguration(string packageDirectory, ManifestEnvelope manifest, HashSet<string> consumed)
+    {
+        var shards = ReadCompoundShards<ConfigurationFactsShard>(packageDirectory, manifest, consumed, "facts/configuration.json");
+        if (shards.Count == 0)
+        {
+            return null;
+        }
+
+        return new ConfigurationFactsShard([.. shards.SelectMany(static shard => shard.ConfigurationBindings)]);
+    }
+
+    private static QuarantineEnvelope? ReadQuarantine(string packageDirectory, ManifestEnvelope manifest, HashSet<string> consumed)
+    {
+        var shards = ReadCompoundShards<QuarantineEnvelope>(packageDirectory, manifest, consumed, "quarantine/records.json");
+        if (shards.Count == 0)
+        {
+            return null;
+        }
+
+        return new QuarantineEnvelope([.. shards.SelectMany(static shard => shard.Records)]);
     }
 
     private static string ManifestPath(string packageDirectory) =>

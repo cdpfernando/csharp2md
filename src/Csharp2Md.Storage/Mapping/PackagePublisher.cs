@@ -36,9 +36,15 @@ internal static class PackagePublisher
         var payloads = ImmutableArray.CreateBuilder<StagedFragment>(plan.Artifacts.Length);
         foreach (var artifact in plan.Artifacts)
         {
-            var bytes = artifact.Records.IsEmpty
-                ? Write(document, artifact.ArtifactKey)
-                : LayoutPlanner.SerializeRecords(artifact.Records.Select(static record => record.Entry));
+            // A compound fact-family bundle's file is one JSON object with several named arrays, not a
+            // flat array of interchangeable entries -- LayoutPlanner precomputes its exact bytes and
+            // carries them here directly, while still populating Records (below) so a citation into it
+            // resolves to that one record's own bytes (see ProjectionValidator.AuthoritativeText).
+            var bytes = !artifact.PrecomputedBytes.IsDefault
+                ? artifact.PrecomputedBytes
+                : artifact.Records.IsEmpty
+                    ? Write(document, artifact.ArtifactKey)
+                    : LayoutPlanner.SerializeRecords(artifact.Records.Select(static record => record.Entry));
             payloads.Add(new StagedFragment(artifact.Role, artifact.ArtifactKey, bytes));
         }
 

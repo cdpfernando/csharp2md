@@ -113,10 +113,7 @@ public sealed class CertificationCorpusEntryPointTests
                 && symbol.Identity.Id.Contains(methodName, StringComparison.Ordinal));
 
     private static T ReadShard<T>(CommittedPublication publication, string canonicalKey) =>
-        CanonicalJson.Read<T>(
-            Assert.Single(
-                publication.ArtifactsInPublicationOrder,
-                artifact => artifact.CanonicalKey == canonicalKey).Payload.AsSpan());
+        ShardedFactsReader.Read<T>(publication.ArtifactsInPublicationOrder, canonicalKey);
 
     /// <summary>
     /// T52 made the derived ~32 KiB ceiling the live default, so a flat record-array family may now

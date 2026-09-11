@@ -60,7 +60,7 @@ public sealed class CrossSolutionCorrelationTests
             Assert.Equal("messaging", CompositionBatch.Text(targetOperation, "protocol"));
 
             var outboundHttp = Assert.Single(
-                CanonicalJson.Read<ArchitectureFactsShard>(ordersPackage["facts/architecture.json"]).BoundaryOperations,
+                CompositionBatch.ReadFactsFamily<ArchitectureFactsShard>(ordersPackage, "facts/architecture.json").BoundaryOperations,
                 operation => operation.Identity.Id == CompositionBatch.Text(candidate, "source_fact_id"));
             Assert.Contains("RequestShippingAsync", outboundHttp.Symbol.Id, StringComparison.Ordinal);
             Assert.Equal("outbound", outboundHttp.Direction);
@@ -69,7 +69,7 @@ public sealed class CrossSolutionCorrelationTests
             Assert.Equal("shipments", outboundHttp.Route?.Value);
 
             var inboundHttp = Assert.Single(
-                CanonicalJson.Read<ArchitectureFactsShard>(shippingPackage["facts/architecture.json"]).BoundaryOperations,
+                CompositionBatch.ReadFactsFamily<ArchitectureFactsShard>(shippingPackage, "facts/architecture.json").BoundaryOperations,
                 operation => operation.Identity.Id == CompositionBatch.Text(candidate, "target_fact_id"));
             Assert.Contains("CreateShipment", inboundHttp.Symbol.Id, StringComparison.Ordinal);
             Assert.Equal("inbound", inboundHttp.Direction);

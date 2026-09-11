@@ -230,17 +230,36 @@ internal static class RetrievalGuideProjector
     private static void AppendSourceSection(StringBuilder text, HashSet<string> slots)
     {
         text.Append("## 5. Open complete callable bodies through source locators\n\n");
-        if (slots.Contains("facts/structural.json"))
+        if (HasFamily(slots, "facts/structural.json"))
         {
+            // "facts/structural.json" is named without backticks here on purpose: once the family
+            // exceeds the ceiling it publishes as facts/structural.<bucket>.json shards instead of that
+            // exact key (GCPC-039), and ValidateNoAbsentKeys rejects any backtick-quoted key this
+            // publication does not actually hold -- the cited ordinal always resolves through the fact's
+            // own citation, never through this literal name.
             text.Append(
-                "Read a symbol's `declaration_locator` from `facts/structural.json` at the cited ordinal, "
-                + "then open the matching source projection: its key starts with source/, followed by the "
-                + "declaring document's relative path.\n\n");
+                "Read a symbol's `declaration_locator` from its facts/structural family at the cited "
+                + "ordinal, then open the matching source projection: its key starts with source/, "
+                + "followed by the declaring document's relative path.\n\n");
         }
         else
         {
             text.Append("No symbol is published in this package, so no source locator can be followed.\n\n");
         }
+    }
+
+    /// <summary>True when <paramref name="slots"/> holds <paramref name="baseKey"/> itself or any shard
+    /// of it (<c>base.&lt;bucket&gt;.json</c>) -- so a family that split under the ceiling is still
+    /// recognized, not reported as absent (GCPC-039, GCPC-048).</summary>
+    private static bool HasFamily(HashSet<string> slots, string baseKey) =>
+        slots.Contains(baseKey) || slots.Any(key => IsShardOf(key, baseKey));
+
+    private static bool IsShardOf(string key, string baseKey)
+    {
+        var dot = baseKey.LastIndexOf('.');
+        var stem = dot < 0 ? baseKey : baseKey[..dot];
+        var extension = dot < 0 ? string.Empty : baseKey[dot..];
+        return key.StartsWith(stem + ".", StringComparison.Ordinal) && key.EndsWith(extension, StringComparison.Ordinal);
     }
 
     private static void AppendStoppingRules(StringBuilder text)

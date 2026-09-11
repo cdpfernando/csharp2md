@@ -231,6 +231,16 @@ Surfaced during Execute; out of scope for the task that found them, not acted on
   drive it) -- it excludes `retrieval.md` from its own "every file within ceiling" check instead,
   with the reasoning inline at the exclusion. The fixture this entry asked for now exists and
   reproduces the failure on demand; closing the four call sites is still open.
+  **Partially addressed by the Verifier's Fix 1** (2026-09-10): F1 made the compound fact families
+  (`facts/structural.json` and its siblings) actually shard under the real ceiling, which exposed the
+  same "is this family recognized" defect in a fifth call site this entry's four-call-site count did
+  not name -- `AppendSourceSection`'s `slots.Contains("facts/structural.json")` check. Fixed as part of
+  F1 (in `RetrievalGuideProjector.cs`, its own listed file): a new `HasFamily`/`IsShardOf` stem-prefix
+  helper replaces the exact-key check, and the printed sentence no longer names the literal filename in
+  backticks (a sharded family has no artifact at that exact key, and `ValidateNoAbsentKeys` rejects any
+  backtick-quoted key the publication does not actually hold). `AppendRelationsSection`,
+  `AppendDisposition` and `PostingHints` -- the original four call sites, now sharing the same helper --
+  remain open and are routed to the Verifier's Fix 5.
 - **`Csharp2Md.Projection.ShardWriter`'s bucketing is a single fixed-depth 256-bucket hash, not
   adaptive like `LayoutPlanner`'s own family splitting** (found in T63, 2026-09-10, while calibrating
   `ScaleInputGenerator`): design.md F9 already named this precisely -- "`ShardWriter` buckets on the

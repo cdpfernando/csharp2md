@@ -31,8 +31,7 @@ public sealed class PersistenceManifestTests
         Assert.All(artifacts[..^1], fragment => Assert.Equal(ArtifactRole.Payload, fragment.Role));
 
         var payloadKeys = artifacts[..^1].Select(fragment => fragment.CanonicalKey).ToArray();
-        var structuralFragment = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "facts/structural.json");
-        var structural = CanonicalJson.Read<StructuralFactsShard>(structuralFragment.Payload.AsSpan());
+        var structural = ShardedFactsReader.Read<StructuralFactsShard>(artifacts, "facts/structural.json");
         Assert.NotEmpty(structural.Solutions);
         Assert.NotEmpty(structural.Projects);
         Assert.NotEmpty(structural.Documents);
@@ -56,7 +55,10 @@ public sealed class PersistenceManifestTests
         Assert.True(registry.Payload.AsSpan().SequenceEqual(expectedRegistry.AsSpan()));
 
         var manifest = CanonicalJson.Read<ManifestEnvelope>(artifacts[^1].Payload.AsSpan());
-        Assert.Contains(manifest.Artifacts, entry => entry.CanonicalKey == "facts/structural" && entry.Count > 0);
+        Assert.Contains(
+            manifest.Artifacts,
+            entry => (entry.CanonicalKey == "facts/structural" || entry.CanonicalKey.StartsWith("facts/structural.", StringComparison.Ordinal))
+                && entry.Count > 0);
         Assert.Contains(
             manifest.Artifacts,
             entry => entry.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal) && entry.Count > 0);

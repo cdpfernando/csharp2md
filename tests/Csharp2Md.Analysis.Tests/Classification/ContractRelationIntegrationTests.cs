@@ -42,14 +42,10 @@ public sealed class ContractRelationIntegrationTests
         Assert.Contains("new RelationPass()", source, StringComparison.Ordinal);
 
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
-        var architectureFragment = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == "facts/architecture.json");
-        var architecture = CanonicalJson.Read<ArchitectureFactsShard>(architectureFragment.Payload.AsSpan());
-        var contractFragment = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == "facts/contract.json");
-        var contracts = CanonicalJson.Read<ContractFactsShard>(contractFragment.Payload.AsSpan());
+        var architecture = ShardedFactsReader.Read<ArchitectureFactsShard>(
+            publication.ArtifactsInPublicationOrder, "facts/architecture.json");
+        var contracts = ShardedFactsReader.Read<ContractFactsShard>(
+            publication.ArtifactsInPublicationOrder, "facts/contract.json");
 
         var orderPlaced = Assert.Single(
             contracts.Contracts,

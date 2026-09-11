@@ -1,5 +1,7 @@
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Analysis.Tests.Fixtures;
+using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Registry;
 using Csharp2Md.Projection;
 using Csharp2Md.Storage;
 using Csharp2Md.Storage.Mapping;
@@ -52,7 +54,7 @@ internal static class LlmReadinessChecklist
         var scale = EvaluateScale(packageDirectory, manifest);
         var factualCoverage = EvaluateFactualCoverage(result.Coverage);
         var runCertification = EvaluateRunCertification(result.Certification);
-        var classificationReliability = EvaluateClassificationReliability(packageDirectory, result.Coverage);
+        var classificationReliability = EvaluateClassificationReliability(result.Snapshot, result.Coverage);
 
         ReadinessVerdict[] prerequisites =
         [
@@ -134,11 +136,13 @@ internal static class LlmReadinessChecklist
     }
 
     /// <summary>GCPC-036..GCPC-038: the derived ceiling and its token estimator are published, and no
-    /// record-bearing, shardable artifact exceeds it. The compound fact-family bundles and the fixed
-    /// one-per-package envelopes are excluded from the per-file check -- LayoutPlanner.Plan deliberately
-    /// never splits them (the pre-existing, documented "GCPC-039 stays partial" limitation
-    /// LayoutPlannerShardingTests and T63's ScaleInputGeneratorTests both already account for), so their
-    /// own size is not evidence of a ceiling violation.</summary>
+    /// record-bearing, shardable artifact exceeds it. Only the fixed one-per-package envelopes are
+    /// excluded from the per-file check -- LayoutPlanner.Plan never splits them (out of GCPC-039's
+    /// explicit list of shardable families; each one's size is bounded by a fixed metric/reason count
+    /// or, for manifest.json, by this run's own shard count, never by any one record's content), so
+    /// their size is not evidence of a ceiling violation. The compound fact-family bundles
+    /// (facts/structural.json and its siblings, quarantine/records.json) are no longer excluded: F1 gave
+    /// them the same adaptive sharding flat record-array families already had.</summary>
     private static ReadinessVerdict EvaluateScale(string packageDirectory, ManifestEnvelope manifest)
     {
         if (manifest.Provenance is not { } provenance)
@@ -162,12 +166,6 @@ internal static class LlmReadinessChecklist
             "diagnostics.json",
             "measurements.json",
             "run-certification.json",
-            "facts/structural.json",
-            "facts/architecture.json",
-            "facts/contract.json",
-            "facts/persistence.json",
-            "facts/configuration.json",
-            "quarantine/records.json",
         };
 
         long largest = 0;
@@ -285,22 +283,25 @@ internal static class LlmReadinessChecklist
     /// positive, reproduced as the certification corpus's ChangeUriPlaceholder fixture) and GCPC-011..018
     /// (linked_call coverage's own numerator/exclusions/unknowns never exceed its denominator, i.e. no
     /// invocation occurrence is missing a disposition).</summary>
-    private static ReadinessVerdict EvaluateClassificationReliability(string packageDirectory, CoverageEnvelope coverage)
+    private static ReadinessVerdict EvaluateClassificationReliability(FactualSnapshot snapshot, CoverageEnvelope coverage)
     {
-        var architecturePath = Path.Combine(packageDirectory, "facts", "architecture.json");
-        if (!File.Exists(architecturePath))
+        // Reads through the same FactualPackageReader every real caller uses (already merges
+        // facts/architecture.json's shards back into one set, F1/GCPC-039) rather than reading the
+        // artifact's bytes off disk directly -- a family that split under the ceiling is no less
+        // published than one that didn't.
+        var entryPoints = snapshot.Facts.OfType<EntryPoint>().ToArray();
+        if (!snapshot.Facts.Any(static fact => fact.Family == FactFamily.Architecture))
         {
             return Fail(ReadinessCriterion.ClassificationReliability, "facts/architecture.json is not published");
         }
 
-        var architecture = CanonicalJson.Read<ArchitectureFactsShard>(File.ReadAllBytes(architecturePath));
-        var falsePositive = architecture.EntryPoints
-            .FirstOrDefault(static entry => entry.Symbol.Id.Contains("ChangeUriPlaceholder", StringComparison.Ordinal));
+        var falsePositive = entryPoints
+            .FirstOrDefault(static entry => entry.Symbol.Id.Value.Contains("ChangeUriPlaceholder", StringComparison.Ordinal));
         if (falsePositive is not null)
         {
             return Fail(
                 ReadinessCriterion.ClassificationReliability,
-                $"'{falsePositive.Symbol.Id}' -- a private helper -- is published as an EntryPoint, "
+                $"'{falsePositive.Symbol.Id.Value}' -- a private helper -- is published as an EntryPoint, "
                     + "reproducing the audit's B2 false positive");
         }
 
@@ -318,7 +319,7 @@ internal static class LlmReadinessChecklist
 
         return Pass(
             ReadinessCriterion.ClassificationReliability,
-            $"no EntryPoint fact names 'ChangeUriPlaceholder' among {architecture.EntryPoints.Length} "
+            $"no EntryPoint fact names 'ChangeUriPlaceholder' among {entryPoints.Length} "
                 + $"published entry points; linked_call coverage accounts for every recognized "
                 + $"occurrence ({linkedCall.Numerator} confirmed, {linkedCall.Exclusions} exclusions, "
                 + $"{linkedCall.Unknowns} unknowns, denominator {linkedCall.Denominator})");

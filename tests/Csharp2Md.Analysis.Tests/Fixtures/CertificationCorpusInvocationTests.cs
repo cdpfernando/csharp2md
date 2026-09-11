@@ -158,10 +158,7 @@ public sealed class CertificationCorpusInvocationTests
     }
 
     private static T ReadShard<T>(CommittedPublication publication, string canonicalKey) =>
-        CanonicalJson.Read<T>(
-            Assert.Single(
-                publication.ArtifactsInPublicationOrder,
-                artifact => artifact.CanonicalKey == canonicalKey).Payload.AsSpan());
+        ShardedFactsReader.Read<T>(publication.ArtifactsInPublicationOrder, canonicalKey);
 
     private static async Task<CommittedPublication> AnalyzeCorpusAsync()
     {

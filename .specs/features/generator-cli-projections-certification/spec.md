@@ -543,13 +543,13 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-035 | P1: Document policy | D-04 safeguard | Design | Verified |
 | GCPC-036 | P1: Bounded payloads | D-02; output-and-retrieval.md scale constraints | Design | Verified |
 | GCPC-037 | P1: Bounded payloads | D-02 | Design | Verified |
-| GCPC-038 | P1: Bounded payloads | Audit B4; calibrates RP-52 | Design | ❌ Needs Fix |
-| GCPC-039 | P1: Bounded payloads | Audit B4; output-and-retrieval.md | Design | ⚠️ Partial |
+| GCPC-038 | P1: Bounded payloads | Audit B4; calibrates RP-52 | Design | Verified |
+| GCPC-039 | P1: Bounded payloads | Audit B4; output-and-retrieval.md | Design | Verified |
 | GCPC-040 | P1: Bounded payloads | Audit gate 4 | Design | Verified |
 | GCPC-041 | P1: Bounded payloads | RP-20 and RP-27 preserved after split | Design | Verified |
 | GCPC-042 | P1: Bounded payloads | RP-53 and RP-54 | Design | Verified |
 | GCPC-043 | P1: Bounded payloads | output-and-retrieval.md scale constraints | Design | Verified |
-| GCPC-044 | P1: Bounded payloads | Audit inventory: contains, belongs-to, invocation | Design | ⚠️ Partial |
+| GCPC-044 | P1: Bounded payloads | Audit inventory: contains, belongs-to, invocation | Design | Verified |
 | GCPC-045 | P1: Bounded payloads | quality-and-security.md performance | Design | Verified |
 | GCPC-046 | P1: Retrieval guide | Audit B5 | Design | Verified |
 | GCPC-047 | P1: Retrieval guide | Audit B4 and B5 | Design | Verified |

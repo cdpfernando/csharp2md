@@ -201,22 +201,18 @@ public sealed class ScaleInputGeneratorTests
             Assert.Equal(CeilingCalculator.Derive().CeilingBytes, ceilingBytes);
 
             // GCPC-038: every published *record-bearing, shardable* file fits the declared ceiling.
-            // Two groups are deliberately excluded, both by LayoutPlanner.Plan's own design (never a
-            // choice this test makes): the fixed one-per-package singleton envelopes (manifest,
-            // registry, coverage, diagnostics, measurements, run-certification), whose own size scales
-            // with how many shards this run produced rather than with any one record; and the compound
-            // fact-family bundles (facts/structural.json, facts/architecture.json, facts/contract.json,
-            // facts/persistence.json, facts/configuration.json, quarantine/records.json), which
-            // LayoutPlanner.Plan still assembles as one artifact per family regardless of count -- the
-            // pre-existing, documented "GCPC-039 stays partial" limitation
-            // (LayoutPlannerShardingTests's own doc comment), not a gap T63 introduces or is scoped to
-            // close. This scale input's Document and Symbol facts necessarily grow with the same N that
-            // drives contains/belongs-to/invocation over the ceiling, so facts/structural.json is
-            // expected to exceed it here; the families GCPC-039 actually promises today -- confirmed
-            // relations by kind, candidates, unresolved records, open frontiers and observations by
-            // kind, plus every catalog and posting the projector writes -- are exactly what this loop
-            // checks.
-            var unshardableCompoundOrEnvelopeArtifacts = new HashSet<string>(StringComparer.Ordinal)
+            // Only the fixed one-per-package singleton envelopes (manifest, registry, coverage,
+            // diagnostics, measurements, run-certification) are excluded -- LayoutPlanner.Plan never
+            // splits them (out of GCPC-039's explicit list of shardable families, and each one's own
+            // size in this input is bounded by a fixed metric/reason count or, for manifest.json, by the
+            // shard count this run itself produced -- not by any one record's content, so splitting it
+            // would be self-referential). The compound fact-family bundles (facts/structural.json,
+            // facts/architecture.json, facts/contract.json, facts/persistence.json,
+            // facts/configuration.json, quarantine/records.json) are no longer excluded: F1 gave them
+            // the same adaptive sharding PlanFamily already applies to flat record-array families, so
+            // this scale input's Document and Symbol facts driving facts/structural.json over the
+            // ceiling now split it instead of publishing one oversized artifact.
+            var unshardableEnvelopeArtifacts = new HashSet<string>(StringComparer.Ordinal)
             {
                 "manifest.json",
                 PackagePublisher.RegistryKey,
@@ -224,12 +220,6 @@ public sealed class ScaleInputGeneratorTests
                 "diagnostics.json",
                 "measurements.json",
                 "run-certification.json",
-                "facts/structural.json",
-                "facts/architecture.json",
-                "facts/contract.json",
-                "facts/persistence.json",
-                "facts/configuration.json",
-                "quarantine/records.json",
                 // retrieval.md: a pre-existing, documented gap (context.md's "RetrievalGuideProjector's
                 // own prose assumes no family is ever sharded" Deferred Idea, found at T52) that this
                 // scale input is the first fixture to actually trigger a *size* symptom for, not only
@@ -237,19 +227,16 @@ public sealed class ScaleInputGeneratorTests
                 // RetrievalGuideProjector's own "## 2. Select a postings bucket" section
                 // (PostingHints, over view.Slots) lists one line per *shard key*, not one line per
                 // posting family, so once a posting family splits into many shards under the real
-                // ceiling, the guide itself grows past the ceiling it documents. Fixing it means
-                // reworking RetrievalGuideProjector's four call sites the deferred entry already names
-                // (AppendRelationsSection, AppendDisposition and PostingHints, to recognize a family by
-                // stem/prefix and describe its bucketing once, not enumerate every shard) -- a
-                // Projection-layer production change outside this file's scope as a test-only task, and
-                // exactly the follow-up work that Deferred Idea already calls for. Recorded as confirmed,
-                // not silently worked around: see context.md.
+                // ceiling, the guide itself grows past the ceiling it documents. F5 (depends on F1)
+                // reworks RetrievalGuideProjector's remaining call sites (AppendRelationsSection,
+                // AppendDisposition and PostingHints) to recognize a family by stem/prefix and describe
+                // its bucketing once, not enumerate every shard, and removes this exclusion.
                 "retrieval.md",
             };
             foreach (var file in Directory.EnumerateFiles(packageDirectory, "*", SearchOption.AllDirectories))
             {
                 var relative = Path.GetRelativePath(packageDirectory, file).Replace(Path.DirectorySeparatorChar, '/');
-                if (unshardableCompoundOrEnvelopeArtifacts.Contains(relative))
+                if (unshardableEnvelopeArtifacts.Contains(relative))
                 {
                     continue;
                 }

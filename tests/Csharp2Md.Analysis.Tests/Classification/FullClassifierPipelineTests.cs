@@ -158,13 +158,8 @@ public sealed class FullClassifierPipelineTests
         Assert.Equal(0, report.RelationCount);
     }
 
-    private static T ReadShard<T>(CommittedPublication publication, string canonicalKey)
-    {
-        var fragment = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == canonicalKey);
-        return CanonicalJson.Read<T>(fragment.Payload.AsSpan());
-    }
+    private static T ReadShard<T>(CommittedPublication publication, string canonicalKey) =>
+        ShardedFactsReader.Read<T>(publication.ArtifactsInPublicationOrder, canonicalKey);
 
     private static ImmutableArray<ConfirmedRelationDto> ReadRelations(
         CommittedPublication publication,

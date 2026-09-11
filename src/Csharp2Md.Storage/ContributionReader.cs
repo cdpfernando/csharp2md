@@ -18,12 +18,14 @@ namespace Csharp2Md.Storage;
 public static class ContributionReader
 {
     /// <summary>
-    /// Reads <paramref name="packageDirectory"/> and rebuilds its contribution. The facts a compound family
-    /// (components, deployment units, contracts, boundary operations, external systems) cites are never
-    /// sharded regardless of the ceiling in force when the package was published (<see cref="LayoutPlanner"/>
-    /// only ever shards flat record-array families), so re-planning with the unsplit default here yields
-    /// citations identical to whatever the original publication assigned -- a fresh <see cref="LayoutPlan"/>
-    /// is safe to build from the re-hydrated facts alone, with no need to recover the original ceiling.
+    /// Reads <paramref name="packageDirectory"/> and rebuilds its contribution. F1 (GCPC-038/039) gave
+    /// the compound fact families the same adaptive ceiling-driven sharding flat record-array families
+    /// already had, so a fact's citation now depends on the ceiling the original publication planned
+    /// with -- re-planning with the unsplit default here would assign a different (unsplit) citation to
+    /// the same fact and desync <c>compose</c>'s output from what a live <c>analyze</c> produced. The
+    /// published provenance carries that exact ceiling (GCPC-058), so re-planning with it reproduces
+    /// the identical shard assignment (GCPC-042: same input, same ceiling, same shards) and therefore
+    /// the identical citations.
     /// </summary>
     public static SolutionContribution Read(string packageDirectory, IBatchComposer composer)
     {
@@ -37,7 +39,10 @@ public static class ContributionReader
 
         var context = new ManifestContext(manifest.SolutionKey, manifest.SolutionFileName);
         var document = DomainMapper.ToWire(result.Snapshot, context);
-        var view = PublishedPackageView.From(document);
+        var ceilingBytes = manifest.Provenance is { ArtifactCeilingBytes: > 0 } provenance
+            ? provenance.ArtifactCeilingBytes
+            : CeilingCalculator.Derive().CeilingBytes;
+        var view = PublishedPackageView.From(document, LayoutPlanner.Plan(document, ceilingBytes));
         var coordinate = SolutionCoordinate.For(manifest.SolutionFileName);
 
         // The bare directory name (e.g. "s-<hash>"), matching exactly what a live analyze run's own

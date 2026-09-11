@@ -216,10 +216,7 @@ internal static class EngineCertificationRunner
     }
 
     private static T ReadShard<T>(CommittedPublication publication, string canonicalKey) =>
-        CanonicalJson.Read<T>(
-            Assert.Single(
-                publication.ArtifactsInPublicationOrder,
-                artifact => artifact.CanonicalKey == canonicalKey).Payload.AsSpan());
+        ShardedFactsReader.Read<T>(publication.ArtifactsInPublicationOrder, canonicalKey);
 
     /// <summary>
     /// Reads a flat record-array family, merging its shards back into one array when the derived

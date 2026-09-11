@@ -86,7 +86,10 @@ public sealed class AnalyzePackageWriteTests
             var manifestPath = Path.Combine(child, "manifest.json");
             Assert.True(File.Exists(manifestPath), $"manifest was not found at '{manifestPath}'.");
             var manifest = CanonicalJson.Read<ManifestEnvelope>(File.ReadAllBytes(manifestPath));
-            Assert.Contains(manifest.Artifacts, static entry => entry.CanonicalKey == "facts/structural" && entry.Count > 0);
+            Assert.Contains(
+                manifest.Artifacts,
+                static entry => (entry.CanonicalKey == "facts/structural" || entry.CanonicalKey.StartsWith("facts/structural.", StringComparison.Ordinal))
+                    && entry.Count > 0);
             Assert.Contains(
                 manifest.Artifacts,
                 static entry => entry.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal) && entry.Count > 0);
