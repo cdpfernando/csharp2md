@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 24,
+  "next_id": 28,
   "lessons": [
     {
       "id": "L-001",
@@ -360,10 +360,11 @@
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "tests/Csharp2Md.Storage.Tests/Scale/ScaleInputGenerator.cs:219 (storage)"
+        "tests/Csharp2Md.Storage.Tests/Scale/ScaleInputGenerator.cs:219 (storage)",
+        "validation.md GCPC-038; tests/Csharp2Md.Analysis.Tests/Readiness/LlmReadinessChecklist.cs:161 (storage)"
       ],
       "created": "2026-09-11T01:30:25Z",
-      "last_seen": "2026-09-11T01:30:25Z"
+      "last_seen": "2026-09-11T16:35:08Z"
     },
     {
       "id": "L-021",
@@ -418,6 +419,78 @@
       ],
       "created": "2026-09-11T01:30:25Z",
       "last_seen": "2026-09-11T01:30:25Z"
+    },
+    {
+      "id": "L-024",
+      "key": "ac_gap::assert a cli verb s own exit code by running that verb not a sibling verb reading a rewritten artifact",
+      "text": "Assert a CLI verb's own exit code by running that verb, not a sibling verb reading a rewritten artifact",
+      "signal": "ac_gap",
+      "scope": "cli",
+      "status": "candidate",
+      "features": [
+        "generator-cli-projections-certification"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md GCPC-069/GCPC-070; src/Csharp2Md.Cli/CommandFactory.cs:147 (cli)"
+      ],
+      "created": "2026-09-11T16:35:08Z",
+      "last_seen": "2026-09-11T16:35:08Z"
+    },
+    {
+      "id": "L-025",
+      "key": "ac_gap::publish an artifact s real byte size even when a deferred writer owns its payload a zero placeholder is a false cardinality claim",
+      "text": "Publish an artifact's real byte size even when a deferred writer owns its payload; a zero placeholder is a false cardinality claim",
+      "signal": "ac_gap",
+      "scope": "storage",
+      "status": "candidate",
+      "features": [
+        "generator-cli-projections-certification"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md GCPC-061; src/Csharp2Md.Storage/Mapping/ManifestBuilder.cs:46 (storage)"
+      ],
+      "created": "2026-09-11T16:35:08Z",
+      "last_seen": "2026-09-11T16:35:08Z"
+    },
+    {
+      "id": "L-026",
+      "key": "ac_gap::when a version axis advances update every place the package republishes it two copies with different values make the package self contradicting",
+      "text": "When a version axis advances, update every place the package republishes it; two copies with different values make the package self-contradicting",
+      "signal": "ac_gap",
+      "scope": "storage",
+      "status": "candidate",
+      "features": [
+        "generator-cli-projections-certification"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md GCPC-057; src/Csharp2Md.Storage/Mapping/ManifestBuilder.cs:65 (storage)"
+      ],
+      "created": "2026-09-11T16:35:08Z",
+      "last_seen": "2026-09-11T16:35:08Z"
+    },
+    {
+      "id": "L-027",
+      "key": "ac_gap::route a degradation reason from the family where the degradation actually occurs not only from families that are convenient to attribute",
+      "text": "Route a degradation reason from the family where the degradation actually occurs, not only from families that are convenient to attribute",
+      "signal": "ac_gap",
+      "scope": "storage",
+      "status": "candidate",
+      "features": [
+        "generator-cli-projections-certification"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md GCPC-004 edge case; src/Csharp2Md.Storage/Mapping/LayoutPlanner.cs:234 (storage)"
+      ],
+      "created": "2026-09-11T16:35:08Z",
+      "last_seen": "2026-09-11T16:35:08Z"
     }
   ]
 }

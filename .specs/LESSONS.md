@@ -131,8 +131,8 @@ Seen once or not yet corroborated. Tracked, not trusted.
 ### L-020 - Never exclude an artifact from an invariant check to make it pass; if an artifact cannot satisfy the invariant, that is a gap to report, not a list to skip
 - signal: `ac_gap` · recurrence: 1 feature(s) · scope: `storage` · harmful: 0
 - features: generator-cli-projections-certification
-- evidence: tests/Csharp2Md.Storage.Tests/Scale/ScaleInputGenerator.cs:219 (storage)
-- last seen: 2026-09-11T01:30:25Z
+- evidence: tests/Csharp2Md.Storage.Tests/Scale/ScaleInputGenerator.cs:219 (storage) (+1 more)
+- last seen: 2026-09-11T16:35:08Z
 
 ### L-021 - A test that hand-builds the record the producer is supposed to emit proves the consumer, never the producer; assert the producing layer emits it end to end
 - signal: `ac_gap` · recurrence: 1 feature(s) · scope: `analysis` · harmful: 0
@@ -151,6 +151,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - features: generator-cli-projections-certification
 - evidence: GCPC-004 (storage)
 - last seen: 2026-09-11T01:30:25Z
+
+### L-024 - Assert a CLI verb's own exit code by running that verb, not a sibling verb reading a rewritten artifact
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `cli` · harmful: 0
+- features: generator-cli-projections-certification
+- evidence: validation.md GCPC-069/GCPC-070; src/Csharp2Md.Cli/CommandFactory.cs:147 (cli)
+- last seen: 2026-09-11T16:35:08Z
+
+### L-025 - Publish an artifact's real byte size even when a deferred writer owns its payload; a zero placeholder is a false cardinality claim
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `storage` · harmful: 0
+- features: generator-cli-projections-certification
+- evidence: validation.md GCPC-061; src/Csharp2Md.Storage/Mapping/ManifestBuilder.cs:46 (storage)
+- last seen: 2026-09-11T16:35:08Z
+
+### L-026 - When a version axis advances, update every place the package republishes it; two copies with different values make the package self-contradicting
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `storage` · harmful: 0
+- features: generator-cli-projections-certification
+- evidence: validation.md GCPC-057; src/Csharp2Md.Storage/Mapping/ManifestBuilder.cs:65 (storage)
+- last seen: 2026-09-11T16:35:08Z
+
+### L-027 - Route a degradation reason from the family where the degradation actually occurs, not only from families that are convenient to attribute
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `storage` · harmful: 0
+- features: generator-cli-projections-certification
+- evidence: validation.md GCPC-004 edge case; src/Csharp2Md.Storage/Mapping/LayoutPlanner.cs:234 (storage)
+- last seen: 2026-09-11T16:35:08Z
 
 ## Quarantined (failed when applied - ignore)
 

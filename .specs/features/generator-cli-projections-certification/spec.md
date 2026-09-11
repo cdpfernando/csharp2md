@@ -509,7 +509,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-001 | P1: Certified execution | Audit B1; AD-009 | Design | Verified |
 | GCPC-002 | P1: Certified execution | quality-and-security.md run coverage | Design | Verified |
 | GCPC-003 | P1: Certified execution | quality-and-security.md denominator table | Design | Verified |
-| GCPC-004 | P1: Certified execution | Audit B1 | Design | Verified |
+| GCPC-004 | P1: Certified execution | Audit B1 | Design | ⚠️ Needs Fix (live producer misses the family where oversized records occur) |
 | GCPC-005 | P1: Certified execution | AD-009; quality-and-security.md | Design | Verified |
 | GCPC-006 | P1: Certified execution | AD-009 | Design | Verified |
 | GCPC-007 | P1: Certified execution | quality-and-security.md degradation | Design | Verified |
@@ -543,13 +543,13 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-035 | P1: Document policy | D-04 safeguard | Design | Verified |
 | GCPC-036 | P1: Bounded payloads | D-02; output-and-retrieval.md scale constraints | Design | Verified |
 | GCPC-037 | P1: Bounded payloads | D-02 | Design | Verified |
-| GCPC-038 | P1: Bounded payloads | Audit B4; calibrates RP-52 | Design | Verified |
+| GCPC-038 | P1: Bounded payloads | Audit B4; calibrates RP-52 | Design | ❌ Needs Fix |
 | GCPC-039 | P1: Bounded payloads | Audit B4; output-and-retrieval.md | Design | Verified |
 | GCPC-040 | P1: Bounded payloads | Audit gate 4 | Design | Verified |
 | GCPC-041 | P1: Bounded payloads | RP-20 and RP-27 preserved after split | Design | Verified |
 | GCPC-042 | P1: Bounded payloads | RP-53 and RP-54 | Design | Verified |
 | GCPC-043 | P1: Bounded payloads | output-and-retrieval.md scale constraints | Design | Verified |
-| GCPC-044 | P1: Bounded payloads | Audit inventory: contains, belongs-to, invocation | Design | Verified |
+| GCPC-044 | P1: Bounded payloads | Audit inventory: contains, belongs-to, invocation | Design | ⚠️ Partial (ceiling clause) |
 | GCPC-045 | P1: Bounded payloads | quality-and-security.md performance | Design | Verified |
 | GCPC-046 | P1: Retrieval guide | Audit B5 | Design | Verified |
 | GCPC-047 | P1: Retrieval guide | Audit B4 and B5 | Design | Verified |
@@ -562,11 +562,11 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-054 | P1: Retrieval guide | Audit gate 9 | Design | Verified |
 | GCPC-055 | P1: Retrieval guide | RP-42 extended to the guide | Design | Verified |
 | GCPC-056 | P1: Provenance | Audit scope note and gate 8 | Design | Verified |
-| GCPC-057 | P1: Provenance | taxonomy.md version axes | Design | Verified |
+| GCPC-057 | P1: Provenance | taxonomy.md version axes | Design | ⚠️ Partial (manifest top-level axes stale) |
 | GCPC-058 | P1: Provenance | D-02; D-04 | Design | Verified |
 | GCPC-059 | P1: Provenance | STOR-43; output-and-retrieval.md | Design | Verified |
 | GCPC-060 | P1: Provenance | Standing determinism constraint | Design | Verified |
-| GCPC-061 | P1: Provenance | Audit I5 | Design | Verified |
+| GCPC-061 | P1: Provenance | Audit I5 | Design | ❌ Needs Fix |
 | GCPC-062 | P1: Provenance | AD-007 | Design | Verified |
 | GCPC-063 | P1: CLI surface | Roadmap row 8; D-03 | Design | Verified |
 | GCPC-064 | P1: CLI surface | User constraint on validate | Design | Verified |
@@ -574,8 +574,8 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-066 | P1: CLI surface | quality-and-security.md degradation | Design | Verified |
 | GCPC-067 | P1: CLI surface | AD-009 | Design | Verified |
 | GCPC-068 | P1: CLI surface | Workstream 7 deferred compose idea | Design | Verified |
-| GCPC-069 | P1: CLI surface | Roadmap row 8 | Design | Verified |
-| GCPC-070 | P1: CLI surface | AD-009 status vocabulary | Design | Verified |
+| GCPC-069 | P1: CLI surface | Roadmap row 8 | Design | ❌ Needs Fix |
+| GCPC-070 | P1: CLI surface | AD-009 status vocabulary | Design | ❌ Needs Fix |
 | GCPC-071 | P1: CLI surface | quality-and-security.md corruption path | Design | Verified |
 | GCPC-072 | P1: CLI surface | MSC-09 and MSC-15 | Design | Verified |
 | GCPC-073 | P1: CLI surface | Existing CLI contract | Design | Verified |
@@ -621,11 +621,11 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-113 | P2: Determinism and batch | output-and-retrieval.md partial composition | Design | Verified |
 | GCPC-114 | P2: Determinism and batch | MSC-09 and MSC-15 | Design | Verified |
 | GCPC-115 | P1: Completion gate | Audit readiness matrix | Design | Verified |
-| GCPC-116 | P1: Completion gate | Audit verdict; D-01 | Design | Verified |
+| GCPC-116 | P1: Completion gate | Audit verdict; D-01 | Design | ⚠️ Partial (Scale criterion exempts the over-ceiling artifact) |
 | GCPC-117 | P1: Completion gate | D-01 | Design | Verified |
 | GCPC-118 | P1: Completion gate | Standing LocalCorpus constraint | Design | Verified |
 | GCPC-119 | P1: Completion gate | Standing LocalCorpus constraint | Design | Verified |
-| GCPC-120 | P1: Completion gate | Roadmap completion section | Design | Verified |
+| GCPC-120 | P1: Completion gate | Roadmap completion section | Design | ⚠️ Partial (budgets condition) |
 
 **ID format:** `GCPC-NNN`
 

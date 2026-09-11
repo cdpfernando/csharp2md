@@ -2297,6 +2297,137 @@ family's bucketing once instead of enumerating every shard, so the guide never c
 
 ---
 
+## Verifier Fix Tasks (iteration 2)
+
+Routed from `.specs/features/generator-cli-projections-certification/validation.md`'s second-iteration
+FAIL. F1-F5 closed GCPC-039, GCPC-048, GCPC-071, GCPC-087 and GCPC-092; these four close what iteration 2
+found still open or newly grounded. Same discipline as T1-T66 and F1-F5: own gate, atomic commit.
+Execute in priority order (F6 first — Blocker; F7, F8, F9 after — Major).
+
+**Discrimination sensor**: skipped for this feature, standing project policy (`CLAUDE.md`,
+`.specs/STATE.md`) — the user runs Stryker manually.
+
+### F6: Bound every published artifact under the declared ceiling
+
+**What**: Close GCPC-038 for real. Three causes, one requirement. (1) `manifest.json` is never split and
+grows ~190 bytes per artifact entry — live: 57,903 B on `fixtures/CertificationCorpus` (304 entries) and
+174,166 B on `fixtures/SyntheticSolution/Acme.Orders` (938 entries), both against
+`artifact_ceiling_bytes: 32768`. Bound it, for example as a small root index carrying `provenance`,
+`solution_key` and a pointer to sharded manifest parts, so the root stays fixed-size and the parts shard
+like any other family. (2) Markdown pages are never sharded and are in no exclusion list — live:
+`markdown/component/70fa37fb…ce0.md` = 71,495 B on `Acme.Orders`. Split a page, or cap the enumerated
+members and link to the posting holding the rest. (3) `facts/architecture.70fa.json` = 45,354 B holds one
+irreducible Component record; GCPC-038's edge case permits its own shard but requires a recorded
+degradation reason, handled by F9. If an artifact genuinely cannot be bounded, amend `spec.md`'s GCPC-038
+and its Independent Test to state the exemption explicitly rather than encoding it in three test files.
+**Where**: `src/Csharp2Md.Storage/Mapping/ManifestBuilder.cs`, `src/Csharp2Md.Storage/Mapping/LayoutPlanner.cs`, `src/Csharp2Md.Storage/FactualPackageReader.cs`, `src/Csharp2Md.Projection/Markdown/MarkdownProjector.cs`
+**Depends on**: F1
+**Requirement**: GCPC-038, GCPC-044
+
+**Done when**:
+
+- [ ] `manifest.json` is removed from the exclusion sets at `tests/Csharp2Md.Analysis.Tests/Fixtures/CertificationCorpusCeilingTests.cs:20-28`, `tests/Csharp2Md.Analysis.Tests/Readiness/LlmReadinessChecklist.cs:161-168` and `tests/Csharp2Md.Storage.Tests/Scale/ScaleInputGenerator.cs:219-226`; all three loops are confirmed to fail against pre-fix code, then pass against the fix
+- [ ] A second corpus-level ceiling test walks every file of a real `analyze` of `fixtures/SyntheticSolution/Acme.Orders` and asserts none exceeds the published ceiling — that fixture reproduces all three causes today; `fixtures/CertificationCorpus` reproduces only the manifest one
+- [ ] A sharded manifest round-trips through `FactualPackageReader`, `PackageValidator.ValidatePackageDirectory` and the `validate` CLI verb to the same package, and GCPC-062's every-file-reachable property still holds in both directions
+- [ ] `compose` over a package published with a sharded manifest still reproduces the batch artifacts byte-for-byte (`ComposeCommandTests`)
+- [ ] Gate check passes: full multi-project gate
+- [ ] Test count reported; total >= 2063
+
+**Tests**: integration
+**Gate**: build
+
+**Commit**: `fix(storage): bound the manifest and markdown pages under the published ceiling`
+
+---
+
+### F7: Map the published certification status onto analyze's exit code
+
+**What**: `analyze` returns `ExitCodes.Success` or `ExitCodes.PartialComposition` and never reads the
+run-certification status the same invocation just published, so a `degraded` run exits `0`. Map the
+status the way `validate` already does at `CommandFactory.cs:300`, with `PartialComposition` keeping
+precedence per GCPC-072.
+**Where**: `src/Csharp2Md.Cli/CommandFactory.cs`, `tests/Csharp2Md.Cli.Tests/ExitCodeTests.cs`
+**Depends on**: T66
+**Requirement**: GCPC-069, GCPC-070
+
+**Done when**:
+
+- [ ] An exit-code test runs **`analyze`** (not `validate`) over a fixture whose published status is `degraded` and asserts exit `3`; live today both `fixtures/CertificationCorpus` and `fixtures/SyntheticSolution/Acme.Orders` publish `degraded` and exit `0`
+- [ ] An exit-code test runs `analyze` over a fixture whose published status is `passed` and asserts exit `0`
+- [ ] A `failed` status from `analyze` asserts exit `4`, with the package still published
+- [ ] `ExitCodeTests.cs:258`'s helper, which currently asserts `analyze` of `Acme.Orders` exits `0` on a `degraded` run, is corrected — this is a correction to an assertion encoding wrong behaviour, not a weakening
+- [ ] GCPC-072's partial-composition case still exits `2` and takes precedence over a status-derived code
+- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
+- [ ] Test count reported; total >= 2063
+
+**Tests**: integration
+**Gate**: build
+
+**Commit**: `fix(cli): map the published certification status onto analyze's exit code`
+
+---
+
+### F8: Publish a real byte size for every manifest entry and one consistent set of version axes
+
+**What**: Two manifest-fidelity defects. (a) `ManifestBuilder.cs:43-46` hardcodes `byteSize = 0` for any
+deferred fragment, so every `source/` entry misreports — live: 10 of 304 corpus entries and 29 of 938
+`Acme.Orders` entries publish `byte_size: 0` for files of 207-2,357 bytes, and `PackageValidator` does
+not reject it. Take the size from the store after it writes the file, or have the store report the
+written length back. (b) `ManifestBuilder.cs:65` and `DomainMapper.cs:120` build the manifest's own
+top-level version axes from `TaxonomyVersions.Initial` (1,1,1,1,1) while `ProvenanceDto.Current()` uses
+`TaxonomyTables.Default.Versions` (2,2,1,2,2), so one `manifest.json` declares `schema_version: 1` at the
+top level and `2` inside `provenance`. Source both from the same place, or drop the duplicated block and
+let provenance be the single declaration.
+**Where**: `src/Csharp2Md.Storage/Mapping/ManifestBuilder.cs`, `src/Csharp2Md.Storage/Mapping/DomainMapper.cs`, `src/Csharp2Md.Storage/FilesystemTransactionalStore.cs`, `src/Csharp2Md.Storage/Validation/PackageValidator.cs`
+**Depends on**: T66
+**Requirement**: GCPC-061, GCPC-057
+
+**Done when**:
+
+- [ ] `tests/Csharp2Md.Storage.Tests/Mapping/ManifestRealCardinalityTests.cs` walks **every** entry of a real certification-corpus package and asserts `byte_size` equals the file's length on disk, `source/` entries included
+- [ ] `PackageValidator` rejects a manifest entry declaring `byte_size: 0` for a non-empty file, naming the artifact key and both values (GCPC-066), and `validate` maps it to exit `5`
+- [ ] A test asserts the manifest's top-level `schema_version`, `taxonomy_version` and `observation_schema_version` equal its own `provenance`'s, on a real published package
+- [ ] Gate check passes: full multi-project gate
+- [ ] Test count reported; total >= 2063
+
+**Tests**: integration
+**Gate**: build
+
+**Commit**: `fix(storage): publish real byte sizes and consistent version axes in the manifest`
+
+---
+
+### F9: Publish the degradation reason for an irreducible over-ceiling record
+
+**What**: `LayoutPlanner.cs:234-240` routes a `record-exceeds-ceiling` reason only for the
+confirmed-relation families `invokes`, `accesses-data` and `uses-contract`. F4's Deviation note left
+`entry_point_coverage` unrouted because the planner cannot distinguish `EntryPoint` from sibling facts
+inside the `facts/architecture` compound family — but that is exactly the family where the only oversized
+record on a versioned fixture lives, so the spec's edge case ("SHALL record a degradation reason") fails
+in the one case that actually fires. Live: `fixtures/SyntheticSolution/Acme.Orders` publishes
+`facts/architecture.70fa.json` = 45,354 B holding one Component record, while its `coverage.json` carries
+`degradation_reasons: []` on all four metrics and `run-certification.json` names only unknown-occurrence
+reasons. Publish the reason wherever it occurs: attach it to every metric the family can feed, or publish
+it as a run-level reason with its affected count. Either satisfies the edge case; silence does not.
+**Where**: `src/Csharp2Md.Storage/Mapping/LayoutPlanner.cs`, `src/Csharp2Md.Storage/Mapping/PublicationPipeline.cs`, `src/Csharp2Md.Storage/Mapping/DomainMapper.cs`
+**Depends on**: F1
+**Requirement**: GCPC-004
+
+**Done when**:
+
+- [ ] An end-to-end test over `fixtures/SyntheticSolution/Acme.Orders` — under the real default ceiling, with no artificial 8-byte ceiling — asserts the published package carries a non-empty `record-exceeds-ceiling` reason with a correct affected count
+- [ ] The existing zero-degradation case still publishes an empty reasons array (`CoverageDegradationRoutingTests`'s second case stays green)
+- [ ] An invariant test asserts that every artifact published in its own shard because it is irreducible has a published degradation reason a consumer can read
+- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
+- [ ] Test count reported; total >= 2063
+
+**Tests**: integration
+**Gate**: build
+
+**Commit**: `fix(storage): publish the degradation reason for an irreducible over-ceiling record`
+
+---
+
 ## Phase Execution Map
 
 ```
