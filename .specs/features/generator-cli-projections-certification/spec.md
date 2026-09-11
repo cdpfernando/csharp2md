@@ -623,8 +623,8 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-115 | P1: Completion gate | Audit readiness matrix | Design | Verified |
 | GCPC-116 | P1: Completion gate | Audit verdict; D-01 | Design | Verified |
 | GCPC-117 | P1: Completion gate | D-01 | Design | Verified |
-| GCPC-118 | P1: Completion gate | Standing LocalCorpus constraint | Design | Pending |
-| GCPC-119 | P1: Completion gate | Standing LocalCorpus constraint | Design | Pending |
+| GCPC-118 | P1: Completion gate | Standing LocalCorpus constraint | Design | Verified |
+| GCPC-119 | P1: Completion gate | Standing LocalCorpus constraint | Design | Verified |
 | GCPC-120 | P1: Completion gate | Roadmap completion section | Design | Pending |
 
 **ID format:** `GCPC-NNN`

@@ -2115,14 +2115,16 @@ T62 -> T66
 
 **Done when**:
 
-- [ ] The test is asserted excluded by `Category!=LocalCorpus` and therefore absent from every gate
-- [ ] With the clone absent, the skip is asserted reported with the missing path named, never silently assumed
-- [ ] No mandatory gate is asserted to depend on the clone
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; total ≥ previous task's total
+- [x] The test is asserted excluded by `Category!=LocalCorpus` and therefore absent from every gate
+- [x] With the clone absent, the skip is asserted reported with the missing path named, never silently assumed
+- [x] No mandatory gate is asserted to depend on the clone
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
+- [x] Test count reported; total ≥ previous task's total — **Analysis 823 pass** (unchanged from T64 — both new `[Trait("Category", "LocalCorpus")]` theory cases are excluded from the gate filter, confirmed by an identical count before and after this task's file was added); total 2050 (Domain 563, Analysis 823, Storage 380, Cli 58, Projection 226)
 
 **Tests**: integration
 **Gate**: build
+
+**Deviation**: none. Reuses the exact `$XunitDynamicSkip$` convention `Csharp2Md.Cli.Tests.LocalCorpusAnalyzeTests` already established (same `TheoryData<string, string>` of the two clone names and expected solution paths, same dynamic-skip message shape naming the missing path) and the same `[Trait("Category", "LocalCorpus")]` exclusion mechanism, applied to `LlmReadinessChecklist.Evaluate` instead of the CLI's `analyze` invocation. Confirmed the exclusion two ways: the mandatory gate's total test count is unchanged at 823 (both new theory cases never execute under `--filter "Category!=LocalCorpus"`), and running the two cases directly (bypassing the gate filter) reproduces the exact same `$XunitDynamicSkip$local <name> clone is not present at '<path>'.` message the pre-existing `LocalCorpusAnalyzeTests` also produces when run the same way -- proving this is the project's own established, working convention, not a new or different skip mechanism.
 
 **Commit**: `test(readiness): run the checklist on the local corpus when present`
 
