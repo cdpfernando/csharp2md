@@ -509,7 +509,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-001 | P1: Certified execution | Audit B1; AD-009 | Design | Verified |
 | GCPC-002 | P1: Certified execution | quality-and-security.md run coverage | Design | Verified |
 | GCPC-003 | P1: Certified execution | quality-and-security.md denominator table | Design | Verified |
-| GCPC-004 | P1: Certified execution | Audit B1 | Design | Pending |
+| GCPC-004 | P1: Certified execution | Audit B1 | Design | Verified (vacuous) |
 | GCPC-005 | P1: Certified execution | AD-009; quality-and-security.md | Design | Verified |
 | GCPC-006 | P1: Certified execution | AD-009 | Design | Verified |
 | GCPC-007 | P1: Certified execution | quality-and-security.md degradation | Design | Verified |
@@ -543,13 +543,13 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-035 | P1: Document policy | D-04 safeguard | Design | Verified |
 | GCPC-036 | P1: Bounded payloads | D-02; output-and-retrieval.md scale constraints | Design | Verified |
 | GCPC-037 | P1: Bounded payloads | D-02 | Design | Verified |
-| GCPC-038 | P1: Bounded payloads | Audit B4; calibrates RP-52 | Design | Verified |
-| GCPC-039 | P1: Bounded payloads | Audit B4; output-and-retrieval.md | Design | Verified |
+| GCPC-038 | P1: Bounded payloads | Audit B4; calibrates RP-52 | Design | ❌ Needs Fix |
+| GCPC-039 | P1: Bounded payloads | Audit B4; output-and-retrieval.md | Design | ⚠️ Partial |
 | GCPC-040 | P1: Bounded payloads | Audit gate 4 | Design | Verified |
 | GCPC-041 | P1: Bounded payloads | RP-20 and RP-27 preserved after split | Design | Verified |
 | GCPC-042 | P1: Bounded payloads | RP-53 and RP-54 | Design | Verified |
 | GCPC-043 | P1: Bounded payloads | output-and-retrieval.md scale constraints | Design | Verified |
-| GCPC-044 | P1: Bounded payloads | Audit inventory: contains, belongs-to, invocation | Design | Verified |
+| GCPC-044 | P1: Bounded payloads | Audit inventory: contains, belongs-to, invocation | Design | ⚠️ Partial |
 | GCPC-045 | P1: Bounded payloads | quality-and-security.md performance | Design | Verified |
 | GCPC-046 | P1: Retrieval guide | Audit B5 | Design | Verified |
 | GCPC-047 | P1: Retrieval guide | Audit B4 and B5 | Design | Verified |
@@ -576,7 +576,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-068 | P1: CLI surface | Workstream 7 deferred compose idea | Design | Verified |
 | GCPC-069 | P1: CLI surface | Roadmap row 8 | Design | Verified |
 | GCPC-070 | P1: CLI surface | AD-009 status vocabulary | Design | Verified |
-| GCPC-071 | P1: CLI surface | quality-and-security.md corruption path | Design | Verified |
+| GCPC-071 | P1: CLI surface | quality-and-security.md corruption path | Design | ⚠️ Partial |
 | GCPC-072 | P1: CLI surface | MSC-09 and MSC-15 | Design | Verified |
 | GCPC-073 | P1: CLI surface | Existing CLI contract | Design | Verified |
 | GCPC-074 | P1: Engine certification | quality-and-security.md corpora | Design | Verified |
@@ -592,12 +592,12 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-084 | P1: Security and fidelity | AD-021 plus the new label surface | Design | Verified |
 | GCPC-085 | P1: Security and fidelity | AD-003 | Design | Verified |
 | GCPC-086 | P1: Security and fidelity | quality-and-security.md security | Design | Verified |
-| GCPC-087 | P2: Contract accounting | Audit I2 | Design | Pending |
+| GCPC-087 | P2: Contract accounting | Audit I2 | Design | ❌ Needs Fix |
 | GCPC-088 | P2: Contract accounting | Audit I2; AD-009 | Design | Verified |
 | GCPC-089 | P2: Contract accounting | Audit I2 | Design | Verified |
-| GCPC-090 | P2: Contract accounting | taxonomy.md contracts | Design | Pending |
+| GCPC-090 | P2: Contract accounting | taxonomy.md contracts | Design | Verified |
 | GCPC-091 | P2: Contract accounting | output-and-retrieval.md postings | Design | Verified |
-| GCPC-092 | P2: Contract accounting | AD-010 | Design | Verified |
+| GCPC-092 | P2: Contract accounting | AD-010 | Design | ❌ Needs Fix |
 | GCPC-093 | P2: Legible projections | Audit I1 | Design | Verified |
 | GCPC-094 | P2: Legible projections | RP-34; AD-007 | Design | Verified |
 | GCPC-095 | P2: Legible projections | AD-007; output-and-retrieval.md Markdown | Design | Verified |

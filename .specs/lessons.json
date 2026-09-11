@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 20,
+  "next_id": 24,
   "lessons": [
     {
       "id": "L-001",
@@ -346,6 +346,78 @@
       ],
       "created": "2026-08-27T12:20:39Z",
       "last_seen": "2026-08-27T12:20:39Z"
+    },
+    {
+      "id": "L-020",
+      "key": "ac_gap::never exclude an artifact from an invariant check to make it pass if an artifact cannot satisfy the invariant that is a gap to report not a list to skip",
+      "text": "Never exclude an artifact from an invariant check to make it pass; if an artifact cannot satisfy the invariant, that is a gap to report, not a list to skip",
+      "signal": "ac_gap",
+      "scope": "storage",
+      "status": "candidate",
+      "features": [
+        "generator-cli-projections-certification"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tests/Csharp2Md.Storage.Tests/Scale/ScaleInputGenerator.cs:219 (storage)"
+      ],
+      "created": "2026-09-11T01:30:25Z",
+      "last_seen": "2026-09-11T01:30:25Z"
+    },
+    {
+      "id": "L-021",
+      "key": "ac_gap::a test that hand builds the record the producer is supposed to emit proves the consumer never the producer assert the producing layer emits it end to end",
+      "text": "A test that hand-builds the record the producer is supposed to emit proves the consumer, never the producer; assert the producing layer emits it end to end",
+      "signal": "ac_gap",
+      "scope": "analysis",
+      "status": "candidate",
+      "features": [
+        "generator-cli-projections-certification"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tests/Csharp2Md.Projection.Tests/Postings/MessagingContractPostingTests.cs:75 (analysis)"
+      ],
+      "created": "2026-09-11T01:30:25Z",
+      "last_seen": "2026-09-11T01:30:25Z"
+    },
+    {
+      "id": "L-022",
+      "key": "ac_gap::a ground truth resolver must read the discrete published record the requirement names never infer the outcome from a sibling artifact that is present either way",
+      "text": "A ground-truth resolver must read the discrete published record the requirement names, never infer the outcome from a sibling artifact that is present either way",
+      "signal": "ac_gap",
+      "scope": "certification",
+      "status": "candidate",
+      "features": [
+        "generator-cli-projections-certification"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "tests/Csharp2Md.Analysis.Tests/Certification/EngineCertificationRunner.cs:161 (certification)"
+      ],
+      "created": "2026-09-11T01:30:25Z",
+      "last_seen": "2026-09-11T01:30:25Z"
+    },
+    {
+      "id": "L-023",
+      "key": "spec_precision_gap::an envelope field only round tripped in a serialization test is unproven until some real pipeline path populates it",
+      "text": "An envelope field only round-tripped in a serialization test is unproven until some real pipeline path populates it",
+      "signal": "spec_precision_gap",
+      "scope": "storage",
+      "status": "candidate",
+      "features": [
+        "generator-cli-projections-certification"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "GCPC-004 (storage)"
+      ],
+      "created": "2026-09-11T01:30:25Z",
+      "last_seen": "2026-09-11T01:30:25Z"
     }
   ]
 }

@@ -128,6 +128,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: MSC-32 Independent Test (composition)
 - last seen: 2026-08-27T12:20:39Z
 
+### L-020 - Never exclude an artifact from an invariant check to make it pass; if an artifact cannot satisfy the invariant, that is a gap to report, not a list to skip
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `storage` · harmful: 0
+- features: generator-cli-projections-certification
+- evidence: tests/Csharp2Md.Storage.Tests/Scale/ScaleInputGenerator.cs:219 (storage)
+- last seen: 2026-09-11T01:30:25Z
+
+### L-021 - A test that hand-builds the record the producer is supposed to emit proves the consumer, never the producer; assert the producing layer emits it end to end
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `analysis` · harmful: 0
+- features: generator-cli-projections-certification
+- evidence: tests/Csharp2Md.Projection.Tests/Postings/MessagingContractPostingTests.cs:75 (analysis)
+- last seen: 2026-09-11T01:30:25Z
+
+### L-022 - A ground-truth resolver must read the discrete published record the requirement names, never infer the outcome from a sibling artifact that is present either way
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `certification` · harmful: 0
+- features: generator-cli-projections-certification
+- evidence: tests/Csharp2Md.Analysis.Tests/Certification/EngineCertificationRunner.cs:161 (certification)
+- last seen: 2026-09-11T01:30:25Z
+
+### L-023 - An envelope field only round-tripped in a serialization test is unproven until some real pipeline path populates it
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `storage` · harmful: 0
+- features: generator-cli-projections-certification
+- evidence: GCPC-004 (storage)
+- last seen: 2026-09-11T01:30:25Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
