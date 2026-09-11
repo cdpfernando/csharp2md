@@ -120,6 +120,20 @@ internal static class PublicationPipeline
             };
         }
 
+        // F9 (GCPC-004/GCPC-038): CoverageMetricDegradations is deliberately limited to families whose
+        // numerator mapping is unambiguous. The complete plan-level list must still be consumer-visible,
+        // especially the real Acme.Orders oversized Component in facts/architecture.json, so publish it
+        // at run scope with each reason's affected count rather than silently losing the edge case.
+        if (!plan.DegradationReasons.IsEmpty)
+        {
+            publishedDocument = publishedDocument with
+            {
+                RunCertification = DomainMapper.WithLayoutDegradations(
+                    publishedDocument.RunCertification,
+                    plan.DegradationReasons),
+            };
+        }
+
         var fragments = PackagePublisher.ToPublicationOrder(publishedDocument, plan, projections, provenance);
         ValidateManifestCardinality(fragments);
         return new PublicationOutcome(fragments, contribution);

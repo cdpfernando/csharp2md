@@ -2417,14 +2417,20 @@ it as a run-level reason with its affected count. Either satisfies the edge case
 
 **Done when**:
 
-- [ ] An end-to-end test over `fixtures/SyntheticSolution/Acme.Orders` — under the real default ceiling, with no artificial 8-byte ceiling — asserts the published package carries a non-empty `record-exceeds-ceiling` reason with a correct affected count
-- [ ] The existing zero-degradation case still publishes an empty reasons array (`CoverageDegradationRoutingTests`'s second case stays green)
-- [ ] An invariant test asserts that every artifact published in its own shard because it is irreducible has a published degradation reason a consumer can read
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; total >= 2063
+- [x] `AnalyzeAsync_AcmeOrders_PublishesNoAvoidableArtifactOverTheDeclaredCeiling` now reads the real default-ceiling package's `run-certification.json` and asserts a non-empty `record-exceeds-ceiling` reason whose `affected_count=1`
+- [x] `Publish_SameSnapshotUnderTheRealDefaultCeiling_PublishesAnEmptyReasonsArray` stays green and now also proves the run-level reasons contain no `record-exceeds-ceiling`
+- [x] The Acme.Orders test walks every over-ceiling artifact, proves each is an irreducible singleton, derives its unsharded family key, and requires a consumer-readable run-level reason naming that family
+- [x] Gate check passes: clean build (0 warnings, 0 errors), Analysis 827/827 with `Category!=LocalCorpus`, Storage 388/388
+- [x] Test count reported; total 2071 (Domain 563, Analysis 827, Storage 388, Cli 64, Projection 229); F9 strengthens two existing tests without inflating the count
 
 **Tests**: integration
 **Gate**: build
+
+**Deviation**: The permitted run-level route made a `LayoutPlanner` change unnecessary. Its complete,
+already-correct `DegradationReasons` collection is now serialized by `PublicationPipeline` through
+`DomainMapper.WithLayoutDegradations`; this covers architecture and every other irreducible family without
+guessing which coverage numerator a compound record affects. Each stable reason retains its code, detail,
+and explicit affected count, and a previously passed run becomes degraded.
 
 **Commit**: `fix(storage): publish the degradation reason for an irreducible over-ceiling record`
 

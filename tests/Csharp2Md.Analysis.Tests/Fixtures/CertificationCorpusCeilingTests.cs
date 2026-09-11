@@ -118,6 +118,32 @@ public sealed class CertificationCorpusCeilingTests
             Assert.True(
                 IsSingleRecordShard(Path.Combine(packageDirectory, offender.Path.Replace('/', Path.DirectorySeparatorChar))),
                 $"'{offender.Path}' exceeds the ceiling but is not the permitted indivisible single-record shard.");
+
+            var certification = CanonicalJson.Read<RunCertificationEnvelope>(
+                File.ReadAllBytes(Path.Combine(packageDirectory, "run-certification.json")));
+            var layoutReasons = certification.Reasons
+                .Where(static reason => reason.StartsWith("record-exceeds-ceiling;", StringComparison.Ordinal))
+                .ToArray();
+            Assert.NotEmpty(layoutReasons);
+            Assert.All(
+                layoutReasons,
+                static reason => Assert.Contains("affected_count=1", reason, StringComparison.Ordinal));
+
+            // Every actual over-ceiling artifact is an irreducible singleton and has a run-level reason
+            // naming its source family. This closes the invariant for the real default-ceiling package,
+            // rather than proving only one hard-coded architecture filename.
+            foreach (var overCeiling in offenders)
+            {
+                Assert.True(
+                    IsSingleRecordShard(Path.Combine(
+                        packageDirectory,
+                        overCeiling.Path.Replace('/', Path.DirectorySeparatorChar))),
+                    $"'{overCeiling.Path}' is over ceiling but not an irreducible singleton.");
+                var family = UnshardedFamilyKey(overCeiling.Path);
+                Assert.Contains(
+                    layoutReasons,
+                    reason => reason.Contains($"'{family}'", StringComparison.Ordinal));
+            }
         }
         finally
         {
@@ -136,5 +162,15 @@ public sealed class CertificationCorpusCeilingTests
                 obj.Sum(static property => ((System.Text.Json.Nodes.JsonArray)property.Value!).Count) == 1,
             _ => false,
         };
+    }
+
+    private static string UnshardedFamilyKey(string shardPath)
+    {
+        var extension = Path.GetExtension(shardPath);
+        var withoutExtension = shardPath[..^extension.Length];
+        var shardSeparator = withoutExtension.LastIndexOf('.');
+        return shardSeparator < 0
+            ? shardPath
+            : withoutExtension[..shardSeparator] + extension;
     }
 }

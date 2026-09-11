@@ -261,6 +261,34 @@ public static class DomainMapper
         };
     }
 
+    /// <summary>
+    /// Publishes every irreducible layout degradation at run scope (GCPC-004/GCPC-038), including
+    /// families such as <c>facts/architecture.json</c> that cannot be attributed to one coverage
+    /// numerator without guessing which subtype caused the oversized record. The stable text retains the
+    /// structured reason code and affected count for downstream consumers; a previously passed run
+    /// becomes degraded, while an already degraded or failed status is preserved.
+    /// </summary>
+    internal static RunCertificationEnvelope WithLayoutDegradations(
+        RunCertificationEnvelope certification,
+        ImmutableArray<DegradationReasonDto> degradations)
+    {
+        ArgumentNullException.ThrowIfNull(certification);
+        if (degradations.IsDefaultOrEmpty)
+        {
+            return certification;
+        }
+
+        var layoutReasons = degradations.Select(static reason =>
+            $"{reason.Code}; affected_count={reason.AffectedCount}; {reason.Detail}");
+        var reasons = certification.Reasons
+            .AddRange(layoutReasons)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToImmutableArray();
+        var status = certification.Status == "passed" ? "degraded" : certification.Status;
+        return new RunCertificationEnvelope(status, reasons);
+    }
+
     private static CoverageMetricDto AppendDegradations(
         CoverageMetricDto metric,
         ImmutableDictionary<CoverageMetricKind, ImmutableArray<DegradationReasonDto>> byMetric,

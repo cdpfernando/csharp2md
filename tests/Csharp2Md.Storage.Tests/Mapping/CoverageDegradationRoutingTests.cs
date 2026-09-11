@@ -53,6 +53,15 @@ public sealed class CoverageDegradationRoutingTests
         Assert.Empty(coverage.EntryPointCoverage.DegradationReasons);
         Assert.Empty(coverage.ContractCoverage.DegradationReasons);
         Assert.Empty(coverage.PersistenceCoverage.DegradationReasons);
+
+        var certification = ReadCertification(outcome);
+        var runReasons = certification.Reasons
+            .Where(static reason => reason.StartsWith("record-exceeds-ceiling;", StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(runReasons);
+        Assert.All(
+            runReasons,
+            static reason => Assert.Contains("affected_count=1", reason, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -78,12 +87,21 @@ public sealed class CoverageDegradationRoutingTests
         Assert.Empty(coverage.EntryPointCoverage.DegradationReasons);
         Assert.Empty(coverage.ContractCoverage.DegradationReasons);
         Assert.Empty(coverage.PersistenceCoverage.DegradationReasons);
+        Assert.DoesNotContain(
+            ReadCertification(outcome).Reasons,
+            static reason => reason.StartsWith("record-exceeds-ceiling;", StringComparison.Ordinal));
     }
 
     private static CoverageEnvelope ReadCoverage(PublicationOutcome outcome)
     {
         var fragment = outcome.Fragments.Single(static f => f.CanonicalKey == "coverage.json");
         return CanonicalJson.Read<CoverageEnvelope>(fragment.Payload.AsSpan());
+    }
+
+    private static RunCertificationEnvelope ReadCertification(PublicationOutcome outcome)
+    {
+        var fragment = outcome.Fragments.Single(static f => f.CanonicalKey == "run-certification.json");
+        return CanonicalJson.Read<RunCertificationEnvelope>(fragment.Payload.AsSpan());
     }
 
     private static FactualSnapshot ManyInvokesSnapshot(int count)

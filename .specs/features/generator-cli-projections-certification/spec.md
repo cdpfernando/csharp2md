@@ -509,7 +509,7 @@ Large and Complex scope: every dimension resolves to a requirement or an explici
 | GCPC-001 | P1: Certified execution | Audit B1; AD-009 | Design | Verified |
 | GCPC-002 | P1: Certified execution | quality-and-security.md run coverage | Design | Verified |
 | GCPC-003 | P1: Certified execution | quality-and-security.md denominator table | Design | Verified |
-| GCPC-004 | P1: Certified execution | Audit B1 | Design | ⚠️ Needs Fix (live producer misses the family where oversized records occur) |
+| GCPC-004 | P1: Certified execution | Audit B1 | Design | Verified |
 | GCPC-005 | P1: Certified execution | AD-009; quality-and-security.md | Design | Verified |
 | GCPC-006 | P1: Certified execution | AD-009 | Design | Verified |
 | GCPC-007 | P1: Certified execution | quality-and-security.md degradation | Design | Verified |
