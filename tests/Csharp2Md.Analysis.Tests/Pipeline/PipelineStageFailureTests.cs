@@ -39,8 +39,6 @@ public sealed class PipelineStageFailureTests
             executed);
         Assert.DoesNotContain("Validation and Coverage", executed);
         Assert.DoesNotContain("Persistence", executed);
-        Assert.DoesNotContain("Retrieval Projection", executed);
-        Assert.DoesNotContain("Batch Composition", executed);
         Assert.Equal(
             ["Inventory", "Semantic Analysis", "Observation Extraction"],
             outcome.Stages.Select(report => report.Name).ToArray());

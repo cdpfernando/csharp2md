@@ -81,8 +81,8 @@ internal sealed class BoundaryPass : IClassifierPass
                 continue;
             }
 
-            var template = ReadPayloadValue(routeDeclaration, RouteKey);
-            var httpMethod = ReadPayloadValue(routeDeclaration, MethodNameKey);
+            var template = PayloadReader.Value(routeDeclaration, RouteKey);
+            var httpMethod = PayloadReader.Value(routeDeclaration, MethodNameKey);
             if (template is null && httpMethod is null)
             {
                 // SPEC_DEVIATION: spec EBC-06 empty template → empty-string protocolOperationKey.
@@ -169,7 +169,7 @@ internal sealed class BoundaryPass : IClassifierPass
                 continue;
             }
 
-            var clientName = ReadPayloadValue(createClient, ClientNameKey);
+            var clientName = PayloadReader.Value(createClient, ClientNameKey);
             if (clientName is null)
             {
                 context.Accumulator.AddUnresolved(
@@ -199,7 +199,7 @@ internal sealed class BoundaryPass : IClassifierPass
                     continue;
                 }
 
-                var routeValue = ReadPayloadValue(invocation, RouteKey);
+                var routeValue = PayloadReader.Value(invocation, RouteKey);
                 if (routeValue is null)
                 {
                     context.Accumulator.AddUnresolved(
@@ -263,9 +263,9 @@ internal sealed class BoundaryPass : IClassifierPass
             .OrderBy(static o => o.Identity.Owner.Id.Value, StringComparer.Ordinal)
             .ThenBy(static o => o.Identity.OccurrenceOrdinal))
         {
-            var methodName = ReadPayloadValue(observation, MethodNameKey);
+            var methodName = PayloadReader.Value(observation, MethodNameKey);
             if (methodName is not ("PublishAsync" or "Publish")
-                || !PayloadContains(observation, TargetTypeKey, EventBusTypeName))
+                || !PayloadReader.Contains(observation, TargetTypeKey, EventBusTypeName))
             {
                 continue;
             }
@@ -276,7 +276,7 @@ internal sealed class BoundaryPass : IClassifierPass
                 continue;
             }
 
-            var eventType = ReadPayloadValue(observation, TypeArgumentKey);
+            var eventType = PayloadReader.Value(observation, TypeArgumentKey);
             if (eventType is null)
             {
                 context.Accumulator.AddDiagnostic(
@@ -313,7 +313,7 @@ internal sealed class BoundaryPass : IClassifierPass
         var componentsById = context.FactsByType<Component>()
             .ToDictionary(static component => component.Reference.Id.Value, StringComparer.Ordinal);
         var types = symbolsById.Values
-            .Where(static symbol => string.Equals(ReadField(symbol.Signature.Value, "kind"), "namedtype", StringComparison.Ordinal))
+            .Where(static symbol => string.Equals(SignatureReader.Field(symbol.Signature.Value, "kind"), "namedtype", StringComparison.Ordinal))
             .ToArray();
 
         var factCount = 0;
@@ -322,7 +322,7 @@ internal sealed class BoundaryPass : IClassifierPass
         {
             if (!symbolsById.TryGetValue(entry.Symbol.Id.Value, out var symbol)
                 || !componentsById.TryGetValue(entry.OwningComponent.Id.Value, out var component)
-                || !string.Equals(ReadField(symbol.Signature.Value, "metadata"), "HandleAsync", StringComparison.Ordinal))
+                || !string.Equals(SignatureReader.Field(symbol.Signature.Value, "metadata"), "HandleAsync", StringComparison.Ordinal))
             {
                 continue;
             }
@@ -366,12 +366,12 @@ internal sealed class BoundaryPass : IClassifierPass
         foreach (var observation in context.ObservationsByOwner(declaringType.Reference))
         {
             if (observation.Identity.Kind is not ObservationKind.BaseType
-                || !PayloadContains(observation, TargetTypeKey, IntegrationEventHandlerTypeName))
+                || !PayloadReader.Contains(observation, TargetTypeKey, IntegrationEventHandlerTypeName))
             {
                 continue;
             }
 
-            var typeArgument = ReadPayloadValue(observation, TypeArgumentKey);
+            var typeArgument = PayloadReader.Value(observation, TypeArgumentKey);
             if (typeArgument is not null)
             {
                 return typeArgument;
@@ -383,20 +383,20 @@ internal sealed class BoundaryPass : IClassifierPass
 
     private static bool IsDeclaredOn(Symbol method, Symbol type)
     {
-        var container = ReadField(method.Signature.Value, "container");
+        var container = SignatureReader.Field(method.Signature.Value, "container");
         if (container is null)
         {
             return false;
         }
 
-        var typeName = ReadField(type.Signature.Value, "type");
+        var typeName = SignatureReader.Field(type.Signature.Value, "type");
         if (string.Equals(container, typeName, StringComparison.Ordinal))
         {
             return true;
         }
 
-        var typeContainer = ReadField(type.Signature.Value, "container");
-        var typeMetadata = ReadField(type.Signature.Value, "metadata");
+        var typeContainer = SignatureReader.Field(type.Signature.Value, "container");
+        var typeMetadata = SignatureReader.Field(type.Signature.Value, "metadata");
         return typeContainer is not null
             && typeMetadata is not null
             && string.Equals(container, typeContainer + "." + typeMetadata, StringComparison.Ordinal);
@@ -404,7 +404,7 @@ internal sealed class BoundaryPass : IClassifierPass
 
     private static string? TryFirstParameterType(Symbol method)
     {
-        var parameters = ReadField(method.Signature.Value, "parameters");
+        var parameters = SignatureReader.Field(method.Signature.Value, "parameters");
         if (string.IsNullOrWhiteSpace(parameters))
         {
             return null;
@@ -423,21 +423,6 @@ internal sealed class BoundaryPass : IClassifierPass
         return string.IsNullOrWhiteSpace(first) ? null : first;
     }
 
-    private static string? ReadField(string identity, string key)
-    {
-        var marker = ";" + key + "=";
-        var start = identity.IndexOf(marker, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += marker.Length;
-        var end = identity.IndexOf(';', start);
-        var encoded = end < 0 ? identity[start..] : identity[start..end];
-        return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
-    }
-
     private static int CompareSourceOrder(Observation left, Observation right)
     {
         var locator = left.Locator.CompareTo(right.Locator);
@@ -447,13 +432,13 @@ internal sealed class BoundaryPass : IClassifierPass
     }
 
     private static bool IsCreateClient(Observation observation) =>
-        string.Equals(ReadPayloadValue(observation, MethodNameKey), CreateClientMethodName, StringComparison.Ordinal)
-        && PayloadContains(observation, TargetTypeKey, HttpClientFactoryTypeName);
+        string.Equals(PayloadReader.Value(observation, MethodNameKey), CreateClientMethodName, StringComparison.Ordinal)
+        && PayloadReader.Contains(observation, TargetTypeKey, HttpClientFactoryTypeName);
 
     private static bool TryHttpMethod(Observation observation, out string httpMethod)
     {
         httpMethod = string.Empty;
-        var methodName = ReadPayloadValue(observation, MethodNameKey);
+        var methodName = PayloadReader.Value(observation, MethodNameKey);
         if (methodName is null || !HttpMethodsByInvocationName.TryGetValue(methodName, out var mapped))
         {
             return false;
@@ -461,33 +446,5 @@ internal sealed class BoundaryPass : IClassifierPass
 
         httpMethod = mapped;
         return true;
-    }
-
-    private static bool PayloadContains(Observation observation, string key, string needle)
-    {
-        foreach (var entry in observation.Identity.Payload.Entries)
-        {
-            if (string.Equals(entry.Key, key, StringComparison.Ordinal)
-                && entry.Value.Value.Contains(needle, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string? ReadPayloadValue(Observation observation, string key)
-    {
-        foreach (var entry in observation.Identity.Payload.Entries)
-        {
-            if (string.Equals(entry.Key, key, StringComparison.Ordinal)
-                && !string.IsNullOrWhiteSpace(entry.Value.Value))
-            {
-                return entry.Value.Value;
-            }
-        }
-
-        return null;
     }
 }

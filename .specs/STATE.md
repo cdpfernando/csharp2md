@@ -2,27 +2,15 @@
 
 ## Status
 
-The architectural replacement is underway. Workstreams 1 through 6 are on `feat/retrieval-projections` (5D and earlier also on `master`); workstream 7 is on `feature/multi-solution-composition`. Certification remains.
+Workstreams 1 through 8 have been executed. Workstream 8,
+[`generator-cli-projections-certification`](features/generator-cli-projections-certification/spec.md),
+is **closed with two known Major gaps deferred** (AD-028) rather than on a clean PASS; the Handoff at the
+end of this file is the authority on what remains and where it is recorded.
 
-Workstream 1, [`knowledge-taxonomy-contract`](features/knowledge-taxonomy-contract/spec.md), is complete, verified and on `master`.
-
-Workstream 2, [`engine-bootstrap`](features/engine-bootstrap/spec.md), is complete, verified and merged to `master` (`8a93121`, PR #7).
-
-Workstream 3, [`factual-storage`](features/factual-storage/spec.md), is complete, verified and on `feat/factual-storage` (`4c4948b`). Verifier report: `.specs/features/factual-storage/validation.md` (PASS, 801 tests).
-
-Workstream 4, [`roslyn-observation-extraction`](features/roslyn-observation-extraction/spec.md), is complete, verified and on `feat/roslyn-observation-extraction` (`65fa91a`). Verifier report: `.specs/features/roslyn-observation-extraction/validation.md` (PASS, 930 tests).
-
-Workstream 5A, [`entrypoints-boundaries-contracts`](features/entrypoints-boundaries-contracts/spec.md), is complete, verified and on `master` via PR #10. Verifier report: `.specs/features/entrypoints-boundaries-contracts/validation.md` (PASS, 1019 tests).
-
-Workstream 5B, [`call-linking-flow-frontiers`](features/call-linking-flow-frontiers/spec.md), is complete, verified and on `master` via PR #11 (`99cd283`). Verifier report: `.specs/features/call-linking-flow-frontiers/validation.md` (PASS, 1076 tests).
-
-Workstream 5C, [`persistence-knowledge`](features/persistence-knowledge/spec.md), is complete, verified and on `master` via PR #12 (`ef4473b`). Verifier report: `.specs/features/persistence-knowledge/validation.md` (PASS, 1158 tests).
-
-Workstream 5D, [`components-deployments-configuration`](features/components-deployments-configuration/spec.md), is complete, verified and on `master` via PR #14 (`792d9cb`). Verifier report: `.specs/features/components-deployments-configuration/validation.md` (PASS, 1342 tests, 58/58 ACs).
-
-Workstream 6, [`retrieval-projections`](features/retrieval-projections/spec.md), is complete and verified on `feat/retrieval-projections` (`97150bd`). Verifier report: `.specs/features/retrieval-projections/validation.md` (PASS, 1613 tests, 57/57 ACs, 5 spec-precision gaps).
-
-Workstream 7, [`multi-solution-composition`](features/multi-solution-composition/spec.md), is complete and verified on `feature/multi-solution-composition` (`d1eaae6`). Verifier report: `.specs/features/multi-solution-composition/validation.md` (PASS, 1723 tests, 40/40 ACs, 2 spec-precision gaps). F1 `7c2c7dc` closed MSC-39 after the first Verifier FAIL.
+Per-workstream ordering, scope and outcome live in
+[`architecture-knowledge-engine-roadmap.md`](../architecture-knowledge-engine-roadmap.md)'s Workstreams
+table — this file does not restate them. Each feature's own Verifier report
+(`features/<feature>/validation.md`) is the authority on its verdict, test count and accepted criteria.
 
 Normative documentation:
 

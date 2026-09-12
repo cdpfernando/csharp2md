@@ -23,33 +23,30 @@ public sealed class PipelineOrchestratorTests
 
     [Fact]
     [Trait("Requirement", "ENG-13")]
-    public void Construction_RejectsAShuffledNameList()
+    public async Task RunAsync_ExecutesTheStagesItWasGiven_InTheOrderItWasGivenThem()
     {
         var executed = new List<string>();
-        var shuffled = StubStages.DeclaredNames
-            .Reverse()
-            .Select(name => (IPipelineStage)new RecordingStage(name, executed))
-            .ToImmutableArray();
+        ImmutableArray<IPipelineStage> reversed =
+        [
+            .. StubStages.DeclaredNames.Reverse().Select(name => (IPipelineStage)new RecordingStage(name, executed)),
+        ];
+        var context = new PipelineContext(new SwallowingSession(), "unused.sln");
 
-        var exception = Assert.Throws<ArgumentException>(() => new PipelineOrchestrator(shuffled));
+        await new PipelineOrchestrator(reversed).RunAsync(context, CancellationToken.None);
 
-        Assert.Equal("stages", exception.ParamName);
-        Assert.Empty(executed);
+        Assert.Equal(StubStages.DeclaredNames.Reverse().ToArray(), executed);
     }
 
     [Fact]
     [Trait("Requirement", "ENG-13")]
-    public void Construction_RejectsADifferentStageCount()
+    public void Construction_RejectsAnEmptyPipeline()
     {
-        ImmutableArray<IPipelineStage> tooFew =
-        [
-            new RecordingStage("Inventory", []),
-        ];
-
-        var exception = Assert.Throws<ArgumentException>(() => new PipelineOrchestrator(tooFew));
+        var exception = Assert.Throws<ArgumentException>(
+            () => new PipelineOrchestrator(ImmutableArray<IPipelineStage>.Empty));
 
         Assert.Equal("stages", exception.ParamName);
     }
+
 }
 
 internal sealed class RecordingStage : IPipelineStage
@@ -70,7 +67,7 @@ internal sealed class RecordingStage : IPipelineStage
     {
         _executed.Add(Name);
         _onExecute?.Invoke(context);
-        return StubStages.ZeroResult();
+        return ValueTask.FromResult(StageResult.Zero);
     }
 }
 

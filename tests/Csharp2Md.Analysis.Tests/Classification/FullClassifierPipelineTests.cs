@@ -22,8 +22,6 @@ public sealed class FullClassifierPipelineTests
         Assert.True(classification.RelationCount > 0, $"Classification relation count was {classification.RelationCount}.");
 
         AssertZeroProduction(outcome.Stages[4], "Validation and Coverage");
-        AssertZeroProduction(outcome.Stages[6], "Retrieval Projection");
-        AssertZeroProduction(outcome.Stages[7], "Batch Composition");
     }
 
     [Fact]
@@ -142,7 +140,7 @@ public sealed class FullClassifierPipelineTests
 
         var outcome = Assert.Single(result.Solutions);
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
-        Assert.Equal(8, outcome.Stages.Length);
+        Assert.Equal(6, outcome.Stages.Length);
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
         return (outcome, publication);
     }

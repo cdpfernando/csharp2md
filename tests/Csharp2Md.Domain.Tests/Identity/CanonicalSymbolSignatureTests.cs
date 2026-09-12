@@ -76,4 +76,58 @@ public sealed class CanonicalSymbolSignatureTests
 
         Assert.Throws<InvalidOperationException>(() => uninitialized.Value);
     }
+
+    [Fact]
+    [Trait("Requirement", "TAX-69")]
+    public void Component_RoundTripsEveryValueCreateEncoded()
+    {
+        var signature = CanonicalSymbolSignature.Create(
+            "method",
+            "global::Acme.Payment+Inner",
+            "TryRun`1",
+            1,
+            "global::System.Threading.Tasks.Task<global::System.Boolean>",
+            [new("global::System.String", SymbolParameterModifier.Ref)],
+            ["global::T"]);
+
+        Assert.Equal("method", signature.Component("kind"));
+        Assert.Equal("global::Acme.Payment+Inner", signature.Component("container"));
+        Assert.Equal("TryRun`1", signature.Component("metadata"));
+        Assert.Equal("1", signature.Component("arity"));
+        Assert.Equal("global::System.Threading.Tasks.Task<global::System.Boolean>", signature.Component("type"));
+        Assert.Equal("ref global::System.String", signature.Component("parameters"));
+        Assert.Equal("global::T", signature.Component("type-arguments"));
+    }
+
+    [Fact]
+    [Trait("Requirement", "TAX-69")]
+    public void Component_OmittedComponentAndUnknownKeyAreBothNull()
+    {
+        var signature = CanonicalSymbolSignature.Create(
+            "namedtype",
+            "global::Acme",
+            "Order",
+            0,
+            "global::Acme.Order");
+
+        Assert.Null(signature.Component("parameters"));
+        Assert.Null(signature.Component("type-arguments"));
+        Assert.Null(signature.Component("no-such-key"));
+    }
+
+    [Fact]
+    [Trait("Requirement", "TAX-69")]
+    public void Component_DoesNotConfuseAKeyWithTheSuffixOfAnother()
+    {
+        var signature = CanonicalSymbolSignature.Create(
+            "method",
+            "global::Acme",
+            "Run",
+            1,
+            "global::System.Void",
+            typeArguments: ["global::T"]);
+
+        Assert.Equal("global::T", signature.Component("type-arguments"));
+        Assert.Equal("global::System.Void", signature.Component("type"));
+    }
 }

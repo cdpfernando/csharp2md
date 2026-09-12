@@ -13,6 +13,9 @@ internal sealed class ClassificationAndPromotionStage : IPipelineStage
 
     public string Name => "Classification and Promotion";
 
+    /// <summary>The passes this stage runs, in the order it runs them.</summary>
+    public ImmutableArray<IClassifierPass> Passes => _passes;
+
     public ValueTask<StageResult> ExecuteAsync(PipelineContext context, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);

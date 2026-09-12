@@ -3,9 +3,8 @@ using Csharp2Md.Domain.Observations;
 namespace Csharp2Md.Analysis.Classification;
 
 /// <summary>
-/// Reads observation payload entries. Workstream 5A's passes each keep a private copy of this logic
-/// and PK-43 forbids touching them, so this is the shared reader every persistence type uses instead
-/// of adding a fourth copy. Multi-valued entries are a single <c>|</c>-joined literal because
+/// Reads observation payload entries - the single owner of that decoding for every classifier pass,
+/// the coverage stage and the persistence model. Multi-valued entries are a single <c>|</c>-joined literal because
 /// <see cref="NormalizedPayload.Create"/> rejects duplicate keys.
 /// </summary>
 internal static class PayloadReader

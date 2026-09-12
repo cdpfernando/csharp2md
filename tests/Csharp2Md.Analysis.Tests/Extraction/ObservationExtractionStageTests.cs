@@ -93,7 +93,6 @@ public sealed class ObservationExtractionStageTests
         var stage = PipelineStages.CreateDefault()[2];
 
         Assert.IsType<ObservationExtractionStage>(stage);
-        Assert.IsNotType<ObservationExtractionStub>(stage);
         Assert.False(typeof(ObservationExtractionStage).IsPublic);
         Assert.False(typeof(ObservationExtractionStage).IsNestedPublic);
         Assert.DoesNotContain(

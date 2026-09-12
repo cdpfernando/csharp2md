@@ -146,7 +146,7 @@ internal sealed class InvokesPass : IClassifierPass
             {
                 if (IsTypeParameterContainer(targetSignature))
                 {
-                    var named = ConcreteCallablesNamed(symbols, ReadField(targetSignature, "metadata"));
+                    var named = ConcreteCallablesNamed(symbols, SignatureReader.Field(targetSignature, "metadata"));
                     if (named.Length > 0)
                     {
                         candidateCount += AddCandidates(context, candidateKeys, owner, named, evidence);
@@ -302,17 +302,17 @@ internal sealed class InvokesPass : IClassifierPass
 
     private static Symbol[] ConcreteImplementors(ImmutableArray<Symbol> symbols, Symbol abstractTarget)
     {
-        var metadata = ReadField(abstractTarget.Signature.Value, "metadata");
-        var parameters = ReadField(abstractTarget.Signature.Value, "parameters");
-        var arity = ReadField(abstractTarget.Signature.Value, "arity");
+        var metadata = SignatureReader.Field(abstractTarget.Signature.Value, "metadata");
+        var parameters = SignatureReader.Field(abstractTarget.Signature.Value, "parameters");
+        var arity = SignatureReader.Field(abstractTarget.Signature.Value, "arity");
         return [.. symbols
             .Where(candidate =>
                 candidate.Facets.Facets.Contains(SymbolFacet.Callable)
                 && !candidate.Facets.Facets.Contains(SymbolFacet.Abstract)
                 && !candidate.Reference.Equals(abstractTarget.Reference)
-                && string.Equals(ReadField(candidate.Signature.Value, "metadata"), metadata, StringComparison.Ordinal)
-                && string.Equals(ReadField(candidate.Signature.Value, "parameters"), parameters, StringComparison.Ordinal)
-                && string.Equals(ReadField(candidate.Signature.Value, "arity"), arity, StringComparison.Ordinal))
+                && string.Equals(SignatureReader.Field(candidate.Signature.Value, "metadata"), metadata, StringComparison.Ordinal)
+                && string.Equals(SignatureReader.Field(candidate.Signature.Value, "parameters"), parameters, StringComparison.Ordinal)
+                && string.Equals(SignatureReader.Field(candidate.Signature.Value, "arity"), arity, StringComparison.Ordinal))
             .OrderBy(static candidate => candidate.Reference.Id.Value, StringComparer.Ordinal)];
     }
 
@@ -323,12 +323,12 @@ internal sealed class InvokesPass : IClassifierPass
                 .Where(candidate =>
                     candidate.Facets.Facets.Contains(SymbolFacet.Callable)
                     && !candidate.Facets.Facets.Contains(SymbolFacet.Abstract)
-                    && string.Equals(ReadField(candidate.Signature.Value, "metadata"), metadata, StringComparison.Ordinal))
+                    && string.Equals(SignatureReader.Field(candidate.Signature.Value, "metadata"), metadata, StringComparison.Ordinal))
                 .OrderBy(static candidate => candidate.Reference.Id.Value, StringComparer.Ordinal)];
 
     private static bool IsFrameworkSignature(string signature)
     {
-        var container = ReadField(signature, "container");
+        var container = SignatureReader.Field(signature, "container");
         return container is not null
             && (container.StartsWith("global::System.", StringComparison.Ordinal)
                 || container.StartsWith("global::Microsoft.", StringComparison.Ordinal))
@@ -338,19 +338,19 @@ internal sealed class InvokesPass : IClassifierPass
 
     private static bool IsReflectionDispatch(string signature)
     {
-        var container = ReadField(signature, "container");
+        var container = SignatureReader.Field(signature, "container");
         return container is not null
             && container.StartsWith("global::System.Reflection", StringComparison.Ordinal);
     }
 
     private static bool IsDelegateInvoke(string signature)
     {
-        if (!string.Equals(ReadField(signature, "metadata"), "Invoke", StringComparison.Ordinal))
+        if (!string.Equals(SignatureReader.Field(signature, "metadata"), "Invoke", StringComparison.Ordinal))
         {
             return false;
         }
 
-        var container = ReadField(signature, "container");
+        var container = SignatureReader.Field(signature, "container");
         return container is not null && IsDelegateContainer(container);
     }
 
@@ -364,24 +364,9 @@ internal sealed class InvokesPass : IClassifierPass
 
     private static bool IsTypeParameterContainer(string signature)
     {
-        var container = ReadField(signature, "container");
+        var container = SignatureReader.Field(signature, "container");
         return container is not null
             && !container.StartsWith("global::", StringComparison.Ordinal)
             && !container.Contains('.', StringComparison.Ordinal);
-    }
-
-    private static string? ReadField(string identity, string key)
-    {
-        var marker = ";" + key + "=";
-        var start = identity.IndexOf(marker, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += marker.Length;
-        var end = identity.IndexOf(';', start);
-        var encoded = end < 0 ? identity[start..] : identity[start..end];
-        return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
     }
 }

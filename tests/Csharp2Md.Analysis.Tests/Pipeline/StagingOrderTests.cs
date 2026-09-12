@@ -120,6 +120,6 @@ internal sealed class StagingPersistence : IPipelineStage
             context.Session.Stage(snapshot);
         }
 
-        return StubStages.ZeroResult();
+        return ValueTask.FromResult(StageResult.Zero);
     }
 }

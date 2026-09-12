@@ -145,7 +145,7 @@ internal sealed class RelationPass : IClassifierPass
             .OrderBy(static observation => observation.Identity.Owner.Id.Value, StringComparer.Ordinal)
             .ThenBy(static observation => observation.Identity.OccurrenceOrdinal))
         {
-            var methodName = ReadPayloadValue(observation, BoundaryPass.MethodNameKey);
+            var methodName = PayloadReader.Value(observation, BoundaryPass.MethodNameKey);
             if (methodName is not ("PublishAsync" or "Publish"))
             {
                 continue;
@@ -156,7 +156,7 @@ internal sealed class RelationPass : IClassifierPass
                 continue;
             }
 
-            var typeArgument = ReadPayloadValue(observation, BoundaryPass.TypeArgumentKey);
+            var typeArgument = PayloadReader.Value(observation, BoundaryPass.TypeArgumentKey);
             if (typeArgument is null || IsAnonymousTypeName(typeArgument))
             {
                 count += TryAddUnresolved(
@@ -198,7 +198,7 @@ internal sealed class RelationPass : IClassifierPass
             .OrderBy(static observation => observation.Identity.Owner.Id.Value, StringComparer.Ordinal)
             .ThenBy(static observation => observation.Identity.OccurrenceOrdinal))
         {
-            if (!IsCreateClient(observation) || ReadPayloadValue(observation, BoundaryPass.ClientNameKey) is not null)
+            if (!IsCreateClient(observation) || PayloadReader.Value(observation, BoundaryPass.ClientNameKey) is not null)
             {
                 continue;
             }
@@ -253,13 +253,13 @@ internal sealed class RelationPass : IClassifierPass
 
         if (identities.Length == 0)
         {
-            var container = ReadField(callable.Signature.Value, "container");
+            var container = SignatureReader.Field(callable.Signature.Value, "container");
             if (container is not null)
             {
                 identities = context.FactsByType<Symbol>()
                     .Where(symbol =>
-                        string.Equals(ReadField(symbol.Signature.Value, "kind"), "namedtype", StringComparison.Ordinal)
-                        && string.Equals(ReadField(symbol.Signature.Value, "type"), container, StringComparison.Ordinal))
+                        string.Equals(SignatureReader.Field(symbol.Signature.Value, "kind"), "namedtype", StringComparison.Ordinal)
+                        && string.Equals(SignatureReader.Field(symbol.Signature.Value, "type"), container, StringComparison.Ordinal))
                     .SelectMany(type => context.ObservationsByOwner(type.Reference))
                     .Select(static observation => observation.Identity)
                     .ToArray();
@@ -292,8 +292,8 @@ internal sealed class RelationPass : IClassifierPass
         };
 
     private static bool IsCreateClient(Observation observation) =>
-        string.Equals(ReadPayloadValue(observation, BoundaryPass.MethodNameKey), BoundaryPass.CreateClientMethodName, StringComparison.Ordinal)
-        && PayloadContains(observation, BoundaryPass.TargetTypeKey, BoundaryPass.HttpClientFactoryTypeName);
+        string.Equals(PayloadReader.Value(observation, BoundaryPass.MethodNameKey), BoundaryPass.CreateClientMethodName, StringComparison.Ordinal)
+        && PayloadReader.Contains(observation, BoundaryPass.TargetTypeKey, BoundaryPass.HttpClientFactoryTypeName);
 
     private static string? ProtocolOperationKeyValue(BoundaryOperation operation) =>
         operation.ProtocolOperationKey is { } key ? key.Value : null;
@@ -301,47 +301,4 @@ internal sealed class RelationPass : IClassifierPass
     private static bool IsAnonymousTypeName(string fullyQualifiedName) =>
         fullyQualifiedName.Contains("<>", StringComparison.Ordinal)
         || fullyQualifiedName.Contains("AnonymousType", StringComparison.Ordinal);
-
-    private static bool PayloadContains(Observation observation, string key, string needle)
-    {
-        foreach (var entry in observation.Identity.Payload.Entries)
-        {
-            if (string.Equals(entry.Key, key, StringComparison.Ordinal)
-                && entry.Value.Value.Contains(needle, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string? ReadPayloadValue(Observation observation, string key)
-    {
-        foreach (var entry in observation.Identity.Payload.Entries)
-        {
-            if (string.Equals(entry.Key, key, StringComparison.Ordinal)
-                && !string.IsNullOrWhiteSpace(entry.Value.Value))
-            {
-                return entry.Value.Value;
-            }
-        }
-
-        return null;
-    }
-
-    private static string? ReadField(string identity, string key)
-    {
-        var marker = ";" + key + "=";
-        var start = identity.IndexOf(marker, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += marker.Length;
-        var end = identity.IndexOf(';', start);
-        var encoded = end < 0 ? identity[start..] : identity[start..end];
-        return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
-    }
 }

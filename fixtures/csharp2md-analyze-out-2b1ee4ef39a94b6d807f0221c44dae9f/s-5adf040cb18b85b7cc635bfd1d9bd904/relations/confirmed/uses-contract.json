@@ -1,0 +1,184 @@
+[
+  {
+    "kind": "uses-contract",
+    "source": {
+      "id": "id1:boundary-operation;component=id1%3Acomponent%3Bsolution%3Did1%253Asolution%253Bworkspace%253Did1%25253Aworkspace%25253Bname%25253Ddefault%253Bpath%253DAcme.Orders.slnx%3Bname%3DAcme.Orders%252FAcme.Orders.csproj;operation-key=global%3A%3AAcme.Shared.Contracts.OrderPlaced",
+      "fact_type": "BoundaryOperation"
+    },
+    "target": {
+      "id": "id1:contract;schema-key=global%3A%3AAcme.Shared.Contracts.OrderPlaced",
+      "fact_type": "Contract"
+    },
+    "facets": [
+      {
+        "axis_name": "payload-role",
+        "wire_value": "request"
+      }
+    ],
+    "derived_from": [
+      {
+        "owner": {
+          "id": "id1:symbol;project=id1%3Aproject%3Bsolution%3Did1%253Asolution%253Bworkspace%253Did1%25253Aworkspace%25253Bname%25253Ddefault%253Bpath%253DAcme.Orders.slnx%3Bpath%3DAcme.Orders%252FAcme.Orders.csproj;signature=sig1%3Bkind%3Dmethod%3Bcontainer%3Dglobal%253A%253AAcme.Orders.Events.OrderPlacedEventHandler%3Bmetadata%3DHandleAsync%3Barity%3D0%3Btype%3Dglobal%253A%253ASystem.Threading.Tasks.Task%3Bparameters%3Dglobal%253A%253AAcme.Shared.Contracts.OrderPlaced%252Cglobal%253A%253ASystem.Threading.CancellationToken%3Btype-arguments%3D-",
+          "fact_type": "Symbol"
+        },
+        "kind": "invocation",
+        "payload": [
+          {
+            "key": "method-name",
+            "value": {
+              "value": "ThrowIfNull",
+              "role": "ProtocolName"
+            }
+          },
+          {
+            "key": "target-type",
+            "value": {
+              "value": "global::System.ArgumentNullException",
+              "role": "ProtocolName"
+            }
+          }
+        ],
+        "occurrence_ordinal": 1
+      },
+      {
+        "owner": {
+          "id": "id1:symbol;project=id1%3Aproject%3Bsolution%3Did1%253Asolution%253Bworkspace%253Did1%25253Aworkspace%25253Bname%25253Ddefault%253Bpath%253DAcme.Orders.slnx%3Bpath%3DAcme.Orders%252FAcme.Orders.csproj;signature=sig1%3Bkind%3Dmethod%3Bcontainer%3Dglobal%253A%253AAcme.Orders.Events.OrderPlacedEventHandler%3Bmetadata%3DHandleAsync%3Barity%3D0%3Btype%3Dglobal%253A%253ASystem.Threading.Tasks.Task%3Bparameters%3Dglobal%253A%253AAcme.Shared.Contracts.OrderPlaced%252Cglobal%253A%253ASystem.Threading.CancellationToken%3Btype-arguments%3D-",
+          "fact_type": "Symbol"
+        },
+        "kind": "invocation",
+        "payload": [
+          {
+            "key": "method-name",
+            "value": {
+              "value": "ThrowIfCancellationRequested",
+              "role": "ProtocolName"
+            }
+          },
+          {
+            "key": "target-type",
+            "value": {
+              "value": "global::System.Threading.CancellationToken",
+              "role": "ProtocolName"
+            }
+          }
+        ],
+        "occurrence_ordinal": 1
+      },
+      {
+        "owner": {
+          "id": "id1:symbol;project=id1%3Aproject%3Bsolution%3Did1%253Asolution%253Bworkspace%253Did1%25253Aworkspace%25253Bname%25253Ddefault%253Bpath%253DAcme.Orders.slnx%3Bpath%3DAcme.Orders%252FAcme.Orders.csproj;signature=sig1%3Bkind%3Dmethod%3Bcontainer%3Dglobal%253A%253AAcme.Orders.Events.OrderPlacedEventHandler%3Bmetadata%3DHandleAsync%3Barity%3D0%3Btype%3Dglobal%253A%253ASystem.Threading.Tasks.Task%3Bparameters%3Dglobal%253A%253AAcme.Shared.Contracts.OrderPlaced%252Cglobal%253A%253ASystem.Threading.CancellationToken%3Btype-arguments%3D-",
+          "fact_type": "Symbol"
+        },
+        "kind": "type-usage",
+        "payload": [],
+        "occurrence_ordinal": 1
+      },
+      {
+        "owner": {
+          "id": "id1:symbol;project=id1%3Aproject%3Bsolution%3Did1%253Asolution%253Bworkspace%253Did1%25253Aworkspace%25253Bname%25253Ddefault%253Bpath%253DAcme.Orders.slnx%3Bpath%3DAcme.Orders%252FAcme.Orders.csproj;signature=sig1%3Bkind%3Dmethod%3Bcontainer%3Dglobal%253A%253AAcme.Orders.Events.OrderPlacedEventHandler%3Bmetadata%3DHandleAsync%3Barity%3D0%3Btype%3Dglobal%253A%253ASystem.Threading.Tasks.Task%3Bparameters%3Dglobal%253A%253AAcme.Shared.Contracts.OrderPlaced%252Cglobal%253A%253ASystem.Threading.CancellationToken%3Btype-arguments%3D-",
+          "fact_type": "Symbol"
+        },
+        "kind": "type-usage",
+        "payload": [],
+        "occurrence_ordinal": 2
+      },
+      {
+        "owner": {
+          "id": "id1:symbol;project=id1%3Aproject%3Bsolution%3Did1%253Asolution%253Bworkspace%253Did1%25253Aworkspace%25253Bname%25253Ddefault%253Bpath%253DAcme.Orders.slnx%3Bpath%3DAcme.Orders%252FAcme.Orders.csproj;signature=sig1%3Bkind%3Dmethod%3Bcontainer%3Dglobal%253A%253AAcme.Orders.Events.OrderPlacedEventHandler%3Bmetadata%3DHandleAsync%3Barity%3D0%3Btype%3Dglobal%253A%253ASystem.Threading.Tasks.Task%3Bparameters%3Dglobal%253A%253AAcme.Shared.Contracts.OrderPlaced%252Cglobal%253A%253ASystem.Threading.CancellationToken%3Btype-arguments%3D-",
+          "fact_type": "Symbol"
+        },
+        "kind": "type-usage",
+        "payload": [],
+        "occurrence_ordinal": 3
+      },
+      {
+        "owner": {
+          "id": "id1:symbol;project=id1%3Aproject%3Bsolution%3Did1%253Asolution%253Bworkspace%253Did1%25253Aworkspace%25253Bname%25253Ddefault%253Bpath%253DAcme.Orders.slnx%3Bpath%3DAcme.Orders%252FAcme.Orders.csproj;signature=sig1%3Bkind%3Dmethod%3Bcontainer%3Dglobal%253A%253AAcme.Orders.Events.OrderPlacedEventHandler%3Bmetadata%3DHandleAsync%3Barity%3D0%3Btype%3Dglobal%253A%253ASystem.Threading.Tasks.Task%3Bparameters%3Dglobal%253A%253AAcme.Shared.Contracts.OrderPlaced%252Cglobal%253A%253ASystem.Threading.CancellationToken%3Btype-arguments%3D-",
+          "fact_type": "Symbol"
+        },
+        "kind": "type-usage",
+        "payload": [],
+        "occurrence_ordinal": 4
+      },
+      {
+        "owner": {
+          "id": "id1:symbol;project=id1%3Aproject%3Bsolution%3Did1%253Asolution%253Bworkspace%253Did1%25253Aworkspace%25253Bname%25253Ddefault%253Bpath%253DAcme.Orders.slnx%3Bpath%3DAcme.Orders%252FAcme.Orders.csproj;signature=sig1%3Bkind%3Dmethod%3Bcontainer%3Dglobal%253A%253AAcme.Orders.Events.OrderPlacedEventHandler%3Bmetadata%3DHandleAsync%3Barity%3D0%3Btype%3Dglobal%253A%253ASystem.Threading.Tasks.Task%3Bparameters%3Dglobal%253A%253AAcme.Shared.Contracts.OrderPlaced%252Cglobal%253A%253ASystem.Threading.CancellationToken%3Btype-arguments%3D-",
+          "fact_type": "Symbol"
+        },
+        "kind": "type-usage",
+        "payload": [],
+        "occurrence_ordinal": 5
+      }
+    ],
+    "classifier": {
+      "id": "csharp2md.classifier.contract-messaging",
+      "version": 1
+    },
+    "analysis_variants": [
+      "id1:analysis-variant;tfm=net10.0;configuration=Debug;symbols=-;environment=local",
+      "id1:analysis-variant;tfm=net10.0;configuration=Debug;symbols=DEBUG%2CNET%2CNET10_0%2CNET10_0_OR_GREATER%2CNET5_0_OR_GREATER%2CNET6_0_OR_GREATER%2CNET7_0_OR_GREATER%2CNET8_0_OR_GREATER%2CNET9_0_OR_GREATER%2CNETCOREAPP%2CNETCOREAPP1_0_OR_GREATER%2CNETCOREAPP1_1_OR_GREATER%2CNETCOREAPP2_0_OR_GREATER%2CNETCOREAPP2_1_OR_GREATER%2CNETCOREAPP2_2_OR_GREATER%2CNETCOREAPP3_0_OR_GREATER%2CNETCOREAPP3_1_OR_GREATER%2CTRACE;environment=local"
+    ],
+    "evidence_method": "Semantic",
+    "content_sha256": "20c6f6e2ac925808c022b24399ca559099ab9aff686f91af7cf60bd4c53c56f0"
+  },
+  {
+    "kind": "uses-contract",
+    "source": {
+      "id": "id1:boundary-operation;component=id1%3Acomponent%3Bsolution%3Did1%253Asolution%253Bworkspace%253Did1%25253Aworkspace%25253Bname%25253Ddefault%253Bpath%253DAcme.Orders.slnx%3Bname%3DAcme.Orders%252FAcme.Orders.csproj;operation-key=outbound%00messaging%00global%3A%3AAcme.Shared.Contracts.OrderPlaced",
+      "fact_type": "BoundaryOperation"
+    },
+    "target": {
+      "id": "id1:contract;schema-key=global%3A%3AAcme.Shared.Contracts.OrderPlaced",
+      "fact_type": "Contract"
+    },
+    "facets": [
+      {
+        "axis_name": "payload-role",
+        "wire_value": "request"
+      }
+    ],
+    "derived_from": [
+      {
+        "owner": {
+          "id": "id1:symbol;project=id1%3Aproject%3Bsolution%3Did1%253Asolution%253Bworkspace%253Did1%25253Aworkspace%25253Bname%25253Ddefault%253Bpath%253DAcme.Orders.slnx%3Bpath%3DAcme.Orders%252FAcme.Orders.csproj;signature=sig1%3Bkind%3Dmethod%3Bcontainer%3Dglobal%253A%253AAcme.Orders.OrderService%3Bmetadata%3DPlaceOrderAsync%3Barity%3D0%3Btype%3Dglobal%253A%253ASystem.Threading.Tasks.Task%3Bparameters%3Dglobal%253A%253ASystem.Guid%252Cdecimal%252Cglobal%253A%253ASystem.Threading.CancellationToken%3Btype-arguments%3D-",
+          "fact_type": "Symbol"
+        },
+        "kind": "message-operation",
+        "payload": [
+          {
+            "key": "method-name",
+            "value": {
+              "value": "PublishAsync",
+              "role": "ProtocolName"
+            }
+          },
+          {
+            "key": "target-type",
+            "value": {
+              "value": "global::Acme.Shared.Contracts.IEventBus",
+              "role": "ProtocolName"
+            }
+          },
+          {
+            "key": "type-argument",
+            "value": {
+              "value": "global::Acme.Shared.Contracts.OrderPlaced",
+              "role": "ProtocolName"
+            }
+          }
+        ],
+        "occurrence_ordinal": 1
+      }
+    ],
+    "classifier": {
+      "id": "csharp2md.classifier.contract-messaging",
+      "version": 1
+    },
+    "analysis_variants": [
+      "id1:analysis-variant;tfm=net10.0;configuration=Debug;symbols=-;environment=local",
+      "id1:analysis-variant;tfm=net10.0;configuration=Debug;symbols=DEBUG%2CNET%2CNET10_0%2CNET10_0_OR_GREATER%2CNET5_0_OR_GREATER%2CNET6_0_OR_GREATER%2CNET7_0_OR_GREATER%2CNET8_0_OR_GREATER%2CNET9_0_OR_GREATER%2CNETCOREAPP%2CNETCOREAPP1_0_OR_GREATER%2CNETCOREAPP1_1_OR_GREATER%2CNETCOREAPP2_0_OR_GREATER%2CNETCOREAPP2_1_OR_GREATER%2CNETCOREAPP2_2_OR_GREATER%2CNETCOREAPP3_0_OR_GREATER%2CNETCOREAPP3_1_OR_GREATER%2CTRACE;environment=local"
+    ],
+    "evidence_method": "Semantic",
+    "content_sha256": "e70bd8b34f7fcea304a79e6c7123dd230bfd0eecaf5ef552eadbe34ff6cbabf3"
+  }
+]

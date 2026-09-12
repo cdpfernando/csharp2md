@@ -14,7 +14,7 @@ public sealed class DefaultPipelineZerosTests
     [Trait("Requirement", "ROSE-60")]
     [Trait("Requirement", "EBC-35")]
     [Trait("Requirement", "ENG-15")]
-    public async Task AnalyzeAsync_DefaultPipeline_InventorySemanticAndExtractionAreNonZeroAndLaterStubsStayZero()
+    public async Task AnalyzeAsync_DefaultPipeline_ProducesFactsObservationsAndRelationsInTheRightStages()
     {
         var solutionPath = Path.Combine(
             AnalysisTestPaths.RepoRoot,
@@ -33,7 +33,7 @@ public sealed class DefaultPipelineZerosTests
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
         Assert.False(result.HasUnpublishedSolution);
         Assert.True(outcome.HasUnknownsOrCandidatesOrFrontiers);
-        Assert.Equal(8, outcome.Stages.Length);
+        Assert.Equal(6, outcome.Stages.Length);
 
         var inventory = outcome.Stages[0];
         Assert.Equal("Inventory", inventory.Name);
@@ -57,8 +57,6 @@ public sealed class DefaultPipelineZerosTests
         Assert.Equal("Persistence", persistence.Name);
 
         AssertZeroProduction(outcome.Stages[4], "Validation and Coverage");
-        AssertZeroProduction(outcome.Stages[6], "Retrieval Projection");
-        AssertZeroProduction(outcome.Stages[7], "Batch Composition");
 
         var classification = outcome.Stages[3];
         Assert.Equal("Classification and Promotion", classification.Name);

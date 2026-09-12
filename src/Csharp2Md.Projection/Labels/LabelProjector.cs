@@ -1,3 +1,4 @@
+using Csharp2Md.Domain.Identity;
 using Csharp2Md.Projection.Source;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
@@ -162,8 +163,8 @@ internal static class LabelProjector
             return;
         }
 
-        var type = SignatureField(symbol.CanonicalSymbolSignature, "container");
-        var method = SignatureField(symbol.CanonicalSymbolSignature, "metadata");
+        var type = CanonicalSymbolSignature.Component(symbol.CanonicalSymbolSignature, "container");
+        var method = CanonicalSymbolSignature.Component(symbol.CanonicalSymbolSignature, "metadata");
         if (!string.IsNullOrEmpty(type))
         {
             labels.Add(new LabelDto(Type, type, citation.ArtifactKey, citation.Ordinal));
@@ -199,25 +200,4 @@ internal static class LabelProjector
 
     private static int ComparePosition(int line1, int column1, int line2, int column2) =>
         line1 != line2 ? line1.CompareTo(line2) : column1.CompareTo(column2);
-
-    /// <summary>
-    /// Decodes one field of a <see cref="Csharp2Md.Domain.Identity.CanonicalSymbolSignature"/> without a
-    /// cross-assembly dependency on Analysis's own private copy (see
-    /// <c>Csharp2Md.Analysis.Classification.SignatureReader</c>, whose own remarks record that every
-    /// consumer keeps this reader rather than sharing it).
-    /// </summary>
-    private static string? SignatureField(string signature, string key)
-    {
-        var marker = ";" + key + "=";
-        var start = signature.IndexOf(marker, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += marker.Length;
-        var end = signature.IndexOf(';', start);
-        var encoded = end < 0 ? signature[start..] : signature[start..end];
-        return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
-    }
 }

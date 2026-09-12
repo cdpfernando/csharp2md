@@ -4,12 +4,12 @@
 
 This roadmap replaces every prior csharp2md/LLMWiki implementation queue. It defines ordering only; it does not create a feature spec or authorize implementation by itself.
 
-The target architecture is documented in [`docs/architecture/`](docs/architecture/README.md). Workstreams 1 through 8 are complete. Workstream 8 (final CLI, corpora, coverage gates, performance and migration completion) closed on its Verifier's iteration-3 report with two known Major gaps deferred to a follow-up workstream (AD-028 in `.specs/STATE.md`) rather than a clean PASS — see `.specs/STATE.md`'s Handoff and `generator-cli-projections-certification/context.md`'s Deferred Ideas.
+The target architecture is documented in [`docs/architecture/`](docs/architecture/README.md). Workstreams 1 through 8 have been executed. Workstream 8 (final CLI, corpora, coverage gates, performance and migration completion) closed on its Verifier's iteration-3 report with two known Major gaps deferred to a follow-up workstream (AD-028 in `.specs/STATE.md`) rather than a clean PASS — see `.specs/STATE.md`'s Handoff and `generator-cli-projections-certification/context.md`'s Deferred Ideas.
 
 ## Delivery rules
 
 - Each row becomes its own `.specs/features/<feature>/` only when explicitly started through `tlc-spec-driven`.
-- Workstreams 1 through 5D are complete; the feature in progress is `retrieval-projections`.
+- Workstreams 1 through 8 have been executed; no feature is in progress. `.specs/STATE.md`'s Handoff is the authority on what remains.
 - A feature reads the normative architecture, active `.specs/STATE.md`, its own spec and only its declared contract dependencies.
 - No feature preserves the old CLI, IDs, schemas, relation kinds or output layout.
 - The replacement may be functionally broken between checkpoints, but every integrated checkpoint must compile and validate its implemented invariants.
@@ -46,8 +46,8 @@ The four classifier workstreams may proceed in parallel after the observation co
 | 5B | `call-linking-flow-frontiers` | Complete on `master` (PR #11) | Confirmed calls, in-process dispatch, polymorphism, candidates and open frontiers |
 | 5C | `persistence-knowledge` | Complete on `master` (PR #12) | Data stores, objects, fields, operations, EF/SQL mappings and persistence coverage |
 | 5D | `components-deployments-configuration` | Complete on `master` (PR #14) | Components, deployment units, DI/options/clients/configuration and secure overrides |
-| 6 | `retrieval-projections` | In progress | Directly navigable catalogs, postings, source locators, Markdown and retrieval scenarios |
-| 7 | `multi-solution-composition` | Blocked by 6 | `1..N` isolated solution outputs, batch manifest and proven global correlations |
+| 6 | `retrieval-projections` | Complete on `feat/retrieval-projections` (`97150bd`) | Directly navigable catalogs, postings, source locators, Markdown and retrieval scenarios |
+| 7 | `multi-solution-composition` | Complete on `feature/multi-solution-composition` (`d1eaae6`) | `1..N` isolated solution outputs, batch manifest and proven global correlations |
 | 8 | `generator-cli-projections-certification` | Closed (AD-028: two Major gaps deferred, see below) | Final analyze/validate/compose CLI, corpora, coverage gates, performance and migration completion |
 
 ## Completion

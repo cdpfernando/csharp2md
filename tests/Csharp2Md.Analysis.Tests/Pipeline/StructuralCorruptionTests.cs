@@ -33,9 +33,7 @@ public sealed class StructuralCorruptionTests
             executed);
         var stages = StubStages.CreateDefault()
             .SetItem(4, corruptedValidation)
-            .SetItem(5, new RecordingStage("Persistence", executed))
-            .SetItem(6, new RecordingStage("Retrieval Projection", executed))
-            .SetItem(7, new RecordingStage("Batch Composition", executed));
+            .SetItem(5, new RecordingStage("Persistence", executed));
 
         var second = await new AnalysisEngine(store, stages).AnalyzeAsync(request, CancellationToken.None);
 
@@ -47,8 +45,6 @@ public sealed class StructuralCorruptionTests
         Assert.True(second.HasUnpublishedSolution);
         Assert.Equal(["Validation and Coverage"], executed);
         Assert.DoesNotContain("Persistence", outcome.Stages.Select(report => report.Name));
-        Assert.DoesNotContain("Retrieval Projection", outcome.Stages.Select(report => report.Name));
-        Assert.DoesNotContain("Batch Composition", outcome.Stages.Select(report => report.Name));
         Assert.Equal("Validation and Coverage", outcome.Stages[^1].Name);
 
         Assert.True(store.TryGetPublication(sessionKey, out var kept));

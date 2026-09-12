@@ -25,13 +25,13 @@ internal sealed class EntryPointPass : IClassifierPass
 
         var symbols = context.FactsByType<Symbol>();
         var typesById = symbols
-            .Where(static symbol => string.Equals(ReadField(symbol.Signature.Value, "kind"), "namedtype", StringComparison.Ordinal))
+            .Where(static symbol => string.Equals(SignatureReader.Field(symbol.Signature.Value, "kind"), "namedtype", StringComparison.Ordinal))
             .ToDictionary(static symbol => symbol.Reference.Id.Value, StringComparer.Ordinal);
         var methods = symbols
             .Where(static symbol =>
-                string.Equals(ReadField(symbol.Signature.Value, "kind"), "method", StringComparison.Ordinal)
+                string.Equals(SignatureReader.Field(symbol.Signature.Value, "kind"), "method", StringComparison.Ordinal)
                 && symbol.Facets.Facets.Contains(SymbolFacet.Callable)
-                && ReadField(symbol.Signature.Value, "metadata") is not (".ctor" or ".cctor"))
+                && SignatureReader.Field(symbol.Signature.Value, "metadata") is not (".ctor" or ".cctor"))
             .ToArray();
 
         var controllerTypes = new HashSet<string>(StringComparer.Ordinal);
@@ -46,13 +46,13 @@ internal sealed class EntryPointPass : IClassifierPass
                 continue;
             }
 
-            if (bases.Any(static observation => PayloadContains(observation, ControllerBaseTypeName))
+            if (bases.Any(static observation => PayloadReader.Contains(observation, TargetTypeKey, ControllerBaseTypeName))
                 || methods.Any(method => IsDeclaredOn(method, type) && HasRouteDeclaration(context, method)))
             {
                 controllerTypes.Add(type.Reference.Id.Value);
             }
 
-            if (bases.Any(static observation => PayloadContains(observation, "IIntegrationEventHandler"))
+            if (bases.Any(static observation => PayloadReader.Contains(observation, TargetTypeKey, "IIntegrationEventHandler"))
                 || methods.Any(method => IsDeclaredOn(method, type) && IsHandleAsync(method)))
             {
                 handlerTypes.Add(type.Reference.Id.Value);
@@ -104,7 +104,7 @@ internal sealed class EntryPointPass : IClassifierPass
 
             if (isControllerAction && !HasRouteDeclaration(context, method))
             {
-                var metadata = ReadField(method.Signature.Value, "metadata") ?? method.Reference.Id.Value;
+                var metadata = SignatureReader.Field(method.Signature.Value, "metadata") ?? method.Reference.Id.Value;
                 context.Accumulator.AddDiagnostic(
                     new DiagnosticRecord(
                         "missing-route-declaration",
@@ -142,7 +142,7 @@ internal sealed class EntryPointPass : IClassifierPass
     }
 
     private static bool IsHandleAsync(Symbol method) =>
-        string.Equals(ReadField(method.Signature.Value, "metadata"), "HandleAsync", StringComparison.Ordinal);
+        string.Equals(SignatureReader.Field(method.Signature.Value, "metadata"), "HandleAsync", StringComparison.Ordinal);
 
     private static bool HasRouteDeclaration(ClassifierContext context, Symbol method) =>
         context.ObservationsByOwner(method.Reference)
@@ -150,20 +150,20 @@ internal sealed class EntryPointPass : IClassifierPass
 
     private static bool IsDeclaredOn(Symbol method, Symbol type)
     {
-        var container = ReadField(method.Signature.Value, "container");
+        var container = SignatureReader.Field(method.Signature.Value, "container");
         if (container is null)
         {
             return false;
         }
 
-        var typeName = ReadField(type.Signature.Value, "type");
+        var typeName = SignatureReader.Field(type.Signature.Value, "type");
         if (string.Equals(container, typeName, StringComparison.Ordinal))
         {
             return true;
         }
 
-        var typeContainer = ReadField(type.Signature.Value, "container");
-        var typeMetadata = ReadField(type.Signature.Value, "metadata");
+        var typeContainer = SignatureReader.Field(type.Signature.Value, "container");
+        var typeMetadata = SignatureReader.Field(type.Signature.Value, "metadata");
         return typeContainer is not null
             && typeMetadata is not null
             && string.Equals(container, typeContainer + "." + typeMetadata, StringComparison.Ordinal);
@@ -171,33 +171,4 @@ internal sealed class EntryPointPass : IClassifierPass
 
     private static Symbol? FindDeclaringType(Symbol method, IEnumerable<Symbol> types) =>
         types.FirstOrDefault(type => IsDeclaredOn(method, type));
-
-    private static bool PayloadContains(Observation observation, string needle)
-    {
-        foreach (var entry in observation.Identity.Payload.Entries)
-        {
-            if (string.Equals(entry.Key, TargetTypeKey, StringComparison.Ordinal)
-                && entry.Value.Value.Contains(needle, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string? ReadField(string identity, string key)
-    {
-        var marker = ";" + key + "=";
-        var start = identity.IndexOf(marker, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += marker.Length;
-        var end = identity.IndexOf(';', start);
-        var encoded = end < 0 ? identity[start..] : identity[start..end];
-        return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
-    }
 }
