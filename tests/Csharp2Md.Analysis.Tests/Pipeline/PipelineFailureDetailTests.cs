@@ -71,6 +71,7 @@ public sealed class PipelineFailureDetailTests
     [InlineData("var secret = customer.Password;")]
     [InlineData("x + secretValue")]
     [InlineData("Customer customer")]
+    [InlineData("string error")]
     public void Create_UnlabeledRawSyntaxWithoutBraces_ReportsOnlyTheExceptionType(string source)
     {
         var detail = PipelineFailureDetail.Create(new InvalidOperationException(source));

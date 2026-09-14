@@ -73,6 +73,7 @@ internal static partial class PipelineFailureDetail
             || syntaxCandidate.Contains("=>", StringComparison.Ordinal)
             || MemberAccessPattern().IsMatch(syntaxCandidate)
             || UnsafeSyntaxTokenPattern().IsMatch(syntaxCandidate)
+            || DeclarationLikePattern().IsMatch(syntaxCandidate)
             || !SafeDiagnosticLanguagePattern().IsMatch(syntaxCandidate);
     }
 
@@ -113,6 +114,11 @@ internal static partial class PipelineFailureDetail
         @"(?:\+\+|--|==|!=|<=|>=|\+=|-=|\*=|/=|%=|&&|\|\||\?\?|\?\.|::|[+*/%&|^~=<>\[\]()`$]|\s-\s)",
         RegexOptions.CultureInvariant)]
     private static partial Regex UnsafeSyntaxTokenPattern();
+
+    [GeneratedRegex(
+        @"^(?:(?i:bool|byte|sbyte|short|ushort|int|uint|long|ulong|nint|nuint|float|double|decimal|char|string|object|dynamic)|[A-Z][A-Za-z0-9_]*(?:<[^>]+>)?\??)\s+@?[A-Za-z_]\w*$",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex DeclarationLikePattern();
 
     [GeneratedRegex(
         @"(?i)\b(?:fail(?:ed|ure)?|error|invalid|unexpected|unable|cannot|could\s+not|timeout|timed\s+out|missing|not\s+found|denied|unavailable|unsupported|malformed|corrupt(?:ed|ion)?|pars(?:e|ed|ing)|load(?:ed|ing)?|open(?:ed|ing)?|read(?:ing)?|writ(?:e|ing|ten)|bind(?:ing)?|resolv(?:e|ed|ing)|analy[sz](?:e|ed|ing)|authenticat(?:e|ed|ing|ion)|publish(?:ed|ing)?|commit(?:ted|ting)?)\b",
