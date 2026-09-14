@@ -297,12 +297,12 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] Domain → wire → Domain of a named-tuple parameter, two tuple parameters, nested generic/tuple, multidimensional array, and a mixed shape all restore exact `CanonicalSymbolSignature` equality (APR-16..20)
-- [ ] The existing simple/generic `Symbol` round-trip in `FactRoundTripTests` stays byte-identical (APR-21)
-- [ ] A mutated wire signature with an unbalanced delimiter is rejected as `PublicationRejectedException` with gate `construction` and is not stored (APR-22)
-- [ ] No third parser is added; `ParseParameter` is the only Storage-local remainder
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; a drop is a silent deletion
+- [x] Domain → wire → Domain of a named-tuple parameter, two tuple parameters, nested generic/tuple, multidimensional array, and a mixed shape all restore exact `CanonicalSymbolSignature` equality (APR-16..20)
+- [x] The existing simple/generic `Symbol` round-trip in `FactRoundTripTests` stays byte-identical (APR-21)
+- [x] A mutated wire signature with an unbalanced delimiter is rejected as `PublicationRejectedException` with gate `construction` and is not stored (APR-22)
+- [x] No third parser is added; `ParseParameter` is the only Storage-local remainder
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj` (Storage 396 passed, Projection 229 passed, 0 failed)
+- [x] Test count reported; Storage 396 pass; Projection 229 pass; total 2124 (Domain 575, Analysis 860, Storage 396, Cli 64, Projection 229)
 
 **Tests**: unit
 **Gate**: full
