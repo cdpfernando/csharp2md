@@ -25,8 +25,8 @@ internal static partial class PipelineFailureDetail
 
         line = SourceExcerptPattern().Replace(line, "");
         line = RawSyntaxPattern().Replace(line, "${prefix}");
-        line = SensitiveQuotedValuePattern().Replace(line, "${key}***");
-        line = QuotedBearerPattern().Replace(line, "${prefix}***");
+        line = SensitiveAssignmentValuePattern().Replace(line, "${key}***");
+        line = BearerValuePattern().Replace(line, "${prefix}***");
         if (SecretRedactor.TryRedact(line, out var redacted))
         {
             line = redacted.Value;
@@ -62,12 +62,19 @@ internal static partial class PipelineFailureDetail
     private static bool IsLineBreak(char value) =>
         value is '\r' or '\n' or '\u0085' or '\u2028' or '\u2029';
 
-    private static bool LooksLikeRawSyntax(string message) =>
-        message.Contains('{', StringComparison.Ordinal)
-        || message.Contains('}', StringComparison.Ordinal)
-        || message.Contains("=>", StringComparison.Ordinal)
-        || message.EndsWith(';')
-        || MemberAccessPattern().IsMatch(message);
+    private static bool LooksLikeRawSyntax(string message)
+    {
+        var syntaxCandidate = RedactedSecretPattern().Replace(message, "");
+        return syntaxCandidate.Length == 0
+            || !char.IsUpper(syntaxCandidate[0])
+            || !syntaxCandidate.Any(char.IsWhiteSpace)
+            || syntaxCandidate.Contains('{', StringComparison.Ordinal)
+            || syntaxCandidate.Contains('}', StringComparison.Ordinal)
+            || syntaxCandidate.Contains("=>", StringComparison.Ordinal)
+            || syntaxCandidate.EndsWith(';')
+            || MemberAccessPattern().IsMatch(syntaxCandidate)
+            || UnsafeSyntaxTokenPattern().IsMatch(syntaxCandidate);
+    }
 
     [GeneratedRegex(
         """(?<prefix>^|[^\p{L}\p{N}"'])["']?(?:[A-Za-z]:[\\/]|\\\\|/).*$""",
@@ -80,22 +87,32 @@ internal static partial class PipelineFailureDetail
     private static partial Regex SourceExcerptPattern();
 
     [GeneratedRegex(
-        @"(?i)(?<prefix>^|.*?[:;]\s)(?:(?:public|private|protected|internal|static|sealed|abstract|partial|readonly|required|async|unsafe|new)\s+)*(?:class|struct|interface|record|enum|namespace|using|return|throw|yield|var|const|if|else|for|foreach|while|do|switch|try|catch|finally|lock)\b.*$",
+        @"(?i)(?<prefix>^|.*?[:;]\s)(?:(?:public|private|protected|internal|static|sealed|abstract|partial|readonly|required|async|unsafe)\s+)*(?:class|struct|interface|record|enum|namespace|using|return|throw|yield|var|const|new|await|if|else|for|foreach|while|do|switch|try|catch|finally|lock)\b.*$",
         RegexOptions.CultureInvariant)]
     private static partial Regex RawSyntaxPattern();
 
     [GeneratedRegex(
-        """(?<key>(?i:Password|Pwd|User ID|User Id|Data Source|Initial Catalog|token|ConnectionString)\s*=\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')""",
+        """(?<key>(?i:Password|Pwd|User ID|User Id|Data Source|Initial Catalog|token|ConnectionString)\s*=\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^;,]*)""",
         RegexOptions.CultureInvariant)]
-    private static partial Regex SensitiveQuotedValuePattern();
+    private static partial Regex SensitiveAssignmentValuePattern();
 
     [GeneratedRegex(
-        """(?<prefix>(?i:(?:Authorization:\s*)?Bearer\s+))(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')""",
+        """(?<prefix>(?i:(?:Authorization:\s*)?Bearer\s+))(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^;,]*)""",
         RegexOptions.CultureInvariant)]
-    private static partial Regex QuotedBearerPattern();
+    private static partial Regex BearerValuePattern();
+
+    [GeneratedRegex(
+        @"(?i)(?:(?:Password|Pwd|User ID|User Id|Data Source|Initial Catalog|token|ConnectionString)\s*=\s*|(?:Authorization:\s*)?Bearer\s+)\*\*\*",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex RedactedSecretPattern();
 
     [GeneratedRegex(@"\b[A-Za-z_]\w*(?:\s*\?\.)?\s*\.\s*[A-Za-z_]\w*\b", RegexOptions.CultureInvariant)]
     private static partial Regex MemberAccessPattern();
+
+    [GeneratedRegex(
+        @"(?:\+\+|--|==|!=|<=|>=|\+=|-=|\*=|/=|%=|&&|\|\||\?\?|\?\.|::|[+*/%&|^~=<>\[\]()`$]|\s-\s)",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex UnsafeSyntaxTokenPattern();
 
     [GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]
     private static partial Regex WhitespacePattern();
