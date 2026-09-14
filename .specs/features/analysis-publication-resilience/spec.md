@@ -228,14 +228,14 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | APR-13 | P1: Preserve valid evidence for contains relations | Tasks | Verified |
 | APR-14 | P1: Preserve valid evidence for contains relations | Tasks | Verified |
 | APR-15 | P1: Preserve valid evidence for contains relations | Tasks | Verified |
-| APR-16 | P1: Round-trip nested canonical symbol signatures | Tasks | In Tasks (T5, T6) |
-| APR-17 | P1: Round-trip nested canonical symbol signatures | Tasks | In Tasks (T5, T6) |
-| APR-18 | P1: Round-trip nested canonical symbol signatures | Tasks | In Tasks (T5, T6) |
-| APR-19 | P1: Round-trip nested canonical symbol signatures | Tasks | In Tasks (T5, T6) |
-| APR-20 | P1: Round-trip nested canonical symbol signatures | Tasks | In Tasks (T5, T6) |
-| APR-21 | P1: Round-trip nested canonical symbol signatures | Tasks | In Tasks (T5, T6) |
-| APR-22 | P1: Round-trip nested canonical symbol signatures | Tasks | In Tasks (T5, T6) |
-| APR-23 | P1: Round-trip nested canonical symbol signatures | Tasks | In Tasks (T5, T6) |
+| APR-16 | P1: Round-trip nested canonical symbol signatures | Tasks | Verified |
+| APR-17 | P1: Round-trip nested canonical symbol signatures | Tasks | Verified |
+| APR-18 | P1: Round-trip nested canonical symbol signatures | Tasks | Verified |
+| APR-19 | P1: Round-trip nested canonical symbol signatures | Tasks | Verified |
+| APR-20 | P1: Round-trip nested canonical symbol signatures | Tasks | Verified |
+| APR-21 | P1: Round-trip nested canonical symbol signatures | Tasks | Verified |
+| APR-22 | P1: Round-trip nested canonical symbol signatures | Tasks | Verified |
+| APR-23 | P1: Round-trip nested canonical symbol signatures | Tasks | Verified |
 | APR-24 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7) |
 | APR-25 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7) |
 | APR-26 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7) |

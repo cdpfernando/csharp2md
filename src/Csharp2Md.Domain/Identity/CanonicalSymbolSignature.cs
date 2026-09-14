@@ -77,6 +77,47 @@ public readonly record struct CanonicalSymbolSignature
     /// <summary>The decoded value of <paramref name="key"/> in this signature.</summary>
     public string? Component(string key) => Component(Value, key);
 
+    public static ImmutableArray<string> SplitTopLevel(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        var slices = ImmutableArray.CreateBuilder<string>();
+        var start = 0;
+        var depth = 0;
+        for (var index = 0; index < text.Length; index++)
+        {
+            switch (text[index])
+            {
+                case '<':
+                case '(':
+                case '[':
+                    depth++;
+                    break;
+                case '>':
+                case ')':
+                case ']':
+                    if (depth > 0)
+                    {
+                        depth--;
+                    }
+
+                    break;
+                case ',' when depth == 0:
+                    slices.Add(text[start..index]);
+                    start = index + 1;
+                    break;
+            }
+        }
+
+        if (depth != 0)
+        {
+            throw new ArgumentException("The signature list is delimiter-unbalanced.", nameof(text));
+        }
+
+        slices.Add(text[start..]);
+        return slices.ToImmutable();
+    }
+
     private CanonicalSymbolSignature(string value) => _value = value;
 
     public override string ToString() => Value;

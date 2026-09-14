@@ -264,16 +264,16 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] Named-tuple text splits on the commas between parameters, not the commas inside `(...)` (APR-16, APR-17)
-- [ ] Nested generic-in-tuple and tuple-in-generic text splits only at depth 0 (APR-18)
-- [ ] Multidimensional-array rank commas inside `[...]` are not treated as separators (APR-19)
-- [ ] Mixed generic, tuple and array text is deterministic across two calls (APR-20)
-- [ ] Existing simple and generic parameter lists still split into the same slices they do today (APR-21)
-- [ ] Unbalanced `)`, `>` or `]` (final depth != 0) throws `ArgumentException` (APR-22)
-- [ ] Identity namespace, signature fields, escaping, taxonomy version and schema version are unchanged (APR-23). `contracts/taxonomy-registry.json` stays byte-identical
-- [ ] `SignatureReader.HasSeparatorAtTopLevel` is not modified
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj`
-- [ ] Test count reported; a drop is a silent deletion
+- [x] Named-tuple text splits on the commas between parameters, not the commas inside `(...)` (APR-16, APR-17)
+- [x] Nested generic-in-tuple and tuple-in-generic text splits only at depth 0 (APR-18)
+- [x] Multidimensional-array rank commas inside `[...]` are not treated as separators (APR-19)
+- [x] Mixed generic, tuple and array text is deterministic across two calls (APR-20)
+- [x] Existing simple and generic parameter lists still split into the same slices they do today (APR-21)
+- [x] Unbalanced `)`, `>` or `]` (final depth != 0) throws `ArgumentException` (APR-22)
+- [x] Identity namespace, signature fields, escaping, taxonomy version and schema version are unchanged (APR-23). `contracts/taxonomy-registry.json` stays byte-identical
+- [x] `SignatureReader.HasSeparatorAtTopLevel` is not modified
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj` (575 passed, 0 failed)
+- [x] Test count reported; Domain 575 pass; total 2117 (Domain 575, Analysis 860, Storage 389, Cli 64, Projection 229)
 
 **Tests**: unit
 **Gate**: quick
