@@ -64,16 +64,16 @@ internal static partial class PipelineFailureDetail
 
     private static bool LooksLikeRawSyntax(string message)
     {
-        var syntaxCandidate = RedactedSecretPattern().Replace(message, "");
+        var syntaxCandidate = RedactedSecretPattern()
+            .Replace(message, "")
+            .Trim(' ', '\t', ':', ';', '-', ',');
         return syntaxCandidate.Length == 0
-            || !char.IsUpper(syntaxCandidate[0])
-            || !syntaxCandidate.Any(char.IsWhiteSpace)
             || syntaxCandidate.Contains('{', StringComparison.Ordinal)
             || syntaxCandidate.Contains('}', StringComparison.Ordinal)
             || syntaxCandidate.Contains("=>", StringComparison.Ordinal)
-            || syntaxCandidate.EndsWith(';')
             || MemberAccessPattern().IsMatch(syntaxCandidate)
-            || UnsafeSyntaxTokenPattern().IsMatch(syntaxCandidate);
+            || UnsafeSyntaxTokenPattern().IsMatch(syntaxCandidate)
+            || !SafeDiagnosticLanguagePattern().IsMatch(syntaxCandidate);
     }
 
     [GeneratedRegex(
@@ -113,6 +113,11 @@ internal static partial class PipelineFailureDetail
         @"(?:\+\+|--|==|!=|<=|>=|\+=|-=|\*=|/=|%=|&&|\|\||\?\?|\?\.|::|[+*/%&|^~=<>\[\]()`$]|\s-\s)",
         RegexOptions.CultureInvariant)]
     private static partial Regex UnsafeSyntaxTokenPattern();
+
+    [GeneratedRegex(
+        @"(?i)\b(?:fail(?:ed|ure)?|error|invalid|unexpected|unable|cannot|could\s+not|timeout|timed\s+out|missing|not\s+found|denied|unavailable|unsupported|malformed|corrupt(?:ed|ion)?|pars(?:e|ed|ing)|load(?:ed|ing)?|open(?:ed|ing)?|read(?:ing)?|writ(?:e|ing|ten)|bind(?:ing)?|resolv(?:e|ed|ing)|analy[sz](?:e|ed|ing)|authenticat(?:e|ed|ing|ion)|publish(?:ed|ing)?|commit(?:ted|ting)?)\b",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex SafeDiagnosticLanguagePattern();
 
     [GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]
     private static partial Regex WhitespacePattern();

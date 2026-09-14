@@ -5,6 +5,16 @@ namespace Csharp2Md.Analysis.Tests.Pipeline;
 public sealed class PipelineFailureDetailTests
 {
     [Theory]
+    [InlineData("project load failed")]
+    [InlineData("Timeout")]
+    public void Create_SafeDiagnosticLanguage_PreservesTheMessage(string message)
+    {
+        var detail = PipelineFailureDetail.Create(new InvalidOperationException(message));
+
+        Assert.Equal($"InvalidOperationException: {message}", detail);
+    }
+
+    [Theory]
     [InlineData(@"C:\private\source\OrderHandler.cs")]
     [InlineData(@"\\server\private\source\OrderHandler.cs")]
     [InlineData("/home/private/source/OrderHandler.cs")]
@@ -60,6 +70,7 @@ public sealed class PipelineFailureDetailTests
     [InlineData("public sealed class Secret")]
     [InlineData("var secret = customer.Password;")]
     [InlineData("x + secretValue")]
+    [InlineData("Customer customer")]
     public void Create_UnlabeledRawSyntaxWithoutBraces_ReportsOnlyTheExceptionType(string source)
     {
         var detail = PipelineFailureDetail.Create(new InvalidOperationException(source));
