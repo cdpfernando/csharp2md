@@ -216,11 +216,11 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | APR-01 | P1: Safe pipeline failure details | Tasks | Verified |
 | APR-02 | P1: Safe pipeline failure details | Tasks | Verified |
 | APR-03 | P1: Safe pipeline failure details | Tasks | Verified |
-| APR-04 | P1: Safe pipeline failure details | Tasks | In Tasks (T2) |
+| APR-04 | P1: Safe pipeline failure details | Tasks | Verified |
 | APR-05 | P1: Safe pipeline failure details | Tasks | Verified |
 | APR-06 | P1: Safe pipeline failure details | Tasks | Verified |
 | APR-07 | P1: Safe pipeline failure details | Tasks | Verified |
-| APR-08 | P1: Safe pipeline failure details | Tasks | In Tasks (T2) |
+| APR-08 | P1: Safe pipeline failure details | Tasks | Verified |
 | APR-09 | P1: Preserve valid evidence for contains relations | Tasks | In Tasks (T4) |
 | APR-10 | P1: Preserve valid evidence for contains relations | Tasks | In Tasks (T4) |
 | APR-11 | P1: Preserve valid evidence for contains relations | Tasks | In Tasks (T3, T4) |

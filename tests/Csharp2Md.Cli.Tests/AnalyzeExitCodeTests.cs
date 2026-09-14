@@ -33,6 +33,7 @@ public sealed class AnalyzeExitCodeTests
 
     [Fact]
     [Trait("Requirement", "ROSE-02")]
+    [Trait("Requirement", "APR-04")]
     public async Task Analyze_WhenUnpublishedWithDetail_WritesDetailToStderr()
     {
         var solutionPath = ExistingFixturePath();

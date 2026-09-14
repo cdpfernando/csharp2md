@@ -22,6 +22,7 @@ public sealed class AnalyzeOptionSurfaceTests
     [Trait("Requirement", "STOR-47")]
     [Trait("Requirement", "STOR-52")]
     [Trait("Requirement", "ROSE-61")]
+    [Trait("Requirement", "APR-08")]
     public void AnalyzeAndRoot_DoNotExposeRemovedMarkdownEraOptions()
     {
         var root = CommandFactory.CreateRootCommand();

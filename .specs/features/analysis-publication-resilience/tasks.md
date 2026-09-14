@@ -170,11 +170,11 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] The unpublished-detail CLI test asserts stderr is exactly one `csharp2md:` line containing the safe detail, stdout summary unchanged, exit code 2 (APR-04)
-- [ ] `AnalyzeOptionSurfaceTests` still lists exactly `--allowlist`, `--max-file-reads-per-scenario`, `--output`, `--reading-budget-tokens`, `--solution` and carries an APR-08 trait
-- [ ] No production file under `src/` changes in this commit unless a discriminating test failed
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; a drop is a silent deletion
+- [x] The unpublished-detail CLI test asserts stderr is exactly one `csharp2md:` line containing the safe detail, stdout summary unchanged, exit code 2 (APR-04)
+- [x] `AnalyzeOptionSurfaceTests` still lists exactly `--allowlist`, `--max-file-reads-per-scenario`, `--output`, `--reading-budget-tokens`, `--solution` and carries an APR-08 trait
+- [x] No production file under `src/` changes in this commit unless a discriminating test failed
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"` (64 passed, 0 failed)
+- [x] Test count reported; Cli 64 pass; total 2102 (Domain 566, Analysis 854, Storage 389, Cli 64, Projection 229)
 
 **Tests**: unit
 **Gate**: quick
