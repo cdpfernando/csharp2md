@@ -29,6 +29,21 @@ internal static class EvidenceScope
         RelationKind.AccessesData,
         RelationKind.OperatesOn);
 
+    public static Observation[] Qualifying(RelationKind kind, IEnumerable<Observation> candidates)
+    {
+        ArgumentNullException.ThrowIfNull(candidates);
+
+        if (CausalRelationKinds.Contains(kind))
+        {
+            return candidates as Observation[] ?? candidates.ToArray();
+        }
+
+        return candidates
+            .Where(static observation =>
+                !BehavioralNoiseForStructuralRelations.Contains(observation.Identity.Kind))
+            .ToArray();
+    }
+
     public static EvidenceChain For(
         FactReference source, FactReference target, RelationKind kind, IEnumerable<Observation> candidates)
     {
@@ -36,12 +51,8 @@ internal static class EvidenceScope
         RequireInitialized(source, nameof(source));
         RequireInitialized(target, nameof(target));
 
-        var scoped = CausalRelationKinds.Contains(kind)
-            ? candidates
-            : candidates.Where(static observation =>
-                !BehavioralNoiseForStructuralRelations.Contains(observation.Identity.Kind));
-
-        return EvidenceChain.Create(scoped.Select(static observation => observation.Identity));
+        return EvidenceChain.Create(
+            Qualifying(kind, candidates).Select(static observation => observation.Identity));
     }
 
     private static void RequireInitialized(FactReference reference, string parameterName)

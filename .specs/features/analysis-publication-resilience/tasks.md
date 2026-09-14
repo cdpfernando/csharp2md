@@ -200,13 +200,13 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] `Qualifying(Contains, [structural, Invocation, DataAccess])` returns only the structural observations
-- [ ] `Qualifying(Contains, [Invocation, DataAccess])` returns empty and does not throw
-- [ ] `Qualifying(Invokes, callerSet)` returns the caller set unchanged
-- [ ] `For` still throws `ArgumentException` ("at least one observation") on an empty qualifying set
-- [ ] Existing `EvidenceScopeTests` stay green
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; a drop is a silent deletion
+- [x] `Qualifying(Contains, [structural, Invocation, DataAccess])` returns only the structural observations
+- [x] `Qualifying(Contains, [Invocation, DataAccess])` returns empty and does not throw
+- [x] `Qualifying(Invokes, callerSet)` returns the caller set unchanged
+- [x] `For` still throws `ArgumentException` ("at least one observation") on an empty qualifying set
+- [x] Existing `EvidenceScopeTests` stay green
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"` (857 passed, 0 failed)
+- [x] Test count reported; Analysis 857 pass; total 2105 (Domain 566, Analysis 857, Storage 389, Cli 64, Projection 229)
 
 **Tests**: unit
 **Gate**: quick

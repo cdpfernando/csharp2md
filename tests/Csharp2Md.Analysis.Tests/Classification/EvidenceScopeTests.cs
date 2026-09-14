@@ -42,7 +42,54 @@ public sealed class EvidenceScopeTests
     }
 
     [Fact]
+    [Trait("Requirement", "APR-11")]
+    public void Qualifying_Contains_DropsInvocationAndDataAccess()
+    {
+        var target = Symbol();
+        var declaration = CreateObservation(target, ObservationKind.BaseType, ordinal: 1);
+        var invocation = CreateObservation(target, ObservationKind.Invocation, ordinal: 1);
+        var dataAccess = CreateObservation(target, ObservationKind.DataAccess, ordinal: 1);
+
+        var qualifying = EvidenceScope.Qualifying(
+            RelationKind.Contains,
+            [declaration, invocation, dataAccess]);
+
+        Assert.Equal([declaration], qualifying);
+    }
+
+    [Fact]
+    [Trait("Requirement", "APR-11")]
+    [Trait("Requirement", "APR-13")]
+    public void Qualifying_Contains_OnlyBehavioral_ReturnsEmptyWithoutThrowing()
+    {
+        var target = Symbol();
+        var invocation = CreateObservation(target, ObservationKind.Invocation, ordinal: 1);
+        var dataAccess = CreateObservation(target, ObservationKind.DataAccess, ordinal: 1);
+
+        var qualifying = EvidenceScope.Qualifying(
+            RelationKind.Contains,
+            [invocation, dataAccess]);
+
+        Assert.Empty(qualifying);
+    }
+
+    [Fact]
+    [Trait("Requirement", "APR-11")]
+    public void Qualifying_Invokes_ReturnsCallerSetUnchanged()
+    {
+        var source = Symbol();
+        var occurrence = CreateObservation(source, ObservationKind.Invocation, ordinal: 1);
+        var dataAccess = CreateObservation(source, ObservationKind.DataAccess, ordinal: 1);
+        Observation[] callerSet = [occurrence, dataAccess];
+
+        var qualifying = EvidenceScope.Qualifying(RelationKind.Invokes, callerSet);
+
+        Assert.Equal(callerSet, qualifying);
+    }
+
+    [Fact]
     [Trait("Requirement", "GCPC-039")]
+    [Trait("Requirement", "APR-13")]
     public void For_NoQualifyingCandidates_RejectsTheEmptyScope()
     {
         var source = Document();
@@ -60,13 +107,15 @@ public sealed class EvidenceScopeTests
 
     [Fact]
     [Trait("Requirement", "GCPC-039")]
+    [Trait("Requirement", "APR-13")]
     public void For_EmptyCandidateSet_RejectsTheEmptyScope()
     {
         var source = Document();
         var target = Symbol();
 
-        Assert.Throws<ArgumentException>(
+        var exception = Assert.Throws<ArgumentException>(
             () => EvidenceScope.For(source, target, RelationKind.Contains, []));
+        Assert.Contains("at least one observation", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
