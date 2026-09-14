@@ -2,8 +2,10 @@ using Csharp2Md.Analysis.Classification;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Semantics;
+using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
+using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Domain.Relations;
@@ -46,7 +48,9 @@ internal static class ContainsRelationEmitter
                 continue;
             }
 
-            if (projects.TryGetValue(document.OwningProject.Value, out var project))
+            var documentQualifying = EvidenceScope.Qualifying(RelationKind.Contains, observations);
+            if (projects.TryGetValue(document.OwningProject.Value, out var project)
+                && documentQualifying.Length > 0)
             {
                 // GCPC-039/044 (partial): the project-to-document edge is justified by the document's
                 // own declaration-shape evidence, not every behavioral occurrence inside it.
@@ -57,11 +61,26 @@ internal static class ContainsRelationEmitter
 
             foreach (var symbol in SymbolsDeclaredIn(context, document, symbolsBySignature, cancellationToken))
             {
-                // The symbol's own declaration evidence is preferred; a symbol with none of its own
-                // (e.g. a bare interface with no base list) falls back to the document's pool, still
-                // scoped by EvidenceScope to exclude unrelated behavioral occurrences.
                 var ownObservations = Array.FindAll(observations, observation => observation.Identity.Owner.Equals(symbol.Reference));
-                var candidates = ownObservations.Length > 0 ? ownObservations : observations;
+                var own = EvidenceScope.Qualifying(RelationKind.Contains, ownObservations);
+                Observation[] candidates;
+                if (own.Length > 0)
+                {
+                    candidates = own;
+                }
+                else if (documentQualifying.Length > 0)
+                {
+                    candidates = documentQualifying;
+                }
+                else
+                {
+                    context.Accumulator.AddDiagnostic(new DiagnosticRecord(
+                        "contains-evidence-unqualified",
+                        "contains relation omitted because no qualifying structural evidence was found.",
+                        symbol.Reference.Id.Value));
+                    continue;
+                }
+
                 var symbolEvidence = EvidenceScope.For(document.Reference, symbol.Reference, RelationKind.Contains, candidates);
                 Add(context, document.Reference, symbol.Reference, facets, symbolEvidence, classifier);
                 count++;

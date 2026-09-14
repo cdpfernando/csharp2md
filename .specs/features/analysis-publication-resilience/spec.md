@@ -221,13 +221,13 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | APR-06 | P1: Safe pipeline failure details | Tasks | Verified |
 | APR-07 | P1: Safe pipeline failure details | Tasks | Verified |
 | APR-08 | P1: Safe pipeline failure details | Tasks | Verified |
-| APR-09 | P1: Preserve valid evidence for contains relations | Tasks | In Tasks (T4) |
-| APR-10 | P1: Preserve valid evidence for contains relations | Tasks | In Tasks (T4) |
+| APR-09 | P1: Preserve valid evidence for contains relations | Tasks | Verified |
+| APR-10 | P1: Preserve valid evidence for contains relations | Tasks | Verified |
 | APR-11 | P1: Preserve valid evidence for contains relations | Tasks | Verified |
-| APR-12 | P1: Preserve valid evidence for contains relations | Tasks | In Tasks (T4) |
+| APR-12 | P1: Preserve valid evidence for contains relations | Tasks | Verified |
 | APR-13 | P1: Preserve valid evidence for contains relations | Tasks | Verified |
-| APR-14 | P1: Preserve valid evidence for contains relations | Tasks | In Tasks (T4) |
-| APR-15 | P1: Preserve valid evidence for contains relations | Tasks | In Tasks (T4) |
+| APR-14 | P1: Preserve valid evidence for contains relations | Tasks | Verified |
+| APR-15 | P1: Preserve valid evidence for contains relations | Tasks | Verified |
 | APR-16 | P1: Round-trip nested canonical symbol signatures | Tasks | In Tasks (T5, T6) |
 | APR-17 | P1: Round-trip nested canonical symbol signatures | Tasks | In Tasks (T5, T6) |
 | APR-18 | P1: Round-trip nested canonical symbol signatures | Tasks | In Tasks (T5, T6) |

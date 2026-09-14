@@ -230,15 +230,15 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] A symbol that owns at least one qualifying structural observation publishes `contains` with that owner, those kinds and that cardinality, and no other scope (APR-09, APR-14). The existing `OrdersController` case stays green
-- [ ] A primary-constructor / builder symbol that owns only `Invocation` or `DataAccess` observations, in a document that has qualifying structural observations, publishes `contains` whose chain is non-empty, structural, and free of `Invocation` and `DataAccess` (APR-10, APR-11)
-- [ ] A mix of structural and behavioral observations owned by the same symbol keeps only the structural ones (APR-09, APR-11 edge case)
-- [ ] When neither scope has qualifying structural evidence, no confirmed `contains` edge is added for that symbol, one `contains-evidence-unqualified` diagnostic is recorded with `IdentityOrKey` equal to the symbol fact id and a one-line message naming `contains` and the missing structural evidence, and the rest of the snapshot still commits (APR-12)
-- [ ] `EvidenceChain.Create` is never called with an empty sequence from this emitter; the Domain non-empty invariant is unchanged (APR-13)
-- [ ] No fact family, observation kind, relation kind, facet, identity namespace or schema version is added (APR-15)
-- [ ] `TopologyEmitter` is not modified
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; a drop is a silent deletion
+- [x] A symbol that owns at least one qualifying structural observation publishes `contains` with that owner, those kinds and that cardinality, and no other scope (APR-09, APR-14). The existing `OrdersController` case stays green
+- [x] A primary-constructor / builder symbol that owns only `Invocation` or `DataAccess` observations, in a document that has qualifying structural observations, publishes `contains` whose chain is non-empty, structural, and free of `Invocation` and `DataAccess` (APR-10, APR-11)
+- [x] A mix of structural and behavioral observations owned by the same symbol keeps only the structural ones (APR-09, APR-11 edge case)
+- [x] When neither scope has qualifying structural evidence, no confirmed `contains` edge is added for that symbol, one `contains-evidence-unqualified` diagnostic is recorded with `IdentityOrKey` equal to the symbol fact id and a one-line message naming `contains` and the missing structural evidence, and the rest of the snapshot still commits (APR-12)
+- [x] `EvidenceChain.Create` is never called with an empty sequence from this emitter; the Domain non-empty invariant is unchanged (APR-13)
+- [x] No fact family, observation kind, relation kind, facet, identity namespace or schema version is added (APR-15)
+- [x] `TopologyEmitter` is not modified
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"` (build 0 warnings; Analysis 860 passed, 0 failed; Domain 566, Storage 389, Cli 64, Projection 229)
+- [x] Test count reported; Analysis 860 pass; total 2108 (Domain 566, Analysis 860, Storage 389, Cli 64, Projection 229)
 
 **Tests**: integration
 **Gate**: build
