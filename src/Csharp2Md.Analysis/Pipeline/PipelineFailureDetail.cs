@@ -24,6 +24,9 @@ internal static partial class PipelineFailureDetail
         }
 
         line = SourceExcerptPattern().Replace(line, "");
+        line = RawSyntaxPattern().Replace(line, "${prefix}");
+        line = SensitiveQuotedValuePattern().Replace(line, "${key}***");
+        line = QuotedBearerPattern().Replace(line, "${prefix}***");
         if (SecretRedactor.TryRedact(line, out var redacted))
         {
             line = redacted.Value;
@@ -73,6 +76,21 @@ internal static partial class PipelineFailureDetail
         @"(?i)\b(?:source(?:\s+text)?|raw\s+syntax|syntax|excerpt)\s*[:=]\s*.*$",
         RegexOptions.CultureInvariant)]
     private static partial Regex SourceExcerptPattern();
+
+    [GeneratedRegex(
+        @"(?i)(?<prefix>^|.*?[:;]\s)(?:(?:public|private|protected|internal|static|sealed|abstract|partial|readonly|required|async|unsafe|new)\s+)*(?:class|struct|interface|record|enum|namespace|using|return|throw|yield|if|else|for|foreach|while|do|switch|try|catch|finally|lock)\b.*$",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex RawSyntaxPattern();
+
+    [GeneratedRegex(
+        """(?<key>(?i:Password|Pwd|User ID|User Id|Data Source|Initial Catalog|token|ConnectionString)\s*=\s*)(?<quote>["'])[^"']*\k<quote>""",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex SensitiveQuotedValuePattern();
+
+    [GeneratedRegex(
+        """(?<prefix>(?i:(?:Authorization:\s*)?Bearer\s+))(?<quote>["'])[^"']*\k<quote>""",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex QuotedBearerPattern();
 
     [GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]
     private static partial Regex WhitespacePattern();

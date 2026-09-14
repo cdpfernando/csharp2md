@@ -29,11 +29,36 @@ public sealed class PipelineFailureDetailTests
         Assert.DoesNotContain(secret, detail, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("Password=\"very secret\"")]
+    [InlineData("token='very secret'")]
+    [InlineData("Authorization: Bearer \"very secret\"")]
+    public void Create_QuotedSecretContainingSpaces_RemovesTheEntireValue(string secretAssignment)
+    {
+        var detail = PipelineFailureDetail.Create(
+            new InvalidOperationException($"Could not authenticate; {secretAssignment}"));
+
+        Assert.StartsWith("InvalidOperationException: Could not authenticate;", detail, StringComparison.Ordinal);
+        Assert.Contains("***", detail, StringComparison.Ordinal);
+        Assert.DoesNotContain("very", detail, StringComparison.Ordinal);
+        Assert.DoesNotContain("secret", detail, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Create_UnlabeledRawSyntax_ReportsOnlyTheExceptionType()
     {
         var detail = PipelineFailureDetail.Create(
             new InvalidOperationException("public sealed class Secret { string Token => rawToken; }"));
+
+        Assert.Equal("InvalidOperationException", detail);
+    }
+
+    [Theory]
+    [InlineData("return customer.Password;")]
+    [InlineData("public sealed class Secret")]
+    public void Create_UnlabeledRawSyntaxWithoutBraces_ReportsOnlyTheExceptionType(string source)
+    {
+        var detail = PipelineFailureDetail.Create(new InvalidOperationException(source));
 
         Assert.Equal("InvalidOperationException", detail);
     }

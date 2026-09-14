@@ -113,6 +113,57 @@ public sealed class PipelineStageFailureTests
         var retry = await successfulEngine.AnalyzeAsync(request, CancellationToken.None);
         Assert.Equal(PublicationStatus.Committed, Assert.Single(retry.Solutions).Status);
     }
+
+    [Fact]
+    public async Task AnalyzeAsync_FailedFilesystemRetry_RemovesStagingAndPreservesCommittedPackageBytes()
+    {
+        var output = Directory.CreateTempSubdirectory("csharp2md-failed-retry-");
+        try
+        {
+            const string solutionPath = "alpha.sln";
+            var request = AnalysisRequest.Create([solutionPath]);
+            var store = new FilesystemTransactionalStore(output.FullName);
+            var successfulEngine = new AnalysisEngine(store, StubStages.CreateDefault());
+
+            var first = await successfulEngine.AnalyzeAsync(request, CancellationToken.None);
+
+            Assert.Equal(PublicationStatus.Committed, Assert.Single(first.Solutions).Status);
+            var package = Assert.Single(Directory.GetDirectories(output.FullName, "s-*"));
+            var prior = SnapshotFiles(package);
+
+            var failedEngine = new AnalysisEngine(
+                store,
+                StubStages.CreateDefault().SetItem(3, new ThrowingStage("Classification and Promotion")));
+            var failed = await failedEngine.AnalyzeAsync(request, CancellationToken.None);
+
+            Assert.Equal(PublicationStatus.Unpublished, Assert.Single(failed.Solutions).Status);
+            Assert.False(Directory.Exists(package + ".staging"));
+            Assert.Empty(Directory.EnumerateDirectories(output.FullName, "*.staging"));
+            AssertEqualSnapshots(prior, SnapshotFiles(package));
+        }
+        finally
+        {
+            output.Delete(recursive: true);
+        }
+    }
+
+    private static IReadOnlyDictionary<string, byte[]> SnapshotFiles(string directory) =>
+        Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
+            .ToDictionary(
+                path => Path.GetRelativePath(directory, path).Replace('\\', '/'),
+                File.ReadAllBytes,
+                StringComparer.Ordinal);
+
+    private static void AssertEqualSnapshots(
+        IReadOnlyDictionary<string, byte[]> expected,
+        IReadOnlyDictionary<string, byte[]> actual)
+    {
+        Assert.Equal(expected.Keys.Order(StringComparer.Ordinal), actual.Keys.Order(StringComparer.Ordinal));
+        foreach (var key in expected.Keys)
+        {
+            Assert.True(expected[key].AsSpan().SequenceEqual(actual[key]), $"Bytes at '{key}' changed.");
+        }
+    }
 }
 
 internal sealed class ThrowingStage : IPipelineStage
