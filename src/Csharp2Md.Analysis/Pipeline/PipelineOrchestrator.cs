@@ -42,6 +42,7 @@ internal sealed class PipelineOrchestrator
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
+                context.Detail = PipelineFailureDetail.Create(exception);
                 return PipelineRunResult.Failed(stage.Name);
             }
         }

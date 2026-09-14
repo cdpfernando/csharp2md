@@ -36,6 +36,7 @@ public sealed class AnalyzeExitCodeTests
     public async Task Analyze_WhenUnpublishedWithDetail_WritesDetailToStderr()
     {
         var solutionPath = ExistingFixturePath();
+        const string safeDetail = "InvalidOperationException: Could not bind project";
         IAnalysisEngine engine = new FakeAnalysisEngine(new AnalysisResult(
         [
             new SolutionOutcome(
@@ -46,16 +47,21 @@ public sealed class AnalyzeExitCodeTests
                 structuralCorruption: false,
                 hasUnknownsOrCandidatesOrFrontiers: false,
                 stages: [],
-                detail: "link.cs"),
+                detail: safeDetail),
         ]));
 
-        var (exitCode, _, stderr) = await CliInvoke.RunAsync(
+        var (exitCode, stdout, stderr) = await CliInvoke.RunAsync(
             ["analyze", "--solution", solutionPath, "--output", CliTestPaths.UniqueOutputPath()],
             engine);
 
         Assert.Equal(2, exitCode);
-        Assert.Contains("link.cs", stderr, StringComparison.Ordinal);
-        Assert.Contains("csharp2md:", stderr, StringComparison.Ordinal);
+        Assert.Equal(
+            $"Analysis complete.{Environment.NewLine}"
+            + $"{solutionPath.Replace('\\', '/')}: Unpublished; facts=0 observations=0 relations=0{Environment.NewLine}",
+            stdout);
+        Assert.Equal(
+            $"csharp2md: unpublished at Inventory {safeDetail} {solutionPath.Replace('\\', '/')}{Environment.NewLine}",
+            stderr);
     }
 
     [Fact]

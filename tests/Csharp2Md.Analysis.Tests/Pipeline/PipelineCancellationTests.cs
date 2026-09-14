@@ -10,6 +10,19 @@ namespace Csharp2Md.Analysis.Tests.Pipeline;
 public sealed class PipelineCancellationTests
 {
     [Fact]
+    public async Task AnalyzeAsync_StageThrowsOperationCanceledException_PropagatesCancellation()
+    {
+        var engine = new AnalysisEngine(
+            new InMemoryTransactionalStore(),
+            StubStages.CreateDefault().SetItem(
+                1,
+                new ThrowingStage("Semantic Analysis", new OperationCanceledException("stage cancelled"))));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => engine.AnalyzeAsync(AnalysisRequest.Create(["alpha.sln"]), CancellationToken.None));
+    }
+
+    [Fact]
     [Trait("Requirement", "ENG-18")]
     public async Task AnalyzeAsync_CancelAfterStageThree_RecordsThreeStagesAndDoesNotCommit()
     {
@@ -34,6 +47,8 @@ public sealed class PipelineCancellationTests
 
         var outcome = Assert.Single(result.Solutions);
         Assert.Equal(PublicationStatus.Unpublished, outcome.Status);
+        Assert.Null(outcome.FailingStage);
+        Assert.Null(outcome.Detail);
         Assert.True(result.HasUnpublishedSolution);
         Assert.Equal(
             ["Inventory", "Semantic Analysis", "Observation Extraction"],
