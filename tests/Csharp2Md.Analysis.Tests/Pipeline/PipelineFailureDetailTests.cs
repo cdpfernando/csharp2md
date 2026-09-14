@@ -7,11 +7,14 @@ public sealed class PipelineFailureDetailTests
     [Theory]
     [InlineData("project load failed")]
     [InlineData("Timeout")]
+    [Trait("Requirement", "APR-02")]
     public void Create_SafeDiagnosticLanguage_PreservesTheMessage(string message)
     {
         var detail = PipelineFailureDetail.Create(new InvalidOperationException(message));
 
         Assert.Equal($"InvalidOperationException: {message}", detail);
+        Assert.DoesNotContain('\r', detail);
+        Assert.DoesNotContain('\n', detail);
     }
 
     [Theory]
@@ -20,6 +23,7 @@ public sealed class PipelineFailureDetailTests
     [InlineData("/home/private/source/OrderHandler.cs")]
     [InlineData("\"C:\\private source\\OrderHandler.cs\"")]
     [InlineData("'/home/private source/OrderHandler.cs'")]
+    [Trait("Requirement", "APR-03")]
     public void Create_MessageContainsOnlyAnAbsolutePath_ReportsOnlyTheExceptionType(string path)
     {
         var detail = PipelineFailureDetail.Create(new InvalidOperationException(path));
@@ -28,6 +32,7 @@ public sealed class PipelineFailureDetailTests
     }
 
     [Fact]
+    [Trait("Requirement", "APR-03")]
     public void Create_SuspectedSecret_PreservesTheSafeMessageAndRemovesTheValue()
     {
         const string secret = "pipeline-secret";
@@ -45,6 +50,7 @@ public sealed class PipelineFailureDetailTests
     [InlineData("Password=very secret")]
     [InlineData("token='very secret'")]
     [InlineData("Authorization: Bearer \"very secret\"")]
+    [Trait("Requirement", "APR-03")]
     public void Create_QuotedSecretContainingSpaces_RemovesTheEntireValue(string secretAssignment)
     {
         var detail = PipelineFailureDetail.Create(
@@ -57,6 +63,8 @@ public sealed class PipelineFailureDetailTests
     }
 
     [Fact]
+    [Trait("Requirement", "APR-03")]
+    [Trait("Requirement", "APR-05")]
     public void Create_UnlabeledRawSyntax_ReportsOnlyTheExceptionType()
     {
         var detail = PipelineFailureDetail.Create(
@@ -78,6 +86,8 @@ public sealed class PipelineFailureDetailTests
     [InlineData("$$\"\"\"load failed\"\"\"")]
     [InlineData("\"\"\"load failed\"\"\"")]
     [InlineData("\"load failed\"u8")]
+    [Trait("Requirement", "APR-03")]
+    [Trait("Requirement", "APR-05")]
     public void Create_UnlabeledRawSyntaxWithoutBraces_ReportsOnlyTheExceptionType(string source)
     {
         var detail = PipelineFailureDetail.Create(new InvalidOperationException(source));
@@ -86,11 +96,37 @@ public sealed class PipelineFailureDetailTests
     }
 
     [Fact]
+    [Trait("Requirement", "APR-03")]
+    [Trait("Requirement", "APR-05")]
     public void Create_SourceExcerptWithoutSafeMessage_ReportsOnlyTheExceptionType()
     {
         var detail = PipelineFailureDetail.Create(
             new InvalidOperationException("source: public sealed class Secret { string Token = \"raw-token\"; }"));
 
         Assert.Equal("InvalidOperationException", detail);
+    }
+
+    [Fact]
+    [Trait("Requirement", "APR-02")]
+    [Trait("Requirement", "APR-05")]
+    public void Create_ExceptionWithStackTrace_EmitsOneLineWithoutStackFrames()
+    {
+        InvalidOperationException caught;
+        try
+        {
+            throw new InvalidOperationException("project load failed");
+        }
+        catch (InvalidOperationException ex)
+        {
+            caught = ex;
+        }
+
+        var detail = PipelineFailureDetail.Create(caught);
+
+        Assert.Equal("InvalidOperationException: project load failed", detail);
+        Assert.DoesNotContain('\r', detail);
+        Assert.DoesNotContain('\n', detail);
+        Assert.False(string.IsNullOrEmpty(caught.StackTrace));
+        Assert.DoesNotContain(caught.StackTrace, detail, StringComparison.Ordinal);
     }
 }

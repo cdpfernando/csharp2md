@@ -10,6 +10,7 @@ namespace Csharp2Md.Analysis.Tests.Pipeline;
 public sealed class PipelineCancellationTests
 {
     [Fact]
+    [Trait("Requirement", "APR-06")]
     public async Task AnalyzeAsync_StageThrowsOperationCanceledException_PropagatesCancellation()
     {
         var engine = new AnalysisEngine(
@@ -24,6 +25,7 @@ public sealed class PipelineCancellationTests
 
     [Fact]
     [Trait("Requirement", "ENG-18")]
+    [Trait("Requirement", "APR-06")]
     public async Task AnalyzeAsync_CancelAfterStageThree_RecordsThreeStagesAndDoesNotCommit()
     {
         using var cts = new CancellationTokenSource();
@@ -62,6 +64,7 @@ public sealed class PipelineCancellationTests
 
     [Fact]
     [Trait("Requirement", "STOR-58")]
+    [Trait("Requirement", "APR-06")]
     public async Task AnalyzeAsync_CancelWithFilesystemStore_LeavesNoStagingAndKeepsLastPackage()
     {
         var outputPath = Path.Combine(Path.GetTempPath(), "csharp2md-fs-" + Guid.NewGuid().ToString("N"));

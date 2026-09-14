@@ -16,6 +16,7 @@ public sealed class AbortPreservesPackageTests
 
     [Fact]
     [Trait("Requirement", "ROSE-63")]
+    [Trait("Requirement", "APR-07")]
     public async Task AnalyzeAsync_FixtureThenSymlinkEscape_KeepsPriorPublicationBytes()
     {
         var fixture = Path.Combine(AnalysisTestPaths.RepoRoot, "fixtures", "SyntheticSolution");

@@ -10,6 +10,7 @@ public sealed class PipelineStageFailureTests
     [Fact]
     [Trait("Requirement", "ENG-19")]
     [Trait("Requirement", "ENG-25")]
+    [Trait("Requirement", "APR-01")]
     public async Task AnalyzeAsync_ThrowingSubstitute_SkipsLaterStagesAndDoesNotPublish()
     {
         var executed = new List<string>();
@@ -47,6 +48,10 @@ public sealed class PipelineStageFailureTests
     }
 
     [Fact]
+    [Trait("Requirement", "APR-01")]
+    [Trait("Requirement", "APR-02")]
+    [Trait("Requirement", "APR-03")]
+    [Trait("Requirement", "APR-05")]
     public async Task AnalyzeAsync_NestedStageFailure_ReportsOnlyTheSanitizedRootCause()
     {
         const string secret = "pipeline-secret";
@@ -80,6 +85,7 @@ public sealed class PipelineStageFailureTests
     }
 
     [Fact]
+    [Trait("Requirement", "APR-07")]
     public async Task AnalyzeAsync_FailedRetry_AbortsStagingAndPreservesCommittedBytes()
     {
         const string solutionPath = "alpha.sln";
@@ -115,6 +121,7 @@ public sealed class PipelineStageFailureTests
     }
 
     [Fact]
+    [Trait("Requirement", "APR-07")]
     public async Task AnalyzeAsync_FailedFilesystemRetry_RemovesStagingAndPreservesCommittedPackageBytes()
     {
         var output = Directory.CreateTempSubdirectory("csharp2md-failed-retry-");
