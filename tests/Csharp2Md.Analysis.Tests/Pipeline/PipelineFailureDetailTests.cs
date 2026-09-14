@@ -31,6 +31,7 @@ public sealed class PipelineFailureDetailTests
 
     [Theory]
     [InlineData("Password=\"very secret\"")]
+    [InlineData("Password=\"it's very secret\"")]
     [InlineData("token='very secret'")]
     [InlineData("Authorization: Bearer \"very secret\"")]
     public void Create_QuotedSecretContainingSpaces_RemovesTheEntireValue(string secretAssignment)
@@ -56,6 +57,7 @@ public sealed class PipelineFailureDetailTests
     [Theory]
     [InlineData("return customer.Password;")]
     [InlineData("public sealed class Secret")]
+    [InlineData("var secret = customer.Password;")]
     public void Create_UnlabeledRawSyntaxWithoutBraces_ReportsOnlyTheExceptionType(string source)
     {
         var detail = PipelineFailureDetail.Create(new InvalidOperationException(source));

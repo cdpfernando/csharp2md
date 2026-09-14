@@ -129,7 +129,7 @@ public sealed class PipelineStageFailureTests
 
             Assert.Equal(PublicationStatus.Committed, Assert.Single(first.Solutions).Status);
             var package = Assert.Single(Directory.GetDirectories(output.FullName, "s-*"));
-            var prior = SnapshotFiles(package);
+            var prior = PackageSnapshot.Capture(package);
 
             var failedEngine = new AnalysisEngine(
                 store,
@@ -139,7 +139,7 @@ public sealed class PipelineStageFailureTests
             Assert.Equal(PublicationStatus.Unpublished, Assert.Single(failed.Solutions).Status);
             Assert.False(Directory.Exists(package + ".staging"));
             Assert.Empty(Directory.EnumerateDirectories(output.FullName, "*.staging"));
-            AssertEqualSnapshots(prior, SnapshotFiles(package));
+            PackageSnapshot.AssertEqual(prior, PackageSnapshot.Capture(package));
         }
         finally
         {
@@ -147,23 +147,6 @@ public sealed class PipelineStageFailureTests
         }
     }
 
-    private static IReadOnlyDictionary<string, byte[]> SnapshotFiles(string directory) =>
-        Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
-            .ToDictionary(
-                path => Path.GetRelativePath(directory, path).Replace('\\', '/'),
-                File.ReadAllBytes,
-                StringComparer.Ordinal);
-
-    private static void AssertEqualSnapshots(
-        IReadOnlyDictionary<string, byte[]> expected,
-        IReadOnlyDictionary<string, byte[]> actual)
-    {
-        Assert.Equal(expected.Keys.Order(StringComparer.Ordinal), actual.Keys.Order(StringComparer.Ordinal));
-        foreach (var key in expected.Keys)
-        {
-            Assert.True(expected[key].AsSpan().SequenceEqual(actual[key]), $"Bytes at '{key}' changed.");
-        }
-    }
 }
 
 internal sealed class ThrowingStage : IPipelineStage

@@ -65,7 +65,9 @@ internal static partial class PipelineFailureDetail
     private static bool LooksLikeRawSyntax(string message) =>
         message.Contains('{', StringComparison.Ordinal)
         || message.Contains('}', StringComparison.Ordinal)
-        || message.Contains("=>", StringComparison.Ordinal);
+        || message.Contains("=>", StringComparison.Ordinal)
+        || message.EndsWith(';')
+        || MemberAccessPattern().IsMatch(message);
 
     [GeneratedRegex(
         """(?<prefix>^|[^\p{L}\p{N}"'])["']?(?:[A-Za-z]:[\\/]|\\\\|/).*$""",
@@ -78,19 +80,22 @@ internal static partial class PipelineFailureDetail
     private static partial Regex SourceExcerptPattern();
 
     [GeneratedRegex(
-        @"(?i)(?<prefix>^|.*?[:;]\s)(?:(?:public|private|protected|internal|static|sealed|abstract|partial|readonly|required|async|unsafe|new)\s+)*(?:class|struct|interface|record|enum|namespace|using|return|throw|yield|if|else|for|foreach|while|do|switch|try|catch|finally|lock)\b.*$",
+        @"(?i)(?<prefix>^|.*?[:;]\s)(?:(?:public|private|protected|internal|static|sealed|abstract|partial|readonly|required|async|unsafe|new)\s+)*(?:class|struct|interface|record|enum|namespace|using|return|throw|yield|var|const|if|else|for|foreach|while|do|switch|try|catch|finally|lock)\b.*$",
         RegexOptions.CultureInvariant)]
     private static partial Regex RawSyntaxPattern();
 
     [GeneratedRegex(
-        """(?<key>(?i:Password|Pwd|User ID|User Id|Data Source|Initial Catalog|token|ConnectionString)\s*=\s*)(?<quote>["'])[^"']*\k<quote>""",
+        """(?<key>(?i:Password|Pwd|User ID|User Id|Data Source|Initial Catalog|token|ConnectionString)\s*=\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')""",
         RegexOptions.CultureInvariant)]
     private static partial Regex SensitiveQuotedValuePattern();
 
     [GeneratedRegex(
-        """(?<prefix>(?i:(?:Authorization:\s*)?Bearer\s+))(?<quote>["'])[^"']*\k<quote>""",
+        """(?<prefix>(?i:(?:Authorization:\s*)?Bearer\s+))(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')""",
         RegexOptions.CultureInvariant)]
     private static partial Regex QuotedBearerPattern();
+
+    [GeneratedRegex(@"\b[A-Za-z_]\w*(?:\s*\?\.)?\s*\.\s*[A-Za-z_]\w*\b", RegexOptions.CultureInvariant)]
+    private static partial Regex MemberAccessPattern();
 
     [GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]
     private static partial Regex WhitespacePattern();
