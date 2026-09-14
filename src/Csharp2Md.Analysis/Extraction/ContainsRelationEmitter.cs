@@ -11,7 +11,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using DomainDocument = Csharp2Md.Domain.Facts.Document;
 using DomainProject = Csharp2Md.Domain.Facts.Project;
-using DomainProjectId = Csharp2Md.Domain.Identity.ProjectId;
 using DomainSymbol = Csharp2Md.Domain.Facts.Symbol;
 
 namespace Csharp2Md.Analysis.Extraction;
@@ -33,7 +32,7 @@ internal static class ContainsRelationEmitter
         var projects = snapshot.Facts.OfType<DomainProject>()
             .ToDictionary(static project => project.Id.Value, StringComparer.Ordinal);
         var symbolsBySignature = snapshot.Facts.OfType<DomainSymbol>()
-            .GroupBy(static symbol => SignatureKey(symbol.OwningProject, symbol.Signature), StringComparer.Ordinal)
+            .GroupBy(static symbol => ClassifierContext.SignatureKey(symbol.OwningProject, symbol.Signature), StringComparer.Ordinal)
             .ToDictionary(static group => group.Key, static group => group.First(), StringComparer.Ordinal);
 
         var facets = FacetBinding.Create(TaxonomyTables.Default.FacetAxes, [], []);
@@ -102,7 +101,7 @@ internal static class ContainsRelationEmitter
             yield break;
         }
 
-        var root = ComputeAuthorizedRoot(context.SolutionPath);
+        var root = AuthorizedRoot.ForSolution(context.SolutionPath);
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var compilation in bound.Compilations)
         {
@@ -113,7 +112,7 @@ internal static class ContainsRelationEmitter
                     continue;
                 }
 
-                var relative = Path.GetRelativePath(root, tree.FilePath).Replace('\\', '/');
+                var relative = AuthorizedRoot.ToLogicalPath(root, tree.FilePath);
                 if (!string.Equals(relative, document.RelativePath, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
@@ -130,7 +129,7 @@ internal static class ContainsRelationEmitter
                             continue;
                         }
 
-                        var key = SignatureKey(document.OwningProject, signature.Value);
+                        var key = ClassifierContext.SignatureKey(document.OwningProject, signature.Value);
                         if (symbolsBySignature.TryGetValue(key, out var fact) && seen.Add(fact.Reference.Id.Value))
                         {
                             yield return fact;
@@ -159,19 +158,5 @@ internal static class ContainsRelationEmitter
                 }
             }
         }
-    }
-
-    private static string SignatureKey(DomainProjectId projectId, CanonicalSymbolSignature signature) =>
-        projectId.Value + "\u001f" + signature.Value;
-
-    private static string ComputeAuthorizedRoot(string solutionPath)
-    {
-        var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
-        var solutionDirectory = Path.GetDirectoryName(Path.GetFullPath(solutionPath))
-            ?? throw new InvalidOperationException($"'{solutionPath}' has no containing directory.");
-        var existing = listed
-            .Select(listedPath => Path.GetFullPath(Path.Combine(solutionDirectory, listedPath)))
-            .Where(File.Exists);
-        return AuthorizedRoot.Compute(solutionPath, existing);
     }
 }

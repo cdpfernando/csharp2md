@@ -62,7 +62,7 @@ internal static class PackagePublisher
     /// <summary>
     /// Assembles the whole-document, never-split artifacts: the taxonomy registry, the envelopes and the
     /// compound fact-family bundles. The flat record-array families (confirmed relations, candidates,
-    /// unresolved records, open frontiers, observations) are no longer written here -- the plan already
+    /// unresolved records, open frontiers, observations) are not written here -- the plan already
     /// carries their exact, possibly-sharded byte content (see <see cref="ToPublicationOrder(WireDocument, LayoutPlan, ImmutableArray{StagedFragment})"/>).
     /// </summary>
     internal static ImmutableArray<byte> Write(WireDocument document, string canonicalKey)

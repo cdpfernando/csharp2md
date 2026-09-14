@@ -4,7 +4,7 @@ namespace Csharp2Md.Analysis.Pipeline;
 
 /// <summary>
 /// Computes the run-certification status (GCPC-001, GCPC-006..GCPC-010, GCPC-013) from the four coverage
-/// metrics T27/T28 computed and the invocation-accounting ledger T29 published. <c>not_evaluated</c> is
+/// metrics and the published invocation-accounting ledger. <c>not_evaluated</c> is
 /// never a possible outcome (GCPC-001): every run publishes exactly one of <c>passed</c>, <c>degraded</c>
 /// or <c>failed</c>.
 /// </summary>

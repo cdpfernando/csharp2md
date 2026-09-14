@@ -57,7 +57,7 @@ internal sealed class InventoryStage : IPipelineStage
                 return ValueTask.FromResult(abort);
             }
 
-            var relativeProject = Path.GetRelativePath(root, projectPath).Replace('\\', '/');
+            var relativeProject = AuthorizedRoot.ToLogicalPath(root, projectPath);
             var projectId = ProjectId.Create(factSet.Solution.Id, relativeProject);
             var project = factSet.Projects.First(candidate => candidate.Id.Equals(projectId));
             context.Accumulator.AddFact(project);
@@ -109,7 +109,7 @@ internal sealed class InventoryStage : IPipelineStage
 
         foreach (var absent in missing)
         {
-            var relative = Path.GetRelativePath(root, absent).Replace('\\', '/');
+            var relative = AuthorizedRoot.ToLogicalPath(root, absent);
             context.Accumulator.AddDiagnostic(new DiagnosticRecord(
                 "missing-project",
                 $"The listed project path '{relative}' does not exist.",

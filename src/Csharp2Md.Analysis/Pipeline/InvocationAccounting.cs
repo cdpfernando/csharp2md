@@ -8,7 +8,7 @@ using Csharp2Md.Domain.Observations;
 namespace Csharp2Md.Analysis.Pipeline;
 
 /// <summary>
-/// Turns <c>InvokesPass</c>'s per-occurrence disposition ledger (GCPC-011, from T22) into the published
+/// Turns <c>InvokesPass</c>'s per-occurrence disposition ledger (GCPC-011) into the published
 /// invocation-accounting envelope: a per-disposition total that sums exactly to the recognized
 /// invocation-occurrence count (GCPC-012, GCPC-015), with an occurrence that carries both an unresolved
 /// record and an open frontier counted once in its exclusive bucket and once more only in the frontier

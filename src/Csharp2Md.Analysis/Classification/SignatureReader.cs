@@ -16,13 +16,11 @@ internal static class SignatureReader
     /// <summary>The fully-qualified type or namespace that declares the symbol.</summary>
     public static string? Container(Symbol symbol) => FieldOf(symbol, "container");
 
-    /// <summary>The symbol's metadata name.</summary>
     public static string? Metadata(Symbol symbol) => FieldOf(symbol, "metadata");
 
     /// <summary>The symbol's fully-qualified type - a property's type, a method's return type.</summary>
     public static string? Type(Symbol symbol) => FieldOf(symbol, "type");
 
-    /// <summary>The decoded value of <paramref name="key"/> in <paramref name="signature"/>.</summary>
     public static string? Field(string signature, string key) =>
         CanonicalSymbolSignature.Component(signature, key);
 

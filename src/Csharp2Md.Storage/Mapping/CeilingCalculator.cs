@@ -26,7 +26,7 @@ public static class CeilingCalculator
     /// </summary>
     public const string TokenEstimatorId = "csharp2md.tokens.bytes-per-token-v1";
 
-    /// <summary>The declared default per-scenario reading budget, in tokens, absent a CLI override (T52).</summary>
+    /// <summary>The declared default per-scenario reading budget, in tokens, absent a CLI override.</summary>
     public const int DefaultReadingBudgetTokens = 100_000;
 
     /// <summary>The declared default maximum file reads per scenario, absent a CLI override.</summary>

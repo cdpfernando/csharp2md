@@ -145,6 +145,8 @@ public sealed class SecretAbsenceTests : IClassFixture<SecretAbsenceTests.Publis
 
     public sealed class PublishedFixture : IDisposable
     {
+        private readonly TempOutputRoot _root;
+
         public PublicationStatus Status { get; }
 
         public IReadOnlyDictionary<string, byte[]> Files { get; }
@@ -154,9 +156,8 @@ public sealed class SecretAbsenceTests : IClassFixture<SecretAbsenceTests.Publis
             var solutionPath = Path.Combine(RepoRoot(), "fixtures", "SyntheticSolution", "Acme.Orders", "Acme.Orders.slnx");
             Assert.True(File.Exists(solutionPath), $"Expected fixture at '{solutionPath}'.");
 
-            DirectoryPath = Path.Combine(Path.GetTempPath(), "csharp2md-secret-sweep-" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(DirectoryPath);
-            var store = new FilesystemTransactionalStore(DirectoryPath, new PackageProjector());
+            _root = TempOutputRoot.Create("csharp2md-secret-sweep-");
+            var store = new FilesystemTransactionalStore(_root.DirectoryPath, new PackageProjector());
             var result = new AnalysisEngine(store)
                 .AnalyzeAsync(AnalysisRequest.Create([solutionPath]), CancellationToken.None)
                 .GetAwaiter()
@@ -165,7 +166,7 @@ public sealed class SecretAbsenceTests : IClassFixture<SecretAbsenceTests.Publis
             var canonical = Path.GetFullPath(solutionPath);
             var identity = SolutionCoordinate.For(canonical).Identity.Value;
             var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(identity)))[..32];
-            var child = Path.Combine(DirectoryPath, "s-" + hex);
+            var child = Path.Combine(_root.DirectoryPath, "s-" + hex);
             Files = Directory.Exists(child)
                 ? Directory.EnumerateFiles(child, "*", SearchOption.AllDirectories)
                     .ToDictionary(
@@ -175,22 +176,7 @@ public sealed class SecretAbsenceTests : IClassFixture<SecretAbsenceTests.Publis
                 : new Dictionary<string, byte[]>(StringComparer.Ordinal);
         }
 
-        private string DirectoryPath { get; }
-
-        public void Dispose()
-        {
-            try
-            {
-                if (Directory.Exists(DirectoryPath))
-                {
-                    Directory.Delete(DirectoryPath, recursive: true);
-                }
-            }
-            catch (IOException)
-            {
-                // Best-effort cleanup of a temp directory; leaving it behind is not a test failure.
-            }
-        }
+        public void Dispose() => _root.Dispose();
 
         private static string RepoRoot()
         {

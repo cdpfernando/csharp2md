@@ -68,9 +68,7 @@ internal static class CommandFactory
 
             // GCPC-036/GCPC-037: the declared per-scenario budget, validated before any analysis begins so
             // a malformed value publishes nothing (GCPC-073). Absent an override, CeilingCalculator's own
-            // declared defaults apply -- the same ~32 KiB ceiling PublicationPipeline.Publish now enforces
-            // by default for every caller (T52 closes the T37 deferred item: this was never the live
-            // default before, only ever proven under an explicit test ceiling).
+            // declared defaults apply -- the same ceiling PublicationPipeline.Publish enforces by default.
             var readingBudgetTokens = parseResult.GetValue(readingBudgetOption);
             var maxFileReadsPerScenario = parseResult.GetValue(maxFileReadsOption);
             CeilingCalculation ceiling;
@@ -110,10 +108,7 @@ internal static class CommandFactory
             {
                 // A BatchComposer alongside the projector: without it, FilesystemTransactionalStore's own
                 // composer field stays null, PublicationPipeline.Publish's composer.Contribute branch never
-                // runs, and PublishBatch's composer?.Compose(view) is permanently []. That left cross-
-                // solution composition dead on every real `analyze` run -- proven only by tests that built
-                // their own store with a composer directly. Found while proving T51's "compose reproduces
-                // the same batch artifacts analyze produced" against a real multi-solution batch.
+                // runs, and PublishBatch's composer?.Compose(view) is permanently [].
                 //
                 // PackageProjector's own ceiling is passed the same derived bytes as the store: GCPC-039
                 // names catalogs and postings alongside facts, observations and relations as artifacts that
@@ -279,7 +274,7 @@ internal static class CommandFactory
                     File.ReadAllBytes(Path.Combine(packagePath, "manifest.json")), "manifest.json");
                 var context = new ManifestContext(manifest.SolutionKey, manifest.SolutionFileName);
                 var document = DomainMapper.ToWire(result.Snapshot, context);
-                // T52: re-plan with the real ceiling this package was actually published under (its own
+                // Re-plan with the real ceiling this package was actually published under (its own
                 // provenance), not the unsplit default -- a sharded family's citations only resolve when
                 // this reconstruction buckets records exactly the way the live publish did.
                 var ceilingBytes = manifest.Provenance?.ArtifactCeilingBytes ?? int.MaxValue;
@@ -346,8 +341,8 @@ internal static class CommandFactory
     /// <summary>
     /// GCPC-069/GCPC-070: maps the certification status from the package this invocation just published.
     /// The batch manifest supplies the exact solution-to-package mapping, avoiding both directory-name
-    /// assumptions and unrelated packages that may already exist under the output root. Injected engines
-    /// that intentionally publish nothing retain the historical success result used by the CLI seam tests.
+    /// assumptions and unrelated packages that may already exist under the output root. An engine that
+    /// publishes nothing writes no batch manifest and reports success.
     /// </summary>
     private static int PublishedCertificationExitCode(string outputPath, AnalysisResult result)
     {

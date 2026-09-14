@@ -108,8 +108,8 @@ internal sealed class InvokesPass : IClassifierPass
                 }
                 else
                 {
-                    // GCPC-011: bound, but no target signature could be extracted at all -- previously
-                    // silent; now unresolved instead of dropped.
+                    // GCPC-011: bound, but no target signature could be extracted at all -- unresolved
+                    // rather than dropped.
                     unresolvedCount += AddUnresolved(
                         context,
                         owner.Reference,

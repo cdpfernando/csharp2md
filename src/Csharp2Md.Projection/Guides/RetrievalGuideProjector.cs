@@ -26,7 +26,7 @@ internal static class RetrievalGuideProjector
 
     private static readonly Regex ArtifactKeyPattern = new("`([^`]+)`", RegexOptions.Compiled);
 
-    /// <summary>The seven confirmed relation kinds this workstream covers (GCPC-048), in the AC's order.</summary>
+    /// <summary>The seven confirmed relation kinds the guide covers (GCPC-048), in their published order.</summary>
     private static readonly string[] RelationKinds =
     [
         "executes",
@@ -163,8 +163,8 @@ internal static class RetrievalGuideProjector
     /// <summary>
     /// One hint per posting family (GCPC-047), not one per shard: a family that split under the ceiling
     /// still has exactly one line here, naming its base key without backticks (the caller decides whether
-    /// to cite it literally) -- printing one line per <c>ShardWriter</c> bucket is what previously let
-    /// this section itself grow past the publication ceiling under scale (T63's second symptom).
+    /// to cite it literally) -- printing one line per <c>ShardWriter</c> bucket would let this section
+    /// itself grow past the publication ceiling under scale.
     /// </summary>
     private static IEnumerable<(string Key, string Hint)> PostingHints(HashSet<string> postingKeys)
     {

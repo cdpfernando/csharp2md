@@ -31,7 +31,7 @@ internal static class InventoryFacts
                 continue;
             }
 
-            var relative = Path.GetRelativePath(root, absolute).Replace('\\', '/');
+            var relative = AuthorizedRoot.ToLogicalPath(root, absolute);
             projects.Add(Project.Create(ProjectId.Create(solution.Id, relative)));
         }
 

@@ -18,9 +18,9 @@ namespace Csharp2Md.Storage;
 public static class ContributionReader
 {
     /// <summary>
-    /// Reads <paramref name="packageDirectory"/> and rebuilds its contribution. F1 (GCPC-038/039) gave
-    /// the compound fact families the same adaptive ceiling-driven sharding flat record-array families
-    /// already had, so a fact's citation now depends on the ceiling the original publication planned
+    /// Reads <paramref name="packageDirectory"/> and rebuilds its contribution. Compound fact families
+    /// shard under the ceiling exactly as flat record-array families do (F1, GCPC-038/039), so a fact's
+    /// citation depends on the ceiling the original publication planned
     /// with -- re-planning with the unsplit default here would assign a different (unsplit) citation to
     /// the same fact and desync <c>compose</c>'s output from what a live <c>analyze</c> produced. The
     /// published provenance carries that exact ceiling (GCPC-058), so re-planning with it reproduces

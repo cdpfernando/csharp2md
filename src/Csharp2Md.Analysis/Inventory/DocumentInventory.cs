@@ -247,7 +247,7 @@ internal static class DocumentInventory
 
     private static string? ToRelativeDocumentPath(string root, string absolute)
     {
-        var relative = Path.GetRelativePath(root, absolute).Replace('\\', '/');
+        var relative = AuthorizedRoot.ToLogicalPath(root, absolute);
         if (Path.IsPathRooted(relative)
             || relative.Length >= 2 && char.IsAsciiLetter(relative[0]) && relative[1] == ':')
         {

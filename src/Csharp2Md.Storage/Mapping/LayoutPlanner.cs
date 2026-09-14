@@ -299,10 +299,10 @@ public static class LayoutPlanner
             return ([], [], []);
         }
 
-        // Unsplit: keep the document's own order, exactly as the pre-plan writer did -- existing callers
-        // (e.g. the unresolved/frontiers postings and catalogs) address these families by that natural
-        // ordinal, not through a citation lookup. Only once a family is actually split does the physical
-        // ordinal become an adaptive-sharding concern (below), which no caller has depended on until now.
+        // Unsplit: keep the document's own order -- callers (e.g. the unresolved/frontiers postings and
+        // catalogs) address these families by that natural ordinal, not through a citation lookup. Only
+        // once a family is actually split does the physical ordinal become an adaptive-sharding concern
+        // (below).
         var inlineBytes = SerializeRecords(original.Select(static source => source.Entry)).Length;
         var citationByIndex = new ArtifactCitation[original.Length];
         if (inlineBytes <= ceilingBytes)
@@ -404,8 +404,6 @@ public static class LayoutPlanner
             : string.Concat(baseKey.AsSpan(0, dot), ".", bucket, baseKey.AsSpan(dot));
     }
 
-    // --- Compound fact families -------------------------------------------------------------------
-    //
     // A compound family (facts/structural.json and its four siblings, plus quarantine/records.json) is
     // one JSON object with several named arrays -- Solutions, Projects, Documents and Symbols for
     // "structural", for instance -- rather than one flat array. GCPC-039 still requires it to split once

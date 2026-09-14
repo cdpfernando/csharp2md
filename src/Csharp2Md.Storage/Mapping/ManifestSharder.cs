@@ -7,8 +7,8 @@ namespace Csharp2Md.Storage.Mapping;
 /// Bounds <c>manifest.json</c> under the declared per-artifact ceiling (F6/GCPC-038): the manifest's own
 /// size is linear in the artifact count (~190 bytes per <see cref="ManifestEntry"/>), which F1's compound-
 /// family sharding multiplied, so a package with enough artifacts pushes the manifest itself past the
-/// ceiling it is supposed to help enforce. When the whole manifest fits, its shape is unchanged from
-/// before this fix (byte-identical for every small package). When it does not, the manifest splits into a
+/// ceiling it is supposed to help enforce. When the whole manifest fits, it is published unsplit, as
+/// every small package's is. When it does not, the manifest splits into a
 /// small, fixed-shape root (<see cref="PackagePublisher.ManifestKey"/>, carrying <see
 /// cref="ManifestEnvelope.Provenance"/>, the solution identity and the version axes unchanged) plus one or
 /// more <c>manifest/parts.lNN.NNNN.json</c> shards, each a flat JSON array of ordered <see
@@ -41,7 +41,7 @@ internal static class ManifestSharder
 
         // Tests and callers may deliberately use byte-sized ceilings to force one record family to
         // split. The manifest's fixed provenance/identity envelope cannot itself be partitioned; in that
-        // artificial case preserve the pre-F6 unsplit behavior instead of entering a non-shrinking loop.
+        // artificial case publish it unsplit instead of entering a non-shrinking loop.
         if (CanonicalJson.Write(manifest with { Artifacts = [] }).Length > ceilingBytes)
         {
             return [new StagedFragment(ArtifactRole.Manifest, PackagePublisher.ManifestKey, unsplitBytes)];

@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
@@ -65,7 +66,7 @@ internal static class ProjectMetadataEmitter
                     continue;
                 }
 
-                var logicalPath = ToLogicalPath(project.FilePath, context.AuthorizedRoot);
+                var logicalPath = AuthorizedRoot.ToLogicalPath(context.AuthorizedRoot, project.FilePath);
                 if (!processed.Add(logicalPath))
                 {
                     continue;
@@ -142,7 +143,7 @@ internal static class ProjectMetadataEmitter
                 continue;
             }
 
-            var logicalPath = ToLogicalPath(referenced.FilePath, authorizedRoot);
+            var logicalPath = AuthorizedRoot.ToLogicalPath(authorizedRoot, referenced.FilePath);
             if (!TryProjectId(solutionId, logicalPath, out var projectId)
                 || !projects.ContainsKey(projectId.Value))
             {
@@ -177,7 +178,7 @@ internal static class ProjectMetadataEmitter
         var candidate = path.Replace('\\', '/');
         if (Path.IsPathRooted(path))
         {
-            candidate = Path.GetRelativePath(authorizedRoot, path).Replace('\\', '/');
+            candidate = AuthorizedRoot.ToLogicalPath(authorizedRoot, path);
         }
 
         if (Path.IsPathRooted(candidate)
@@ -244,7 +245,4 @@ internal static class ProjectMetadataEmitter
         kind is OutputKind.ConsoleApplication or OutputKind.WindowsApplication
             ? "application"
             : "library";
-
-    private static string ToLogicalPath(string absolutePath, string authorizedRoot) =>
-        Path.GetRelativePath(authorizedRoot, absolutePath).Replace('\\', '/');
 }

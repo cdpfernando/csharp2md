@@ -128,7 +128,7 @@ public sealed record ScenarioReport(ImmutableArray<ScenarioResult> Scenarios)
 /// set of artifact keys one of the guide's own bullet lines names, in the order the guide states them --
 /// the confirmed-relation bullets from "## 3. Follow a confirmed relation", the disposition bullets from
 /// "## 4. Follow an unproven disposition", and the catalog bullets from "## 1. Locate an identity" taken
-/// together as one scenario. No parsing beyond the guide's own published bullets is required: T46's
+/// together as one scenario. No parsing beyond the guide's own published bullets is required:
 /// <c>RetrievalGuideProjector</c> already guarantees every artifact key it names exists in this
 /// publication (GCPC-055), so a resolution failure here means <paramref name="source"/> itself disagrees
 /// with the guide it was handed, not that the guide is wrong.

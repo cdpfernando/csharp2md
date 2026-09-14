@@ -20,11 +20,11 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
     private readonly Dictionary<string, SolutionContribution> _contributions = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// <paramref name="readingBudgetTokens"/> and <paramref name="maxFileReadsPerScenario"/> (T52's
+    /// <paramref name="readingBudgetTokens"/> and <paramref name="maxFileReadsPerScenario"/> (the CLI's
     /// <c>--reading-budget-tokens</c> and <c>--max-file-reads-per-scenario</c>), absent an override, are
     /// the same declared defaults <see cref="Mapping.CeilingCalculator"/> already derives the enforced
     /// per-artifact ceiling from on every publish; <paramref name="allowlist"/> is the same allowlist
-    /// <see cref="Analysis.AnalysisRequest"/> already admitted through the pipeline (T12), threaded here
+    /// <see cref="Analysis.AnalysisRequest"/> already admitted through the pipeline, threaded here
     /// only so its digest reaches the published provenance (GCPC-058).
     /// </summary>
     public FilesystemTransactionalStore(
@@ -86,7 +86,7 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
 
     /// <summary>
     /// Registers a contribution built by re-reading an already-published package (<see
-    /// cref="ContributionReader"/>, T51's <c>compose</c> path) as if it had come from a live <see
+    /// cref="ContributionReader"/>, the <c>compose</c> path) as if it had come from a live <see
     /// cref="IStoreSession.Commit"/> on this store instance, so <see cref="PublishBatch"/> composes it
     /// through the exact same path a live <c>analyze</c> batch uses -- no second write path is introduced.
     /// </summary>

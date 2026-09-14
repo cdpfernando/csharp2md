@@ -99,11 +99,11 @@ internal static class PostingProjector
     /// <see cref="BoundaryOperationDto.Direction"/> (outbound publishes, inbound handles), never
     /// <see cref="ContractBindingDto.PayloadRole"/>: <c>ContractPass</c> assigns every messaging
     /// binding, producer and consumer alike, the same <c>"request"</c> payload role (EBC-22/EBC-26;
-    /// there is no messaging "response"), so a role-only split put every messaging operation in
-    /// <c>consumers</c> and left <c>producers</c> permanently empty. This is additive, scoped to
-    /// <c>Protocol == "messaging"</c> only: a non-messaging (HTTP-shaped) binding keeps using
-    /// <see cref="ContractBindingDto.PayloadRole"/> exactly as before (RP-25 -- role decides, not the
-    /// operation's own name or direction), so that existing, tested behavior does not change.
+    /// there is no messaging "response"), so a role-only split would put every messaging operation in
+    /// <c>consumers</c> and leave <c>producers</c> permanently empty. Scoped to
+    /// <c>Protocol == "messaging"</c> only: a non-messaging (HTTP-shaped) binding uses
+    /// <see cref="ContractBindingDto.PayloadRole"/> (RP-25 -- role decides, not the operation's own
+    /// name or direction).
     /// </summary>
     private static void AddContractRole(
         PublishedPackageView view,

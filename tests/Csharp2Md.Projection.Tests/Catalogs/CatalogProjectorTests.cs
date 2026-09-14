@@ -14,53 +14,31 @@ namespace Csharp2Md.Projection.Tests.Catalogs;
 
 public sealed class CatalogProjectorTests
 {
-    [Fact]
+    /// <summary>
+    /// Both architecture catalogs cite <c>facts/architecture.json</c>, whose ordinals run over the
+    /// concatenation [components, deployment units, entry points, boundary operations, external systems].
+    /// The entry-point fixture also publishes a component, so its two entries start at ordinal 1; the
+    /// boundary-operation fixture publishes nothing before them, so theirs start at 0.
+    /// </summary>
+    [Theory]
     [Trait("Requirement", "RP-18")]
     [Trait("Requirement", "RP-19")]
-    public void Project_EntryPoints_EachEntryCarriesFactIdKeyAndZeroBasedOrdinal()
+    [InlineData(CatalogProjector.EntryPointsKey, 1, 2)]
+    [InlineData(CatalogProjector.BoundaryOperationsKey, 0, 1)]
+    public void Project_ArchitectureCatalog_EachEntryCarriesItsFactIdKeyAndFamilyOrdinal(
+        string catalogKey,
+        int firstOrdinal,
+        int secondOrdinal)
     {
-        var component = CatalogProjectionFactory.CreateComponent("Orders.Api");
-        var first = CatalogProjectionFactory.CreateEntryPoint("Run", "Orders.Api");
-        var second = CatalogProjectionFactory.CreateEntryPoint("Main", "Orders.Worker");
-        var view = CatalogProjectionFactory.ViewOf(component, first, second);
+        var (view, first, second) = ArchitecturePair(catalogKey);
 
-        var entries = CatalogProjectionFactory.ReadCatalog(
-            CatalogProjector.Project(view),
-            "catalogs/entry-points.json");
+        var entries = CatalogProjectionFactory.ReadCatalog(CatalogProjector.Project(view), catalogKey);
 
         Assert.Equal(2, entries.Length);
-        Assert.All(entries, entry =>
-        {
-            Assert.False(string.IsNullOrEmpty(entry.FactId));
-            Assert.False(string.IsNullOrEmpty(entry.ArtifactKey));
-            Assert.True(entry.Ordinal >= 0, entry.FactId);
-        });
-        Assert.Contains(entries, entry => entry.FactId == first.Reference.Id.Value);
-        Assert.Contains(entries, entry => entry.FactId == second.Reference.Id.Value);
-    }
-
-    [Fact]
-    [Trait("Requirement", "RP-18")]
-    [Trait("Requirement", "RP-19")]
-    public void Project_BoundaryOperations_EachEntryCarriesFactIdKeyAndZeroBasedOrdinal()
-    {
-        var first = CatalogProjectionFactory.CreateInboundOperation("Charge", "Payments.Api", "POST /charge");
-        var second = CatalogProjectionFactory.CreateInboundOperation("Refund", "Payments.Api", "POST /refund");
-        var view = CatalogProjectionFactory.ViewOf(first, second);
-
-        var entries = CatalogProjectionFactory.ReadCatalog(
-            CatalogProjector.Project(view),
-            "catalogs/boundary-operations.json");
-
-        Assert.Equal(2, entries.Length);
-        Assert.All(entries, entry =>
-        {
-            Assert.False(string.IsNullOrEmpty(entry.FactId));
-            Assert.False(string.IsNullOrEmpty(entry.ArtifactKey));
-            Assert.True(entry.Ordinal >= 0, entry.FactId);
-        });
-        Assert.Contains(entries, entry => entry.FactId == first.Reference.Id.Value);
-        Assert.Contains(entries, entry => entry.FactId == second.Reference.Id.Value);
+        Assert.All(entries, entry => Assert.Equal("facts/architecture.json", entry.ArtifactKey));
+        Assert.Equal([firstOrdinal, secondOrdinal], entries.Select(static entry => entry.Ordinal).ToArray());
+        Assert.Contains(entries, entry => entry.FactId == first);
+        Assert.Contains(entries, entry => entry.FactId == second);
     }
 
     [Fact]
@@ -77,7 +55,7 @@ public sealed class CatalogProjectorTests
             "catalogs/entry-points.json");
 
         CatalogProjectionFactory.AssertEveryEntryResolves(view, entries);
-        Assert.DoesNotContain(entries, entry => entry.Ordinal == 0);
+        Assert.Equal([1, 2], entries.Select(static entry => entry.Ordinal).ToArray());
     }
 
     [Fact]
@@ -172,9 +150,11 @@ public sealed class CatalogProjectorTests
     [Trait("Requirement", "RP-20")]
     public void Project_ComponentsAndDeploymentUnits_EveryEntryResolves()
     {
+        var component = CatalogProjectionFactory.CreateComponent("Orders.Api");
+        var unit = CatalogProjectionFactory.CreateDeploymentUnit("Orders.Container");
         var view = CatalogProjectionFactory.ViewOf(
-            CatalogProjectionFactory.CreateComponent("Orders.Api"),
-            CatalogProjectionFactory.CreateDeploymentUnit("Orders.Container"),
+            component,
+            unit,
             CatalogProjectionFactory.CreateEntryPoint("Run", "Orders.Worker"));
 
         var entries = CatalogProjectionFactory.ReadCatalog(
@@ -182,12 +162,11 @@ public sealed class CatalogProjectorTests
             "catalogs/components-and-deployment-units.json");
 
         CatalogProjectionFactory.AssertEveryEntryResolves(view, entries);
-        Assert.All(entries, entry =>
-        {
-            Assert.False(string.IsNullOrEmpty(entry.FactId));
-            Assert.False(string.IsNullOrEmpty(entry.ArtifactKey));
-            Assert.True(entry.Ordinal >= 0, entry.FactId);
-        });
+
+        // facts/architecture.json orders components before deployment units, so these are ordinals 0 and 1
+        // even though the entry point sharing the family is published after them.
+        Assert.Equal(0, Assert.Single(entries, entry => entry.FactId == component.Reference.Id.Value).Ordinal);
+        Assert.Equal(1, Assert.Single(entries, entry => entry.FactId == unit.Reference.Id.Value).Ordinal);
     }
 
     [Fact]
@@ -223,12 +202,8 @@ public sealed class CatalogProjectorTests
             "catalogs/contracts.json");
 
         Assert.Equal(2, entries.Length);
-        Assert.All(entries, entry =>
-        {
-            Assert.False(string.IsNullOrEmpty(entry.FactId));
-            Assert.False(string.IsNullOrEmpty(entry.ArtifactKey));
-            Assert.True(entry.Ordinal >= 0, entry.FactId);
-        });
+        Assert.All(entries, entry => Assert.Equal("facts/contract.json", entry.ArtifactKey));
+        Assert.Equal([0, 1], entries.Select(static entry => entry.Ordinal).ToArray());
         CatalogProjectionFactory.AssertEveryEntryResolves(view, entries);
         Assert.Contains(entries, entry => entry.FactId == first.Reference.Id.Value);
         Assert.Contains(entries, entry => entry.FactId == second.Reference.Id.Value);
@@ -335,12 +310,11 @@ public sealed class CatalogProjectorTests
             "catalogs/data-stores-objects-and-fields.json");
 
         CatalogProjectionFactory.AssertEveryEntryResolves(view, entries);
-        Assert.All(entries, entry =>
-        {
-            Assert.False(string.IsNullOrEmpty(entry.FactId));
-            Assert.False(string.IsNullOrEmpty(entry.ArtifactKey));
-            Assert.True(entry.Ordinal >= 0, entry.FactId);
-        });
+
+        // facts/persistence.json orders stores, then objects, then fields.
+        Assert.Equal(0, Assert.Single(entries, entry => entry.FactId == store.Reference.Id.Value).Ordinal);
+        Assert.Equal(1, Assert.Single(entries, entry => entry.FactId == dataObject.Reference.Id.Value).Ordinal);
+        Assert.Equal(2, Assert.Single(entries, entry => entry.FactId == field.Reference.Id.Value).Ordinal);
     }
 
     [Fact]
@@ -425,12 +399,10 @@ public sealed class CatalogProjectorTests
             "catalogs/unknowns.json");
 
         CatalogProjectionFactory.AssertUnknownsResolve(view, entries);
-        Assert.All(entries, entry =>
-        {
-            Assert.False(string.IsNullOrEmpty(entry.FactId));
-            Assert.False(string.IsNullOrEmpty(entry.ArtifactKey));
-            Assert.True(entry.Ordinal >= 0, entry.FactId);
-        });
+
+        // The fixture's three unresolved records are each cited exactly once, so the ordinals the catalog
+        // carries are a permutation of every position in the document's Unresolved array.
+        Assert.Equal([0, 1, 2], entries.Select(static entry => entry.Ordinal).Order().ToArray());
     }
 
     [Fact]
@@ -620,6 +592,30 @@ public sealed class CatalogProjectorTests
             .ToArray();
         Assert.Equal(2, entries.Length);
         Assert.Equal(expectedOrder, entries.Select(static entry => entry.FactId).ToArray());
+    }
+
+    /// <summary>
+    /// Builds the two-fact fixture behind <paramref name="catalogKey"/> and returns the fact ids the
+    /// catalog is expected to carry.
+    /// </summary>
+    private static (PublishedPackageView View, string First, string Second) ArchitecturePair(string catalogKey)
+    {
+        if (string.Equals(catalogKey, CatalogProjector.EntryPointsKey, StringComparison.Ordinal))
+        {
+            var run = CatalogProjectionFactory.CreateEntryPoint("Run", "Orders.Api");
+            var main = CatalogProjectionFactory.CreateEntryPoint("Main", "Orders.Worker");
+            return (
+                CatalogProjectionFactory.ViewOf(CatalogProjectionFactory.CreateComponent("Orders.Api"), run, main),
+                run.Reference.Id.Value,
+                main.Reference.Id.Value);
+        }
+
+        var charge = CatalogProjectionFactory.CreateInboundOperation("Charge", "Payments.Api", "POST /charge");
+        var refund = CatalogProjectionFactory.CreateInboundOperation("Refund", "Payments.Api", "POST /refund");
+        return (
+            CatalogProjectionFactory.ViewOf(charge, refund),
+            charge.Reference.Id.Value,
+            refund.Reference.Id.Value);
     }
 
     /// <summary>

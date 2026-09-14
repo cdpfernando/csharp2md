@@ -62,7 +62,7 @@ internal enum TargetOutcome
 internal sealed record UnboundKeyRead(FactReference Symbol, ObservationIdentity Evidence);
 
 /// <summary>
-/// Run-coverage counts for the configuration walk. The coverage diagnostic itself is CDC-57 / T36.
+/// Run-coverage counts for the configuration walk. The coverage diagnostic itself is CDC-57.
 /// </summary>
 internal sealed record ConfigurationCoverage(
     int KeysDeclared,

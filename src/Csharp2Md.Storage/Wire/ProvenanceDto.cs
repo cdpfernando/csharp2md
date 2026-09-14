@@ -35,7 +35,7 @@ public sealed record ProvenanceDto(
 
     /// <summary>
     /// The digest of an empty document allowlist. No channel yet carries the allowlist an analysis run
-    /// actually used (T12's `AnalysisRequest` allowlist is consumed entirely inside Analysis) onto
+    /// actually used (the `AnalysisRequest` allowlist is consumed entirely inside Analysis) onto
     /// <c>WireDocument</c>, so every provenance published today reports the empty-allowlist digest. A
     /// caller that supplies the real allowlist recomputes it with <see cref="ComputeAllowlistDigest"/>.
     /// </summary>
@@ -60,7 +60,7 @@ public sealed record ProvenanceDto(
 
     /// <summary>
     /// The provenance of the running generator build, using the caller-supplied ceiling and allowlist
-    /// digest instead of the derived defaults (T52: the CLI's own <c>--reading-budget-tokens</c>,
+    /// digest instead of the derived defaults (the CLI's own <c>--reading-budget-tokens</c>,
     /// <c>--max-file-reads-per-scenario</c> and <c>--allowlist</c> reach here, so a run's published
     /// provenance reflects the values that actually shaped it, not always the default).
     /// </summary>

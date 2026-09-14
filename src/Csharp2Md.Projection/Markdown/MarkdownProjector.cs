@@ -166,9 +166,8 @@ internal static class MarkdownProjector
         }
 
         // F6/GCPC-038: a fact with a large fan-in (e.g. a Component many Symbols belong to) can carry
-        // enough direct relations to push the whole page past the ceiling on its own -- a real, live-
-        // measured case (markdown/component/....md at 71,495 bytes on fixtures/SyntheticSolution/
-        // Acme.Orders, ~2.2x the published ceiling). Rather than enumerate every direct relation inline,
+        // enough direct relations to push the whole page past the ceiling on its own, by a multiple
+        // rather than a margin. Rather than enumerate every direct relation inline,
         // include as many as fit the remaining budget and point the rest at the same posting artifact(s)
         // the ## Evidence section below already cites for this fact -- the postings family exists
         // precisely to hold a fact's full relation set without a whole-payload read (GCPC-047).

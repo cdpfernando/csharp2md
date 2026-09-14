@@ -78,7 +78,7 @@ public static class PackageValidator
     /// that the manifest does not name (GCPC-062). A deferred artifact may be skipped only by the
     /// pre-write validation pass, where its single-read payload has deliberately not been materialized;
     /// an on-disk package has no exemption. Also checks the manifest's own provenance for compatibility with the running generator
-    /// (GCPC-071's rejection reason; the exit-code mapping itself is Phase 9's CLI work).
+    /// (GCPC-071's rejection reason).
     /// </summary>
     public static void ValidatePublishedManifest(
         ManifestEnvelope manifest,
@@ -566,14 +566,7 @@ public static class PackageValidator
 
         try
         {
-            try
-        {
             ScanNode(node, artifactKey);
-        }
-        catch (PublicationRejectedException exception) when (exception.Gate == "absolute-path")
-        {
-            throw new PublicationRejectedException("absolute-path", artifactKey);
-        }
         }
         catch (PublicationRejectedException exception) when (exception.Gate == "absolute-path")
         {
@@ -620,10 +613,7 @@ public static class PackageValidator
         // A bare "\\", "//" or "///" with nothing after it is punctuation, not a path -- most commonly a
         // C# comment marker (`//`) or an empty XML doc-comment line (`///`), tokenized in isolation by
         // EnsureNoAbsolutePathTokens's fallback scan of non-JSON payloads (a raw `source/*.cs` copy).
-        // Before this fixed a real end-to-end failure (T48: `validate` re-scanning a package's own
-        // committed `source/` fragments, which publish-time skips for deferred fragments never exercised),
-        // every ordinary C# comment line falsely aborted publication the moment content-scanning actually
-        // ran against it. A real UNC-style path still requires a host/share segment after the slashes.
+        // A real UNC-style path still requires a host/share segment after the slashes.
         if ((text[0] == '\\' || text.StartsWith("//", StringComparison.Ordinal))
             && HasSegmentAfterLeadingSeparators(text))
         {

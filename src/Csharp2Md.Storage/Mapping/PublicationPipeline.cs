@@ -31,11 +31,6 @@ internal static class PublicationPipeline
         var document = DomainMapper.ToWire(snapshot, context);
         var report = PackageValidator.Validate(document);
 
-        // T52: the derived ceiling (CeilingCalculator.Derive's defaults, absent a CLI override) is now the
-        // enforced default for every live publication -- closing the T37 deferred item. Every existing
-        // caller that never supplied a budget keeps getting the same ~32 KiB default the CLI itself falls
-        // back to; only a caller that explicitly passes readingBudgetTokens/maxFileReadsPerScenario moves
-        // it.
         var ceiling = CeilingCalculator.Derive(
             readingBudgetTokens ?? CeilingCalculator.DefaultReadingBudgetTokens,
             maxFileReadsPerScenario ?? CeilingCalculator.DefaultMaxFileReadsPerScenario);
@@ -68,13 +63,10 @@ internal static class PublicationPipeline
 
                 ProjectionValidator.Validate(view, projections);
 
-                // Deferred item (context.md, found at T47): a real `retrieval.md` (the real PackageProjector
-                // -- not every projector test double emits one) means GCPC-052..GCPC-054's documented
-                // scenarios can actually be walked against exactly what this publication is about to write,
-                // so their measured records reach a real `measurements.json` instead of staying proven only
-                // in the runner's own tests. Gated on the guide's presence so every existing caller with a
-                // projector that has no retrieval.md (unit-test doubles across Storage/Projection) is
-                // unaffected -- this only ever activates for the real, end-to-end `analyze` pipeline.
+                // GCPC-052..GCPC-054's documented scenarios are walked against exactly what this
+                // publication is about to write, so their measured records reach `measurements.json`.
+                // Gated on the guide's presence: only a projector that emits `retrieval.md` has scenarios
+                // to walk, so a projector without one is unaffected.
                 if (projections.Any(static fragment => fragment.CanonicalKey == "retrieval.md"))
                 {
                     var candidateFragments = PackagePublisher.ToPublicationOrder(report.Document, plan, projections, provenance);
@@ -109,9 +101,9 @@ internal static class PublicationPipeline
         // F4 (GCPC-004): a layout-time degradation (LayoutPlanner's `record-exceeds-ceiling`, e.g. a
         // solitary oversized `invokes`/`accesses-data`/`uses-contract` relation) is computed only once
         // `plan` exists, after the coverage envelope DomainMapper.ToWire already baked from the analysis
-        // snapshot -- so it is merged onto the document actually serialized here, right before ordering,
-        // rather than staying silently unread as it did before this fix. Applied last so it reflects
-        // whichever `plan` (original or the retrieval-scenario re-plan above) is about to be written.
+        // snapshot -- so it is merged onto the document actually serialized here, right before ordering.
+        // Applied last so it reflects whichever `plan` (original or the retrieval-scenario re-plan above)
+        // is about to be written.
         if (!plan.CoverageMetricDegradations.IsEmpty)
         {
             publishedDocument = publishedDocument with

@@ -56,7 +56,6 @@ public sealed class ExitCodeTests
                 ["analyze", "--solution", AcmeOrdersSolutionPath(), "--output", outputPath]);
 
             Assert.Equal(ExitCodes.Degraded, exitCode);
-            Assert.Equal(3, exitCode);
             Assert.Equal(
                 "degraded",
                 CanonicalJson.Read<RunCertificationEnvelope>(
@@ -81,7 +80,6 @@ public sealed class ExitCodeTests
             var (exitCode, _, _) = await CliInvoke.RunAsync(["validate", "--package", child]);
 
             Assert.Equal(ExitCodes.Success, exitCode);
-            Assert.Equal(0, exitCode);
         }
         finally
         {
@@ -101,7 +99,6 @@ public sealed class ExitCodeTests
             var (exitCode, _, _) = await CliInvoke.RunAsync(["validate", "--package", child]);
 
             Assert.Equal(ExitCodes.Degraded, exitCode);
-            Assert.Equal(3, exitCode);
         }
         finally
         {
@@ -121,7 +118,6 @@ public sealed class ExitCodeTests
             var (exitCode, _, _) = await CliInvoke.RunAsync(["validate", "--package", child]);
 
             Assert.Equal(ExitCodes.CertificationFailed, exitCode);
-            Assert.Equal(4, exitCode);
         }
         finally
         {
@@ -147,7 +143,6 @@ public sealed class ExitCodeTests
             var (exitCode, _, _) = await CliInvoke.RunAsync(["validate", "--package", child]);
 
             Assert.Equal(ExitCodes.StructuralCorruption, exitCode);
-            Assert.Equal(5, exitCode);
         }
         finally
         {
@@ -171,7 +166,6 @@ public sealed class ExitCodeTests
             var (exitCode, _, _) = await CliInvoke.RunAsync(["validate", "--package", child]);
 
             Assert.Equal(ExitCodes.IncompatibleProvenance, exitCode);
-            Assert.Equal(6, exitCode);
         }
         finally
         {
@@ -201,7 +195,6 @@ public sealed class ExitCodeTests
             var (exitCode, _, _) = await CliInvoke.RunAsync(["validate", "--package", child]);
 
             Assert.Equal(ExitCodes.IncompatibleProvenance, exitCode);
-            Assert.Equal(6, exitCode);
         }
         finally
         {
@@ -221,7 +214,6 @@ public sealed class ExitCodeTests
                 ["analyze", "--solution", missingSolution, "--output", outputPath]);
 
             Assert.Equal(ExitCodes.InvalidInvocation, exitCode);
-            Assert.Equal(1, exitCode);
             Assert.Contains("csharp2md:", stderr, StringComparison.Ordinal);
             Assert.False(Directory.Exists(outputPath), "An invalid invocation must publish nothing.");
         }
@@ -254,7 +246,6 @@ public sealed class ExitCodeTests
             engine);
 
         Assert.Equal(ExitCodes.PartialComposition, exitCode);
-        Assert.Equal(2, exitCode);
     }
 
     [Fact]

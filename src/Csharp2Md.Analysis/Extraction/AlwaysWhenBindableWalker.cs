@@ -1,3 +1,4 @@
+using Csharp2Md.Analysis.Classification;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Semantics;
@@ -72,7 +73,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
 
         var symbols = snapshot.Facts.OfType<DomainSymbol>().ToArray();
         var symbolsBySignature = symbols
-            .GroupBy(static symbol => SignatureKey(symbol.OwningProject, symbol.Signature), StringComparer.Ordinal)
+            .GroupBy(static symbol => ClassifierContext.SignatureKey(symbol.OwningProject, symbol.Signature), StringComparer.Ordinal)
             .ToDictionary(static group => group.Key, static group => group.First().Reference, StringComparer.Ordinal);
         var fallbackByProject = symbols
             .GroupBy(static symbol => symbol.OwningProject.Value, StringComparer.Ordinal)
@@ -81,7 +82,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                 static group => group.OrderBy(static symbol => symbol.Signature.Value, StringComparer.Ordinal).First().Reference,
                 StringComparer.Ordinal);
 
-        var root = ComputeAuthorizedRoot(context.SolutionPath);
+        var root = AuthorizedRoot.ForSolution(context.SolutionPath);
         var batches = ImmutableArray.CreateBuilder<ImmutableArray<ObservationDraft>>();
         foreach (var compilation in bound.Compilations)
         {
@@ -102,7 +103,7 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                     continue;
                 }
 
-                var relative = Path.GetRelativePath(root, tree.FilePath).Replace('\\', '/');
+                var relative = AuthorizedRoot.ToLogicalPath(root, tree.FilePath);
                 if (!documentsByRelativePath.TryGetValue(relative, out var document))
                 {
                     continue;
@@ -483,26 +484,12 @@ internal sealed class AlwaysWhenBindableWalker : CSharpSyntaxWalker
                 continue;
             }
 
-            if (_symbolsBySignature.TryGetValue(SignatureKey(projectId, signature.Value), out var reference))
+            if (_symbolsBySignature.TryGetValue(ClassifierContext.SignatureKey(projectId, signature.Value), out var reference))
             {
                 return reference;
             }
         }
 
         return null;
-    }
-
-    private static string SignatureKey(DomainProjectId projectId, CanonicalSymbolSignature signature) =>
-        projectId.Value + "\u001f" + signature.Value;
-
-    private static string ComputeAuthorizedRoot(string solutionPath)
-    {
-        var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
-        var solutionDirectory = Path.GetDirectoryName(Path.GetFullPath(solutionPath))
-            ?? throw new InvalidOperationException($"'{solutionPath}' has no containing directory.");
-        var existing = listed
-            .Select(listedPath => Path.GetFullPath(Path.Combine(solutionDirectory, listedPath)))
-            .Where(File.Exists);
-        return AuthorizedRoot.Compute(solutionPath, existing);
     }
 }

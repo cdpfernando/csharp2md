@@ -599,9 +599,8 @@ public sealed class PersistenceEmitterTests
             pipeline.Accumulator.ToSnapshot().Diagnostics,
             record => record.Code == "persistence-coverage");
         Assert.Equal(store.Reference.Id.Value, diagnostic.IdentityOrKey);
-        Assert.NotNull(diagnostic.IdentityOrKey);
-        Assert.DoesNotContain('\\', diagnostic.IdentityOrKey);
-        Assert.DoesNotContain('/', diagnostic.IdentityOrKey);
+        Assert.DoesNotContain('\\', store.Reference.Id.Value);
+        Assert.DoesNotContain('/', store.Reference.Id.Value);
         Assert.Contains("3", diagnostic.Message, StringComparison.Ordinal);
         Assert.Contains("2", diagnostic.Message, StringComparison.Ordinal);
         Assert.Contains(owner.Reference.Id.Value, diagnostic.Message, StringComparison.Ordinal);

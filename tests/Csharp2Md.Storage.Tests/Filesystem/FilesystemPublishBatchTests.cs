@@ -137,7 +137,7 @@ public sealed class FilesystemPublishBatchTests
         }
         finally
         {
-            TryDelete(lockPath);
+            TempPath.TryDelete(lockPath);
         }
     }
 
@@ -234,20 +234,6 @@ public sealed class FilesystemPublishBatchTests
         foreach (var key in left.Keys)
         {
             Assert.True(left[key].AsSpan().SequenceEqual(right[key]), $"Bytes at '{key}' changed.");
-        }
-    }
-
-    private static void TryDelete(string path)
-    {
-        try
-        {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
-        }
-        catch (IOException)
-        {
         }
     }
 

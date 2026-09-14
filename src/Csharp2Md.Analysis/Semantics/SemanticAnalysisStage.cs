@@ -199,14 +199,8 @@ internal sealed class SemanticAnalysisStage : IPipelineStage
             return projectPath.Replace('\\', '/');
         }
 
-        var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
-        var solutionDirectory = Path.GetDirectoryName(Path.GetFullPath(solutionPath))
-            ?? throw new InvalidOperationException($"'{solutionPath}' has no containing directory.");
-        var existing = listed
-            .Select(listedPath => Path.GetFullPath(Path.Combine(solutionDirectory, listedPath)))
-            .Where(File.Exists);
-        var root = AuthorizedRoot.Compute(solutionPath, existing);
-        return Path.GetRelativePath(root, projectPath).Replace('\\', '/');
+        var root = AuthorizedRoot.ForSolution(solutionPath);
+        return AuthorizedRoot.ToLogicalPath(root, projectPath);
     }
 
     private static string? PathComponent(string projectId)

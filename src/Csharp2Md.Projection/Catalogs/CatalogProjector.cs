@@ -94,8 +94,7 @@ internal static class CatalogProjector
         // GCPC-040/GCPC-041: `item.Ordinal` is the record's position in the document's own (unsplit)
         // `Unresolved` array, not necessarily its ordinal inside whatever artifact the family split into
         // -- resolve the real, shard-aware citation instead of assuming the family stayed in a single
-        // "relations/unresolved.json" (the single .Single() lookup this replaced threw once that family
-        // was actually sharded, since no shard key ends with the literal unsplit base key).
+        // "relations/unresolved.json", a key no shard of a split family ever ends with.
         var entries = new List<CatalogEntryDto>();
         foreach (var item in ranked)
         {

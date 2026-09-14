@@ -70,7 +70,7 @@ internal sealed record UnresolvedNode(
 
 /// <summary>
 /// The run-coverage numerator, denominator and unresolved owners (PK-51, PK-52). No percentage and
-/// no verdict: the certification envelope is workstream 8's (PK-53).
+/// no verdict: the certification envelope is built elsewhere (PK-53).
 /// </summary>
 internal readonly record struct CoverageCounts(
     int RecognizedOccurrences,

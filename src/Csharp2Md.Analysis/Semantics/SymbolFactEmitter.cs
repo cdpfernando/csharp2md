@@ -29,7 +29,7 @@ internal static class SymbolFactEmitter
         ArgumentException.ThrowIfNullOrWhiteSpace(solutionPath);
 
         var documents = accumulator.ToSnapshot().Facts.OfType<DomainDocument>().ToArray();
-        var root = ComputeAuthorizedRoot(solutionPath);
+        var root = AuthorizedRoot.ForSolution(solutionPath);
         foreach (var compilation in boundSolution.Compilations)
         {
             foreach (var tree in compilation.SyntaxTrees)
@@ -372,7 +372,7 @@ internal static class SymbolFactEmitter
             return null;
         }
 
-        var relative = Path.GetRelativePath(authorizedRoot, treePath).Replace('\\', '/');
+        var relative = AuthorizedRoot.ToLogicalPath(authorizedRoot, treePath);
         DomainProjectId? best = null;
         var bestLength = -1;
         foreach (var candidate in documents)
@@ -406,7 +406,7 @@ internal static class SymbolFactEmitter
             return null;
         }
 
-        var relative = Path.GetRelativePath(authorizedRoot, treePath).Replace('\\', '/');
+        var relative = AuthorizedRoot.ToLogicalPath(authorizedRoot, treePath);
         foreach (var document in documents)
         {
             if (string.Equals(document.RelativePath, relative, StringComparison.OrdinalIgnoreCase))
@@ -416,16 +416,5 @@ internal static class SymbolFactEmitter
         }
 
         return null;
-    }
-
-    private static string ComputeAuthorizedRoot(string solutionPath)
-    {
-        var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
-        var solutionDirectory = Path.GetDirectoryName(Path.GetFullPath(solutionPath))
-            ?? throw new InvalidOperationException($"'{solutionPath}' has no containing directory.");
-        var existing = listed
-            .Select(listedPath => Path.GetFullPath(Path.Combine(solutionDirectory, listedPath)))
-            .Where(File.Exists);
-        return AuthorizedRoot.Compute(solutionPath, existing);
     }
 }
