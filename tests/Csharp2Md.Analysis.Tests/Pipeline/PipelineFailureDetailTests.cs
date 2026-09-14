@@ -73,6 +73,11 @@ public sealed class PipelineFailureDetailTests
     [InlineData("Customer customer")]
     [InlineData("string error")]
     [InlineData("\"load failed\"")]
+    [InlineData("@\"load failed\"")]
+    [InlineData("$\"load failed\"")]
+    [InlineData("$$\"\"\"load failed\"\"\"")]
+    [InlineData("\"\"\"load failed\"\"\"")]
+    [InlineData("\"load failed\"u8")]
     public void Create_UnlabeledRawSyntaxWithoutBraces_ReportsOnlyTheExceptionType(string source)
     {
         var detail = PipelineFailureDetail.Create(new InvalidOperationException(source));

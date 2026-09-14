@@ -74,7 +74,7 @@ internal static partial class PipelineFailureDetail
             || MemberAccessPattern().IsMatch(syntaxCandidate)
             || UnsafeSyntaxTokenPattern().IsMatch(syntaxCandidate)
             || DeclarationLikePattern().IsMatch(syntaxCandidate)
-            || QuotedLiteralPattern().IsMatch(syntaxCandidate)
+            || QuotedLiteralPrefixPattern().IsMatch(syntaxCandidate)
             || !SafeDiagnosticLanguagePattern().IsMatch(syntaxCandidate);
     }
 
@@ -121,10 +121,8 @@ internal static partial class PipelineFailureDetail
         RegexOptions.CultureInvariant)]
     private static partial Regex DeclarationLikePattern();
 
-    [GeneratedRegex(
-        """^(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')$""",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex QuotedLiteralPattern();
+    [GeneratedRegex(@"^(?:@|\$)*[""']", RegexOptions.CultureInvariant)]
+    private static partial Regex QuotedLiteralPrefixPattern();
 
     [GeneratedRegex(
         @"(?i)\b(?:fail(?:ed|ure)?|error|invalid|unexpected|unable|cannot|could\s+not|timeout|timed\s+out|missing|not\s+found|denied|unavailable|unsupported|malformed|corrupt(?:ed|ion)?|pars(?:e|ed|ing)|load(?:ed|ing)?|open(?:ed|ing)?|read(?:ing)?|writ(?:e|ing|ten)|bind(?:ing)?|resolv(?:e|ed|ing)|analy[sz](?:e|ed|ing)|authenticat(?:e|ed|ing|ion)|publish(?:ed|ing)?|commit(?:ted|ting)?)\b",
