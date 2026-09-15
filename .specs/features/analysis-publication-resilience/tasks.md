@@ -424,10 +424,10 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] A test analyzes this fixture and finds at least one symbol whose signature text contains a named-tuple parameter, one with nested generics, one with a multidimensional array, and one mixed shape
-- [ ] Those symbols round-trip through the published package with exact canonical identity equality (engine path; CLI path is T12)
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; a drop is a silent deletion
+- [x] A test analyzes this fixture and finds at least one symbol whose signature text contains a named-tuple parameter, one with nested generics, one with a multidimensional array, and one mixed shape
+- [x] Those symbols round-trip through the published package with exact canonical identity equality (engine path; CLI path is T12)
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"` (Analysis 863 passed, 0 failed)
+- [x] Test count reported; Analysis 863 pass; total 2132 (Domain 575, Analysis 863, Storage 396, Cli 64, Projection 234). Floor after T9 was 2131; 1 new T10 test, no drop.
 
 **Tests**: integration
 **Gate**: quick
