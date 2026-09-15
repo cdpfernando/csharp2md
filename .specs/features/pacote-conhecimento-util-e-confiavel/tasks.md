@@ -167,14 +167,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Direct dependencies and transitive impact are distinct model concepts.
-- [ ] Four aggregation scopes and all eight dependency categories are closed enums/types.
-- [ ] At least 8 contract and invalid-state cases pass.
-- [ ] Quick gate passes.
+- [x] Direct dependencies and transitive impact are distinct model concepts.
+- [x] Four aggregation scopes and all eight dependency categories are closed enums/types.
+- [x] At least 8 contract and invalid-state cases pass.
+- [x] Quick gate passes.
 
 **Tests**: unit — ≥8 focused cases  
 **Gate**: quick  
-**Commit**: `feat(core): define retrieval contracts`
+**Commit**: `feat(core): define retrieval contracts`  
+**Status**: ✅ Complete
 
 ### T5: Define package plan and manifest contracts
 
