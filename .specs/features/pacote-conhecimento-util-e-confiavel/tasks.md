@@ -888,7 +888,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: quick  
 **Commit**: `feat(certification): certify graph journeys`
 
-### T36: Publish immutable generations atomically
+### T36: Publish immutable generations atomically ✅ Complete
 
 **What**: Materialize, rehydrate, validate, certify and atomically commit one immutable generation under an exclusive lock.  
 **Where**: `src/Csharp2Md.Core/Publication/PackagePublication.cs`  
