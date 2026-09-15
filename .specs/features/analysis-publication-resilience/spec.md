@@ -236,15 +236,15 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | APR-21 | P1: Round-trip nested canonical symbol signatures | Tasks | Verified |
 | APR-22 | P1: Round-trip nested canonical symbol signatures | Tasks | Verified |
 | APR-23 | P1: Round-trip nested canonical symbol signatures | Tasks | Verified |
-| APR-24 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7) |
-| APR-25 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7) |
-| APR-26 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7) |
-| APR-27 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7) |
-| APR-28 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7) |
-| APR-29 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7, T11) |
-| APR-30 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7) |
-| APR-31 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7) |
-| APR-32 | P1: Shard-aware disposition posting guidance | Tasks | In Tasks (T7) |
+| APR-24 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
+| APR-25 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
+| APR-26 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
+| APR-27 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
+| APR-28 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
+| APR-29 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
+| APR-30 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
+| APR-31 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
+| APR-32 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
 | APR-33 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T8) |
 | APR-34 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T8, T12) |
 | APR-35 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T12) |

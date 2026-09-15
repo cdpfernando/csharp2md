@@ -91,7 +91,7 @@ internal static class RetrievalGuideProjector
         AppendLocateSection(text, catalogKeys);
         AppendPostingsSection(text, postingKeys);
         AppendRelationsSection(text, slots);
-        AppendDispositionsSection(text, slots);
+        AppendDispositionsSection(text, slots, postingKeys);
         AppendSourceSection(text, slots);
         AppendStoppingRules(text);
 
@@ -211,7 +211,7 @@ internal static class RetrievalGuideProjector
         text.Append('\n');
     }
 
-    private static void AppendDispositionsSection(StringBuilder text, HashSet<string> slots)
+    private static void AppendDispositionsSection(StringBuilder text, HashSet<string> slots, HashSet<string> postingKeys)
     {
         text.Append("## 4. Follow an unproven disposition\n\n");
         text.Append("Each proof state that is not a confirmed relation has its own artifact and, where one exists, its own posting:\n\n");
@@ -227,15 +227,19 @@ internal static class RetrievalGuideProjector
             slots,
             "unresolved record",
             "relations/unresolved.json",
-            key => "select its bucket in `postings/unknowns.json`, then read `" + key + "` at the cited ordinal",
-            key => "select its bucket in `postings/unknowns.json`, then read the matching " + key + " shard at the cited ordinal");
+            key => SelectPostingBucket(postingKeys, "postings/unknowns.json")
+                + ", then read `" + key + "` at the cited ordinal",
+            key => SelectPostingBucket(postingKeys, "postings/unknowns.json")
+                + ", then read the matching " + key + " shard at the cited ordinal");
         AppendDisposition(
             text,
             slots,
             "open frontier",
             "relations/frontiers.json",
-            key => "select its bucket in `postings/frontiers.json`, then read `" + key + "` at the cited ordinal",
-            key => "select its bucket in `postings/frontiers.json`, then read the matching " + key + " shard at the cited ordinal");
+            key => SelectPostingBucket(postingKeys, "postings/frontiers.json")
+                + ", then read `" + key + "` at the cited ordinal",
+            key => SelectPostingBucket(postingKeys, "postings/frontiers.json")
+                + ", then read the matching " + key + " shard at the cited ordinal");
         text.Append('\n');
     }
 
@@ -288,6 +292,16 @@ internal static class RetrievalGuideProjector
     /// recognized, not reported as absent (GCPC-039, GCPC-048).</summary>
     private static bool HasFamily(HashSet<string> slots, string baseKey) =>
         slots.Contains(baseKey) || slots.Any(key => IsShardOf(key, baseKey));
+
+    /// <summary>
+    /// Exact posting keys are backtick-quoted; otherwise the family is named without backticks
+    /// (ValidateNoAbsentKeys rejects quoted absent keys, including a relation family whose posting
+    /// family was not published).
+    /// </summary>
+    private static string SelectPostingBucket(HashSet<string> postingKeys, string postingKey) =>
+        postingKeys.Contains(postingKey)
+            ? "select its bucket in `" + postingKey + "`"
+            : "select its bucket in the matching " + postingKey + " shard";
 
     private static bool IsShardOf(string key, string baseKey)
     {

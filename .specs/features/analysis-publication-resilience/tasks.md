@@ -328,17 +328,17 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] When `postings/unknowns.json` exists as an exact key, the unresolved disposition line still backticks that key (APR-24). The current `Project_DispositionsSection_ShardedUnresolvedFamily_IsRecognizedNotReportedAbsent` assertion on `` `postings/unknowns.json` `` stays, because that case shards the *relation* family, not the posting family
-- [ ] A new test shards the unknown *posting* family itself (same small ceiling on layout and on `Project`) and asserts the guide describes a matching unknown shard and does not contain `` `postings/unknowns.json` `` (APR-25, APR-28)
-- [ ] The same exact-versus-sharded rule is asserted for `postings/frontiers.json` (APR-26)
-- [ ] A mixed case (unknown posting family sharded, frontier posting family exact) uses shard wording for unknowns and exact-key wording for frontiers (APR-25, APR-26 edge case)
-- [ ] Candidate, unresolved-relation and frontier-relation instructions stay shard-aware as they are today (APR-27)
-- [ ] `ValidateNoAbsentKeys` still throws on a backtick-quoted missing key; no ceiling exclusion is added (APR-28, APR-29)
-- [ ] A missing posting family still renders "none is recognized in this package" (APR-30)
-- [ ] Two projections of the same view and ceiling produce byte-identical `retrieval.md` (APR-31)
-- [ ] Validator strictness, taxonomy, schemas and retrieval semantics are unchanged (APR-32)
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj`
-- [ ] Test count reported; a drop is a silent deletion
+- [x] When `postings/unknowns.json` exists as an exact key, the unresolved disposition line still backticks that key (APR-24). The current `Project_DispositionsSection_ShardedUnresolvedFamily_IsRecognizedNotReportedAbsent` assertion on `` `postings/unknowns.json` `` stays, because that case shards the *relation* family, not the posting family
+- [x] A new test shards the unknown *posting* family itself (same small ceiling on layout and on `Project`) and asserts the guide describes a matching unknown shard and does not contain `` `postings/unknowns.json` `` (APR-25, APR-28)
+- [x] The same exact-versus-sharded rule is asserted for `postings/frontiers.json` (APR-26)
+- [x] A mixed case (unknown posting family sharded, frontier posting family exact) uses shard wording for unknowns and exact-key wording for frontiers (APR-25, APR-26 edge case)
+- [x] Candidate, unresolved-relation and frontier-relation instructions stay shard-aware as they are today (APR-27)
+- [x] `ValidateNoAbsentKeys` still throws on a backtick-quoted missing key; no ceiling exclusion is added (APR-28, APR-29)
+- [x] A missing posting family still renders "none is recognized in this package" (APR-30)
+- [x] Two projections of the same view and ceiling produce byte-identical `retrieval.md` (APR-31)
+- [x] Validator strictness, taxonomy, schemas and retrieval semantics are unchanged (APR-32)
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj` (Projection 234 passed, Storage 396 passed, 0 failed)
+- [x] Test count reported; Projection 234 pass; Storage 396 pass; total 2129 (Domain 575, Analysis 860, Storage 396, Cli 64, Projection 234). Floor after T6 was 2124 (Projection 229); 5 new T7 tests, no drop.
 
 **Tests**: unit
 **Gate**: full

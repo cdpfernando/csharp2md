@@ -123,6 +123,7 @@ public sealed class RetrievalGuideProjectorTests
 
     [Fact]
     [Trait("Requirement", "GCPC-048")]
+    [Trait("Requirement", "APR-27")]
     public void Project_RelationsSection_ShardedInvokesFamily_IsRecognizedNotReportedAbsent()
     {
         // A real LayoutPlanner-driven split (not the hand-built ViewWithConfirmedRelationKinds fixture,
@@ -146,6 +147,8 @@ public sealed class RetrievalGuideProjectorTests
 
     [Fact]
     [Trait("Requirement", "GCPC-049")]
+    [Trait("Requirement", "APR-24")]
+    [Trait("Requirement", "APR-27")]
     public void Project_DispositionsSection_ShardedUnresolvedFamily_IsRecognizedNotReportedAbsent()
     {
         var view = ShardedUnresolvedView(count: 8, ceilingBytes: 24);
@@ -158,6 +161,107 @@ public sealed class RetrievalGuideProjectorTests
             section,
             StringComparison.Ordinal);
         Assert.DoesNotContain("`relations/unresolved.json`", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "APR-25")]
+    [Trait("Requirement", "APR-28")]
+    [Trait("Requirement", "APR-29")]
+    public void Project_DispositionsSection_ShardedUnknownPostingFamily_DescribesMatchingShardWithoutQuotingAbsentKey()
+    {
+        const int ceilingBytes = 24;
+        var view = ShardedUnresolvedView(count: 8, ceilingBytes: ceilingBytes);
+
+        var section = Section(
+            GuideText(RetrievalGuideProjector.Project(view, ceilingBytes)),
+            "## 4. Follow an unproven disposition");
+
+        Assert.Contains(
+            "unresolved record: select its bucket in the matching postings/unknowns.json shard, then read the matching relations/unresolved.json shard at the cited ordinal",
+            section,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("`postings/unknowns.json`", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "APR-26")]
+    public void Project_DispositionsSection_ExactFrontierPostingFamily_BackticksTheExactKey()
+    {
+        var owner = CatalogProjectionFactory.CreateComponent("Orders.Api").Reference;
+        var frontier = Csharp2Md.Domain.Relations.OpenFrontier.Create(
+            new Csharp2Md.Domain.Observations.ObservationIdentity(
+                owner,
+                Csharp2Md.Domain.Observations.ObservationKind.Invocation,
+                Csharp2Md.Domain.Observations.NormalizedPayload.Create([]),
+                1),
+            Csharp2Md.Domain.Relations.FrontierCause.FurtherContinuationObserved);
+        var view = CatalogProjectionFactory.ViewOf([], frontiers: [frontier]);
+
+        var section = Section(GuideText(RetrievalGuideProjector.Project(view)), "## 4. Follow an unproven disposition");
+
+        Assert.Contains(
+            "open frontier: select its bucket in `postings/frontiers.json`, then read `relations/frontiers.json` at the cited ordinal",
+            section,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "APR-26")]
+    [Trait("Requirement", "APR-28")]
+    [Trait("Requirement", "APR-29")]
+    public void Project_DispositionsSection_ShardedFrontierPostingFamily_DescribesMatchingShardWithoutQuotingAbsentKey()
+    {
+        const int ceilingBytes = 24;
+        var view = ShardedFrontiersView(count: 8, ceilingBytes: ceilingBytes);
+
+        var section = Section(
+            GuideText(RetrievalGuideProjector.Project(view, ceilingBytes)),
+            "## 4. Follow an unproven disposition");
+
+        Assert.Contains(
+            "open frontier: select its bucket in the matching postings/frontiers.json shard, then read the matching relations/frontiers.json shard at the cited ordinal",
+            section,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("`postings/frontiers.json`", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "APR-25")]
+    [Trait("Requirement", "APR-26")]
+    public void Project_DispositionsSection_ShardedUnknownPostingAndExactFrontierPosting_MixesWording()
+    {
+        // One frontier group is ~282 bytes; eight unknown groups unsplit exceed 2 KiB. A ceiling in
+        // between shards only the unknown posting family, matching APR-25/APR-26 mixed wording.
+        const int ceilingBytes = 400;
+        var view = MixedUnknownsAndFrontiersView(unresolvedCount: 8, frontierCount: 1, ceilingBytes: ceilingBytes);
+
+        var section = Section(
+            GuideText(RetrievalGuideProjector.Project(view, ceilingBytes)),
+            "## 4. Follow an unproven disposition");
+
+        Assert.Contains(
+            "unresolved record: select its bucket in the matching postings/unknowns.json shard",
+            section,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("`postings/unknowns.json`", section, StringComparison.Ordinal);
+        Assert.Contains(
+            "open frontier: select its bucket in `postings/frontiers.json`",
+            section,
+            StringComparison.Ordinal);
+        Assert.Contains("`postings/frontiers.json`", section, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Requirement", "APR-31")]
+    public void Project_SameViewAndCeiling_ProducesByteIdenticalRetrievalGuide()
+    {
+        const int ceilingBytes = 24;
+        var view = ShardedUnresolvedView(count: 8, ceilingBytes: ceilingBytes);
+
+        var first = RetrievalGuideProjector.Project(view, ceilingBytes);
+        var second = RetrievalGuideProjector.Project(view, ceilingBytes);
+
+        Assert.True(first[0].Payload.AsSpan().SequenceEqual(second[0].Payload.AsSpan()));
     }
 
     [Fact]
@@ -179,6 +283,9 @@ public sealed class RetrievalGuideProjectorTests
 
     [Fact]
     [Trait("Requirement", "GCPC-049")]
+    [Trait("Requirement", "APR-24")]
+    [Trait("Requirement", "APR-26")]
+    [Trait("Requirement", "APR-27")]
     public void Project_DispositionsSection_DocumentsCandidatesUnresolvedAndFrontiersEachWithTheirOwnArtifact()
     {
         var owner = CatalogProjectionFactory.CreateComponent("Orders.Api").Reference;
@@ -216,6 +323,7 @@ public sealed class RetrievalGuideProjectorTests
 
     [Fact]
     [Trait("Requirement", "GCPC-049")]
+    [Trait("Requirement", "APR-30")]
     public void Project_DispositionsSection_WhenNoneArePresent_NamesNoDispositionArtifact()
     {
         var view = CatalogProjectionFactory.ViewOf();
@@ -246,6 +354,7 @@ public sealed class RetrievalGuideProjectorTests
 
     [Fact]
     [Trait("Requirement", "GCPC-055")]
+    [Trait("Requirement", "APR-28")]
     public void ValidateNoAbsentKeys_TextNamingAKeyNotInThePublication_AbortsNamingTheOffender()
     {
         const string offender = "catalogs/entry-points.json";
@@ -466,6 +575,62 @@ public sealed class RetrievalGuideProjectorTests
 
         var document = DomainMapper.ToWire(
             new FactualSnapshot([], [], [], [], [.. records], []),
+            CatalogProjectionFactory.Context);
+        return PublishedPackageView.From(document, LayoutPlanner.Plan(document, ceilingBytes));
+    }
+
+    private static PublishedPackageView ShardedFrontiersView(int count, int ceilingBytes)
+    {
+        var frontiers = new List<Csharp2Md.Domain.Relations.OpenFrontier>();
+        for (var i = 0; i < count; i++)
+        {
+            var owner = CatalogProjectionFactory.CreateComponent($"Orders.Frontier{i:D3}").Reference;
+            frontiers.Add(Csharp2Md.Domain.Relations.OpenFrontier.Create(
+                new Csharp2Md.Domain.Observations.ObservationIdentity(
+                    owner,
+                    Csharp2Md.Domain.Observations.ObservationKind.Invocation,
+                    Csharp2Md.Domain.Observations.NormalizedPayload.Create([]),
+                    1),
+                Csharp2Md.Domain.Relations.FrontierCause.FurtherContinuationObserved));
+        }
+
+        var document = DomainMapper.ToWire(
+            new FactualSnapshot([], [], [], [], [], [.. frontiers]),
+            CatalogProjectionFactory.Context);
+        return PublishedPackageView.From(document, LayoutPlanner.Plan(document, ceilingBytes));
+    }
+
+    private static PublishedPackageView MixedUnknownsAndFrontiersView(
+        int unresolvedCount,
+        int frontierCount,
+        int ceilingBytes)
+    {
+        var records = new List<Csharp2Md.Domain.Relations.UnresolvedRecord>();
+        for (var i = 0; i < unresolvedCount; i++)
+        {
+            var owner = CatalogProjectionFactory.CreateComponent($"Orders.Shard{i:D3}").Reference;
+            records.Add(Csharp2Md.Domain.Relations.UnresolvedRecord.Create(
+                Csharp2Md.Domain.Relations.RelationKind.Invokes,
+                owner,
+                Csharp2Md.Domain.Relations.UnresolvedCause.NoCandidateFound,
+                Evidence(owner)));
+        }
+
+        var frontiers = new List<Csharp2Md.Domain.Relations.OpenFrontier>();
+        for (var i = 0; i < frontierCount; i++)
+        {
+            var owner = CatalogProjectionFactory.CreateComponent($"Orders.Frontier{i:D3}").Reference;
+            frontiers.Add(Csharp2Md.Domain.Relations.OpenFrontier.Create(
+                new Csharp2Md.Domain.Observations.ObservationIdentity(
+                    owner,
+                    Csharp2Md.Domain.Observations.ObservationKind.Invocation,
+                    Csharp2Md.Domain.Observations.NormalizedPayload.Create([]),
+                    1),
+                Csharp2Md.Domain.Relations.FrontierCause.FurtherContinuationObserved));
+        }
+
+        var document = DomainMapper.ToWire(
+            new FactualSnapshot([], [], [], [], [.. records], [.. frontiers]),
             CatalogProjectionFactory.Context);
         return PublishedPackageView.From(document, LayoutPlanner.Plan(document, ceilingBytes));
     }
