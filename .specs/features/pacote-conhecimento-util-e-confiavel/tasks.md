@@ -211,14 +211,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Serialization is UTF-8 without BOM, LF-normalized and deterministically ordered by prepared models.
-- [ ] Only current contract types are registered in the source-generation context.
-- [ ] At least 6 byte-level round-trip and determinism cases pass.
-- [ ] Quick gate passes.
+- [x] Serialization is UTF-8 without BOM, LF-normalized and deterministically ordered by prepared models.
+- [x] Only current contract types are registered in the source-generation context.
+- [x] At least 6 byte-level round-trip and determinism cases pass.
+- [x] Quick gate passes.
 
 **Tests**: unit — ≥6 focused cases  
 **Gate**: quick  
-**Commit**: `feat(core): add canonical package serialization`
+**Commit**: `feat(core): add canonical package serialization`  
+**Status**: ✅ Complete
 
 ### T7: Add canonical identity primitives
 
