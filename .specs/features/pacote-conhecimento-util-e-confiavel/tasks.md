@@ -425,14 +425,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Analysis returns a graph and never writes or commits package files.
-- [ ] Entity/relation/evidence order and extraction/filter measurements are deterministic.
-- [ ] Diagnostics identify solution, project, variant and cause when applicable.
-- [ ] At least 10 orchestration, cancellation, determinism and no-write cases pass; build gate passes.
+- [x] Analysis returns a graph and never writes or commits package files.
+- [x] Entity/relation/evidence order and extraction/filter measurements are deterministic.
+- [x] Diagnostics identify solution, project, variant and cause when applicable.
+- [x] At least 10 orchestration, cancellation, determinism and no-write cases pass; build gate passes.
 
 **Tests**: integration — ≥10 focused cases  
 **Gate**: build  
 **Commit**: `feat(analysis): assemble factual solution graphs`
+**Status**: ✅ Complete
 
 ## Phase 3: Retention, dependencies and measures
 
