@@ -471,14 +471,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Candidate, Unknown and Open Frontier survive only when they can alter/interrupt a retained journey.
-- [ ] Gap ordering uses affected journeys, affected roots and canonical identity.
-- [ ] Only cited documents survive; test sources require explicit policy recorded in measurements.
-- [ ] At least 12 gap, incoming, source and test-policy cases pass; quick gate passes.
+- [x] Candidate, Unknown and Open Frontier survive only when they can alter/interrupt a retained journey.
+- [x] Gap ordering uses affected journeys, affected roots and canonical identity.
+- [x] Only cited documents survive; test sources require explicit policy recorded in measurements.
+- [x] At least 12 gap, incoming, source and test-policy cases pass; quick gate passes.
 
 **Tests**: unit — ≥12 focused cases  
 **Gate**: quick  
 **Commit**: `feat(package): retain relevant gaps and sources`
+**Status**: ✅ Complete
 
 ### T18: Aggregate dependencies at four scopes
 

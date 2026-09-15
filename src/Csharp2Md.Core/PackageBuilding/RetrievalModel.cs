@@ -104,12 +104,15 @@ internal sealed record RetentionMeasurements
 
     public int FilteredCount { get; }
 
-    public RetentionMeasurements(int retainedCount, int filteredCount)
+    public bool IncludesTests { get; }
+
+    public RetentionMeasurements(int retainedCount, int filteredCount, bool includesTests = false)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(retainedCount);
         ArgumentOutOfRangeException.ThrowIfNegative(filteredCount);
         RetainedCount = retainedCount;
         FilteredCount = filteredCount;
+        IncludesTests = includesTests;
     }
 }
 
