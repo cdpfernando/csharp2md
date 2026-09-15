@@ -145,14 +145,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Models separate logical identity from variant-qualified occurrences and evidence.
-- [ ] Locators accept only logical relative paths and immutable collections are defensively owned.
-- [ ] At least 8 invariant/immutability cases pass.
-- [ ] Quick gate passes.
+- [x] Models separate logical identity from variant-qualified occurrences and evidence.
+- [x] Locators accept only logical relative paths and immutable collections are defensively owned.
+- [x] At least 8 invariant/immutability cases pass.
+- [x] Quick gate passes.
 
 **Tests**: unit — ≥8 focused cases  
 **Gate**: quick  
-**Commit**: `feat(core): define factual graph contract`
+**Commit**: `feat(core): define factual graph contract`  
+**Status**: ✅ Complete
 
 ### T4: Define retained and retrieval contracts
 
