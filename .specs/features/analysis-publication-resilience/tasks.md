@@ -482,16 +482,16 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] `["analyze", "--solution", PublicationResilience.slnx, "--output", ...]` is invoked with no `--reading-budget-tokens` and no `--max-file-reads-per-scenario`
-- [ ] The run commits without observation-extraction failure, structural corruption or projection-key rejection (APR-35)
-- [ ] The published builder symbol has a document-to-symbol `contains` relation whose evidence is non-empty, structural and free of `Invocation` and `DataAccess` (APR-36)
-- [ ] Tuple, nested-generic and multidimensional-array symbols read back with canonical identities equal to the published ones (APR-37)
-- [ ] Every backtick-quoted key in `retrieval.md` exists in the same publication, including sharded unknown and frontier postings (APR-38)
-- [ ] Package validation, projection validation, run-certification, manifest-reachability, determinism and artifact-ceiling gates pass on this package with no exclusions or weakened assertions (APR-39)
-- [ ] Two default-budget runs produce identical package bytes (APR-40)
-- [ ] `fixtures/SyntheticSolution` is still byte-identical (APR-34)
-- [ ] Gate check passes: the Build command in Gate Check Commands
-- [ ] Test count reported; a drop is a silent deletion
+- [x] `["analyze", "--solution", PublicationResilience.slnx, "--output", ...]` is invoked with no `--reading-budget-tokens` and no `--max-file-reads-per-scenario`
+- [x] The run commits without observation-extraction failure, structural corruption or projection-key rejection (APR-35)
+- [x] The published builder symbol has a document-to-symbol `contains` relation whose evidence is non-empty, structural and free of `Invocation` and `DataAccess` (APR-36)
+- [x] Tuple, nested-generic and multidimensional-array symbols read back with canonical identities equal to the published ones (APR-37)
+- [x] Every backtick-quoted key in `retrieval.md` exists in the same publication, including sharded unknown and frontier postings (APR-38)
+- [x] Package validation, projection validation, run-certification, manifest-reachability, determinism and artifact-ceiling gates pass on this package with no exclusions or weakened assertions (APR-39)
+- [x] Two default-budget runs produce identical package bytes (APR-40)
+- [x] `fixtures/SyntheticSolution` is still byte-identical (APR-34)
+- [x] Gate check passes: the Build command in Gate Check Commands (build 0 warnings; Domain 575, Analysis 864, Storage 396, Cli 65, Projection 234 passed, 0 failed)
+- [x] Test count reported; Cli 65 pass; total 2134 (Domain 575, Analysis 864, Storage 396, Cli 65, Projection 234). Floor after T11 was 2133; 1 new T12 test, no drop.
 
 **Tests**: integration
 **Gate**: build

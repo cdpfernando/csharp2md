@@ -246,13 +246,13 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | APR-31 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
 | APR-32 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
 | APR-33 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
-| APR-34 | P1: Default-budget CLI publication across the regressions | Tasks | Implementing (T12 remaining) |
-| APR-35 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T12) |
-| APR-36 | P1: Default-budget CLI publication across the regressions | Tasks | Implementing (T12 remaining) |
-| APR-37 | P1: Default-budget CLI publication across the regressions | Tasks | Implementing (T12 remaining) |
-| APR-38 | P1: Default-budget CLI publication across the regressions | Tasks | Implementing (T12 remaining) |
-| APR-39 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T12) |
-| APR-40 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T12) |
+| APR-34 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
+| APR-35 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
+| APR-36 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
+| APR-37 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
+| APR-38 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
+| APR-39 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
+| APR-40 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
 | APR-41 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T13) |
 | APR-42 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T13) |
 
