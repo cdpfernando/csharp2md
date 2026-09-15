@@ -615,6 +615,8 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: quick  
 **Commit**: `feat(package): generate compact public ids`
 
+**Status**: ✅ Complete
+
 ### T24: Build solution-local handle tables
 
 **What**: Deduplicate identities, documents, strings, variants and evidence and assign ordered base36 handles.  
