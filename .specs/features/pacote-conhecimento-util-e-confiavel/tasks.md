@@ -730,6 +730,8 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: quick  
 **Commit**: `feat(package): render markdown navigation`
 
+**Status**: ✅ Complete
+
 ### T29: Rehydrate retrieval artifacts and prove equivalence
 
 **What**: Rehydrate the RetrievalModel from machine artifacts, rerender Markdown and compare exact bytes.  
