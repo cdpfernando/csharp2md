@@ -515,13 +515,13 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] `fixtures/Pitstop/` is in `.gitignore` next to eShop and eShopOnContainers
-- [ ] TheoryData includes the full Pitstop solution plus 15 isolated project solutions. Discover the 15 relative paths from the clone when it is present; if it is absent during Execute, still commit skippable rows so CI stays green
-- [ ] Each row skips with `$XunitDynamicSkip$` when its file is missing (APR-41)
-- [ ] When present, each analyze writes a package; observed diagnostic counts are not asserted as exact baselines (APR-42)
-- [ ] eShop and eShopOnContainers are not added to source control
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"` (the new rows are `Category=LocalCorpus` and are excluded here by design)
-- [ ] Test count reported for the non-LocalCorpus suite; a drop is a silent deletion
+- [x] `fixtures/Pitstop/` is in `.gitignore` next to eShop and eShopOnContainers
+- [x] TheoryData includes the full Pitstop solution plus 15 isolated project solutions. Discover the 15 relative paths from the clone when it is present; if it is absent during Execute, still commit skippable rows so CI stays green
+- [x] Each row skips with `$XunitDynamicSkip$` when its file is missing (APR-41)
+- [x] When present, each analyze writes a package; observed diagnostic counts are not asserted as exact baselines (APR-42)
+- [x] eShop and eShopOnContainers are not added to source control
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --filter "Category!=LocalCorpus"` (the new rows are `Category=LocalCorpus` and are excluded here by design)
+- [x] Test count reported for the non-LocalCorpus suite; Cli 65 pass; total 2134 (Domain 575, Analysis 864, Storage 396, Cli 65, Projection 234). Floor after T12 was 2134; new Pitstop rows are Category=LocalCorpus and excluded by this gate, no drop.
 
 **Tests**: integration
 **Gate**: quick

@@ -74,6 +74,7 @@ artifacts/*
 # SyntheticSolution, CertificationCorpus and PublicationResilience.
 fixtures/eShop/
 fixtures/eShopOnContainers/
+fixtures/Pitstop/
 
 # Tye
 .tye/

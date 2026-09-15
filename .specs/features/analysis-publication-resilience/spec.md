@@ -253,8 +253,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | APR-38 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
 | APR-39 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
 | APR-40 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
-| APR-41 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T13) |
-| APR-42 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T13) |
+| APR-41 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
+| APR-42 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
 
 **ID format:** `APR-NN`
 

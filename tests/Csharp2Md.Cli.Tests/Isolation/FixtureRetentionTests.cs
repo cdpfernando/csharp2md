@@ -23,6 +23,7 @@ public sealed class FixtureRetentionTests
 
     [Fact]
     [Trait("Requirement", "ENG-50")]
+    [Trait("Requirement", "APR-42")]
     public void Gitignore_ExcludesLocalEShopCorpora()
     {
         var gitignorePath = Path.Combine(CliTestPaths.RepoRoot, ".gitignore");
@@ -31,5 +32,6 @@ public sealed class FixtureRetentionTests
         var gitignore = File.ReadAllText(gitignorePath);
         Assert.Contains("fixtures/eShop/", gitignore, StringComparison.Ordinal);
         Assert.Contains("fixtures/eShopOnContainers/", gitignore, StringComparison.Ordinal);
+        Assert.Contains("fixtures/Pitstop/", gitignore, StringComparison.Ordinal);
     }
 }
