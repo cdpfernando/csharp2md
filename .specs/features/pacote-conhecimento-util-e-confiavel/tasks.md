@@ -581,14 +581,16 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Machine and Markdown writers can consume the same immutable model without querying the source graph again.
-- [ ] Model ordering is canonical across solution/input permutations.
-- [ ] At least 8 assembly, omission and permutation cases pass.
-- [ ] Build gate passes.
+- [x] Machine and Markdown writers can consume the same immutable model without querying the source graph again.
+- [x] Model ordering is canonical across solution/input permutations.
+- [x] At least 8 assembly, omission and permutation cases pass.
+- [x] Build gate passes.
 
 **Tests**: unit — ≥8 focused cases  
 **Gate**: build  
 **Commit**: `feat(package): assemble retrieval model`
+**Status**: ✅ Complete
+**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests --configuration Release --no-build` passed (249 tests); full legacy test suite remains deferred by the user-approved interim rule.
 
 ## Phase 4: Identity, layout and retrieval artifacts
 

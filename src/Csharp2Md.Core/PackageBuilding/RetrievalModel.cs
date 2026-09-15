@@ -315,16 +315,20 @@ internal sealed record RetrievalModel
 
     public NavigationIndexes Indexes { get; }
 
+    public RetainedGraph? RetainedGraph { get; }
+
     public RetrievalModel(
         ImmutableArray<SolutionNavigation> solutions,
         ImmutableArray<AggregatedDependency> dependencies,
         ImmutableArray<ScopeMeasures> measures,
-        NavigationIndexes indexes)
+        NavigationIndexes indexes,
+        RetainedGraph? retainedGraph = null)
     {
         ArgumentNullException.ThrowIfNull(indexes);
         Solutions = solutions.IsDefault ? ImmutableArray<SolutionNavigation>.Empty : ImmutableArray.CreateRange(solutions);
         Dependencies = dependencies.IsDefault ? ImmutableArray<AggregatedDependency>.Empty : ImmutableArray.CreateRange(dependencies);
         Measures = measures.IsDefault ? ImmutableArray<ScopeMeasures>.Empty : ImmutableArray.CreateRange(measures);
         Indexes = indexes;
+        RetainedGraph = retainedGraph;
     }
 }
