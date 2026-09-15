@@ -189,14 +189,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] A plan contains every final payload and root-manifest reference before staging.
-- [ ] Manifest models declare token estimator/divisor, include-tests policy, solutions, roots, indexes and journeys.
-- [ ] At least 8 contract/invariant cases pass.
-- [ ] Quick gate passes.
+- [x] A plan contains every final payload and root-manifest reference before staging.
+- [x] Manifest models declare token estimator/divisor, include-tests policy, solutions, roots, indexes and journeys.
+- [x] At least 8 contract/invariant cases pass.
+- [x] Quick gate passes.
 
 **Tests**: unit — ≥8 focused cases  
 **Gate**: quick  
-**Commit**: `feat(core): define package publication contracts`
+**Commit**: `feat(core): define package publication contracts`  
+**Status**: ✅ Complete
 
 ### T6: Port canonical JSON serialization
 
