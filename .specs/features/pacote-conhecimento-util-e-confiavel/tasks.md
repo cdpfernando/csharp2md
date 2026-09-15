@@ -707,6 +707,8 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: quick  
 **Commit**: `feat(package): render machine artifacts`
 
+**Status**: ✅ Complete
+
 ### T28: Render equivalent Markdown navigation
 
 **What**: Render summary, Component, Deployment Unit and retained-document pages from the same RetrievalModel.  
