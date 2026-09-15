@@ -29,10 +29,10 @@
 ## Handoff
 
 - **Feature**: `pacote-conhecimento-util-e-confiavel` / `.specs/features/pacote-conhecimento-util-e-confiavel`
-- **Phase / Task**: Execute / Batch 2 in progress — next T12
-- **Completed**: T1-T11; interim Core-only build gate until T44 (user-approved)
+- **Phase / Task**: Execute / Batch 2 — T12 complete; next T13
+- **Completed**: T1-T12; interim Core-only build gate until T44 (user-approved)
 - **In-progress** (file:line): none
-- **Next step**: T12 ArchitectureFactExtractor (then T13-T15 to finish Batch 2)
+- **Next step**: T13 CausalRelationExtractor
 - **Blockers**: full-solution legacy suites still fail until T44; sub-agents blocked by usage limits (executing inline)
 - **Uncommitted files**: `AGENTS.md`, `docs/specs/pacote-conhecimento-util-e-confiavel.md`, `research/2026-09-15-agent-harness-portability.md`
 - **Branch**: `feature/simplif`

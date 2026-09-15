@@ -355,14 +355,17 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Roots require approved evidence; project/assembly/directory names alone never create Deployment Units.
-- [ ] Production/test provenance and variant-qualified locators are retained.
-- [ ] No business-rule interpretation or heuristic quality label is emitted.
-- [ ] At least 12 extractor and negative-proof cases pass; quick gate passes.
+- [x] Roots require approved evidence; project/assembly/directory names alone never create Deployment Units.
+- [x] Production/test provenance and variant-qualified locators are retained.
+- [x] No business-rule interpretation or heuristic quality label is emitted.
+- [x] At least 12 extractor and negative-proof cases pass; quick gate passes.
 
 **Tests**: integration — ≥12 focused cases  
 **Gate**: quick  
 **Commit**: `feat(analysis): extract architectural roots`
+
+**Status**: ✅ Complete  
+**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T13: Extract causal and boundary relations
 
