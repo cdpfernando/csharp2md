@@ -259,14 +259,17 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Inventory cannot escape the authorized root through relative paths or symlinks.
-- [ ] Test documents are excluded by default and the explicit option changes the analysis policy identity.
-- [ ] At least 10 inventory, symlink, source/config and test-policy cases pass.
-- [ ] Quick gate passes.
+- [x] Inventory cannot escape the authorized root through relative paths or symlinks.
+- [x] Test documents are excluded by default and the explicit option changes the analysis policy identity.
+- [x] At least 10 inventory, symlink, source/config and test-policy cases pass.
+- [x] Quick gate passes.
 
 **Tests**: integration — ≥10 focused cases  
 **Gate**: quick  
 **Commit**: `feat(analysis): build authorized source inventory`
+
+**Status**: ✅ Complete  
+**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T9: Discover project-specific variants
 
