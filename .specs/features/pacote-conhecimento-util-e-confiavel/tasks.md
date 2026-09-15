@@ -684,6 +684,8 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: quick  
 **Commit**: `feat(package): build navigation indexes`
 
+**Status**: ✅ Complete
+
 ### T27: Render machine artifacts and root manifest
 
 **What**: Render tables, graph, indexes, dependencies, measures and a single root manifest from the RetrievalModel.  
