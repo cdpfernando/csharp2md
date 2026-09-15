@@ -793,10 +793,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] C# `//` comments/trivia are never classified as UNC paths.
-- [ ] Actual absolute paths, escapes and secrets in structured fields/source are deterministically redacted or rejected before commit.
-- [ ] Removed values never appear in diagnostics or retained bytes; per-document disposition remains auditable.
-- [ ] At least 14 lexical, JSON, path, secret and no-leak cases pass; quick gate passes.
+- [x] C# `//` comments/trivia are never classified as UNC paths.
+- [x] Actual absolute paths, escapes and secrets in structured fields/source are deterministically redacted or rejected before commit.
+- [x] Removed values never appear in diagnostics or retained bytes; per-document disposition remains auditable.
+- [x] At least 14 lexical, JSON, path, secret and no-leak cases pass; quick gate passes.
 
 **Tests**: integration — ≥14 focused cases  
 **Gate**: quick  
