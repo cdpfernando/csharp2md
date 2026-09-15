@@ -559,14 +559,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Each reachable source appears once with minimum traversal depth.
-- [ ] Gap kinds remain separate from confirmed measures and no composite score/quality label exists.
-- [ ] At least 12 depth, diamond, cycle, scope, gap and omission cases pass.
-- [ ] Quick gate passes.
+- [x] Each reachable source appears once with minimum traversal depth.
+- [x] Gap kinds remain separate from confirmed measures and no composite score/quality label exists.
+- [x] At least 12 depth, diamond, cycle, scope, gap and omission cases pass.
+- [x] Quick gate passes.
 
 **Tests**: unit — ≥12 focused cases  
 **Gate**: quick  
 **Commit**: `feat(package): calculate reverse impact`
+**Status**: ✅ Complete
 
 ### T22: Assemble the single RetrievalModel
 
