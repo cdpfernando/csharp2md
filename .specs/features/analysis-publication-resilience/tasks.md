@@ -364,14 +364,14 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] The solution restores and builds under `net10.0`
-- [ ] `PublicationResiliencePaths` (or equivalent) points at the `.slnx`
-- [ ] A test analyzes the empty-enough skeleton end to end and asserts a committed package with a manifest
-- [ ] `fixtures/SyntheticSolution` is byte-identical (`SyntheticSolutionImmutabilityTests` still passes)
-- [ ] `fixtures/CertificationCorpus/labels/` is untouched
-- [ ] `.gitignore` comment for versioned fixtures names SyntheticSolution, CertificationCorpus and PublicationResilience; eShop / eShopOnContainers stay gitignored
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; a drop is a silent deletion
+- [x] The solution restores and builds under `net10.0`
+- [x] `PublicationResiliencePaths` (or equivalent) points at the `.slnx`
+- [x] A test analyzes the empty-enough skeleton end to end and asserts a committed package with a manifest
+- [x] `fixtures/SyntheticSolution` is byte-identical (`SyntheticSolutionImmutabilityTests` still passes)
+- [x] `fixtures/CertificationCorpus/labels/` is untouched
+- [x] `.gitignore` comment for versioned fixtures names SyntheticSolution, CertificationCorpus and PublicationResilience; eShop / eShopOnContainers stay gitignored
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"` (build 0 warnings; Analysis 861 passed, 0 failed)
+- [x] Test count reported; Analysis 861 pass; total 2130 (Domain 575, Analysis 861, Storage 396, Cli 64, Projection 234). Floor after T7 was 2129; 1 new T8 test, no drop.
 
 **Tests**: integration
 **Gate**: build

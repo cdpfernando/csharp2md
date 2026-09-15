@@ -70,7 +70,8 @@ project.fragment.lock.json
 artifacts/*
 !artifacts/verifications/
 
-# Local-only analysis corpora. Never version these apps; the in-repo fixture is SyntheticSolution.
+# Local-only analysis corpora. Never version these apps; the in-repo fixtures are
+# SyntheticSolution, CertificationCorpus and PublicationResilience.
 fixtures/eShop/
 fixtures/eShopOnContainers/
 

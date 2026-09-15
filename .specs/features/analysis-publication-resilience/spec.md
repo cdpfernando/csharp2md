@@ -245,8 +245,8 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | APR-30 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
 | APR-31 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
 | APR-32 | P1: Shard-aware disposition posting guidance | Tasks | Verified |
-| APR-33 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T8) |
-| APR-34 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T8, T12) |
+| APR-33 | P1: Default-budget CLI publication across the regressions | Tasks | Verified |
+| APR-34 | P1: Default-budget CLI publication across the regressions | Tasks | Implementing (T12 remaining) |
 | APR-35 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T12) |
 | APR-36 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T9, T12) |
 | APR-37 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T10, T12) |
