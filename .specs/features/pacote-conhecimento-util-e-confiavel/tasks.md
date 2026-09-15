@@ -403,14 +403,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Published graph inputs contain keys, sections, bindings, categories and safe locators only.
-- [ ] Environment values, connection strings, credentials and absolute paths never enter the graph.
-- [ ] Persistence relations remain observable and evidence-backed.
-- [ ] At least 12 configuration, EF/SQL, secret and negative cases pass; quick gate passes.
+- [x] Published graph inputs contain keys, sections, bindings, categories and safe locators only.
+- [x] Environment values, connection strings, credentials and absolute paths never enter the graph.
+- [x] Persistence relations remain observable and evidence-backed.
+- [x] At least 12 configuration, EF/SQL, secret and negative cases pass; quick gate passes.
 
 **Tests**: integration — ≥12 focused cases  
 **Gate**: quick  
 **Commit**: `feat(analysis): extract safe configuration and persistence facts`
+**Status**: ✅ Complete
 
 ### T15: Assemble an immutable FactualGraph per solution
 
