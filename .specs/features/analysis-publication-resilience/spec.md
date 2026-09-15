@@ -250,7 +250,7 @@ Each requirement gets a unique ID for tracking across design, tasks, and validat
 | APR-35 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T12) |
 | APR-36 | P1: Default-budget CLI publication across the regressions | Tasks | Implementing (T12 remaining) |
 | APR-37 | P1: Default-budget CLI publication across the regressions | Tasks | Implementing (T12 remaining) |
-| APR-38 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T11, T12) |
+| APR-38 | P1: Default-budget CLI publication across the regressions | Tasks | Implementing (T12 remaining) |
 | APR-39 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T12) |
 | APR-40 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T12) |
 | APR-41 | P1: Default-budget CLI publication across the regressions | Tasks | In Tasks (T13) |

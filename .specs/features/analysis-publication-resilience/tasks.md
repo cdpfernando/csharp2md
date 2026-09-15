@@ -451,12 +451,12 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] Analyzing the fixture through `AnalysisEngine` + `FilesystemTransactionalStore` + `PackageProjector(CeilingCalculator.Derive().CeilingBytes)` publishes unknown and frontier posting *shards*
-- [ ] The exact keys `postings/unknowns.json` and `postings/frontiers.json` are absent
-- [ ] Every published artifact, including `retrieval.md`, is within the derived ceiling except the existing indivisible-single-record exemption
-- [ ] No ceiling exclusion is added
-- [ ] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj`
-- [ ] Test count reported; a drop is a silent deletion
+- [x] Analyzing the fixture through `AnalysisEngine` + `FilesystemTransactionalStore` + `PackageProjector(CeilingCalculator.Derive().CeilingBytes)` publishes unknown and frontier posting *shards*
+- [x] The exact keys `postings/unknowns.json` and `postings/frontiers.json` are absent
+- [x] Every published artifact, including `retrieval.md`, is within the derived ceiling except the existing indivisible-single-record exemption
+- [x] No ceiling exclusion is added
+- [x] Gate check passes: `dotnet build && dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus" && dotnet test tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj && dotnet test tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj` (build 0 warnings; Analysis 864, Storage 396, Projection 234 passed, 0 failed)
+- [x] Test count reported; Analysis 864 pass; Storage 396 pass; Projection 234 pass; total 2133 (Domain 575, Analysis 864, Storage 396, Cli 64, Projection 234). Floor after T10 was 2132; 1 new T11 test, no drop.
 
 **Tests**: integration
 **Gate**: build
