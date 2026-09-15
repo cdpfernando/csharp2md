@@ -242,7 +242,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: build  
 **Commit**: `feat(core): add canonical identity primitives`
 
-**Status**: ✅ Complete  
+**Status**: ✅ Complete
 **Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (legacy Domain/Analysis/CLI suites fail on removed historical specs and non-Synthetic corpora; user-approved 2026-09-15).
 
 ## Phase 2: Isolated factual analysis
@@ -379,14 +379,17 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Every confirmed relation resolves source, target, variant occurrence and evidence chain.
-- [ ] Repeated calls remain separate factual occurrences for later aggregation.
-- [ ] Unresolved destinations become Candidate/Unknown/Open Frontier with cause, never guessed confirmed edges.
-- [ ] At least 14 category, repeated-call and unresolved cases pass; quick gate passes.
+- [x] Every confirmed relation resolves source, target, variant occurrence and evidence chain.
+- [x] Repeated calls remain separate factual occurrences for later aggregation.
+- [x] Unresolved destinations become Candidate/Unknown/Open Frontier with cause, never guessed confirmed edges.
+- [x] At least 14 category, repeated-call and unresolved cases pass; quick gate passes.
 
 **Tests**: integration — ≥14 focused cases  
 **Gate**: quick  
 **Commit**: `feat(analysis): extract causal relations`
+
+**Status**: ✅ Complete
+**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T14: Extract configuration and persistence facts safely
 

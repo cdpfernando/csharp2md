@@ -239,10 +239,10 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 | PKG-06 | Conhecimento útil, critério 6 | Design | Pending |
 | PKG-07 | Conhecimento útil, critério 7 | Design | Pending |
 | PKG-08 | Conhecimento útil, critério 8 | Design | Pending |
-| PKG-09 | Conhecimento útil, critério 9 | Design | Pending |
+| PKG-09 | Conhecimento útil, critério 9 | T13 | Complete |
 | PKG-10 | Conhecimento útil, critério 10 | Design | Pending |
 | DEP-01 | Dependências, critério 1 | Design | Pending |
-| DEP-02 | Dependências, critério 2 | Design | Pending |
+| DEP-02 | Dependências, critério 2 | T13 | Complete |
 | DEP-03 | Dependências, critério 3 | Design | Pending |
 | DEP-04 | Dependências, critério 4 | Design | Pending |
 | DEP-05 | Dependências, critério 5 | Design | Pending |
@@ -295,12 +295,12 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 | CRT-05 | Certificação, critério 5 | Design | Pending |
 | CRT-06 | Certificação, critério 6 | Design | Pending |
 | CRT-07 | Certificação, critério 7 | Design | Pending |
-| CRT-08 | Certificação, critério 8 | Design | Pending |
+| CRT-08 | Certificação, critério 8 | T13 | Complete |
 | CRT-09 | Certificação, critério 9 | Design | Pending |
-| EDG-01 | Edge case 1 | Design | Pending |
+| EDG-01 | Edge case 1 | T13 | Complete |
 | EDG-02 | Edge case 2 | Design | Pending |
 | EDG-03 | Edge case 3 | Design | Pending |
-| EDG-04 | Edge case 4 | Design | Pending |
+| EDG-04 | Edge case 4 | T13 | Complete |
 | EDG-05 | Edge case 5 | Design | Pending |
 
 **Coverage:** 71 requisitos, todos mapeados para Design; nenhum requisito não mapeado.
