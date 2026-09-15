@@ -31,7 +31,7 @@ internal static class PackagePublication
             Directory.CreateDirectory(Path.GetDirectoryName(generation)!);
             if (Directory.Exists(generation)) Directory.Delete(generation, recursive: true);
             Directory.Move(staging, generation);
-            MaterializeRoot(generation, output);
+            ReplaceRootManifest(output, plan.PackageDigest);
             CleanupGenerations(output, generation);
             return new CommittedPackage(output, plan.PackageDigest, certification);
         }
@@ -57,17 +57,10 @@ internal static class PackagePublication
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllBytes(path, bytes.ToArray());
     }
-    private static void MaterializeRoot(string generation, string output)
+    private static void ReplaceRootManifest(string output, string packageDigest)
     {
-        foreach (var source in Directory.GetFiles(generation, "*", SearchOption.AllDirectories).Where(path => !string.Equals(Path.GetFileName(path), "manifest.json", StringComparison.Ordinal)))
-        {
-            var relative = Path.GetRelativePath(generation, source);
-            var destination = Path.Combine(output, relative);
-            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-            File.Copy(source, destination, overwrite: true);
-        }
         var replacement = Path.Combine(output, $".manifest-{Guid.NewGuid():N}.json");
-        File.Copy(Path.Combine(generation, "manifest.json"), replacement);
+        File.WriteAllBytes(replacement, CanonicalJson.Write(new PackageGenerationPointer(packageDigest)).ToArray());
         File.Move(replacement, Path.Combine(output, "manifest.json"), overwrite: true);
     }
     private static void CleanupGenerations(string output, string current)

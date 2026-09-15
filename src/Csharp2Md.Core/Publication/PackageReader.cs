@@ -6,12 +6,14 @@ namespace Csharp2Md.Core.Publication;
 internal sealed class PackageReader : IDisposable
 {
     private readonly string _packageDirectory;
+    private readonly string _artifactDirectory;
     private readonly FileStream _manifestLock;
     private bool _disposed;
 
-    private PackageReader(string packageDirectory, FileStream manifestLock, PackageManifest manifest)
+    private PackageReader(string packageDirectory, string artifactDirectory, FileStream manifestLock, PackageManifest manifest)
     {
         _packageDirectory = packageDirectory;
+        _artifactDirectory = artifactDirectory;
         _manifestLock = manifestLock;
         Manifest = manifest;
     }
@@ -34,8 +36,19 @@ internal sealed class PackageReader : IDisposable
         try
         {
             var bytes = ReadAll(manifestLock);
-            var manifest = CanonicalJson.Read<PackageManifest>(bytes.AsSpan());
-            return new PackageReader(root, manifestLock, manifest);
+            var artifactDirectory = root;
+            PackageManifest manifest;
+            if (TryReadPointer(bytes, out var pointer))
+            {
+                artifactDirectory = Path.Combine(root, "generations", pointer.Generation);
+                PathGuard.RejectEscapes(root, artifactDirectory);
+                manifest = CanonicalJson.Read<PackageManifest>(File.ReadAllBytes(Path.Combine(artifactDirectory, "manifest.json")));
+            }
+            else
+            {
+                manifest = CanonicalJson.Read<PackageManifest>(bytes.AsSpan());
+            }
+            return new PackageReader(root, artifactDirectory, manifestLock, manifest);
         }
         catch
         {
@@ -67,6 +80,17 @@ internal sealed class PackageReader : IDisposable
         return paths.ToDictionary(path => path, ReadArtifact, StringComparer.Ordinal);
     }
 
+    private static bool TryReadPointer(ImmutableArray<byte> bytes, out PackageGenerationPointer pointer)
+    {
+        try
+        {
+            pointer = CanonicalJson.Read<PackageGenerationPointer>(bytes.AsSpan());
+            return true;
+        }
+        catch (ArgumentException) { pointer = null!; return false; }
+        catch (System.Text.Json.JsonException) { pointer = null!; return false; }
+    }
+
     public void Dispose()
     {
         if (_disposed)
@@ -81,12 +105,12 @@ internal sealed class PackageReader : IDisposable
     private string Resolve(string relativePath)
     {
         _ = new RelativeArtifactPath(relativePath);
-        var fullPath = Path.GetFullPath(Path.Combine(_packageDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        var fullPath = Path.GetFullPath(Path.Combine(_artifactDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar)));
         if (!File.Exists(fullPath))
         {
             throw new FileNotFoundException("The declared package artifact is missing.", fullPath);
         }
-        PathGuard.RejectEscapes(_packageDirectory, fullPath);
+        PathGuard.RejectEscapes(_artifactDirectory, fullPath);
         return fullPath;
     }
 

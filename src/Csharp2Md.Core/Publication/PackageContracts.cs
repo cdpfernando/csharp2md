@@ -123,6 +123,14 @@ internal sealed record PackageManifest
         Indexes = indexes.IsDefault ? ImmutableArray<IndexManifestEntry>.Empty : ImmutableArray.CreateRange(indexes);
         Journeys = ownedJourneys;
     }
+
+}
+
+internal sealed record PackageGenerationPointer
+{
+    public string Generation { get; }
+
+    public PackageGenerationPointer(string generation) => Generation = CanonicalText.Require(generation, nameof(generation));
 }
 
 internal sealed record SolutionManifestEntry

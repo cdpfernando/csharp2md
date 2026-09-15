@@ -65,6 +65,7 @@ internal static class CanonicalJson
     NewLine = "\n")]
 [JsonSerializable(typeof(PackageManifest))]
 [JsonSerializable(typeof(SolutionManifestEntry))]
+[JsonSerializable(typeof(PackageGenerationPointer))]
 [JsonSerializable(typeof(RootManifestEntry))]
 [JsonSerializable(typeof(IndexManifestEntry))]
 [JsonSerializable(typeof(JourneyManifestEntry))]
