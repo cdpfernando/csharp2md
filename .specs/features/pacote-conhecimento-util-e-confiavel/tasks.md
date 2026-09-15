@@ -307,14 +307,17 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Each planned pair opens its project with only that pair's global TFM property.
-- [ ] Referenced projects support compilation but never emit occurrences as another root.
-- [ ] Workspaces are disposed on success, failure and cancellation.
-- [ ] At least 8 isolation, reference and disposal cases pass; quick gate passes.
+- [x] Each planned pair opens its project with only that pair's global TFM property.
+- [x] Referenced projects support compilation but never emit occurrences as another root.
+- [x] Workspaces are disposed on success, failure and cancellation.
+- [x] At least 8 isolation, reference and disposal cases pass; quick gate passes.
 
 **Tests**: integration — ≥8 focused cases  
 **Gate**: quick  
 **Commit**: `feat(analysis): isolate project variant workspaces`
+
+**Status**: ✅ Complete  
+**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T11: Merge logical entities across variants
 
