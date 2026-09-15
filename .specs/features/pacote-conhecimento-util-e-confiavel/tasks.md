@@ -661,6 +661,8 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: quick  
 **Commit**: `feat(package): pack deterministic shards`
 
+**Status**: ✅ Complete
+
 ### T26: Build directly resolvable navigation indexes
 
 **What**: Build identity, roots, outgoing, incoming, contract, persistence and evidence/disposition indexes with direct shard locators.  
