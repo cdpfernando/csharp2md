@@ -331,14 +331,17 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Compatible occurrences across TFMs share one logical entity.
-- [ ] Shape differences remain qualified across variants and collide only within the same variant.
-- [ ] Separate solutions cannot share identity, occurrence or deduplication state.
-- [ ] At least 10 merge, collision and solution-isolation cases pass; quick gate passes.
+- [x] Compatible occurrences across TFMs share one logical entity.
+- [x] Shape differences remain qualified across variants and collide only within the same variant.
+- [x] Separate solutions cannot share identity, occurrence or deduplication state.
+- [x] At least 10 merge, collision and solution-isolation cases pass; quick gate passes.
 
 **Tests**: unit — ≥10 focused cases  
 **Gate**: quick  
 **Commit**: `feat(analysis): merge variant occurrences`
+
+**Status**: ✅ Complete  
+**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T12: Extract structural and architectural roots
 
