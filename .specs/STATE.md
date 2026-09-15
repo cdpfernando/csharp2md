@@ -232,6 +232,15 @@ Normative documentation:
 - **Date**: 2026-09-11.
 - **Status**: active.
 
+### AD-029 — Third versioned fixture `fixtures/PublicationResilience`
+
+- **Decision**: `fixtures/PublicationResilience` joins `fixtures/SyntheticSolution` and `fixtures/CertificationCorpus` as a versioned analysis fixture. It is a sibling tree. `fixtures/SyntheticSolution` stays byte-identical. `fixtures/CertificationCorpus` labeled denominators stay untouched: this tree carries no engine-certification labels.
+- **Reason**: `analysis-publication-resilience` must prove three publication defects through default-budget `analyze` without silently moving labeled precision/recall (AD-026) or mutating the immutability digest of SyntheticSolution (GCPC-117).
+- **Trade-off**: a third committed C# tree costs review and CI time. Putting the cases inside `CertificationCorpus` would have been smaller and would have changed labeled denominators. Generating the disposition volume at test time would have avoided git size but would not be the "versioned fixture" APR-33 requires.
+- **Scope**: `analysis-publication-resilience`, the standing engineering-constraint fixture list, and every later workstream that must not treat this tree as labeled ground truth.
+- **Date**: 2026-09-14
+- **Status**: active.
+
 ## Standing engineering constraints
 
 - Retrieval-led reasoning is mandatory for .NET/Roslyn work; never invent a Roslyn API.
@@ -239,23 +248,16 @@ Normative documentation:
 - Structural corruption aborts atomic publication; legitimate unknowns and candidates do not.
 - Secrets are never duplicated into facts, observations, indexes or diagnostics.
 - The tlc-spec-driven discrimination sensor remains skipped; the user runs Stryker manually. All other verifier steps remain required when feature execution begins.
-- The versioned analysis fixtures are `fixtures/SyntheticSolution` and, as of `generator-cli-projections-certification` (AD-026), `fixtures/CertificationCorpus`. `fixtures/SyntheticSolution` stays byte-identical; the new corpus is a sibling tree, not a modification. `fixtures/eShop` and `fixtures/eShopOnContainers` are local clones (gitignored). After each feature Verifier, run `LocalCorpus` analyze tests when those clones exist; skip when they do not (the skip also applies when the clone directory exists but the expected `.sln`/`.slnx` path inside it is missing). Never add those apps to git.
+- The versioned analysis fixtures are `fixtures/SyntheticSolution`, `fixtures/CertificationCorpus` (AD-026), and `fixtures/PublicationResilience` (AD-029). `fixtures/SyntheticSolution` stays byte-identical. `fixtures/CertificationCorpus` is the labeled engine-certification tree; `fixtures/PublicationResilience` is an unlabeled publication-regression sibling and is not a labeled-denominator source. `fixtures/eShop` and `fixtures/eShopOnContainers` are local clones (gitignored). After each feature Verifier, run `LocalCorpus` analyze tests when those clones exist; skip when they do not (the skip also applies when the clone directory exists but the expected `.sln`/`.slnx` path inside it is missing). Never add those apps to git.
 
 ## Handoff
 
-- **Feature**: 8 `generator-cli-projections-certification` — **closed**. Execute complete (T1–T66) plus two rounds of Verifier fix tasks (T67–T71 = F1–F5 for iteration 1's FAIL, T72–T75 = F6–F9 for iteration 2's FAIL). Verifier iteration 3 (the bounded loop's final round) returned FAIL — see `validation.md`, left as the true, unedited record. Presented with the loop's exhaustion, the user chose to close the feature now and defer the remaining gaps rather than authorize a 4th round or accept them silently — recorded as AD-028.
-- **Phase / Task**: all of T1–T75 committed. Iteration-3 Verifier report at `16d54c2`. Closure docs (AD-028, `spec.md` traceability, `context.md` Deferred Ideas, this Handoff, roadmap) at `<pending this commit>`.
-- **Completed**: iteration 3 reconfirmed, from a live `analyze` rather than from the fix tasks' own tests, that all four gaps iteration 2 routed are genuinely closed: GCPC-038 (0/307 corpus artifacts over ceiling, 1/944 on Acme.Orders as an irreducible singleton with its degradation reason), GCPC-057 (manifest version axes now equal provenance), GCPC-061 (0 byte-size mismatches across 1,249 manifest entries), GCPC-069/070 (`analyze` exits 3 on both degraded fixtures), GCPC-004 (the degradation reason is published). Two corpus runs stayed byte-identical (0/307 files differing).
-- **In-progress** (file:line): none. This feature is closed; nothing to resume here.
-- **Deferred to a future workstream, per AD-028** (each recorded in `context.md`'s Deferred Ideas with root cause and fix-task shape; `spec.md`'s Requirement Traceability table marks each `⚠️ Deferred`):
-  1. *(Major, Fix 1)* GCPC-012/016/034/088 — `InvocationAccountingReport`, `ContractAccountingReport` and `DocumentPolicyReport` are built and consumed by `RunCertifier` but `src/Csharp2Md.Storage/Mapping/DomainMapper.cs` never maps any of them onto the wire; a live package has zero bytes naming `external-framework-callable`, `recognized_occurrences`, `accepted_count`, etc.
-  2. *(Major, Fix 2)* GCPC-018 — `InvokesPass.ConcreteImplementors` (`src/Csharp2Md.Analysis/Classification/Passes/InvokesPass.cs:303-317`) matches candidate implementors by metadata+parameters+arity only, with no implements/overrides check and no return-type check, so the corpus publishes a candidate `invokes` edge from `OrderQueriesController.GetOrderStatus` to itself. This is a re-confirmation of a pre-existing gap first recorded in T23 (2026-09-09) and never actually closed despite GCPC-018 reading `Verified`.
-  3. *(Minor, Fix 3)* GCPC-117 — `SyntheticSolutionManifest.json`'s committed digest was generated from a mixed CRLF/LF working tree and does not reproduce from a clean checkout under either `core.autocrlf` setting.
-  4. *(Cosmetic, Fix 4)* GCPC-037/045 — the ceiling's bytes-per-token ratio and the largest-artifact-per-role measurement are derivable from the publication but never written as their own fields.
-  Full root cause, fix task (What/Where/Verify/Done-when) and priority for each in `validation.md`'s Fix Plans section.
-- **Next step**: none owed by this feature. When a future workstream wants to close GCPC-012/016/018/034/037/045/088/117, it starts as its own `.specs/features/<name>/` through Specify (per CLAUDE.md's standing rule against pre-creating a feature spec before its workstream starts, and the roadmap's "Delivery rules") — read `context.md`'s Deferred Ideas above for the starting root cause and fix shape.
-- **Measured gate** (iteration-3 Verifier, 2026-09-11, final for this feature): `dotnet build` clean, 0 warnings, 0 errors. 2072 tests passing, 0 failed, `Category=LocalCorpus` excluded (Domain 563, Analysis 827, Storage 389, Cli 64, Projection 229). `validate_state.py generator-cli-projections-certification` exits 1 by design (FAIL verdict, left true — see AD-028's trade-off) — do not treat that exit code as an open task on this feature; it is the accepted, permanent state of a feature closed with known deferred gaps.
-- **Blockers**: none — the feature is closed. The two Deferred Ideas from the earlier T63 batch (RetrievalGuideProjector's per-shard-key prose/size, ShardWriter's fixed-depth bucketing) remain open in `context.md`, unrelated to this closure.
-- **Carry-forward** (for whichever future workstream reopens this area): Full gates exclude `Category=LocalCorpus`. Multi-csproj `dotnet test` hits MSB1008 — run each test project separately. Discrimination sensor remains skipped (standing skip). `TreatWarningsAsErrors` is on. `PackageProjector()`'s parameterless constructor still defaults to `ShardWriter.DefaultCeilingBytes` (1 MiB) rather than the derived ~32 KiB ceiling — same latent, harmless-only-because-fixtures-are-small caveat as before.
-- **Uncommitted files**: none of substance. Same pre-existing untracked stray files as before, still untouched: `artifacts/verifications/llm-readiness-s-cb7a4be0b1a084f3b59e9c2f1e3906f1.md`, `docs/specs/`, two `fixtures/csharp2md-analyze-out-*/` directories.
+- **Feature**: `analysis-publication-resilience` — Execute closed PASS. `validate_state.py` 0 errors.
+- **Phase / Task**: Post-Verifier LocalCorpus (clones present: eShop, eShopOnContainers, Pitstop). Discrimination sensor standing skip.
+- **Completed**: T1–T13 (`a0a9598` … `b717b5c`). Verifier PASS, 42/42 ACs, gate 2134. Lesson L-028 from APR-41 spec-precision.
+- **In-progress** (file:line): none.
+- **Next step**: commit `validation.md`, `design.md`, lessons, and STATE.md when the user asks. LocalCorpus (optional): 12 passed, 6 failed — see last run.
+- **Blockers**: none. APR-41 isolated Pitstop rows wrap each `.csproj` in a temp `.slnx` (clone has one `pitstop.sln`). Recorded as spec-precision, not a FAIL.
+- **Carry-forward**: Full gates exclude `Category=LocalCorpus`. Test floor 2134 (Domain 575, Analysis 864, Storage 396, Cli 65, Projection 234).
+- **Uncommitted files**: `.specs/STATE.md`; `.specs/LESSONS.md`; `.specs/lessons.json`; `docs/specs/reducao-complexidade-acidental.md`; `?? .specs/features/analysis-publication-resilience/design.md`; `?? .specs/features/analysis-publication-resilience/validation.md`.
 - **Branch**: `feature/generator-cli-projections-certification`.

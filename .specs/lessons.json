@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 28,
+  "next_id": 29,
   "lessons": [
     {
       "id": "L-001",
@@ -491,6 +491,24 @@
       ],
       "created": "2026-09-11T16:35:08Z",
       "last_seen": "2026-09-11T16:35:08Z"
+    },
+    {
+      "id": "L-028",
+      "key": "spec_precision_gap::when a local corpus ships one solution file and many projects the spec must say whether isolated analyze rows wrap each project in a temporary solution or require pre existing per project solutions",
+      "text": "When a local corpus ships one solution file and many projects, the spec must say whether isolated analyze rows wrap each project in a temporary solution or require pre-existing per-project solutions.",
+      "signal": "spec_precision_gap",
+      "scope": "LocalCorpus",
+      "status": "candidate",
+      "features": [
+        "analysis-publication-resilience"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "APR-41 LocalCorpusAnalyzeTests.cs:121-139 (LocalCorpus)"
+      ],
+      "created": "2026-09-15T03:32:50Z",
+      "last_seen": "2026-09-15T03:32:50Z"
     }
   ]
 }

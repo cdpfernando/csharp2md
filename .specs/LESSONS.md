@@ -176,6 +176,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: validation.md GCPC-004 edge case; src/Csharp2Md.Storage/Mapping/LayoutPlanner.cs:234 (storage)
 - last seen: 2026-09-11T16:35:08Z
 
+### L-028 - When a local corpus ships one solution file and many projects, the spec must say whether isolated analyze rows wrap each project in a temporary solution or require pre-existing per-project solutions.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `LocalCorpus` · harmful: 0
+- features: analysis-publication-resilience
+- evidence: APR-41 LocalCorpusAnalyzeTests.cs:121-139 (LocalCorpus)
+- last seen: 2026-09-15T03:32:50Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
