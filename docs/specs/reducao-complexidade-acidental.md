@@ -2,7 +2,7 @@
 
 **Status:** spec de intervenção parcialmente implementada; pendências descritas abaixo.  
 **Triage:** `ready-for-agent` — registro local, sem publicação no GitHub.  
-**Revisão:** 2026-09-15, sobre HEAD `5d9ad14`. A revisão de 2026-09-11 (HEAD `2e93f5f`) permanece a origem dos 13 itens; esta edição reconcilia o estado observado depois disso e encerra os itens documentais 1 e 12.
+**Revisão:** 2026-09-15, sobre HEAD `5d9ad14`. A revisão de 2026-09-11 (HEAD `2e93f5f`) permanece a origem dos 13 itens; esta edição reconcilia o estado observado depois disso, encerra os itens documentais 1 e 12 e registra a implementação dos itens 14–16.
 
 ## Problem Statement
 
@@ -135,7 +135,7 @@ Executar os testes afetados a cada entrega e a suíte pertinente ao integrar. Co
 
 A base observada nesta edição é o HEAD `5d9ad14` de 2026-09-15. A revisão original usava `2e93f5f` (fechamento AD-028) mais o trabalho local de então. Entre as duas revisões, `analysis-publication-resilience` encerrou com PASS e a proposta `pacote-conhecimento-util-e-confiavel` registrou a próxima substituição. Este documento continua sendo o registro das intervenções de complexidade acidental; sua edição não inicia a implementação dessa nova proposta.
 
-Estado dos itens: itens 1 e 12 resolvidos nesta revisão; implementação observada do item 2 e das histórias 7–8; atendimento parcial dos itens 3, 6 e 8; itens 4, 5, 7, 9 a 11 e 13 abertos; itens 14–16 abertos (achados de 14/09). Observação estática não equivale a nova validação funcional. A issue local `01-expose-safe-pipeline-failure-details` descreve trabalho já presente no HEAD; não tratá-la como entrega aberta.
+Estado dos itens: itens 1 e 12 resolvidos nesta revisão; itens 14–16 implementados e verificados por `analysis-publication-resilience`; implementação observada do item 2 e das histórias 7–8; atendimento parcial dos itens 3, 6 e 8; itens 4, 5, 7, 9 a 11 e 13 abertos. Observação estática não equivale a nova validação funcional. A issue local `01-expose-safe-pipeline-failure-details` descreve trabalho já presente no HEAD; não tratá-la como entrega aberta.
 
 A feature generator-cli-projections-certification foi encerrada por AD-028 com duas lacunas Major adiadas e relatório do Verifier mantido em FAIL. Os resultados anteriores de 2070 testes, build sem avisos e comparação de 947 arquivos são registros anteriores, não execuções realizadas para esta síntese. Contagens estáticas de arquivos e linhas da suíte na revisão de 11/09 também são registro, não meta nem estado atual.
 
@@ -208,14 +208,14 @@ Referências: [AGENTS.md](../../AGENTS.md), [CLAUDE.md](../../CLAUDE.md).
 
 Referências: [ProvenanceDto](../../src/Csharp2Md.Storage/Wire/ProvenanceDto.cs), [ValidationAndCoverageStage](../../src/Csharp2Md.Analysis/Pipeline/ValidationAndCoverageStage.cs), [Directory.Packages.props](../../Directory.Packages.props).
 
-**Item 14 — Preservar evidência válida para `contains` (aberto; achado de 14/09).** ContainsRelationEmitter prefere observações próprias do símbolo e só cai no documento quando o símbolo não tem nenhuma. Se todas as próprias forem Invocation ou DataAccess, EvidenceScope esvazia a cadeia e EvidenceChain.Create lança. Evidência estrutural do documento já é o fallback previsto quando o conjunto próprio está vazio; falta aplicá-lo também quando o conjunto próprio não qualifica.
+**Item 14 — Preservar evidência válida para `contains` (implementado; verificado por APR-09–15).** ContainsRelationEmitter usa observações estruturais qualificadas do símbolo e recorre às observações estruturais do documento quando o conjunto próprio não qualifica. Se nenhum dos dois escopos fornecer evidência válida, omite a relação e registra `contains-evidence-unqualified`. A cadeia confirmada permanece não vazia e não recebe observações Invocation ou DataAccess.
 
-Referências: [ContainsRelationEmitter](../../src/Csharp2Md.Analysis/Extraction/ContainsRelationEmitter.cs), [EvidenceScope](../../src/Csharp2Md.Analysis/Classification/EvidenceScope.cs), [EvidenceChain](../../src/Csharp2Md.Domain/Proof/EvidenceChain.cs).
+Referências: [ContainsRelationEmitter](../../src/Csharp2Md.Analysis/Extraction/ContainsRelationEmitter.cs), [EvidenceScope](../../src/Csharp2Md.Analysis/Classification/EvidenceScope.cs), [EvidenceChain](../../src/Csharp2Md.Domain/Proof/EvidenceChain.cs), [validação APR](../../.specs/features/analysis-publication-resilience/validation.md).
 
-**Item 15 — Round-trip de assinaturas canônicas aninhadas (aberto; achado de 14/09).** CanonicalSymbolSignature junta parâmetros e type-arguments com vírgula. WireFactMapping.SignatureFromValue parte por SplitTopLevel que só equilibra `<>`; parênteses de tupla e colchetes de rank de array não entram na profundidade. Uma tupla nomeada, uma tupla dentro de genérico ou um array multidimensional não rehidratam com a mesma identidade. Este item é a persistência da forma; o item 11 é o consumidor BoundaryPass.
+**Item 15 — Round-trip de assinaturas canônicas aninhadas (implementado; verificado por APR-16–23).** A leitura compartilhada separa somente vírgulas de nível superior e equilibra `<>`, `()` e `[]`. Tuplas nomeadas, formas genéricas aninhadas e arrays multidimensionais reidratam com a mesma identidade canônica; delimitadores desbalanceados continuam sendo rejeitados. O item 11 permanece aberto porque trata o consumidor BoundaryPass, não a persistência da forma.
 
-Referências: [CanonicalSymbolSignature](../../src/Csharp2Md.Domain/Identity/CanonicalSymbolSignature.cs), [WireFactMapping](../../src/Csharp2Md.Storage/Mapping/WireFactMapping.cs).
+Referências: [CanonicalSymbolSignature](../../src/Csharp2Md.Domain/Identity/CanonicalSymbolSignature.cs), [WireFactMapping](../../src/Csharp2Md.Storage/Mapping/WireFactMapping.cs), [validação APR](../../.specs/features/analysis-publication-resilience/validation.md).
 
-**Item 16 — Guia de postings fragmentados (aberto; achado de 14/09).** RetrievalGuideProjector já distingue família de relação exata versus fragmentada. As instruções de unknown e frontier ainda citam `postings/unknowns.json` e `postings/frontiers.json` entre backticks mesmo no ramo fragmentado da relação. Quando a família de posting ela mesma fragmenta, ValidateNoAbsentKeys rejeita a chave-base. Relação shard-aware e posting ausente (família inexistente) permanecem comportamentos distintos.
+**Item 16 — Guia de postings fragmentados (implementado; verificado por APR-24–32).** RetrievalGuideProjector cita uma chave exata entre backticks somente quando o artefato existe. Famílias fragmentadas orientam a seleção do shard correspondente sem citar a chave-base ausente; famílias inexistentes continuam descritas como ausentes. ValidateNoAbsentKeys permanece estrito.
 
-Referências: [RetrievalGuideProjector](../../src/Csharp2Md.Projection/Guides/RetrievalGuideProjector.cs).
+Referências: [RetrievalGuideProjector](../../src/Csharp2Md.Projection/Guides/RetrievalGuideProjector.cs), [validação APR](../../.specs/features/analysis-publication-resilience/validation.md).

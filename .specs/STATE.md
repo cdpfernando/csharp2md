@@ -253,12 +253,12 @@ Normative documentation:
 
 ## Handoff
 
-- **Feature**: `analysis-publication-resilience` — Execute closed PASS. `validate_state.py` 0 errors.
-- **Phase / Task**: Post-Verifier LocalCorpus (clones present: eShop, eShopOnContainers, Pitstop). Discrimination sensor standing skip.
-- **Completed**: T1–T13 (`a0a9598` … `b717b5c`). Verifier PASS, 42/42 ACs, gate 2134. Lesson L-028 from APR-41 spec-precision.
+- **Feature**: `reducao-complexidade-acidental` — documentation items 1 and 12 complete.
+- **Phase / Task**: Independent documentation verification complete. Discrimination sensor standing skip.
+- **Completed**: active project status reconciled; `AGENTS.md` established as the canonical agent guidance; `CLAUDE.md` reduced to its native import; items 14–16 reconciled with the `analysis-publication-resilience` PASS.
 - **In-progress** (file:line): none.
-- **Next step**: commit `validation.md`, `design.md`, lessons, and STATE.md when the user asks. LocalCorpus (optional): 12 passed, 6 failed — see last run.
-- **Blockers**: none. APR-41 isolated Pitstop rows wrap each `.csproj` in a temp `.slnx` (clone has one `pitstop.sln`). Recorded as spec-precision, not a FAIL.
-- **Carry-forward**: Full gates exclude `Category=LocalCorpus`. Test floor 2134 (Domain 575, Analysis 864, Storage 396, Cli 65, Projection 234).
-- **Uncommitted files**: `.specs/STATE.md`; `.specs/LESSONS.md`; `.specs/lessons.json`; `docs/specs/reducao-complexidade-acidental.md`; `?? .specs/features/analysis-publication-resilience/design.md`; `?? .specs/features/analysis-publication-resilience/validation.md`.
+- **Next step**: explicitly start the proposed `pacote-conhecimento-util-e-confiavel` workstream or select another open accidental-complexity item.
+- **Blockers**: none.
+- **Carry-forward**: AD-028 gaps remain deferred. Accidental-complexity items 3, 6 and 8 are partial; items 4, 5, 7, 9–11 and 13 remain open. Full gates exclude `Category=LocalCorpus`; test floor 2134 (Domain 575, Analysis 864, Storage 396, Cli 65, Projection 234).
+- **Uncommitted files**: none.
 - **Branch**: `feature/generator-cli-projections-certification`.
