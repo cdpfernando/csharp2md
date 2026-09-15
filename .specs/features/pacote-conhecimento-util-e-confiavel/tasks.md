@@ -123,14 +123,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] `AnalyzeAsync` and `Validate` have the approved facade shape and structured diagnostics.
-- [ ] Invalid requests fail before analysis/staging and cancellation remains `OperationCanceledException`.
-- [ ] At least 6 surface and request-validation cases pass.
-- [ ] Quick gate passes.
+- [x] `AnalyzeAsync` and `Validate` have the approved facade shape and structured diagnostics.
+- [x] Invalid requests fail before analysis/staging and cancellation remains `OperationCanceledException`.
+- [x] At least 6 surface and request-validation cases pass.
+- [x] Quick gate passes.
 
 **Tests**: unit — ≥6 focused cases  
 **Gate**: quick  
-**Commit**: `feat(core): define knowledge engine facade`
+**Commit**: `feat(core): define knowledge engine facade`  
+**Status**: ✅ Complete
 
 ### T3: Define the factual graph contract
 
