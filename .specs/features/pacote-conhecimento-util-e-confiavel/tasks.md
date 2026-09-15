@@ -283,14 +283,17 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Discovery creates only evaluated project/TFM pairs and deduplicates them per solution.
-- [ ] Missing, unmatched or ambiguous SDK-style TFM progress fails as `variant-plan` instead of guessing.
-- [ ] No `Microsoft.Build.*` reference or `MSBuildLocator.RegisterDefaults()` call exists.
-- [ ] At least 8 real-workspace discovery and failure cases pass; quick gate passes.
+- [x] Discovery creates only evaluated project/TFM pairs and deduplicates them per solution.
+- [x] Missing, unmatched or ambiguous SDK-style TFM progress fails as `variant-plan` instead of guessing.
+- [x] No `Microsoft.Build.*` reference or `MSBuildLocator.RegisterDefaults()` call exists.
+- [x] At least 8 real-workspace discovery and failure cases pass; quick gate passes.
 
 **Tests**: integration — ≥8 focused cases  
 **Gate**: quick  
 **Commit**: `feat(analysis): discover project variants`
+
+**Status**: ✅ Complete  
+**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T10: Load each project variant in isolation
 
