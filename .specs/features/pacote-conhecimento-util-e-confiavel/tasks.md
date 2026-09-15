@@ -515,14 +515,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Fan-in/out count distinct origins/destinations in the requested scope.
-- [ ] Occurrences are counted before edge deduplication and cross-component counts require proven distinct ownership.
-- [ ] At least 12 hand-calculated empty, duplicate, multi-category and multi-scope cases pass.
-- [ ] Quick gate passes.
+- [x] Fan-in/out count distinct origins/destinations in the requested scope.
+- [x] Occurrences are counted before edge deduplication and cross-component counts require proven distinct ownership.
+- [x] At least 12 hand-calculated empty, duplicate, multi-category and multi-scope cases pass.
+- [x] Quick gate passes.
 
 **Tests**: unit — ≥12 focused cases  
 **Gate**: quick  
 **Commit**: `feat(package): calculate direct dependency measures`
+**Status**: ✅ Complete
 
 ### T20: Calculate directed cycles
 
