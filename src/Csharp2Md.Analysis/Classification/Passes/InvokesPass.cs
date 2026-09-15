@@ -19,10 +19,20 @@ internal sealed class InvokesPass : IClassifierPass
 
     public string Name => "Invokes";
 
-    public ClassifierPassResult Execute(ClassifierContext context, CancellationToken cancellationToken)
+    public ClassifierPassResult Execute(ClassifierContext context, CancellationToken cancellationToken) =>
+        Execute(context, cancellationToken, out _);
+
+    /// <summary>
+    /// Same as <see cref="Execute(ClassifierContext, CancellationToken)"/>, additionally exposing the
+    /// per-occurrence <see cref="InvocationDispositionLedger"/> (GCPC-011) built while classifying, for
+    /// tests that need to prove every recognized invocation occurrence carries exactly one disposition.
+    /// </summary>
+    internal ClassifierPassResult Execute(
+        ClassifierContext context, CancellationToken cancellationToken, out InvocationDispositionLedger ledger)
     {
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
+        ledger = new InvocationDispositionLedger();
 
         var symbols = context.FactsByType<Symbol>();
         var symbolsById = symbols.ToDictionary(static symbol => symbol.Reference.Id.Value, StringComparer.Ordinal);
@@ -61,6 +71,14 @@ internal sealed class InvokesPass : IClassifierPass
             if (!symbolsById.TryGetValue(observation.Identity.Owner.Id.Value, out var owner)
                 || !owner.Facets.Facets.Contains(SymbolFacet.Callable))
             {
+                // GCPC-011: the occurrence's own owner is not a recognized callable, so the occurrence
+                // is unresolved rather than silently vanishing.
+                unresolvedCount += AddUnresolved(
+                    context,
+                    observation.Identity.Owner,
+                    UnresolvedCause.InsufficientEvidence,
+                    evidence);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
@@ -72,6 +90,7 @@ internal sealed class InvokesPass : IClassifierPass
                     owner.Reference,
                     UnresolvedCause.InsufficientEvidence,
                     evidence);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
@@ -87,7 +106,18 @@ internal sealed class InvokesPass : IClassifierPass
                         evidence);
                     AddFrontier(context, frontiered, observation.Identity);
                 }
+                else
+                {
+                    // GCPC-011: bound, but no target signature could be extracted at all -- unresolved
+                    // rather than dropped.
+                    unresolvedCount += AddUnresolved(
+                        context,
+                        owner.Reference,
+                        UnresolvedCause.InsufficientEvidence,
+                        evidence);
+                }
 
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
@@ -99,11 +129,15 @@ internal sealed class InvokesPass : IClassifierPass
                     UnresolvedCause.NoCandidateFound,
                     evidence);
                 AddFrontier(context, frontiered, observation.Identity);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
             if (IsFrameworkSignature(targetSignature))
             {
+                // GCPC-016: a binding outside the analyzed solution scope is a counted exclusion, not a
+                // per-occurrence diagnostic and not silence.
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationExclusionCategory.ExternalFrameworkCallable));
                 continue;
             }
 
@@ -112,11 +146,12 @@ internal sealed class InvokesPass : IClassifierPass
             {
                 if (IsTypeParameterContainer(targetSignature))
                 {
-                    var named = ConcreteCallablesNamed(symbols, ReadField(targetSignature, "metadata"));
+                    var named = ConcreteCallablesNamed(symbols, SignatureReader.Field(targetSignature, "metadata"));
                     if (named.Length > 0)
                     {
                         candidateCount += AddCandidates(context, candidateKeys, owner, named, evidence);
                         AddFrontier(context, frontiered, observation.Identity);
+                        ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Candidate));
                         continue;
                     }
                 }
@@ -127,6 +162,7 @@ internal sealed class InvokesPass : IClassifierPass
                     UnresolvedCause.NoCandidateFound,
                     evidence);
                 AddFrontier(context, frontiered, observation.Identity);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
@@ -134,6 +170,7 @@ internal sealed class InvokesPass : IClassifierPass
             {
                 candidateCount += AddCandidates(context, candidateKeys, owner, matches, evidence);
                 AddFrontier(context, frontiered, observation.Identity);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Candidate));
                 continue;
             }
 
@@ -149,22 +186,36 @@ internal sealed class InvokesPass : IClassifierPass
                         UnresolvedCause.NoCandidateFound,
                         evidence);
                     AddFrontier(context, frontiered, observation.Identity);
+                    ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                     continue;
                 }
 
                 candidateCount += AddCandidates(context, candidateKeys, owner, implementors, evidence);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Candidate));
                 continue;
             }
 
             if (!target.Facets.Facets.Contains(SymbolFacet.Callable)
                 || context.AnalysisVariants.IsDefaultOrEmpty)
             {
+                // GCPC-011: a bound target that is not itself a recognized callable (or no analysis
+                // variant to attach evidence to) cannot be confirmed, so it is unresolved instead of
+                // silently dropped.
+                unresolvedCount += AddUnresolved(
+                    context,
+                    owner.Reference,
+                    UnresolvedCause.InsufficientEvidence,
+                    evidence);
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Unresolved));
                 continue;
             }
 
             var key = (RelationKind.Invokes, owner.Reference.Id.Value, target.Reference.Id.Value);
             if (!confirmed.Add(key))
             {
+                // GCPC-016: a duplicate occurrence of an already-confirmed edge is a counted exclusion,
+                // not silence -- the edge itself was already published for an earlier occurrence.
+                ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationExclusionCategory.DuplicateEdge));
                 continue;
             }
 
@@ -180,6 +231,7 @@ internal sealed class InvokesPass : IClassifierPass
                     EvidenceMethod.Semantic,
                     sourceFact: owner));
             relationCount++;
+            ledger.Add(InvocationDisposition.Create(observation.Identity, InvocationDispositionKind.Confirmed));
         }
 
         return new ClassifierPassResult(0, relationCount, candidateCount, unresolvedCount);
@@ -250,17 +302,17 @@ internal sealed class InvokesPass : IClassifierPass
 
     private static Symbol[] ConcreteImplementors(ImmutableArray<Symbol> symbols, Symbol abstractTarget)
     {
-        var metadata = ReadField(abstractTarget.Signature.Value, "metadata");
-        var parameters = ReadField(abstractTarget.Signature.Value, "parameters");
-        var arity = ReadField(abstractTarget.Signature.Value, "arity");
+        var metadata = SignatureReader.Field(abstractTarget.Signature.Value, "metadata");
+        var parameters = SignatureReader.Field(abstractTarget.Signature.Value, "parameters");
+        var arity = SignatureReader.Field(abstractTarget.Signature.Value, "arity");
         return [.. symbols
             .Where(candidate =>
                 candidate.Facets.Facets.Contains(SymbolFacet.Callable)
                 && !candidate.Facets.Facets.Contains(SymbolFacet.Abstract)
                 && !candidate.Reference.Equals(abstractTarget.Reference)
-                && string.Equals(ReadField(candidate.Signature.Value, "metadata"), metadata, StringComparison.Ordinal)
-                && string.Equals(ReadField(candidate.Signature.Value, "parameters"), parameters, StringComparison.Ordinal)
-                && string.Equals(ReadField(candidate.Signature.Value, "arity"), arity, StringComparison.Ordinal))
+                && string.Equals(SignatureReader.Field(candidate.Signature.Value, "metadata"), metadata, StringComparison.Ordinal)
+                && string.Equals(SignatureReader.Field(candidate.Signature.Value, "parameters"), parameters, StringComparison.Ordinal)
+                && string.Equals(SignatureReader.Field(candidate.Signature.Value, "arity"), arity, StringComparison.Ordinal))
             .OrderBy(static candidate => candidate.Reference.Id.Value, StringComparer.Ordinal)];
     }
 
@@ -271,12 +323,12 @@ internal sealed class InvokesPass : IClassifierPass
                 .Where(candidate =>
                     candidate.Facets.Facets.Contains(SymbolFacet.Callable)
                     && !candidate.Facets.Facets.Contains(SymbolFacet.Abstract)
-                    && string.Equals(ReadField(candidate.Signature.Value, "metadata"), metadata, StringComparison.Ordinal))
+                    && string.Equals(SignatureReader.Field(candidate.Signature.Value, "metadata"), metadata, StringComparison.Ordinal))
                 .OrderBy(static candidate => candidate.Reference.Id.Value, StringComparer.Ordinal)];
 
     private static bool IsFrameworkSignature(string signature)
     {
-        var container = ReadField(signature, "container");
+        var container = SignatureReader.Field(signature, "container");
         return container is not null
             && (container.StartsWith("global::System.", StringComparison.Ordinal)
                 || container.StartsWith("global::Microsoft.", StringComparison.Ordinal))
@@ -286,19 +338,19 @@ internal sealed class InvokesPass : IClassifierPass
 
     private static bool IsReflectionDispatch(string signature)
     {
-        var container = ReadField(signature, "container");
+        var container = SignatureReader.Field(signature, "container");
         return container is not null
             && container.StartsWith("global::System.Reflection", StringComparison.Ordinal);
     }
 
     private static bool IsDelegateInvoke(string signature)
     {
-        if (!string.Equals(ReadField(signature, "metadata"), "Invoke", StringComparison.Ordinal))
+        if (!string.Equals(SignatureReader.Field(signature, "metadata"), "Invoke", StringComparison.Ordinal))
         {
             return false;
         }
 
-        var container = ReadField(signature, "container");
+        var container = SignatureReader.Field(signature, "container");
         return container is not null && IsDelegateContainer(container);
     }
 
@@ -312,24 +364,9 @@ internal sealed class InvokesPass : IClassifierPass
 
     private static bool IsTypeParameterContainer(string signature)
     {
-        var container = ReadField(signature, "container");
+        var container = SignatureReader.Field(signature, "container");
         return container is not null
             && !container.StartsWith("global::", StringComparison.Ordinal)
             && !container.Contains('.', StringComparison.Ordinal);
-    }
-
-    private static string? ReadField(string identity, string key)
-    {
-        var marker = ";" + key + "=";
-        var start = identity.IndexOf(marker, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += marker.Length;
-        var end = identity.IndexOf(';', start);
-        var encoded = end < 0 ? identity[start..] : identity[start..end];
-        return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
     }
 }

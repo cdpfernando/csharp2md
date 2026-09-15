@@ -27,6 +27,69 @@
               "integer",
               "null"
             ]
+          },
+          "exercised": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "default": null
+          },
+          "reached": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "default": null
+          },
+          "failure_reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "default": null
+          },
+          "files_read": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "default": null
+          },
+          "hops": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "default": null
+          },
+          "bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "default": null
+          },
+          "tokens": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "default": null
+          },
+          "relevant_facts": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "default": null
+          },
+          "noise_records_read": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "default": null
           }
         },
         "required": [

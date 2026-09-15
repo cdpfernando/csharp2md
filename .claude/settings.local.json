@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"D:\\\\workspace\\\\csharp2md\" log --oneline -20)",
+      "Bash(git -C \"D:\\\\workspace\\\\csharp2md\" remote -v)",
+      "Read(//d/workspace/**)",
+      "Read(//d//**)",
+      "Read(//c/Users/cdpfe/**)",
+      "Bash(python3 \".claude/skills/tlc-spec-driven/scripts/validate_spec.py\" \".specs/features/csharp2md/spec.md\")",
+      "Bash(curl -s \"https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/index.json\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\)['versions']; print\\('\\\\n'.join\\(d[-12:]\\)\\)\")",
+      "Bash(curl -s \"https://api.nuget.org/v3-flatcontainer/system.commandline/index.json\")"
+    ]
+  }
+}

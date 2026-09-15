@@ -73,7 +73,7 @@ public sealed class BatchPublicationEngineTests
             var unpublished = Assert.Single(result.Solutions, outcome => outcome.Status == PublicationStatus.Unpublished);
             Assert.Equal("Classification and Promotion", unpublished.FailingStage);
             Assert.NotNull(store.PackagesBeforeBatch);
-            AssertEqualSnapshots(store.PackagesBeforeBatch, SnapshotPackages(output.FullName));
+            PackageSnapshot.AssertEqual(store.PackagesBeforeBatch, SnapshotPackages(output.FullName));
             var unpublishedRecord = Assert.Single(
                 store.Published,
                 record => record.Status == PublicationStatus.Unpublished);
@@ -154,17 +154,6 @@ public sealed class BatchPublicationEngineTests
                     Key: Path.GetRelativePath(outputRoot, path).Replace('\\', '/'),
                     Bytes: File.ReadAllBytes(path))))
             .ToDictionary(pair => pair.Key, pair => pair.Bytes, StringComparer.Ordinal);
-    }
-
-    private static void AssertEqualSnapshots(
-        IReadOnlyDictionary<string, byte[]> left,
-        IReadOnlyDictionary<string, byte[]> right)
-    {
-        Assert.Equal(left.Keys.Order(StringComparer.Ordinal), right.Keys.Order(StringComparer.Ordinal));
-        foreach (var key in left.Keys)
-        {
-            Assert.True(left[key].AsSpan().SequenceEqual(right[key]), $"Bytes at '{key}' changed.");
-        }
     }
 
     private sealed class RecordingBatchStore : ITransactionalStore

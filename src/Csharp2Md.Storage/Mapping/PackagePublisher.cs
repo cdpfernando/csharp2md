@@ -8,17 +8,44 @@ internal static class PackagePublisher
     internal const string RegistryKey = "contracts/taxonomy-registry.json";
     internal const string ManifestKey = "manifest.json";
 
+    /// <summary>
+    /// Plans with an effectively unbounded ceiling, preserving the unsplit shape every caller of this
+    /// overload already depends on. A caller that wants the derived ceiling actually enforced -- and a
+    /// caller (such as <see cref="PublicationPipeline"/>) that already built a plan for citations, so the
+    /// bytes written always agree with the citations minted against them (AD-023) -- should use the
+    /// <see cref="LayoutPlan"/> overload instead.
+    /// </summary>
     internal static ImmutableArray<StagedFragment> ToPublicationOrder(
         WireDocument document,
         ImmutableArray<StagedFragment> projections = default)
     {
         ArgumentNullException.ThrowIfNull(document);
+        return ToPublicationOrder(document, LayoutPlanner.Plan(document, int.MaxValue), projections);
+    }
 
-        var view = PublishedPackageView.From(document);
-        var payloads = ImmutableArray.CreateBuilder<StagedFragment>(view.Slots.Length);
-        foreach (var slot in view.Slots)
+    internal static ImmutableArray<StagedFragment> ToPublicationOrder(
+        WireDocument document,
+        LayoutPlan plan,
+        ImmutableArray<StagedFragment> projections = default,
+        ProvenanceDto? provenance = null)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(plan);
+
+        var view = PublishedPackageView.From(document, plan);
+        var payloads = ImmutableArray.CreateBuilder<StagedFragment>(plan.Artifacts.Length);
+        foreach (var artifact in plan.Artifacts)
         {
-            payloads.Add(new StagedFragment(slot.Role, slot.CanonicalKey, Write(document, slot.CanonicalKey)));
+            // A compound fact-family bundle's file is one JSON object with several named arrays, not a
+            // flat array of interchangeable entries -- LayoutPlanner precomputes its exact bytes and
+            // carries them here directly, while still populating Records (below) so a citation into it
+            // resolves to that one record's own bytes (see ProjectionValidator.AuthoritativeText).
+            var bytes = !artifact.PrecomputedBytes.IsDefault
+                ? artifact.PrecomputedBytes
+                : artifact.Records.IsEmpty
+                    ? Write(document, artifact.ArtifactKey)
+                    : LayoutPlanner.SerializeRecords(artifact.Records.Select(static record => record.Entry));
+            payloads.Add(new StagedFragment(artifact.Role, artifact.ArtifactKey, bytes));
         }
 
         var fragments = payloads.ToImmutable();
@@ -28,10 +55,16 @@ internal static class PackagePublisher
         }
 
         var context = new ManifestContext(document.Manifest.SolutionKey, document.Manifest.SolutionFileName);
-        var manifest = ManifestBuilder.From(context, fragments, view);
-        return fragments.Add(new StagedFragment(ArtifactRole.Manifest, ManifestKey, CanonicalJson.Write(manifest)));
+        var manifest = ManifestBuilder.From(context, fragments, view, provenance);
+        return fragments.AddRange(ManifestSharder.ToFragments(manifest, plan.CeilingBytes));
     }
 
+    /// <summary>
+    /// Assembles the whole-document, never-split artifacts: the taxonomy registry, the envelopes and the
+    /// compound fact-family bundles. The flat record-array families (confirmed relations, candidates,
+    /// unresolved records, open frontiers, observations) are not written here -- the plan already
+    /// carries their exact, possibly-sharded byte content (see <see cref="ToPublicationOrder(WireDocument, LayoutPlan, ImmutableArray{StagedFragment})"/>).
+    /// </summary>
     internal static ImmutableArray<byte> Write(WireDocument document, string canonicalKey)
     {
         if (canonicalKey == RegistryKey)
@@ -100,52 +133,11 @@ internal static class PackagePublisher
             return CanonicalJson.Write(new ConfigurationFactsShard(document.ConfigurationBindings));
         }
 
-        if (canonicalKey == "relations/candidates.json")
-        {
-            return CanonicalJson.Write(document.Candidates);
-        }
-
-        if (canonicalKey == "relations/unresolved.json")
-        {
-            return CanonicalJson.Write(document.Unresolved);
-        }
-
-        if (canonicalKey == "relations/frontiers.json")
-        {
-            return CanonicalJson.Write(document.Frontiers);
-        }
-
         if (canonicalKey == "quarantine/records.json")
         {
             return CanonicalJson.Write(new QuarantineEnvelope(document.Quarantine));
         }
 
-        const string observationPrefix = "observations/";
-        if (TryFamilyName(canonicalKey, observationPrefix, out var observationKind))
-        {
-            return CanonicalJson.Write(document.Observations[observationKind]);
-        }
-
-        const string confirmedPrefix = "relations/confirmed/";
-        if (TryFamilyName(canonicalKey, confirmedPrefix, out var relationKind))
-        {
-            return CanonicalJson.Write(document.ConfirmedRelations[relationKind]);
-        }
-
         throw new InvalidOperationException($"PublishedPackageView emitted unsupported canonical key '{canonicalKey}'.");
-    }
-
-    private static bool TryFamilyName(string canonicalKey, string prefix, out string name)
-    {
-        if (canonicalKey.StartsWith(prefix, StringComparison.Ordinal)
-            && canonicalKey.EndsWith(".json", StringComparison.Ordinal)
-            && canonicalKey.Length > prefix.Length + ".json".Length)
-        {
-            name = canonicalKey[prefix.Length..^".json".Length];
-            return name.Length > 0;
-        }
-
-        name = string.Empty;
-        return false;
     }
 }

@@ -1,3 +1,4 @@
+using System.Text;
 using Csharp2Md.Analysis.Extraction;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
@@ -281,6 +282,127 @@ public sealed class ConfigurationDocumentReaderTests
         {
             tree.Delete(recursive: true);
         }
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-105")]
+    public void Emit_LineAndBlockComments_YieldsBindingAndNoMalformedDiagnostic()
+    {
+        using var tree = new TempRoot();
+        var json = "{\n  // line comment\n  \"Certification\": {\n    /* block comment */\n    \"Level\": \"Info\"\n  }\n}";
+        var context = Arrange(tree, json);
+
+        var count = ConfigurationDocumentReader.Emit(context, CancellationToken.None);
+        var snapshot = context.Accumulator.ToSnapshot();
+
+        Assert.Equal(1, count);
+        Assert.Equal("Certification:Level", PayloadValue(Assert.Single(ConfigurationObservations(context)), "key"));
+        Assert.DoesNotContain(
+            snapshot.Diagnostics,
+            record => string.Equals(record.Code, "malformed-configuration-document", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-105")]
+    public void Emit_TrailingComma_YieldsBindingAndNoMalformedDiagnostic()
+    {
+        using var tree = new TempRoot();
+        var json = "{\n  \"Certification\": {\n    \"Level\": \"Info\",\n  },\n}";
+        var context = Arrange(tree, json);
+
+        var count = ConfigurationDocumentReader.Emit(context, CancellationToken.None);
+        var snapshot = context.Accumulator.ToSnapshot();
+
+        Assert.Equal(1, count);
+        Assert.Equal("Certification:Level", PayloadValue(Assert.Single(ConfigurationObservations(context)), "key"));
+        Assert.DoesNotContain(
+            snapshot.Diagnostics,
+            record => string.Equals(record.Code, "malformed-configuration-document", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-105")]
+    public void Emit_Utf8Bom_YieldsBindingAndNoMalformedDiagnostic()
+    {
+        using var tree = new TempRoot();
+        var app = Path.Combine(tree.Root, "App");
+        Directory.CreateDirectory(app);
+        File.WriteAllText(
+            Path.Combine(app, "appsettings.json"),
+            """{"Certification": {"Level": "Info"}}""",
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        var context = ArrangeExisting(tree.Root, "App/appsettings.json");
+
+        var count = ConfigurationDocumentReader.Emit(context, CancellationToken.None);
+        var snapshot = context.Accumulator.ToSnapshot();
+
+        Assert.Equal(1, count);
+        Assert.Equal("Certification:Level", PayloadValue(Assert.Single(ConfigurationObservations(context)), "key"));
+        Assert.DoesNotContain(
+            snapshot.Diagnostics,
+            record => string.Equals(record.Code, "malformed-configuration-document", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-106")]
+    public void Emit_UnterminatedObject_IsStillDiagnosedAndYieldsNoBinding()
+    {
+        using var tree = new TempRoot();
+        var context = Arrange(tree, "{ \"Certification\": { \"Level\": \"Info\"");
+
+        var count = ConfigurationDocumentReader.Emit(context, CancellationToken.None);
+        var snapshot = context.Accumulator.ToSnapshot();
+
+        Assert.Equal(0, count);
+        Assert.Empty(ConfigurationObservations(context));
+        var diagnostic = Assert.Single(
+            snapshot.Diagnostics,
+            record => string.Equals(record.Code, "malformed-configuration-document", StringComparison.Ordinal));
+        Assert.Equal("App/appsettings.json", diagnostic.IdentityOrKey);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-107")]
+    public void Emit_DuplicateKey_IsDiagnosedAsMalformedAndYieldsNoBinding()
+    {
+        using var tree = new TempRoot();
+        var json = """{ "Certification": { "Level": "Info" }, "Certification": { "Level": "Debug" } }""";
+        var context = Arrange(tree, json);
+
+        var count = ConfigurationDocumentReader.Emit(context, CancellationToken.None);
+        var snapshot = context.Accumulator.ToSnapshot();
+
+        Assert.Equal(0, count);
+        Assert.Empty(ConfigurationObservations(context));
+        var diagnostic = Assert.Single(
+            snapshot.Diagnostics,
+            record => string.Equals(record.Code, "malformed-configuration-document", StringComparison.Ordinal));
+        Assert.Equal("App/appsettings.json", diagnostic.IdentityOrKey);
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-107")]
+    public void Emit_CaseInsensitiveDuplicateKey_IsDiagnosedAsMalformedAndYieldsNoBinding()
+    {
+        using var tree = new TempRoot();
+        var json = """{ "Name": "a", "name": "b" }""";
+        var context = Arrange(tree, json);
+
+        var count = ConfigurationDocumentReader.Emit(context, CancellationToken.None);
+        var snapshot = context.Accumulator.ToSnapshot();
+
+        Assert.Equal(0, count);
+        Assert.Empty(ConfigurationObservations(context));
+        Assert.Single(
+            snapshot.Diagnostics,
+            record => string.Equals(record.Code, "malformed-configuration-document", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Trait("Requirement", "GCPC-105")]
+    public void ParsingPolicy_IsANonEmptyStatedPolicyString()
+    {
+        Assert.False(string.IsNullOrWhiteSpace(ConfigurationDocumentReader.ParsingPolicy));
     }
 
     private static PipelineContext Arrange(TempRoot tree, string json)

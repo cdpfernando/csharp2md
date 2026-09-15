@@ -2,6 +2,28 @@ namespace Csharp2Md.Analysis.Inventory;
 
 internal static class AuthorizedRoot
 {
+    /// <summary>
+    /// The authorized root of <paramref name="solutionPath"/>, taking the existing project paths from
+    /// the solution file itself. A listed project that is not on disk contributes nothing to the root.
+    /// </summary>
+    public static string ForSolution(string solutionPath)
+    {
+        var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
+        var solutionDirectory = Path.GetDirectoryName(Path.GetFullPath(solutionPath))
+            ?? throw new InvalidOperationException($"'{solutionPath}' has no containing directory.");
+        var existing = listed
+            .Select(listedPath => Path.GetFullPath(Path.Combine(solutionDirectory, listedPath)))
+            .Where(File.Exists);
+        return Compute(solutionPath, existing);
+    }
+
+    /// <summary>
+    /// <paramref name="absolutePath"/> relative to <paramref name="root"/> with forward slashes on
+    /// every platform - the logical form every fact and observation addresses a file by.
+    /// </summary>
+    public static string ToLogicalPath(string root, string absolutePath) =>
+        Path.GetRelativePath(root, absolutePath).Replace('\\', '/');
+
     public static string Compute(string solutionPath, IEnumerable<string> existingProjectPaths)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(solutionPath);

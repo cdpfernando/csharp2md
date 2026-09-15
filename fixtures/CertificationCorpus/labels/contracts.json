@@ -1,0 +1,28 @@
+[
+  {
+    "id": "contract-orderplaced",
+    "kind": "positive",
+    "expected": "present",
+    "sourceFile": "fixtures/SyntheticSolution/Acme.Orders/OrderService.cs",
+    "relatedSourceFile": "fixtures/SyntheticSolution/Acme.Orders.Worker/OrderPlacedWorker.cs",
+    "symbol": "OrderPlaced",
+    "rationale": "Published by OrderService.PlaceOrderAsync (Acme.Orders) and handled by OrderPlacedWorker (Acme.Orders.Worker) -- producer, type and consumer prove the identity is shared across a project boundary. Already proven by ContractRelationIntegrationTests. Contract identity is proven, so both the producer and the consumer must be recoverable from postings in one hop from that identity (GCPC-091). Note: Certification.Messaging/ContractShapes.cs's OrderCreated is published and handled entirely within one project (Certification.Messaging), which ContractPass does not promote to a Contract -- that pair is deliberately not used as the positive case here; see T54's commit deviation note."
+  },
+  {
+    "id": "contract-ordershipped",
+    "kind": "negative",
+    "expected": "unresolved",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Messaging/ContractShapes.cs",
+    "symbol": "OrderShipped",
+    "rationale": "Published with deliberately no handler anywhere in the corpus. Must publish an explicit unresolved or excluded outcome, never a contract, and must never be presented in any envelope as 'no messaging' (GCPC-089, GCPC-092)."
+  },
+  {
+    "id": "contract-receipt-not-merged",
+    "kind": "lookalike",
+    "expected": "absent",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Messaging/ContractShapes.cs",
+    "relatedSourceFile": "fixtures/CertificationCorpus/Certification.Api/DuplicatePayloadName.cs",
+    "symbol": "Receipt",
+    "rationale": "Certification.Messaging.Receipt and Certification.Api.Receipt share a name but nothing else -- no project reference either way. The classifier must never create a shared contract identity from name similarity, structural similarity, path or prefix alone (GCPC-090); the expected 'absent' is the absence of a shared contract across the pair, not the absence of either individual type."
+  }
+]

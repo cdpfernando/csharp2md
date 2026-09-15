@@ -70,14 +70,16 @@ public sealed class AnalyzeBatchFailureTests
     public void AnalyzeAndRoot_ExposeNoNewOption()
     {
         var root = CommandFactory.CreateRootCommand();
-        var analyze = Assert.Single(root.Subcommands);
+        var analyze = Assert.Single(root.Subcommands, static command => command.Name == "analyze");
 
         var analyzeProductOptions = analyze.Options
             .Where(static option => option is not HelpOption and not VersionOption)
             .Select(static option => option.Name)
             .OrderBy(static name => name, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(["--output", "--solution"], analyzeProductOptions);
+        Assert.Equal(
+            ["--allowlist", "--max-file-reads-per-scenario", "--output", "--reading-budget-tokens", "--solution"],
+            analyzeProductOptions);
         Assert.Empty(analyze.Arguments);
         Assert.DoesNotContain(
             root.Options,

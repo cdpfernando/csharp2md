@@ -66,7 +66,8 @@ public sealed class ProjectorPublicationTests
             Path.GetFileName(SolutionKey));
         var expected = PackageValidator.Validate(DomainMapper.ToWire(FactualSnapshot.Empty, context)).Document;
         Assert.Equal(expected.Manifest.SolutionKey, projector.View.Document.Manifest.SolutionKey);
-        Assert.Equal(expected.RunCertification, projector.View.Document.RunCertification);
+        Assert.Equal(expected.RunCertification.Status, projector.View.Document.RunCertification.Status);
+        Assert.Equal(expected.RunCertification.Reasons.ToArray(), projector.View.Document.RunCertification.Reasons.ToArray());
         Assert.Equal(expected.Quarantine.Length, projector.View.Document.Quarantine.Length);
     }
 
@@ -79,7 +80,7 @@ public sealed class ProjectorPublicationTests
             Path.Combine(StorageTestPaths.RepoRoot, "src", "Csharp2Md.Storage", "Mapping", "PublicationPipeline.cs"));
 
         var validate = pipeline.IndexOf("PackageValidator.Validate", StringComparison.Ordinal);
-        var viewFromReport = pipeline.IndexOf("PublishedPackageView.From(report.Document)", StringComparison.Ordinal);
+        var viewFromReport = pipeline.IndexOf("PublishedPackageView.From(report.Document, plan)", StringComparison.Ordinal);
         var project = pipeline.IndexOf("projector.Project(view, source)", StringComparison.Ordinal);
         var order = pipeline.IndexOf("PackagePublisher.ToPublicationOrder", StringComparison.Ordinal);
 
@@ -88,6 +89,7 @@ public sealed class ProjectorPublicationTests
         Assert.True(project > viewFromReport, "Project must run after the post-validation view is built.");
         Assert.True(order > project, "Ordering must run after projection.");
         Assert.DoesNotContain("PublishedPackageView.From(document)", pipeline, StringComparison.Ordinal);
+        Assert.DoesNotContain("PublishedPackageView.From(document, plan)", pipeline, StringComparison.Ordinal);
     }
 
     private sealed class OneFragmentProjector : IPackageProjector

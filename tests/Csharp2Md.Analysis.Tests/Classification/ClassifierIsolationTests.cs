@@ -124,10 +124,8 @@ public sealed class ClassifierIsolationTests
         Assert.True(outcome.Stages[3].RelationCount > 0, $"Classification relation count was {outcome.Stages[3].RelationCount}.");
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
 
-        var architecture = CanonicalJson.Read<ArchitectureFactsShard>(
-            Assert.Single(
-                publication.ArtifactsInPublicationOrder,
-                artifact => artifact.CanonicalKey == "facts/architecture.json").Payload.AsSpan());
+        var architecture = ShardedFactsReader.Read<ArchitectureFactsShard>(
+            publication.ArtifactsInPublicationOrder, "facts/architecture.json");
         Assert.NotEmpty(architecture.Components);
         Assert.NotEmpty(architecture.EntryPoints);
         Assert.Contains(
@@ -158,7 +156,7 @@ public sealed class ClassifierIsolationTests
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
 
         var payloads = publication.ArtifactsInPublicationOrder
-            .Where(artifact => ClassifierPayloadKeys.Contains(artifact.CanonicalKey, StringComparer.Ordinal))
+            .Where(artifact => ClassifierPayloadKeys.Any(baseKey => ShardedFactsReader.IsFamilyMember(artifact.CanonicalKey, baseKey)))
             .Select(artifact => (artifact.CanonicalKey, Text: Encoding.UTF8.GetString(artifact.Payload.ToArray())))
             .ToArray();
         Assert.NotEmpty(payloads);

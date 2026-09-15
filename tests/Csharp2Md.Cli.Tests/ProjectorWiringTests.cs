@@ -13,21 +13,30 @@ public sealed class ProjectorWiringTests
         var source = File.ReadAllText(
             Path.Combine(CliTestPaths.RepoRoot, "src", "Csharp2Md.Cli", "CommandFactory.cs"));
 
-        Assert.Contains("new FilesystemTransactionalStore(outputPath, new PackageProjector())", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "new PackageProjector(ceiling.CeilingBytes)",
+            source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "new BatchComposer(),",
+            source,
+            StringComparison.Ordinal);
     }
 
     [Fact]
     [Trait("Requirement", "RP-06")]
-    public void Analyze_PublishesProjectionsWithoutANewFlag()
+    public void Analyze_PublishesProjectionsWithoutANewProjectionFlag()
     {
-        var analyze = Assert.Single(CommandFactory.CreateRootCommand().Subcommands);
+        var analyze = Assert.Single(CommandFactory.CreateRootCommand().Subcommands, static command => command.Name == "analyze");
         var names = analyze.Options
             .Where(static option => option is not HelpOption and not VersionOption)
             .Select(static option => option.Name)
             .OrderBy(static name => name, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Equal(["--output", "--solution"], names);
+        Assert.Equal(
+            ["--allowlist", "--max-file-reads-per-scenario", "--output", "--reading-budget-tokens", "--solution"],
+            names);
         Assert.DoesNotContain(names, static name => name.Contains("project", StringComparison.OrdinalIgnoreCase));
     }
 }

@@ -27,6 +27,8 @@ internal sealed class PipelineContext
 
     public ImmutableArray<Csharp2Md.Domain.Facts.Document> ConfigurationDocuments { get; set; } = [];
 
+    public ImmutableArray<string> AllowedDocumentPaths { get; set; } = [];
+
     public BoundSolution? BoundSolution { get; set; }
 
     public ImmutableArray<AnalysisVariantId> AnalysisVariants { get; set; } = [];

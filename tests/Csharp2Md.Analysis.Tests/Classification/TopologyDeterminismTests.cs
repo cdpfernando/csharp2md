@@ -195,7 +195,7 @@ public sealed class TopologyDeterminismTests
 
     private static StagedFragment[] TopologyFragments(CommittedPublication publication) =>
         [.. publication.ArtifactsInPublicationOrder
-            .Where(fragment => TopologyPayloadKeys.Contains(fragment.CanonicalKey, StringComparer.Ordinal))];
+            .Where(fragment => TopologyPayloadKeys.Any(baseKey => ShardedFactsReader.IsFamilyMember(fragment.CanonicalKey, baseKey)))];
 
     private static IReadOnlyList<(string Key, string Text)> TopologyPayloads(CommittedPublication publication) =>
         TopologyFragments(publication)
@@ -239,18 +239,24 @@ public sealed class TopologyDeterminismTests
     private static T? ReadOptional<T>(CommittedPublication publication, string canonicalKey)
         where T : class
     {
-        var fragment = publication.ArtifactsInPublicationOrder
-            .SingleOrDefault(artifact => artifact.CanonicalKey == canonicalKey);
-        return fragment is null ? null : CanonicalJson.Read<T>(fragment.Payload.AsSpan());
+        var hasAny = publication.ArtifactsInPublicationOrder
+            .Any(artifact => ShardedFactsReader.IsFamilyMember(artifact.CanonicalKey, canonicalKey));
+        return hasAny ? ShardedFactsReader.Read<T>(publication.ArtifactsInPublicationOrder, canonicalKey) : null;
     }
 
     private static ImmutableArray<T> ReadOptionalArray<T>(CommittedPublication publication, string canonicalKey)
     {
-        var fragment = publication.ArtifactsInPublicationOrder
-            .SingleOrDefault(artifact => artifact.CanonicalKey == canonicalKey);
-        return fragment is null
-            ? []
-            : CanonicalJson.Read<ImmutableArray<T>>(fragment.Payload.AsSpan());
+        var matches = publication.ArtifactsInPublicationOrder
+            .Where(artifact => ShardedFactsReader.IsFamilyMember(artifact.CanonicalKey, canonicalKey))
+            .OrderBy(static artifact => artifact.CanonicalKey, StringComparer.Ordinal);
+
+        var records = ImmutableArray.CreateBuilder<T>();
+        foreach (var artifact in matches)
+        {
+            records.AddRange(CanonicalJson.Read<ImmutableArray<T>>(artifact.Payload.AsSpan()));
+        }
+
+        return records.ToImmutable();
     }
 
     private static string[] Ordered(IEnumerable<string> values) =>

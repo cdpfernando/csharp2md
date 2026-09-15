@@ -41,7 +41,10 @@ public sealed class RegistryDriftGateTests
     public void HandEditedCopy_FailsTheByteComparison_NamingTheDifferingEntry()
     {
         var freshJson = TaxonomyRegistryWriter.Write(TaxonomyTables.Default);
-        var handEdited = freshJson.Replace("\"schema_version\": 1", "\"schema_version\": 2", StringComparison.Ordinal);
+        // observation_schema_version stays at 1 under F3's version bump (only schema_version,
+        // taxonomy_version, extractor_set_version and classifier_set_version advance to 2), so it is
+        // still a genuine hand-edit target here.
+        var handEdited = freshJson.Replace("\"observation_schema_version\": 1", "\"observation_schema_version\": 2", StringComparison.Ordinal);
         Assert.NotEqual(freshJson, handEdited);
 
         var freshBytes = NoBomUtf8.GetBytes(freshJson);
@@ -50,8 +53,8 @@ public sealed class RegistryDriftGateTests
         Assert.False(freshBytes.AsSpan().SequenceEqual(handEditedBytes));
 
         var description = DescribeDifference(freshBytes, handEditedBytes);
-        Assert.Contains("schema_version", description, StringComparison.Ordinal);
-        Assert.Contains("line 2", description, StringComparison.Ordinal);
+        Assert.Contains("observation_schema_version", description, StringComparison.Ordinal);
+        Assert.Contains("line 4", description, StringComparison.Ordinal);
     }
 
     [Fact]

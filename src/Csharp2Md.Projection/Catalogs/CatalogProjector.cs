@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Projection.Labels;
 using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Wire;
 
@@ -63,7 +64,12 @@ internal static class CatalogProjector
                 continue;
             }
 
-            entries.Add(new CatalogEntryDto(identity.Id, citation.ArtifactKey, citation.Ordinal, identity.FactType));
+            entries.Add(new CatalogEntryDto(
+                identity.Id,
+                citation.ArtifactKey,
+                citation.Ordinal,
+                identity.FactType,
+                LabelProjector.For(identity, view)));
         }
 
         if (entries.Count == 0)
@@ -85,16 +91,31 @@ internal static class CatalogProjector
             return;
         }
 
-        var artifactKey = view.Slots
-            .Single(static slot => slot.CanonicalKey.EndsWith("/unresolved.json", StringComparison.Ordinal))
-            .CanonicalKey;
-        var entries = ranked
-            .Select(item => new CatalogEntryDto(
+        // GCPC-040/GCPC-041: `item.Ordinal` is the record's position in the document's own (unsplit)
+        // `Unresolved` array, not necessarily its ordinal inside whatever artifact the family split into
+        // -- resolve the real, shard-aware citation instead of assuming the family stayed in a single
+        // "relations/unresolved.json", a key no shard of a split family ever ends with.
+        var entries = new List<CatalogEntryDto>();
+        foreach (var item in ranked)
+        {
+            if (!view.TryLocateUnresolved(item.Ordinal, out var citation))
+            {
+                continue;
+            }
+
+            entries.Add(new CatalogEntryDto(
                 item.Record.Source.Id,
-                artifactKey,
-                item.Ordinal,
-                item.Record.Source.FactType))
-            .ToArray();
+                citation.ArtifactKey,
+                citation.Ordinal,
+                item.Record.Source.FactType,
+                LabelProjector.For(item.Record.Source, view)));
+        }
+
+        if (entries.Count == 0)
+        {
+            return;
+        }
+
         fragments.AddRange(ShardWriter.Write(UnknownsKey, Nodes(entries), ceilingBytes));
     }
 

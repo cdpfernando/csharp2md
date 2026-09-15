@@ -51,6 +51,73 @@ public readonly record struct CanonicalSymbolSignature
         return new CanonicalSymbolSignature(signature.Value.Replace("id1:signature", "sig1", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// The decoded value of <paramref name="key"/> in <paramref name="signature"/> - the inverse of the
+    /// encoding <see cref="Create"/> applies. Null when the component is absent or carries the <c>-</c>
+    /// sentinel that stands for an omitted component.
+    /// </summary>
+    public static string? Component(string signature, string key)
+    {
+        ArgumentNullException.ThrowIfNull(signature);
+        ArgumentException.ThrowIfNullOrEmpty(key);
+
+        var marker = ";" + key + "=";
+        var start = signature.IndexOf(marker, StringComparison.Ordinal);
+        if (start < 0)
+        {
+            return null;
+        }
+
+        start += marker.Length;
+        var end = signature.IndexOf(';', start);
+        var encoded = end < 0 ? signature[start..] : signature[start..end];
+        return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
+    }
+
+    /// <summary>The decoded value of <paramref name="key"/> in this signature.</summary>
+    public string? Component(string key) => Component(Value, key);
+
+    public static ImmutableArray<string> SplitTopLevel(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        var slices = ImmutableArray.CreateBuilder<string>();
+        var start = 0;
+        var depth = 0;
+        for (var index = 0; index < text.Length; index++)
+        {
+            switch (text[index])
+            {
+                case '<':
+                case '(':
+                case '[':
+                    depth++;
+                    break;
+                case '>':
+                case ')':
+                case ']':
+                    if (depth > 0)
+                    {
+                        depth--;
+                    }
+
+                    break;
+                case ',' when depth == 0:
+                    slices.Add(text[start..index]);
+                    start = index + 1;
+                    break;
+            }
+        }
+
+        if (depth != 0)
+        {
+            throw new ArgumentException("The signature list is delimiter-unbalanced.", nameof(text));
+        }
+
+        slices.Add(text[start..]);
+        return slices.ToImmutable();
+    }
+
     private CanonicalSymbolSignature(string value) => _value = value;
 
     public override string ToString() => Value;

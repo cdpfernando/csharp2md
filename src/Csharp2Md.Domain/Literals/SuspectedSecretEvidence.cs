@@ -4,7 +4,7 @@ namespace Csharp2Md.Domain.Literals;
 /// An excerpt is accepted only when it carries a visible redaction marker (<c>***</c> or
 /// <c>[REDACTED]</c>). This is a shape check, not a secret-detection algorithm: it rejects text
 /// that carries no redaction marker at all, which is the narrow contract this type owns. Deciding
-/// what to redact from a source span is workstream 4's job.
+/// what to redact from a source span belongs to the caller.
 /// </summary>
 public readonly record struct RedactedExcerpt
 {

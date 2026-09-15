@@ -1,0 +1,10 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove($(MSBuildThisFile), $(MSBuildThisFileDirectory)..))" />
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\TempPath.cs" Link="Shared\TempPath.cs" />
+    <Using Include="Csharp2Md.Tests.Shared" />
+  </ItemGroup>
+
+</Project>

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Xml.Linq;
+using Csharp2Md.Analysis.Classification;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Literals;
@@ -10,7 +11,9 @@ internal sealed record InventoriedDocuments(
     ImmutableArray<Document> Documents,
     ImmutableArray<Document> CSharpDocuments,
     ImmutableArray<Document> ConfigurationDocuments,
-    ImmutableArray<DiagnosticRecord> Diagnostics);
+    ImmutableArray<DiagnosticRecord> Diagnostics,
+    ImmutableArray<string> ExcludedRelativePaths,
+    DocumentPolicyReport PolicyReport);
 
 internal static class DocumentInventory
 {
@@ -37,7 +40,8 @@ internal static class DocumentInventory
         string authorizedRoot,
         Project owningProject,
         string projectFilePath,
-        IReadOnlyList<string>? listedProjectFilePaths = null)
+        IReadOnlyList<string>? listedProjectFilePaths = null,
+        ImmutableArray<string> allowlistedRelativePaths = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(authorizedRoot);
         ArgumentNullException.ThrowIfNull(owningProject);
@@ -68,10 +72,15 @@ internal static class DocumentInventory
             }
         }
 
+        var policy = new SupportedDocumentPolicy(new ClassifierCapabilityRegistry([]), allowlistedRelativePaths);
+
         var documents = ImmutableArray.CreateBuilder<Document>();
         var csharpDocuments = ImmutableArray.CreateBuilder<Document>();
         var configurationDocuments = ImmutableArray.CreateBuilder<Document>();
         var diagnostics = ImmutableArray.CreateBuilder<DiagnosticRecord>();
+        var excludedRelativePaths = ImmutableArray.CreateBuilder<string>();
+        var excludedExtensions = new SortedSet<string>(StringComparer.Ordinal);
+        var outcomes = ImmutableArray.CreateBuilder<(DocumentPolicyCategory Category, bool Accepted, long Bytes)>();
         foreach (var absolute in absolutePaths.OrderBy(path => path, comparison))
         {
             var relative = ToRelativeDocumentPath(root, absolute);
@@ -80,42 +89,53 @@ internal static class DocumentInventory
                 continue;
             }
 
-            var digest = Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(absolute)));
+            var decision = policy.Decide(relative);
+            if (!decision.Accepted)
+            {
+                excludedRelativePaths.Add(relative);
+                excludedExtensions.Add(ExtensionForReporting(relative));
+                outcomes.Add((decision.Category, false, new FileInfo(absolute).Length));
+                continue;
+            }
+
+            var bytes = File.ReadAllBytes(absolute);
+            outcomes.Add((decision.Category, true, bytes.LongLength));
+            var digest = Convert.ToHexStringLower(SHA256.HashData(bytes));
             var document = Document.Create(owningProject.Id, relative, DocumentHash.Create(digest));
             documents.Add(document);
-            if (IsCSharpDocument(relative))
+            switch (decision.Category)
             {
-                csharpDocuments.Add(document);
-                continue;
+                case DocumentPolicyCategory.CSharpSource:
+                    csharpDocuments.Add(document);
+                    break;
+                case DocumentPolicyCategory.Configuration:
+                    configurationDocuments.Add(document);
+                    break;
             }
+        }
 
-            if (IsConfigurationDocument(relative))
-            {
-                configurationDocuments.Add(document);
-                continue;
-            }
-
+        if (excludedRelativePaths.Count > 0)
+        {
             diagnostics.Add(new DiagnosticRecord(
                 "unsupported-document",
-                "The document is not C# and will not be extracted.",
-                relative));
+                $"{excludedRelativePaths.Count} document(s) excluded by the supported-document policy: "
+                    + string.Join(", ", excludedExtensions) + ".",
+                null));
         }
 
         return new InventoriedDocuments(
             documents.ToImmutable(),
             csharpDocuments.ToImmutable(),
             configurationDocuments.ToImmutable(),
-            diagnostics.ToImmutable());
+            diagnostics.ToImmutable(),
+            excludedRelativePaths.ToImmutable(),
+            DocumentPolicyReport.FromOutcomes(outcomes));
     }
 
-    private static bool IsCSharpDocument(string relativePath) =>
-        relativePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
-
-    private static bool IsConfigurationDocument(string relativePath)
+    private static string ExtensionForReporting(string relativePath)
     {
-        var fileName = Path.GetFileName(relativePath);
-        return fileName.StartsWith("appsettings", StringComparison.OrdinalIgnoreCase)
-            && fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
+        var extension = Path.GetExtension(relativePath);
+        return extension.Length > 0 ? extension.ToLowerInvariant() : Path.GetFileName(relativePath);
     }
 
     private static void TryAddInventoriedPath(HashSet<string> absolutePaths, string root, string candidate)
@@ -227,7 +247,7 @@ internal static class DocumentInventory
 
     private static string? ToRelativeDocumentPath(string root, string absolute)
     {
-        var relative = Path.GetRelativePath(root, absolute).Replace('\\', '/');
+        var relative = AuthorizedRoot.ToLogicalPath(root, absolute);
         if (Path.IsPathRooted(relative)
             || relative.Length >= 2 && char.IsAsciiLetter(relative[0]) && relative[1] == ':')
         {

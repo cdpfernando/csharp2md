@@ -46,17 +46,17 @@ internal sealed class BoundaryPass : IClassifierPass
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var factCount = ClassifyHttpInbound(context);
+        var inbound = ClassifyHttpInbound(context);
         var outbound = ClassifyHttpOutbound(context);
         var messagingFacts = ClassifyMessagingOutbound(context) + ClassifyMessagingInbound(context);
         return new ClassifierPassResult(
-            factCount + outbound.FactCount + messagingFacts,
+            inbound.FactCount + outbound.FactCount + messagingFacts,
             0,
             outbound.CandidateCount,
-            outbound.UnresolvedCount);
+            outbound.UnresolvedCount + inbound.UnresolvedCount);
     }
 
-    private static int ClassifyHttpInbound(ClassifierContext context)
+    private static (int FactCount, int UnresolvedCount) ClassifyHttpInbound(ClassifierContext context)
     {
         var symbolsById = context.FactsByType<Symbol>()
             .ToDictionary(static symbol => symbol.Reference.Id.Value, StringComparer.Ordinal);
@@ -64,6 +64,7 @@ internal sealed class BoundaryPass : IClassifierPass
             .ToDictionary(static component => component.Reference.Id.Value, StringComparer.Ordinal);
 
         var factCount = 0;
+        var unresolvedCount = 0;
         var emittedKeys = new HashSet<string>(StringComparer.Ordinal);
         foreach (var entry in context.FactsByType<EntryPoint>().OrderBy(static e => e.Reference.Id.Value, StringComparer.Ordinal))
         {
@@ -80,12 +81,14 @@ internal sealed class BoundaryPass : IClassifierPass
                 continue;
             }
 
-            var template = ReadPayloadValue(routeDeclaration, RouteKey);
-            if (template is null)
+            var template = PayloadReader.Value(routeDeclaration, RouteKey);
+            var httpMethod = PayloadReader.Value(routeDeclaration, MethodNameKey);
+            if (template is null && httpMethod is null)
             {
                 // SPEC_DEVIATION: spec EBC-06 empty template → empty-string protocolOperationKey.
                 // Reason: StructuralLiteral.Create rejects empty canonical text, matching the
-                // design missing-field rule (skip + diagnostic).
+                // design missing-field rule (skip + diagnostic). Neither the verb nor the route is
+                // proven here, so there is nothing to publish (GCPC-099..102 need at least one).
                 context.Accumulator.AddDiagnostic(
                     new DiagnosticRecord(
                         "missing-route-template",
@@ -97,25 +100,47 @@ internal sealed class BoundaryPass : IClassifierPass
             // SPEC_DEVIATION: EBC-06 names the route template as protocolOperationKey.
             // Reason: TAX-30 inbound identity is that key; GET vs DELETE on the same
             // template must not share one identity (Domain example is "POST /charge").
-            var httpMethod = ReadPayloadValue(routeDeclaration, MethodNameKey);
-            var operationKey = httpMethod is null ? template : httpMethod + " " + template;
+            var operationKey = template is null
+                ? httpMethod!
+                : httpMethod is null ? template : httpMethod + " " + template;
             if (!emittedKeys.Add(string.Join('\u0000', component.Reference.Id.Value, operationKey)))
             {
                 continue;
             }
 
+            // GCPC-099/GCPC-100: the verb and route are published in their own fields whenever
+            // proven, not left recoverable only by parsing protocolOperationKey.
             var protocolOperationKey = StructuralLiteral.Create(LiteralRole.ProtocolName, operationKey, "protocol-operation-key");
-            context.Accumulator.AddFact(
-                BoundaryOperation.Create(
-                    symbol.Reference,
-                    component.Reference,
-                    BoundaryDirection.Inbound,
-                    BoundaryProtocol.Http,
-                    protocolOperationKey: protocolOperationKey));
+            var route = template is null ? null : (StructuralLiteral?)StructuralLiteral.Create(LiteralRole.Route, template, RouteKey);
+            var operation = BoundaryOperation.Create(
+                symbol.Reference,
+                component.Reference,
+                BoundaryDirection.Inbound,
+                BoundaryProtocol.Http,
+                httpMethod: httpMethod,
+                route: route,
+                protocolOperationKey: protocolOperationKey);
+            context.Accumulator.AddFact(operation);
             factCount++;
+
+            if (route is null || httpMethod is null)
+            {
+                // GCPC-102: only one of the verb and the route is proven here (the other branch above
+                // already handled "neither") -- a conventional action carrying only a bare verb
+                // attribute proves the verb but not the route, and a generic, verb-agnostic [Route]
+                // attribute proves the route but not the verb. Publish the proven field and record the
+                // unproven one as unresolved instead of leaving it undiscoverable.
+                context.Accumulator.AddUnresolved(
+                    UnresolvedRecord.Create(
+                        RelationKind.Targets,
+                        operation.Reference,
+                        UnresolvedCause.InsufficientEvidence,
+                        EvidenceChain.Create([routeDeclaration.Identity])));
+                unresolvedCount++;
+            }
         }
 
-        return factCount;
+        return (factCount, unresolvedCount);
     }
 
     private static (int FactCount, int CandidateCount, int UnresolvedCount) ClassifyHttpOutbound(ClassifierContext context)
@@ -144,7 +169,7 @@ internal sealed class BoundaryPass : IClassifierPass
                 continue;
             }
 
-            var clientName = ReadPayloadValue(createClient, ClientNameKey);
+            var clientName = PayloadReader.Value(createClient, ClientNameKey);
             if (clientName is null)
             {
                 context.Accumulator.AddUnresolved(
@@ -174,7 +199,7 @@ internal sealed class BoundaryPass : IClassifierPass
                     continue;
                 }
 
-                var routeValue = ReadPayloadValue(invocation, RouteKey);
+                var routeValue = PayloadReader.Value(invocation, RouteKey);
                 if (routeValue is null)
                 {
                     context.Accumulator.AddUnresolved(
@@ -238,9 +263,9 @@ internal sealed class BoundaryPass : IClassifierPass
             .OrderBy(static o => o.Identity.Owner.Id.Value, StringComparer.Ordinal)
             .ThenBy(static o => o.Identity.OccurrenceOrdinal))
         {
-            var methodName = ReadPayloadValue(observation, MethodNameKey);
+            var methodName = PayloadReader.Value(observation, MethodNameKey);
             if (methodName is not ("PublishAsync" or "Publish")
-                || !PayloadContains(observation, TargetTypeKey, EventBusTypeName))
+                || !PayloadReader.Contains(observation, TargetTypeKey, EventBusTypeName))
             {
                 continue;
             }
@@ -251,7 +276,7 @@ internal sealed class BoundaryPass : IClassifierPass
                 continue;
             }
 
-            var eventType = ReadPayloadValue(observation, TypeArgumentKey);
+            var eventType = PayloadReader.Value(observation, TypeArgumentKey);
             if (eventType is null)
             {
                 context.Accumulator.AddDiagnostic(
@@ -288,7 +313,7 @@ internal sealed class BoundaryPass : IClassifierPass
         var componentsById = context.FactsByType<Component>()
             .ToDictionary(static component => component.Reference.Id.Value, StringComparer.Ordinal);
         var types = symbolsById.Values
-            .Where(static symbol => string.Equals(ReadField(symbol.Signature.Value, "kind"), "namedtype", StringComparison.Ordinal))
+            .Where(static symbol => string.Equals(SignatureReader.Field(symbol.Signature.Value, "kind"), "namedtype", StringComparison.Ordinal))
             .ToArray();
 
         var factCount = 0;
@@ -297,7 +322,7 @@ internal sealed class BoundaryPass : IClassifierPass
         {
             if (!symbolsById.TryGetValue(entry.Symbol.Id.Value, out var symbol)
                 || !componentsById.TryGetValue(entry.OwningComponent.Id.Value, out var component)
-                || !string.Equals(ReadField(symbol.Signature.Value, "metadata"), "HandleAsync", StringComparison.Ordinal))
+                || !string.Equals(SignatureReader.Field(symbol.Signature.Value, "metadata"), "HandleAsync", StringComparison.Ordinal))
             {
                 continue;
             }
@@ -341,12 +366,12 @@ internal sealed class BoundaryPass : IClassifierPass
         foreach (var observation in context.ObservationsByOwner(declaringType.Reference))
         {
             if (observation.Identity.Kind is not ObservationKind.BaseType
-                || !PayloadContains(observation, TargetTypeKey, IntegrationEventHandlerTypeName))
+                || !PayloadReader.Contains(observation, TargetTypeKey, IntegrationEventHandlerTypeName))
             {
                 continue;
             }
 
-            var typeArgument = ReadPayloadValue(observation, TypeArgumentKey);
+            var typeArgument = PayloadReader.Value(observation, TypeArgumentKey);
             if (typeArgument is not null)
             {
                 return typeArgument;
@@ -358,20 +383,20 @@ internal sealed class BoundaryPass : IClassifierPass
 
     private static bool IsDeclaredOn(Symbol method, Symbol type)
     {
-        var container = ReadField(method.Signature.Value, "container");
+        var container = SignatureReader.Field(method.Signature.Value, "container");
         if (container is null)
         {
             return false;
         }
 
-        var typeName = ReadField(type.Signature.Value, "type");
+        var typeName = SignatureReader.Field(type.Signature.Value, "type");
         if (string.Equals(container, typeName, StringComparison.Ordinal))
         {
             return true;
         }
 
-        var typeContainer = ReadField(type.Signature.Value, "container");
-        var typeMetadata = ReadField(type.Signature.Value, "metadata");
+        var typeContainer = SignatureReader.Field(type.Signature.Value, "container");
+        var typeMetadata = SignatureReader.Field(type.Signature.Value, "metadata");
         return typeContainer is not null
             && typeMetadata is not null
             && string.Equals(container, typeContainer + "." + typeMetadata, StringComparison.Ordinal);
@@ -379,7 +404,7 @@ internal sealed class BoundaryPass : IClassifierPass
 
     private static string? TryFirstParameterType(Symbol method)
     {
-        var parameters = ReadField(method.Signature.Value, "parameters");
+        var parameters = SignatureReader.Field(method.Signature.Value, "parameters");
         if (string.IsNullOrWhiteSpace(parameters))
         {
             return null;
@@ -398,21 +423,6 @@ internal sealed class BoundaryPass : IClassifierPass
         return string.IsNullOrWhiteSpace(first) ? null : first;
     }
 
-    private static string? ReadField(string identity, string key)
-    {
-        var marker = ";" + key + "=";
-        var start = identity.IndexOf(marker, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += marker.Length;
-        var end = identity.IndexOf(';', start);
-        var encoded = end < 0 ? identity[start..] : identity[start..end];
-        return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
-    }
-
     private static int CompareSourceOrder(Observation left, Observation right)
     {
         var locator = left.Locator.CompareTo(right.Locator);
@@ -422,13 +432,13 @@ internal sealed class BoundaryPass : IClassifierPass
     }
 
     private static bool IsCreateClient(Observation observation) =>
-        string.Equals(ReadPayloadValue(observation, MethodNameKey), CreateClientMethodName, StringComparison.Ordinal)
-        && PayloadContains(observation, TargetTypeKey, HttpClientFactoryTypeName);
+        string.Equals(PayloadReader.Value(observation, MethodNameKey), CreateClientMethodName, StringComparison.Ordinal)
+        && PayloadReader.Contains(observation, TargetTypeKey, HttpClientFactoryTypeName);
 
     private static bool TryHttpMethod(Observation observation, out string httpMethod)
     {
         httpMethod = string.Empty;
-        var methodName = ReadPayloadValue(observation, MethodNameKey);
+        var methodName = PayloadReader.Value(observation, MethodNameKey);
         if (methodName is null || !HttpMethodsByInvocationName.TryGetValue(methodName, out var mapped))
         {
             return false;
@@ -436,33 +446,5 @@ internal sealed class BoundaryPass : IClassifierPass
 
         httpMethod = mapped;
         return true;
-    }
-
-    private static bool PayloadContains(Observation observation, string key, string needle)
-    {
-        foreach (var entry in observation.Identity.Payload.Entries)
-        {
-            if (string.Equals(entry.Key, key, StringComparison.Ordinal)
-                && entry.Value.Value.Contains(needle, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string? ReadPayloadValue(Observation observation, string key)
-    {
-        foreach (var entry in observation.Identity.Payload.Entries)
-        {
-            if (string.Equals(entry.Key, key, StringComparison.Ordinal)
-                && !string.IsNullOrWhiteSpace(entry.Value.Value))
-            {
-                return entry.Value.Value;
-            }
-        }
-
-        return null;
     }
 }

@@ -93,6 +93,7 @@ public static class FacetAxes
         SymbolFacet.Client => "client",
         SymbolFacet.Service => "service",
         SymbolFacet.Abstract => "abstract",
+        SymbolFacet.ExternallyReachable => "externally-reachable",
         _ => throw new ArgumentOutOfRangeException(nameof(facet), facet, $"'{facet}' is not a defined value of the '{nameof(SymbolFacet)}' axis."),
     };
 

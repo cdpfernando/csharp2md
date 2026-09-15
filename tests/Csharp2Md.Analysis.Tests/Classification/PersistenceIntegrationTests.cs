@@ -148,25 +148,38 @@ public sealed class PersistenceIntegrationTests
         return (outcome, publication);
     }
 
-    private static T ReadShard<T>(CommittedPublication publication, string canonicalKey)
-    {
-        var fragment = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == canonicalKey);
-        return CanonicalJson.Read<T>(fragment.Payload.AsSpan());
-    }
+    private static T ReadShard<T>(CommittedPublication publication, string canonicalKey) =>
+        ShardedFactsReader.Read<T>(publication.ArtifactsInPublicationOrder, canonicalKey);
 
     private static ImmutableArray<ConfirmedRelationDto> ReadOptionalRelations(
         CommittedPublication publication,
         string canonicalKey) =>
         ReadOptionalArray<ConfirmedRelationDto>(publication, canonicalKey);
 
+    /// <summary>
+    /// T52 made the derived ~32 KiB ceiling the live default, so a flat record-array family may now
+    /// legitimately be sharded into "&lt;stem&gt;.&lt;bucket&gt;.json" artifacts instead of staying one
+    /// file at its base key -- this merges every shard back into one array, matching what
+    /// <c>FactualPackageReader.ReadShardedArray</c> does for a real reader.
+    /// </summary>
     private static ImmutableArray<T> ReadOptionalArray<T>(CommittedPublication publication, string canonicalKey)
     {
-        var fragment = publication.ArtifactsInPublicationOrder
-            .SingleOrDefault(artifact => artifact.CanonicalKey == canonicalKey);
-        return fragment is null
-            ? []
-            : CanonicalJson.Read<ImmutableArray<T>>(fragment.Payload.AsSpan());
+        var stem = canonicalKey.EndsWith(".json", StringComparison.Ordinal)
+            ? canonicalKey[..^".json".Length]
+            : canonicalKey;
+        var shardKeys = publication.ArtifactsInPublicationOrder
+            .Select(static artifact => artifact.CanonicalKey)
+            .Where(key => key == canonicalKey
+                || (key.StartsWith(stem + ".", StringComparison.Ordinal) && key.EndsWith(".json", StringComparison.Ordinal)))
+            .OrderBy(static key => key, StringComparer.Ordinal);
+
+        var records = ImmutableArray.CreateBuilder<T>();
+        foreach (var key in shardKeys)
+        {
+            var fragment = publication.ArtifactsInPublicationOrder.Single(artifact => artifact.CanonicalKey == key);
+            records.AddRange(CanonicalJson.Read<ImmutableArray<T>>(fragment.Payload.AsSpan()));
+        }
+
+        return records.ToImmutable();
     }
 }

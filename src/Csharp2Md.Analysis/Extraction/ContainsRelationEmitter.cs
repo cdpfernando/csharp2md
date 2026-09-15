@@ -1,8 +1,11 @@
+using Csharp2Md.Analysis.Classification;
 using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Semantics;
+using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Domain.Facts;
 using Csharp2Md.Domain.Identity;
+using Csharp2Md.Domain.Observations;
 using Csharp2Md.Domain.Proof;
 using Csharp2Md.Domain.Registry;
 using Csharp2Md.Domain.Relations;
@@ -10,7 +13,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using DomainDocument = Csharp2Md.Domain.Facts.Document;
 using DomainProject = Csharp2Md.Domain.Facts.Project;
-using DomainProjectId = Csharp2Md.Domain.Identity.ProjectId;
 using DomainSymbol = Csharp2Md.Domain.Facts.Symbol;
 
 namespace Csharp2Md.Analysis.Extraction;
@@ -32,7 +34,7 @@ internal static class ContainsRelationEmitter
         var projects = snapshot.Facts.OfType<DomainProject>()
             .ToDictionary(static project => project.Id.Value, StringComparer.Ordinal);
         var symbolsBySignature = snapshot.Facts.OfType<DomainSymbol>()
-            .GroupBy(static symbol => SignatureKey(symbol.OwningProject, symbol.Signature), StringComparer.Ordinal)
+            .GroupBy(static symbol => ClassifierContext.SignatureKey(symbol.OwningProject, symbol.Signature), StringComparer.Ordinal)
             .ToDictionary(static group => group.Key, static group => group.First(), StringComparer.Ordinal);
 
         var facets = FacetBinding.Create(TaxonomyTables.Default.FacetAxes, [], []);
@@ -46,16 +48,41 @@ internal static class ContainsRelationEmitter
                 continue;
             }
 
-            var derivedFrom = EvidenceChain.Create(observations.Select(static observation => observation.Identity));
-            if (projects.TryGetValue(document.OwningProject.Value, out var project))
+            var documentQualifying = EvidenceScope.Qualifying(RelationKind.Contains, observations);
+            if (projects.TryGetValue(document.OwningProject.Value, out var project)
+                && documentQualifying.Length > 0)
             {
-                Add(context, project.Reference, document.Reference, facets, derivedFrom, classifier);
+                // GCPC-039/044 (partial): the project-to-document edge is justified by the document's
+                // own declaration-shape evidence, not every behavioral occurrence inside it.
+                var documentEvidence = EvidenceScope.For(project.Reference, document.Reference, RelationKind.Contains, observations);
+                Add(context, project.Reference, document.Reference, facets, documentEvidence, classifier);
                 count++;
             }
 
             foreach (var symbol in SymbolsDeclaredIn(context, document, symbolsBySignature, cancellationToken))
             {
-                Add(context, document.Reference, symbol.Reference, facets, derivedFrom, classifier);
+                var ownObservations = Array.FindAll(observations, observation => observation.Identity.Owner.Equals(symbol.Reference));
+                var own = EvidenceScope.Qualifying(RelationKind.Contains, ownObservations);
+                Observation[] candidates;
+                if (own.Length > 0)
+                {
+                    candidates = own;
+                }
+                else if (documentQualifying.Length > 0)
+                {
+                    candidates = documentQualifying;
+                }
+                else
+                {
+                    context.Accumulator.AddDiagnostic(new DiagnosticRecord(
+                        "contains-evidence-unqualified",
+                        "contains relation omitted because no qualifying structural evidence was found.",
+                        symbol.Reference.Id.Value));
+                    continue;
+                }
+
+                var symbolEvidence = EvidenceScope.For(document.Reference, symbol.Reference, RelationKind.Contains, candidates);
+                Add(context, document.Reference, symbol.Reference, facets, symbolEvidence, classifier);
                 count++;
             }
         }
@@ -93,7 +120,7 @@ internal static class ContainsRelationEmitter
             yield break;
         }
 
-        var root = ComputeAuthorizedRoot(context.SolutionPath);
+        var root = AuthorizedRoot.ForSolution(context.SolutionPath);
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var compilation in bound.Compilations)
         {
@@ -104,7 +131,7 @@ internal static class ContainsRelationEmitter
                     continue;
                 }
 
-                var relative = Path.GetRelativePath(root, tree.FilePath).Replace('\\', '/');
+                var relative = AuthorizedRoot.ToLogicalPath(root, tree.FilePath);
                 if (!string.Equals(relative, document.RelativePath, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
@@ -121,7 +148,7 @@ internal static class ContainsRelationEmitter
                             continue;
                         }
 
-                        var key = SignatureKey(document.OwningProject, signature.Value);
+                        var key = ClassifierContext.SignatureKey(document.OwningProject, signature.Value);
                         if (symbolsBySignature.TryGetValue(key, out var fact) && seen.Add(fact.Reference.Id.Value))
                         {
                             yield return fact;
@@ -150,19 +177,5 @@ internal static class ContainsRelationEmitter
                 }
             }
         }
-    }
-
-    private static string SignatureKey(DomainProjectId projectId, CanonicalSymbolSignature signature) =>
-        projectId.Value + "\u001f" + signature.Value;
-
-    private static string ComputeAuthorizedRoot(string solutionPath)
-    {
-        var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
-        var solutionDirectory = Path.GetDirectoryName(Path.GetFullPath(solutionPath))
-            ?? throw new InvalidOperationException($"'{solutionPath}' has no containing directory.");
-        var existing = listed
-            .Select(listedPath => Path.GetFullPath(Path.Combine(solutionDirectory, listedPath)))
-            .Where(File.Exists);
-        return AuthorizedRoot.Compute(solutionPath, existing);
     }
 }

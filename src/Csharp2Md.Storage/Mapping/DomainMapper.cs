@@ -8,8 +8,6 @@ namespace Csharp2Md.Storage.Mapping;
 
 public static class DomainMapper
 {
-    private static readonly CoverageMetricDto ZeroCoverage = new(0, 0, 0, 0, []);
-
     public static WireDocument ToWire(FactualSnapshot snapshot, ManifestContext context)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
@@ -119,7 +117,7 @@ public static class DomainMapper
             snapshot.Frontiers.Select(WireRelationMapping.ToDto),
             static dto => $"{dto.Occurrence.Owner.Id}:{dto.Occurrence.Kind}:{dto.Occurrence.OccurrenceOrdinal}");
 
-        var versions = TaxonomyVersions.Initial;
+        var versions = TaxonomyTables.Default.Versions;
         return new WireDocument(
             new ManifestEnvelope(
                 versions.SchemaVersion,
@@ -152,8 +150,8 @@ public static class DomainMapper
             unresolvedDtos,
             frontierDtos,
             [],
-            new CoverageEnvelope(ZeroCoverage, ZeroCoverage, ZeroCoverage, ZeroCoverage),
-            new RunCertificationEnvelope("not_evaluated"),
+            MapCoverage(snapshot.Coverage),
+            MapCertification(snapshot.Certification),
             new DiagnosticsEnvelope(MapDiagnostics(snapshot)),
             new MeasurementsEnvelope([]));
     }
@@ -213,6 +211,132 @@ public static class DomainMapper
             unresolvedArr,
             frontiersArr);
     }
+
+    /// <summary>
+    /// Maps the computed coverage report (GCPC-002) onto the wire envelope. A missing report means the
+    /// snapshot never reached <c>ValidationAndCoverageStage</c> (a hand-built snapshot in a test, for
+    /// example, rather than a genuine analysis run) -- each metric then publishes its own
+    /// <c>not_applicable</c> reason instead of a fabricated ratio, exactly as GCPC-009 requires when
+    /// nothing was actually evaluated.
+    /// </summary>
+    private static CoverageEnvelope MapCoverage(CoverageReport? coverage) =>
+        coverage is null
+            ? new CoverageEnvelope(
+                UnevaluatedMetric, UnevaluatedMetric, UnevaluatedMetric, UnevaluatedMetric)
+            : new CoverageEnvelope(
+                ToDto(coverage.EntryPointCoverage),
+                ToDto(coverage.LinkedCallCoverage),
+                ToDto(coverage.ContractCoverage),
+                ToDto(coverage.PersistenceCoverage));
+
+    private static readonly CoverageMetricDto UnevaluatedMetric =
+        CoverageMetricDto.NotApplicable("Coverage was not computed for this snapshot.");
+
+    /// <summary>
+    /// Merges layout-time degradation reasons (GCPC-004) -- e.g. a record <see cref="LayoutPlanner"/>
+    /// could not reduce to fit the publication ceiling and published in a shard of its own instead --
+    /// onto the coverage metric each reason's family feeds (<see cref="LayoutPlan.CoverageMetricDegradations"/>),
+    /// keeping any reasons the metric already carried. A metric absent from <paramref name="byMetric"/> is
+    /// returned unchanged. <see cref="PublicationPipeline"/> calls this after planning so a real
+    /// degradation is never silently dropped from <c>coverage.json</c>.
+    /// </summary>
+    internal static CoverageEnvelope WithCoverageDegradations(
+        CoverageEnvelope coverage,
+        ImmutableDictionary<CoverageMetricKind, ImmutableArray<DegradationReasonDto>> byMetric)
+    {
+        ArgumentNullException.ThrowIfNull(coverage);
+        ArgumentNullException.ThrowIfNull(byMetric);
+
+        if (byMetric.IsEmpty)
+        {
+            return coverage;
+        }
+
+        return coverage with
+        {
+            EntryPointCoverage = AppendDegradations(coverage.EntryPointCoverage, byMetric, CoverageMetricKind.EntryPoint),
+            LinkedCallCoverage = AppendDegradations(coverage.LinkedCallCoverage, byMetric, CoverageMetricKind.LinkedCall),
+            ContractCoverage = AppendDegradations(coverage.ContractCoverage, byMetric, CoverageMetricKind.Contract),
+            PersistenceCoverage = AppendDegradations(coverage.PersistenceCoverage, byMetric, CoverageMetricKind.Persistence),
+        };
+    }
+
+    /// <summary>
+    /// Publishes every irreducible layout degradation at run scope (GCPC-004/GCPC-038), including
+    /// families such as <c>facts/architecture.json</c> that cannot be attributed to one coverage
+    /// numerator without guessing which subtype caused the oversized record. The stable text retains the
+    /// structured reason code and affected count for downstream consumers; a previously passed run
+    /// becomes degraded, while an already degraded or failed status is preserved.
+    /// </summary>
+    internal static RunCertificationEnvelope WithLayoutDegradations(
+        RunCertificationEnvelope certification,
+        ImmutableArray<DegradationReasonDto> degradations)
+    {
+        ArgumentNullException.ThrowIfNull(certification);
+        if (degradations.IsDefaultOrEmpty)
+        {
+            return certification;
+        }
+
+        var layoutReasons = degradations.Select(static reason =>
+            $"{reason.Code}; affected_count={reason.AffectedCount}; {reason.Detail}");
+        var reasons = certification.Reasons
+            .AddRange(layoutReasons)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToImmutableArray();
+        var status = certification.Status == "passed" ? "degraded" : certification.Status;
+        return new RunCertificationEnvelope(status, reasons);
+    }
+
+    private static CoverageMetricDto AppendDegradations(
+        CoverageMetricDto metric,
+        ImmutableDictionary<CoverageMetricKind, ImmutableArray<DegradationReasonDto>> byMetric,
+        CoverageMetricKind kind)
+    {
+        if (!byMetric.TryGetValue(kind, out var additional) || additional.IsEmpty)
+        {
+            return metric;
+        }
+
+        var merged = Ordered(
+            metric.DegradationReasons.AddRange(additional),
+            static dto => $"{dto.Code}:{dto.Detail}");
+
+        return metric.NotApplicableReason is not null
+            ? CoverageMetricDto.NotApplicable(metric.NotApplicableReason, merged)
+            : CoverageMetricDto.Evaluated(metric.Numerator, metric.Denominator, metric.Exclusions, metric.Unknowns, merged);
+    }
+
+    private static CoverageMetricDto ToDto(CoverageMetric metric)
+    {
+        var degradationReasons = Ordered(
+            metric.DegradationReasons.Select(static reason => new DegradationReasonDto(reason.Code, reason.Detail, reason.AffectedCount)),
+            static dto => $"{dto.Code}:{dto.Detail}");
+
+        return metric.State == CoverageMetricState.NotApplicable
+            ? CoverageMetricDto.NotApplicable(metric.NotApplicableReason!, degradationReasons)
+            : CoverageMetricDto.Evaluated(metric.Numerator, metric.Denominator, metric.Exclusions, metric.Unknowns, degradationReasons);
+    }
+
+    /// <summary>
+    /// Maps the computed run-certification report (GCPC-001, GCPC-006..GCPC-010) onto the wire envelope.
+    /// A missing report (a snapshot that never reached <c>ValidationAndCoverageStage</c>) publishes
+    /// <c>degraded</c> rather than a fabricated <c>passed</c> -- <c>not_evaluated</c> is not a status
+    /// this envelope can construct at all (GCPC-001).
+    /// </summary>
+    private static RunCertificationEnvelope MapCertification(RunCertificationReport? certification) =>
+        certification is null
+            ? new RunCertificationEnvelope("degraded", ["Run certification was not computed for this snapshot."])
+            : new RunCertificationEnvelope(WireStatus(certification.Status), certification.Reasons);
+
+    private static string WireStatus(RunCertificationStatus status) => status switch
+    {
+        RunCertificationStatus.Passed => "passed",
+        RunCertificationStatus.Degraded => "degraded",
+        RunCertificationStatus.Failed => "failed",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, $"'{status}' is not a defined run-certification status."),
+    };
 
     private static ImmutableArray<DiagnosticRecordDto> MapDiagnostics(FactualSnapshot snapshot)
     {

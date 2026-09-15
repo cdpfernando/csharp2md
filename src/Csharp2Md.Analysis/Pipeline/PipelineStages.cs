@@ -9,21 +9,23 @@ namespace Csharp2Md.Analysis.Pipeline;
 internal static class PipelineStages
 {
     internal static ImmutableArray<IPipelineStage> CreateDefault() =>
-        StubStages.CreateDefault()
-            .SetItem(0, new InventoryStage())
-            .SetItem(1, new SemanticAnalysisStage())
-            .SetItem(2, new ObservationExtractionStage())
-            .SetItem(3, new ClassificationAndPromotionStage(
-            [
-                new ComponentPass(),
-                new EntryPointPass(),
-                new BoundaryPass(),
-                new ContractPass(),
-                new PersistencePass(),
-                new ConfigurationPass(),
-                new RelationPass(),
-                new InvokesPass(),
-                new ExecutesPass(),
-            ]))
-            .SetItem(5, new PersistenceStage());
+    [
+        new InventoryStage(),
+        new SemanticAnalysisStage(),
+        new ObservationExtractionStage(),
+        new ClassificationAndPromotionStage(
+        [
+            new ComponentPass(),
+            new EntryPointPass(),
+            new BoundaryPass(),
+            new ContractPass(),
+            new PersistencePass(),
+            new ConfigurationPass(),
+            new RelationPass(),
+            new InvokesPass(),
+            new ExecutesPass(),
+        ]),
+        new ValidationAndCoverageStage(),
+        new PersistenceStage(),
+    ];
 }

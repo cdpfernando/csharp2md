@@ -93,17 +93,45 @@ public static class ProjectionValidator
         }
     }
 
+    /// <summary>
+    /// Confirms the repeated value actually lives inside the payload the citation names (RP-44, extended
+    /// by GCPC-097 to label fields). A label's value is decoded plain text (<see cref="LabelProjector"/>
+    /// unescapes it before publishing so the catalog stays human-legible), while some authoritative
+    /// fields -- a <c>CanonicalSymbolSignature</c>'s container and metadata segments in particular -- keep
+    /// their values percent-encoded on the wire. A literal decoded value therefore will not always appear
+    /// as a literal substring of the encoded payload even when it is the exact value that produced it, so
+    /// the percent-encoded form is checked as a second, still-exact match before declaring a mismatch --
+    /// this never widens what passes for a citation whose payload value was never encoded to begin with,
+    /// since <see cref="Uri.EscapeDataString(string)"/> is the identity function for such values.
+    /// </summary>
     private static void EnsureValueMatches(PublishedPackageView view, ProjectionLink link)
     {
         var text = AuthoritativeText(view, link.Citation);
-        if (!text.Contains(link.Value!, StringComparison.Ordinal))
+        if (text.Contains(link.Value!, StringComparison.Ordinal)
+            || text.Contains(Uri.EscapeDataString(link.Value!), StringComparison.Ordinal))
         {
-            throw new PublicationRejectedException("projection-value", link.Page + " " + link.Value);
+            return;
         }
+
+        throw new PublicationRejectedException("projection-value", link.Page + " " + link.Value);
     }
 
     private static string AuthoritativeText(PublishedPackageView view, ArtifactCitation citation)
     {
+        var shardedArtifact = view.Plan.Artifacts.FirstOrDefault(
+            artifact => artifact.ArtifactKey == citation.ArtifactKey && !artifact.Records.IsEmpty);
+        if (shardedArtifact is not null)
+        {
+            if ((uint)citation.Ordinal >= (uint)shardedArtifact.Records.Length)
+            {
+                return string.Empty;
+            }
+
+            var entry = shardedArtifact.Records[citation.Ordinal].Entry;
+            var recordNode = JsonNode.Parse(entry.AsSpan());
+            return recordNode?.ToJsonString() ?? Encoding.UTF8.GetString(entry.AsSpan());
+        }
+
         var bytes = PackagePublisher.Write(view.Document, citation.ArtifactKey);
         var node = JsonNode.Parse(bytes.AsSpan());
         var element = ElementAt(node, citation.Ordinal);

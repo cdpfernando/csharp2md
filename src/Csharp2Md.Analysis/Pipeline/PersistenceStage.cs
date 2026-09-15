@@ -11,6 +11,6 @@ internal sealed class PersistenceStage : IPipelineStage
         ArgumentNullException.ThrowIfNull(context);
         _ = cancellationToken;
         context.Session.Stage(context.Accumulator.ToSnapshot());
-        return StubStages.ZeroResult();
+        return ValueTask.FromResult(StageResult.Zero);
     }
 }

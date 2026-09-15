@@ -87,6 +87,7 @@ public sealed class FacetAxesTests
     [InlineData(SymbolFacet.Client, "client")]
     [InlineData(SymbolFacet.Service, "service")]
     [InlineData(SymbolFacet.Abstract, "abstract")]
+    [InlineData(SymbolFacet.ExternallyReachable, "externally-reachable")]
     public void WireValue_ResolvesTheDocumentedLiteralWireValue_SymbolFacet(SymbolFacet value, string expectedWireValue) =>
         Assert.Equal(expectedWireValue, FacetAxes.WireValue(value));
 

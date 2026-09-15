@@ -57,19 +57,15 @@ public sealed class ComposabilityTests
         Assert.True(counting.EntryPointCount > 0, $"Counting pass saw {counting.EntryPointCount} entry-point facts.");
         Assert.Equal(1, counting.ReportedFactCount);
 
-        var architecture = CanonicalJson.Read<ArchitectureFactsShard>(
-            Assert.Single(
-                composed.Publication.ArtifactsInPublicationOrder,
-                artifact => artifact.CanonicalKey == "facts/architecture.json").Payload.AsSpan());
+        var architecture = ShardedFactsReader.Read<ArchitectureFactsShard>(
+            composed.Publication.ArtifactsInPublicationOrder, "facts/architecture.json");
         Assert.Contains(architecture.DeploymentUnits, unit => unit.Name == CountingClassifierPass.DummyName);
         Assert.Contains(
             architecture.EntryPoints,
             entry => entry.Symbol.Id.Contains("GetOrderStatus", StringComparison.Ordinal));
 
-        var baselineArchitecture = CanonicalJson.Read<ArchitectureFactsShard>(
-            Assert.Single(
-                baseline.Publication.ArtifactsInPublicationOrder,
-                artifact => artifact.CanonicalKey == "facts/architecture.json").Payload.AsSpan());
+        var baselineArchitecture = ShardedFactsReader.Read<ArchitectureFactsShard>(
+            baseline.Publication.ArtifactsInPublicationOrder, "facts/architecture.json");
         Assert.Equal(baselineArchitecture.Components.Length, architecture.Components.Length);
         Assert.Equal(baselineArchitecture.EntryPoints.Length, architecture.EntryPoints.Length);
         Assert.Equal(baselineArchitecture.DeploymentUnits.Length + 1, architecture.DeploymentUnits.Length);

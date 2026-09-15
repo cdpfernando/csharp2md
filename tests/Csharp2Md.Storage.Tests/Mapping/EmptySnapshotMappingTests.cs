@@ -58,7 +58,7 @@ public sealed class EmptySnapshotMappingTests
         AssertZero(document.Coverage.LinkedCallCoverage);
         AssertZero(document.Coverage.ContractCoverage);
         AssertZero(document.Coverage.PersistenceCoverage);
-        Assert.Equal("not_evaluated", document.RunCertification.Status);
+        Assert.Equal("degraded", document.RunCertification.Status);
         Assert.True(document.Diagnostics.Records.IsEmpty);
         Assert.True(document.Measurements.Records.IsEmpty);
     }

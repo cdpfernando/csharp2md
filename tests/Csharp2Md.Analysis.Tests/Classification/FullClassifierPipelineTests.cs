@@ -22,8 +22,6 @@ public sealed class FullClassifierPipelineTests
         Assert.True(classification.RelationCount > 0, $"Classification relation count was {classification.RelationCount}.");
 
         AssertZeroProduction(outcome.Stages[4], "Validation and Coverage");
-        AssertZeroProduction(outcome.Stages[6], "Retrieval Projection");
-        AssertZeroProduction(outcome.Stages[7], "Batch Composition");
     }
 
     [Fact]
@@ -109,10 +107,7 @@ public sealed class FullClassifierPipelineTests
             candidates,
             link => link.Kind == "targets" && link.Source.Id == outboundHttp.Identity.Id);
 
-        var manifest = CanonicalJson.Read<ManifestEnvelope>(
-            Assert.Single(
-                publication.ArtifactsInPublicationOrder,
-                artifact => artifact.CanonicalKey == "manifest.json").Payload.AsSpan());
+        var manifest = PublishedManifestTestData.Read(publication);
         var unresolvedEntry = Assert.Single(manifest.Artifacts, entry => entry.CanonicalKey == "relations/unresolved");
         var unresolvedFragment = publication.ArtifactsInPublicationOrder
             .SingleOrDefault(artifact => artifact.CanonicalKey == "relations/unresolved.json");
@@ -145,7 +140,7 @@ public sealed class FullClassifierPipelineTests
 
         var outcome = Assert.Single(result.Solutions);
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
-        Assert.Equal(8, outcome.Stages.Length);
+        Assert.Equal(6, outcome.Stages.Length);
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
         return (outcome, publication);
     }
@@ -158,13 +153,8 @@ public sealed class FullClassifierPipelineTests
         Assert.Equal(0, report.RelationCount);
     }
 
-    private static T ReadShard<T>(CommittedPublication publication, string canonicalKey)
-    {
-        var fragment = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == canonicalKey);
-        return CanonicalJson.Read<T>(fragment.Payload.AsSpan());
-    }
+    private static T ReadShard<T>(CommittedPublication publication, string canonicalKey) =>
+        ShardedFactsReader.Read<T>(publication.ArtifactsInPublicationOrder, canonicalKey);
 
     private static ImmutableArray<ConfirmedRelationDto> ReadRelations(
         CommittedPublication publication,

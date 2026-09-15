@@ -103,12 +103,12 @@ internal sealed class ContractPass : IClassifierPass
     {
         foreach (var symbol in symbols)
         {
-            if (!string.Equals(ReadField(symbol.Signature.Value, "kind"), "namedtype", StringComparison.Ordinal))
+            if (!string.Equals(SignatureReader.Field(symbol.Signature.Value, "kind"), "namedtype", StringComparison.Ordinal))
             {
                 continue;
             }
 
-            var typeName = ReadField(symbol.Signature.Value, "type");
+            var typeName = SignatureReader.Field(symbol.Signature.Value, "type");
             if (string.Equals(typeName, fullyQualifiedName, StringComparison.Ordinal))
             {
                 return symbol;
@@ -148,7 +148,7 @@ internal sealed class ContractPass : IClassifierPass
 
     private static string Fingerprint(Symbol eventType, IReadOnlyList<Symbol> symbols)
     {
-        var typeName = ReadField(eventType.Signature.Value, "type");
+        var typeName = SignatureReader.Field(eventType.Signature.Value, "type");
         if (typeName is null)
         {
             return eventType.Reference.Id.Value;
@@ -156,32 +156,17 @@ internal sealed class ContractPass : IClassifierPass
 
         var parts = symbols
             .Where(symbol =>
-                string.Equals(ReadField(symbol.Signature.Value, "kind"), "property", StringComparison.Ordinal)
-                && string.Equals(ReadField(symbol.Signature.Value, "container"), typeName, StringComparison.Ordinal))
+                string.Equals(SignatureReader.Field(symbol.Signature.Value, "kind"), "property", StringComparison.Ordinal)
+                && string.Equals(SignatureReader.Field(symbol.Signature.Value, "container"), typeName, StringComparison.Ordinal))
             .Select(symbol =>
             {
-                var metadata = ReadField(symbol.Signature.Value, "metadata") ?? string.Empty;
-                var propertyType = ReadField(symbol.Signature.Value, "type") ?? string.Empty;
+                var metadata = SignatureReader.Field(symbol.Signature.Value, "metadata") ?? string.Empty;
+                var propertyType = SignatureReader.Field(symbol.Signature.Value, "type") ?? string.Empty;
                 return metadata + ":" + propertyType;
             })
             .OrderBy(static part => part, StringComparer.Ordinal)
             .ToArray();
 
         return parts.Length == 0 ? typeName : string.Join('|', parts);
-    }
-
-    private static string? ReadField(string identity, string key)
-    {
-        var marker = ";" + key + "=";
-        var start = identity.IndexOf(marker, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += marker.Length;
-        var end = identity.IndexOf(';', start);
-        var encoded = end < 0 ? identity[start..] : identity[start..end];
-        return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
     }
 }

@@ -169,9 +169,12 @@ public sealed class PersistenceIsolationTests
                 artifact => artifact.CanonicalKey == "facts/persistence.json").Payload.AsSpan());
         Assert.NotEmpty(persistence.DataStores);
         Assert.NotEmpty(persistence.DataObjects);
+        // T52 made the derived ~32 KiB ceiling the live default: this flat record-array family may now
+        // legitimately be sharded into "accesses-data.<bucket>.json" instead of staying at its base key.
         Assert.Contains(
             publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == "relations/confirmed/accesses-data.json");
+            artifact => artifact.CanonicalKey == "relations/confirmed/accesses-data.json"
+                || artifact.CanonicalKey.StartsWith("relations/confirmed/accesses-data.", StringComparison.Ordinal));
     }
 
     private static async Task<IReadOnlyList<(string Key, string Text)>> CanonicalPayloadTextsAsync()

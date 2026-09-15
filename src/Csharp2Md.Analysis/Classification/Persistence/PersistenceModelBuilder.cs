@@ -61,7 +61,7 @@ internal static class PersistenceModelBuilder
     /// (PK-41); one that reached an object but could not say what it does to it is short of evidence
     /// for <c>operates-on</c> (PK-39); one that reached no object at all - an unreadable statement or
     /// a flush its callable never explains - has no candidate at all (PK-37, PK-40). Counts are raw:
-    /// no percentage and no verdict is computed here, since certification is workstream 8's (PK-53).
+    /// no percentage and no verdict is computed here (PK-53).
     /// </summary>
     private static (ImmutableArray<UnresolvedNode> Unresolved, CoverageCounts Coverage) ResolveUnresolved(
         ClassifierContext context,

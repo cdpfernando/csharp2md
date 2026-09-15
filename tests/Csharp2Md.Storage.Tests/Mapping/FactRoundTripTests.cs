@@ -77,6 +77,7 @@ public sealed class FactRoundTripTests
     [Trait("Requirement", "STOR-01")]
     [Trait("Requirement", "STOR-10")]
     [Trait("Requirement", "STOR-13")]
+    [Trait("Requirement", "APR-21")]
     [MemberData(nameof(FactFixtures))]
     public void RoundTrip_FactType_EqualsOriginalUnderDomainEquality(string factType, FactualSnapshot snapshot)
     {

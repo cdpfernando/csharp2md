@@ -80,10 +80,8 @@ public sealed class ClonePathIndependenceTests
 
     private static string[] StructuralFactIds(CommittedPublication publication)
     {
-        var fragment = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == "facts/structural.json");
-        var structural = CanonicalJson.Read<StructuralFactsShard>(fragment.Payload.AsSpan());
+        var structural = ShardedFactsReader.Read<StructuralFactsShard>(
+            publication.ArtifactsInPublicationOrder, "facts/structural.json");
         return structural.Solutions.Select(solution => solution.Identity.Id)
             .Concat(structural.Projects.Select(project => project.Identity.Id))
             .Concat(structural.Documents.Select(document => document.Identity.Id))

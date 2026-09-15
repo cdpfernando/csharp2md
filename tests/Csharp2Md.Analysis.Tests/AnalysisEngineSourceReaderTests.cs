@@ -3,6 +3,7 @@ using Csharp2Md.Analysis.Inventory;
 using Csharp2Md.Analysis.Pipeline;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage;
+using Csharp2Md.Analysis.Tests.Pipeline;
 
 namespace Csharp2Md.Analysis.Tests;
 

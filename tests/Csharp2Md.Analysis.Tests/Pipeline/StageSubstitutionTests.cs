@@ -21,7 +21,7 @@ public sealed class StageSubstitutionTests
 
         var outcome = Assert.Single(result.Solutions);
         Assert.Equal(["Persistence"], executed);
-        Assert.Equal(8, outcome.Stages.Length);
+        Assert.Equal(6, outcome.Stages.Length);
         Assert.Equal("Persistence", outcome.Stages[5].Name);
     }
 

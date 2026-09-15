@@ -74,6 +74,20 @@ internal static class CompositionBatch
         return array;
     }
 
+    /// <summary>
+    /// Reads one compound fact-family artifact (e.g. <c>facts/architecture.json</c>) from a package's raw
+    /// file snapshot, merging every shard the family split into (F1/GCPC-039) back into a single value --
+    /// so a composition test asserting against <c>ArchitectureFactsShard</c> and friends keeps working
+    /// whether or not this run's ceiling actually split the family.
+    /// </summary>
+    internal static T ReadFactsFamily<T>(IReadOnlyDictionary<string, byte[]> package, string baseKey)
+    {
+        var fragments = package
+            .Select(pair => new StagedFragment(ArtifactRole.Payload, pair.Key, pair.Value.ToImmutableArray()))
+            .ToImmutableArray();
+        return ShardedFactsReader.Read<T>(fragments, baseKey);
+    }
+
     internal static JsonNode ElementAt(IReadOnlyDictionary<string, byte[]> package, string artifactKey, int ordinal)
     {
         Assert.True(package.TryGetValue(artifactKey, out var bytes), $"Missing cited artifact '{artifactKey}'.");

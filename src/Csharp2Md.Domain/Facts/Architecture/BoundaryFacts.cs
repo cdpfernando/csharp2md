@@ -97,7 +97,7 @@ public sealed record BoundaryOperation : IFact
                 symbol, owningComponent, destinationScope, httpMethod, route),
             (BoundaryDirection.Outbound, BoundaryProtocol.Messaging) => CreateOutboundMessaging(
                 symbol, owningComponent, protocolOperationKey),
-            (BoundaryDirection.Inbound, _) => CreateInbound(symbol, owningComponent, protocol, protocolOperationKey),
+            (BoundaryDirection.Inbound, _) => CreateInbound(symbol, owningComponent, protocol, httpMethod, route, protocolOperationKey),
             _ => throw new ArgumentException(
                 $"Direction '{direction}' with protocol '{protocol}' is not a supported boundary-operation combination.",
                 nameof(direction)),
@@ -184,6 +184,8 @@ public sealed record BoundaryOperation : IFact
         FactReference symbol,
         FactReference owningComponent,
         BoundaryProtocol? protocol,
+        string? httpMethod,
+        StructuralLiteral? route,
         StructuralLiteral? protocolOperationKey)
     {
         if (protocolOperationKey is null)
@@ -203,10 +205,17 @@ public sealed record BoundaryOperation : IFact
             FactGuards.RequireDefined(protocol.Value, nameof(protocol));
         }
 
+        if (route is not null && route.Value.Role != LiteralRole.Route)
+        {
+            throw new ArgumentException(
+                $"An inbound boundary operation's route must be a structural literal with role '{nameof(LiteralRole.Route)}', but was '{route.Value.Role}'.",
+                nameof(route));
+        }
+
         var id = FactIdGrammar.Create(
             "boundary-operation", ("component", owningComponent.Id.Value), ("operation-key", protocolOperationKey.Value.Value));
         var reference = new FactReference(id, nameof(BoundaryOperation));
         return new BoundaryOperation(
-            reference, symbol, owningComponent, BoundaryDirection.Inbound, protocol, null, null, null, protocolOperationKey);
+            reference, symbol, owningComponent, BoundaryDirection.Inbound, protocol, null, httpMethod, route, protocolOperationKey);
     }
 }

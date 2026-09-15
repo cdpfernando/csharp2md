@@ -117,7 +117,6 @@ internal static class CatalogProjectionFactory
         {
             Assert.False(string.IsNullOrEmpty(entry.FactId));
             Assert.False(string.IsNullOrEmpty(entry.ArtifactKey));
-            Assert.True(entry.Ordinal >= 0, entry.FactId);
             Assert.Equal(entry.FactId, FactIdAt(view, new ArtifactCitation(entry.ArtifactKey, entry.Ordinal)));
             Assert.Equal(view.Document.Unresolved[entry.Ordinal].Source.Id, entry.FactId);
         }
@@ -148,6 +147,11 @@ internal static class CatalogProjectionFactory
         var document = view.Document;
         return artifactKey switch
         {
+            "facts/structural.json" => Concat(
+                document.Solutions.Select(static dto => dto.Identity.Id),
+                document.Projects.Select(static dto => dto.Identity.Id),
+                document.Documents.Select(static dto => dto.Identity.Id),
+                document.Symbols.Select(static dto => dto.Identity.Id)),
             "facts/architecture.json" => Concat(
                 document.Components.Select(static dto => dto.Identity.Id),
                 document.DeploymentUnits.Select(static dto => dto.Identity.Id),
@@ -174,7 +178,6 @@ internal static class CatalogProjectionFactory
         foreach (var entry in entries)
         {
             Assert.False(string.IsNullOrEmpty(entry.FactId));
-            Assert.True(entry.Ordinal >= 0, entry.FactId);
             Assert.Equal(entry.FactId, FactIdAt(view, new ArtifactCitation(entry.ArtifactKey, entry.Ordinal)));
             Assert.True(view.TryLocate(entry.FactId, out var citation), entry.FactId);
             Assert.Equal(citation.ArtifactKey, entry.ArtifactKey);
@@ -238,6 +241,12 @@ internal static class CatalogProjectionFactory
         var document = view.Document;
         return artifactKey switch
         {
+            "facts/structural.json" => CanonicalJson.Write(
+                new StructuralFactsShard(
+                    document.Solutions,
+                    document.Projects,
+                    document.Documents,
+                    document.Symbols)),
             "facts/architecture.json" => CanonicalJson.Write(
                 new ArchitectureFactsShard(
                     document.Components,

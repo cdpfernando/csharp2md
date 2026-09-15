@@ -29,7 +29,7 @@ internal static class SymbolFactEmitter
         ArgumentException.ThrowIfNullOrWhiteSpace(solutionPath);
 
         var documents = accumulator.ToSnapshot().Facts.OfType<DomainDocument>().ToArray();
-        var root = ComputeAuthorizedRoot(solutionPath);
+        var root = AuthorizedRoot.ForSolution(solutionPath);
         foreach (var compilation in boundSolution.Compilations)
         {
             foreach (var tree in compilation.SyntaxTrees)
@@ -252,9 +252,45 @@ internal static class SymbolFactEmitter
             return SymbolFacetSet.Create([]);
         }
 
-        return method.IsAbstract || method.ContainingType?.TypeKind is TypeKind.Interface
-            ? SymbolFacetSet.Create([SymbolFacet.Callable, SymbolFacet.Abstract])
-            : SymbolFacetSet.Create([SymbolFacet.Callable]);
+        var facets = new List<SymbolFacet> { SymbolFacet.Callable };
+        if (method.IsAbstract || method.ContainingType?.TypeKind is TypeKind.Interface)
+        {
+            facets.Add(SymbolFacet.Abstract);
+        }
+
+        if (IsExternallyReachable(method))
+        {
+            facets.Add(SymbolFacet.ExternallyReachable);
+        }
+
+        return SymbolFacetSet.Create(facets);
+    }
+
+    /// <summary>
+    /// Walks <paramref name="symbol"/>'s own accessibility and every enclosing <see cref="ISymbol.ContainingType"/>
+    /// up to the namespace-scoped declaration. Roslyn's <see cref="ISymbol.DeclaredAccessibility"/> only reports
+    /// the symbol's own declared modifier, not whether the declaration is actually reachable from outside the
+    /// assembly once containing types are accounted for (a public method on a private nested type is not
+    /// reachable). <see cref="Accessibility.Public"/>, <see cref="Accessibility.Protected"/> and
+    /// <see cref="Accessibility.ProtectedOrInternal"/> at every level keep the walk alive; anything else
+    /// (private, internal, private protected, or not applicable) closes it.
+    /// </summary>
+    private static bool IsExternallyReachable(ISymbol symbol)
+    {
+        for (ISymbol? current = symbol; current is not null; current = current.ContainingType)
+        {
+            switch (current.DeclaredAccessibility)
+            {
+                case Accessibility.Public:
+                case Accessibility.Protected:
+                case Accessibility.ProtectedOrInternal:
+                    continue;
+                default:
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     private static string Container(ISymbol symbol)
@@ -336,7 +372,7 @@ internal static class SymbolFactEmitter
             return null;
         }
 
-        var relative = Path.GetRelativePath(authorizedRoot, treePath).Replace('\\', '/');
+        var relative = AuthorizedRoot.ToLogicalPath(authorizedRoot, treePath);
         DomainProjectId? best = null;
         var bestLength = -1;
         foreach (var candidate in documents)
@@ -370,7 +406,7 @@ internal static class SymbolFactEmitter
             return null;
         }
 
-        var relative = Path.GetRelativePath(authorizedRoot, treePath).Replace('\\', '/');
+        var relative = AuthorizedRoot.ToLogicalPath(authorizedRoot, treePath);
         foreach (var document in documents)
         {
             if (string.Equals(document.RelativePath, relative, StringComparison.OrdinalIgnoreCase))
@@ -380,16 +416,5 @@ internal static class SymbolFactEmitter
         }
 
         return null;
-    }
-
-    private static string ComputeAuthorizedRoot(string solutionPath)
-    {
-        var listed = SolutionFileReader.ReadProjectPaths(solutionPath);
-        var solutionDirectory = Path.GetDirectoryName(Path.GetFullPath(solutionPath))
-            ?? throw new InvalidOperationException($"'{solutionPath}' has no containing directory.");
-        var existing = listed
-            .Select(listedPath => Path.GetFullPath(Path.Combine(solutionDirectory, listedPath)))
-            .Where(File.Exists);
-        return AuthorizedRoot.Compute(solutionPath, existing);
     }
 }

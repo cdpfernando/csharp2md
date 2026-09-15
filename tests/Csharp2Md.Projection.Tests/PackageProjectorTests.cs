@@ -58,7 +58,7 @@ public sealed class PackageProjectorTests
     private static PublishedPackageView EmptyView()
     {
         var versions = Csharp2Md.Domain.Registry.TaxonomyVersions.Initial;
-        var zero = new CoverageMetricDto(0, 0, 0, 0, []);
+        var zero = CoverageMetricDto.Evaluated(0, 0, 0, 0);
         return PublishedPackageView.From(
             new WireDocument(
                 new ManifestEnvelope(
@@ -93,7 +93,7 @@ public sealed class PackageProjectorTests
                 [],
                 [],
                 new CoverageEnvelope(zero, zero, zero, zero),
-                new RunCertificationEnvelope("not_evaluated"),
+                new RunCertificationEnvelope("degraded", ["not yet evaluated"]),
                 new DiagnosticsEnvelope([]),
                 new MeasurementsEnvelope([])));
     }

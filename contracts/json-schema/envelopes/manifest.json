@@ -37,6 +37,9 @@
           "count": {
             "type": "integer"
           },
+          "byte_size": {
+            "type": "integer"
+          },
           "path": {
             "type": "string"
           }
@@ -45,10 +48,67 @@
           "canonical_key",
           "role",
           "count",
+          "byte_size",
           "path"
         ],
         "additionalProperties": false
       }
+    },
+    "provenance": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "generator_version": {
+          "type": "string"
+        },
+        "build_identity": {
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "integer"
+        },
+        "taxonomy_version": {
+          "type": "integer"
+        },
+        "observation_schema_version": {
+          "type": "integer"
+        },
+        "extractor_set_version": {
+          "type": "integer"
+        },
+        "classifier_set_version": {
+          "type": "integer"
+        },
+        "artifact_ceiling_bytes": {
+          "type": "integer"
+        },
+        "token_estimator_id": {
+          "type": "string"
+        },
+        "document_policy_version": {
+          "type": "string"
+        },
+        "allowlist_digest": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "generator_version",
+        "build_identity",
+        "schema_version",
+        "taxonomy_version",
+        "observation_schema_version",
+        "extractor_set_version",
+        "classifier_set_version",
+        "artifact_ceiling_bytes",
+        "token_estimator_id",
+        "document_policy_version",
+        "allowlist_digest"
+      ],
+      "additionalProperties": false,
+      "default": null
     }
   },
   "required": [

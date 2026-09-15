@@ -72,6 +72,152 @@ public static class PackageValidator
         }
     }
 
+    /// <summary>
+    /// Checks a manifest against the artifact bytes it describes: every declared entry exists with the
+    /// declared count and byte size (GCPC-061), and every artifact is declared -- nothing is reachable
+    /// that the manifest does not name (GCPC-062). A deferred artifact may be skipped only by the
+    /// pre-write validation pass, where its single-read payload has deliberately not been materialized;
+    /// an on-disk package has no exemption. Also checks the manifest's own provenance for compatibility with the running generator
+    /// (GCPC-071's rejection reason).
+    /// </summary>
+    public static void ValidatePublishedManifest(
+        ManifestEnvelope manifest,
+        IReadOnlyDictionary<string, ImmutableArray<byte>> artifactsByKey,
+        IReadOnlySet<string>? deferredKeys = null)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+        ArgumentNullException.ThrowIfNull(artifactsByKey);
+        deferredKeys ??= FrozenSet<string>.Empty;
+
+        foreach (var entry in manifest.Artifacts)
+        {
+            if (deferredKeys.Contains(entry.Path))
+            {
+                continue;
+            }
+
+            if (!artifactsByKey.TryGetValue(entry.Path, out var bytes))
+            {
+                throw new PublicationRejectedException("manifest-file-missing", entry.Path);
+            }
+
+            if (bytes.Length != entry.ByteSize)
+            {
+                throw new PublicationRejectedException(
+                    "manifest-size-mismatch",
+                    $"{entry.Path}: manifest declares {entry.ByteSize} bytes, the artifact is {bytes.Length} bytes.");
+            }
+
+            // The taxonomy registry is one indivisible document, not a homogeneous record set: it
+            // legitimately declares count 1 while holding many internal tables (see ManifestBuilder /
+            // LayoutPlanner). Summing its arrays generically would not be "its own top-level entry count"
+            // in any meaningful sense, so it is exempt from the generic recount below.
+            if (entry.Path == PackagePublisher.RegistryKey)
+            {
+                continue;
+            }
+
+            var realCount = ManifestBuilder.CountTopLevelEntries(bytes.AsSpan());
+            if (realCount != entry.Count)
+            {
+                throw new PublicationRejectedException(
+                    "manifest-count-mismatch",
+                    $"{entry.Path}: manifest declares count {entry.Count}, the artifact's real count is {realCount}.");
+            }
+        }
+
+        var declared = manifest.Artifacts.Select(static entry => entry.Path).ToFrozenSet(StringComparer.Ordinal);
+        foreach (var key in artifactsByKey.Keys)
+        {
+            if (!declared.Contains(key) && !deferredKeys.Contains(key))
+            {
+                throw new PublicationRejectedException("undeclared-file", key);
+            }
+        }
+
+        if (manifest.Provenance is { } provenance)
+        {
+            EnsureProvenanceCompatible(provenance);
+        }
+    }
+
+    /// <summary>
+    /// Rejects provenance naming a generator version, a schema version or a taxonomy version newer than
+    /// the one currently running (GCPC-071's "incompatible provenance or contract version" half). A newer
+    /// schema or taxonomy version means the package's wire encoding or classification taxonomy moved past
+    /// what this build understands -- reading it anyway risks silently misinterpreting it, exactly the
+    /// failure mode a newer generator build already refuses.
+    /// </summary>
+    public static void EnsureProvenanceCompatible(ProvenanceDto provenance)
+    {
+        ArgumentNullException.ThrowIfNull(provenance);
+
+        var running = ProvenanceDto.Current();
+        if (Version.TryParse(provenance.GeneratorVersion, out var declared)
+            && Version.TryParse(running.GeneratorVersion, out var current)
+            && declared > current)
+        {
+            throw new PublicationRejectedException(
+                "incompatible-provenance",
+                $"Package generator version {provenance.GeneratorVersion} is newer than the running generator version {running.GeneratorVersion}.");
+        }
+
+        if (provenance.SchemaVersion > running.SchemaVersion)
+        {
+            throw new PublicationRejectedException(
+                "incompatible-provenance",
+                $"Package schema version {provenance.SchemaVersion} is newer than the running generator's schema version {running.SchemaVersion}.");
+        }
+
+        if (provenance.TaxonomyVersion > running.TaxonomyVersion)
+        {
+            throw new PublicationRejectedException(
+                "incompatible-provenance",
+                $"Package taxonomy version {provenance.TaxonomyVersion} is newer than the running generator's taxonomy version {running.TaxonomyVersion}.");
+        }
+    }
+
+    /// <summary>
+    /// Re-validates an already-published package directory: reads its manifest and every file it
+    /// declares, checks cardinality and provenance the same way publication does (AD-025 -- one validator
+    /// serves both), and never writes anything.
+    /// </summary>
+    public static void ValidatePackageDirectory(string packageDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageDirectory);
+
+        var manifestPath = Path.Combine(packageDirectory, PackagePublisher.ManifestKey);
+        if (!File.Exists(manifestPath))
+        {
+            throw new PublicationRejectedException("not-a-package", packageDirectory);
+        }
+
+        var manifest = ReadPayloadOrThrow<ManifestEnvelope>(File.ReadAllBytes(manifestPath), PackagePublisher.ManifestKey);
+
+        var artifactsByKey = new Dictionary<string, ImmutableArray<byte>>(StringComparer.Ordinal);
+        foreach (var absolutePath in Directory.EnumerateFiles(packageDirectory, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(packageDirectory, absolutePath).Replace(Path.DirectorySeparatorChar, '/');
+            if (relative == PackagePublisher.ManifestKey)
+            {
+                continue;
+            }
+
+            artifactsByKey[relative] = File.ReadAllBytes(absolutePath).ToImmutableArray();
+        }
+
+        // F6: a manifest too large to fit the ceiling shards into manifest/parts.*.json, with the root
+        // (just read above) carrying only small part-pointer entries. Resolve to the real, full entry list
+        // before doing anything else with it -- every check below assumes it already has one.
+        var resolved = ManifestSharder.Resolve(
+            manifest,
+            path => artifactsByKey.TryGetValue(path, out var bytes)
+                ? bytes
+                : throw new PublicationRejectedException("manifest-file-missing", path));
+
+        ValidatePublishedManifest(resolved, artifactsByKey);
+    }
+
     private static void EnsureRegisteredKinds(WireDocument document)
     {
         foreach (var factType in EnumerateFactTypes(document))
@@ -420,14 +566,7 @@ public static class PackageValidator
 
         try
         {
-            try
-        {
             ScanNode(node, artifactKey);
-        }
-        catch (PublicationRejectedException exception) when (exception.Gate == "absolute-path")
-        {
-            throw new PublicationRejectedException("absolute-path", artifactKey);
-        }
         }
         catch (PublicationRejectedException exception) when (exception.Gate == "absolute-path")
         {
@@ -471,7 +610,12 @@ public static class PackageValidator
             return false;
         }
 
-        if (text[0] == '\\' || text.StartsWith("//", StringComparison.Ordinal))
+        // A bare "\\", "//" or "///" with nothing after it is punctuation, not a path -- most commonly a
+        // C# comment marker (`//`) or an empty XML doc-comment line (`///`), tokenized in isolation by
+        // EnsureNoAbsolutePathTokens's fallback scan of non-JSON payloads (a raw `source/*.cs` copy).
+        // A real UNC-style path still requires a host/share segment after the slashes.
+        if ((text[0] == '\\' || text.StartsWith("//", StringComparison.Ordinal))
+            && HasSegmentAfterLeadingSeparators(text))
         {
             return true;
         }
@@ -482,6 +626,17 @@ public static class PackageValidator
         }
 
         return text[0] == '/' && UnixFilesystemRoots.Contains(FirstPathSegment(text));
+    }
+
+    private static bool HasSegmentAfterLeadingSeparators(string text)
+    {
+        var start = 0;
+        while (start < text.Length && text[start] is '/' or '\\')
+        {
+            start++;
+        }
+
+        return start < text.Length;
     }
 
     private static string FirstPathSegment(string path)
@@ -605,7 +760,7 @@ public static class PackageValidator
             Quarantine = quarantined,
             RunCertification = quarantined.IsEmpty
                 ? document.RunCertification
-                : new RunCertificationEnvelope("failed"),
+                : new RunCertificationEnvelope("failed", ["A derived fact was quarantined during publication."]),
         };
 
         return new ValidationReport(next, quarantined);

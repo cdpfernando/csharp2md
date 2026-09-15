@@ -454,6 +454,35 @@ public sealed class InvokesPassTests
     }
 
     [Fact]
+    [Trait("Requirement", "GCPC-011")]
+    public void Execute_BoundOccurrenceWithNoExtractableTargetSignature_EmitsUnresolvedInsteadOfNothing()
+    {
+        var pipeline = Arrange();
+        var source = AddMethod(pipeline, "PlaceOrderAsync", "global::Acme.Orders.OrderService", OrdersProject);
+        var occurrence = CreateObservation(
+            source.Reference,
+            ObservationKind.Invocation,
+            1,
+            diagnostic: new BindingDiagnostic("bound", "no target signature can be parsed from this message"));
+        pipeline.Accumulator.AddObservation(occurrence);
+        var context = new ClassifierContext(pipeline);
+
+        // Line-91 gap: bound (not "unbound"), yet AlwaysWhenBindableWalker.TryExtractTargetSignature
+        // still returns null for this message -- previously a silent continue with no disposition at
+        // all; GCPC-011 requires the occurrence to carry one regardless.
+        var result = new InvokesPass().Execute(context, CancellationToken.None, out var ledger);
+
+        Assert.Equal(1, result.UnresolvedCount);
+        var unresolved = Assert.Single(pipeline.Accumulator.ToSnapshot().Unresolved.ToArray());
+        Assert.Equal(UnresolvedCause.InsufficientEvidence, unresolved.Cause);
+        Assert.Equal(source.Reference, unresolved.Source);
+        var disposition = Assert.Single(ledger.Dispositions);
+        Assert.Equal(occurrence.Identity, disposition.Occurrence);
+        Assert.Equal(InvocationDispositionKind.Unresolved, disposition.Kind);
+        Assert.Empty(ledger.Duplicates);
+    }
+
+    [Fact]
     [Trait("Requirement", "CLLF-01")]
     public void Identity_IsInvokesClassifierVersionOne()
     {

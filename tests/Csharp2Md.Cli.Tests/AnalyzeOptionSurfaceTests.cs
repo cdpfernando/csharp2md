@@ -22,10 +22,11 @@ public sealed class AnalyzeOptionSurfaceTests
     [Trait("Requirement", "STOR-47")]
     [Trait("Requirement", "STOR-52")]
     [Trait("Requirement", "ROSE-61")]
+    [Trait("Requirement", "APR-08")]
     public void AnalyzeAndRoot_DoNotExposeRemovedMarkdownEraOptions()
     {
         var root = CommandFactory.CreateRootCommand();
-        var analyze = Assert.Single(root.Subcommands);
+        var analyze = Assert.Single(root.Subcommands, static command => command.Name == "analyze");
 
         var rootNames = OptionNames(root.Options);
         var analyzeNames = OptionNames(analyze.Options);
@@ -41,7 +42,9 @@ public sealed class AnalyzeOptionSurfaceTests
             .Select(static option => option.Name)
             .OrderBy(static name => name, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(["--output", "--solution"], analyzeProductOptions);
+        Assert.Equal(
+            ["--allowlist", "--max-file-reads-per-scenario", "--output", "--reading-budget-tokens", "--solution"],
+            analyzeProductOptions);
         Assert.Empty(analyze.Arguments);
     }
 

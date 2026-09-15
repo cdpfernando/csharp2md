@@ -1,5 +1,7 @@
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Storage.Retrieval;
 using Csharp2Md.Storage.Validation;
+using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage.Mapping;
 
@@ -17,7 +19,10 @@ internal static class PublicationPipeline
         IPackageProjector? projector,
         IBatchComposer? composer,
         ISourceDocumentReader source,
-        Func<WireDocument, PublishedPackageView>? createView = null)
+        Func<WireDocument, PublishedPackageView>? createView = null,
+        int? readingBudgetTokens = null,
+        int? maxFileReadsPerScenario = null,
+        ImmutableArray<string> allowlist = default)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(context);
@@ -25,12 +30,21 @@ internal static class PublicationPipeline
 
         var document = DomainMapper.ToWire(snapshot, context);
         var report = PackageValidator.Validate(document);
+
+        var ceiling = CeilingCalculator.Derive(
+            readingBudgetTokens ?? CeilingCalculator.DefaultReadingBudgetTokens,
+            maxFileReadsPerScenario ?? CeilingCalculator.DefaultMaxFileReadsPerScenario);
+        var allowlistDigest = ProvenanceDto.ComputeAllowlistDigest(allowlist.IsDefault ? [] : allowlist);
+        var provenance = ProvenanceDto.Current(ceiling, allowlistDigest);
+
+        var plan = LayoutPlanner.Plan(report.Document, ceiling.CeilingBytes);
         var projections = ImmutableArray<StagedFragment>.Empty;
         SolutionContribution? contribution = null;
+        var publishedDocument = report.Document;
         if (projector is not null || composer is not null)
         {
             var view = createView is null
-                ? PublishedPackageView.From(report.Document)
+                ? PublishedPackageView.From(report.Document, plan)
                 : createView(report.Document);
             if (projector is not null)
             {
@@ -48,6 +62,34 @@ internal static class PublicationPipeline
                 }
 
                 ProjectionValidator.Validate(view, projections);
+
+                // GCPC-052..GCPC-054's documented scenarios are walked against exactly what this
+                // publication is about to write, so their measured records reach `measurements.json`.
+                // Gated on the guide's presence: only a projector that emits `retrieval.md` has scenarios
+                // to walk, so a projector without one is unaffected.
+                if (projections.Any(static fragment => fragment.CanonicalKey == "retrieval.md"))
+                {
+                    var candidateFragments = PackagePublisher.ToPublicationOrder(report.Document, plan, projections, provenance);
+                    var scenarioRecords = RetrievalScenarioRunner
+                        .Run(new StagedFragmentArtifactSource(candidateFragments))
+                        .ToMeasurementRecords();
+                    if (!scenarioRecords.IsEmpty)
+                    {
+                        publishedDocument = report.Document with
+                        {
+                            Measurements = new MeasurementsEnvelope(
+                                report.Document.Measurements.Records.AddRange(scenarioRecords)),
+                        };
+
+                        // Re-plan: the fact/relation families are unchanged (measurements.json carries no
+                        // fact or relation identity, so it never participates in their sharding), only
+                        // measurements.json's own declared record count moves. The already-built `view`
+                        // keeps flowing to `composer.Contribute` below unchanged, so a caller depending on
+                        // exactly one `createView` invocation per publish (a same-instance-to-projector-
+                        // and-composer guarantee) still sees exactly that.
+                        plan = LayoutPlanner.Plan(publishedDocument, ceiling.CeilingBytes);
+                    }
+                }
             }
 
             if (composer is not null)
@@ -56,8 +98,78 @@ internal static class PublicationPipeline
             }
         }
 
-        return new PublicationOutcome(
-            PackagePublisher.ToPublicationOrder(report.Document, projections),
-            contribution);
+        // F4 (GCPC-004): a layout-time degradation (LayoutPlanner's `record-exceeds-ceiling`, e.g. a
+        // solitary oversized `invokes`/`accesses-data`/`uses-contract` relation) is computed only once
+        // `plan` exists, after the coverage envelope DomainMapper.ToWire already baked from the analysis
+        // snapshot -- so it is merged onto the document actually serialized here, right before ordering.
+        // Applied last so it reflects whichever `plan` (original or the retrieval-scenario re-plan above)
+        // is about to be written.
+        if (!plan.CoverageMetricDegradations.IsEmpty)
+        {
+            publishedDocument = publishedDocument with
+            {
+                Coverage = DomainMapper.WithCoverageDegradations(publishedDocument.Coverage, plan.CoverageMetricDegradations),
+            };
+        }
+
+        // F9 (GCPC-004/GCPC-038): CoverageMetricDegradations is deliberately limited to families whose
+        // numerator mapping is unambiguous. The complete plan-level list must still be consumer-visible,
+        // especially the real Acme.Orders oversized Component in facts/architecture.json, so publish it
+        // at run scope with each reason's affected count rather than silently losing the edge case.
+        if (!plan.DegradationReasons.IsEmpty)
+        {
+            publishedDocument = publishedDocument with
+            {
+                RunCertification = DomainMapper.WithLayoutDegradations(
+                    publishedDocument.RunCertification,
+                    plan.DegradationReasons),
+            };
+        }
+
+        var fragments = PackagePublisher.ToPublicationOrder(publishedDocument, plan, projections, provenance);
+        ValidateManifestCardinality(fragments);
+        return new PublicationOutcome(fragments, contribution);
+    }
+
+    /// <summary>
+    /// Proves the manifest this publication is about to write agrees with the bytes it is about to write,
+    /// before any of them reach disk (GCPC-061/GCPC-062) -- an abort here leaves the prior package
+    /// untouched, since nothing has been written yet.
+    /// </summary>
+    private static void ValidateManifestCardinality(ImmutableArray<StagedFragment> fragments)
+    {
+        var manifestFragment = fragments.Single(static fragment => fragment.CanonicalKey == PackagePublisher.ManifestKey);
+        var manifest = PackageValidator.ReadPayloadOrThrow<ManifestEnvelope>(
+            manifestFragment.Payload.AsSpan(), PackagePublisher.ManifestKey);
+
+        var artifactsByKey = new Dictionary<string, ImmutableArray<byte>>(StringComparer.Ordinal);
+        var deferredKeys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var fragment in fragments)
+        {
+            if (fragment.Role != ArtifactRole.Payload)
+            {
+                continue;
+            }
+
+            if (fragment.IsDeferred)
+            {
+                deferredKeys.Add(fragment.CanonicalKey);
+            }
+            else
+            {
+                artifactsByKey[fragment.CanonicalKey] = fragment.Payload;
+            }
+        }
+
+        // F6: the manifest fragment about to be written may itself be a small root pointing at
+        // manifest/parts.*.json shards -- those shards are already among the Payload fragments above (and
+        // therefore in artifactsByKey), so resolving here needs no extra plumbing.
+        var resolved = ManifestSharder.Resolve(
+            manifest,
+            path => artifactsByKey.TryGetValue(path, out var bytes)
+                ? bytes
+                : throw new PublicationRejectedException("manifest-file-missing", path));
+
+        PackageValidator.ValidatePublishedManifest(resolved, artifactsByKey, deferredKeys);
     }
 }

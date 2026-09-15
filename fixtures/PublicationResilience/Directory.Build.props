@@ -1,0 +1,18 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!-- Fixture projects are never packed or published, and MSBuildWorkspace surfaces SourceLink's
+       "no git remote" / "no commits" build-task warnings as Kind == Failure workspace diagnostics
+       (see fixtures/SyntheticSolution's own Directory.Build.props for the precedent). Pure noise here. -->
+  <PropertyGroup>
+    <PublishRepositoryUrl>false</PublishRepositoryUrl>
+    <EmbedUntrackedSources>false</EmbedUntrackedSources>
+    <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Remove="Microsoft.SourceLink.GitHub" />
+  </ItemGroup>
+
+</Project>

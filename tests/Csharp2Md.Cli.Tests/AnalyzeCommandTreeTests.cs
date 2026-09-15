@@ -7,12 +7,13 @@ public sealed class AnalyzeCommandTreeTests
 {
     [Fact]
     [Trait("Requirement", "ENG-37")]
-    public void RootCommand_ExposesExactlyOneVerbNamedAnalyze()
+    [Trait("Requirement", "GCPC-063")]
+    public void RootCommand_ExposesExactlyTheThreeCertificationVerbs()
     {
         var root = CommandFactory.CreateRootCommand();
 
-        var analyze = Assert.Single(root.Subcommands);
-        Assert.Equal("analyze", analyze.Name);
+        var names = root.Subcommands.Select(static command => command.Name).OrderBy(static name => name, StringComparer.Ordinal).ToArray();
+        Assert.Equal(["analyze", "compose", "validate"], names);
         Assert.Null(root.Action);
     }
 
@@ -20,7 +21,7 @@ public sealed class AnalyzeCommandTreeTests
     [Trait("Requirement", "ENG-38")]
     public void Analyze_RequiresRepeatableSolutionOptionThatIsNotPositional()
     {
-        var analyze = Assert.Single(CommandFactory.CreateRootCommand().Subcommands);
+        var analyze = Analyze();
         var solution = Assert.Single(analyze.Options, option => option.Name == "--solution");
 
         Assert.True(solution.Required);
@@ -32,11 +33,14 @@ public sealed class AnalyzeCommandTreeTests
     [Trait("Requirement", "STOR-47")]
     public void Analyze_RequiresOutputOptionThatIsNotPositional()
     {
-        var analyze = Assert.Single(CommandFactory.CreateRootCommand().Subcommands);
+        var analyze = Analyze();
         var output = Assert.Single(analyze.Options, option => option.Name == "--output");
 
         Assert.True(output.Required);
         Assert.Equal(ArgumentArity.ExactlyOne, output.Arity);
         Assert.Empty(analyze.Arguments);
     }
+
+    private static Command Analyze() =>
+        Assert.Single(CommandFactory.CreateRootCommand().Subcommands, static command => command.Name == "analyze");
 }

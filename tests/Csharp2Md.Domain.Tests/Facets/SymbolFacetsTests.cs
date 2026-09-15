@@ -82,4 +82,30 @@ public sealed class SymbolFacetsTests
 
         Assert.Equal(new[] { SymbolFacet.Callable, SymbolFacet.Abstract }, set.Facets.ToArray());
     }
+
+    [Fact]
+    [Trait("Requirement", "TAX-13")]
+    public void SymbolFacet_HasExternallyReachableAsAValue()
+    {
+        Assert.True(Enum.IsDefined(SymbolFacet.ExternallyReachable));
+        Assert.Contains("ExternallyReachable", Enum.GetNames<SymbolFacet>());
+    }
+
+    [Fact]
+    [Trait("Requirement", "TAX-13")]
+    public void Create_ExternallyReachableFacet_IsAcceptedAndPresentInTheSet()
+    {
+        var set = SymbolFacetSet.Create([SymbolFacet.ExternallyReachable]);
+
+        Assert.Equal(new[] { SymbolFacet.ExternallyReachable }, set.Facets.ToArray());
+    }
+
+    [Fact]
+    [Trait("Requirement", "TAX-13")]
+    public void Create_ExternallyReachableTogetherWithCallable_ProducesOrderedDistinctSet()
+    {
+        var set = SymbolFacetSet.Create([SymbolFacet.ExternallyReachable, SymbolFacet.Callable, SymbolFacet.ExternallyReachable]);
+
+        Assert.Equal(new[] { SymbolFacet.Callable, SymbolFacet.ExternallyReachable }, set.Facets.ToArray());
+    }
 }

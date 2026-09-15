@@ -8,6 +8,15 @@
     "entry_point_coverage": {
       "type": "object",
       "properties": {
+        "state": {
+          "type": "string"
+        },
+        "not_applicable_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "numerator": {
           "type": "integer"
         },
@@ -24,13 +33,32 @@
           "type": "array",
           "items": {
             "type": [
-              "string",
+              "object",
               "null"
-            ]
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "affected_count": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "code",
+              "detail",
+              "affected_count"
+            ],
+            "additionalProperties": false
           }
         }
       },
       "required": [
+        "state",
+        "not_applicable_reason",
         "numerator",
         "denominator",
         "exclusions",
@@ -42,6 +70,15 @@
     "linked_call_coverage": {
       "type": "object",
       "properties": {
+        "state": {
+          "type": "string"
+        },
+        "not_applicable_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "numerator": {
           "type": "integer"
         },
@@ -59,6 +96,8 @@
         }
       },
       "required": [
+        "state",
+        "not_applicable_reason",
         "numerator",
         "denominator",
         "exclusions",
@@ -70,6 +109,15 @@
     "contract_coverage": {
       "type": "object",
       "properties": {
+        "state": {
+          "type": "string"
+        },
+        "not_applicable_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "numerator": {
           "type": "integer"
         },
@@ -87,6 +135,8 @@
         }
       },
       "required": [
+        "state",
+        "not_applicable_reason",
         "numerator",
         "denominator",
         "exclusions",
@@ -98,6 +148,15 @@
     "persistence_coverage": {
       "type": "object",
       "properties": {
+        "state": {
+          "type": "string"
+        },
+        "not_applicable_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "numerator": {
           "type": "integer"
         },
@@ -115,6 +174,8 @@
         }
       },
       "required": [
+        "state",
+        "not_applicable_reason",
         "numerator",
         "denominator",
         "exclusions",

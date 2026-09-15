@@ -10,7 +10,22 @@ namespace Csharp2Md.Analysis.Tests.Pipeline;
 public sealed class PipelineCancellationTests
 {
     [Fact]
+    [Trait("Requirement", "APR-06")]
+    public async Task AnalyzeAsync_StageThrowsOperationCanceledException_PropagatesCancellation()
+    {
+        var engine = new AnalysisEngine(
+            new InMemoryTransactionalStore(),
+            StubStages.CreateDefault().SetItem(
+                1,
+                new ThrowingStage("Semantic Analysis", new OperationCanceledException("stage cancelled"))));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => engine.AnalyzeAsync(AnalysisRequest.Create(["alpha.sln"]), CancellationToken.None));
+    }
+
+    [Fact]
     [Trait("Requirement", "ENG-18")]
+    [Trait("Requirement", "APR-06")]
     public async Task AnalyzeAsync_CancelAfterStageThree_RecordsThreeStagesAndDoesNotCommit()
     {
         using var cts = new CancellationTokenSource();
@@ -34,6 +49,8 @@ public sealed class PipelineCancellationTests
 
         var outcome = Assert.Single(result.Solutions);
         Assert.Equal(PublicationStatus.Unpublished, outcome.Status);
+        Assert.Null(outcome.FailingStage);
+        Assert.Null(outcome.Detail);
         Assert.True(result.HasUnpublishedSolution);
         Assert.Equal(
             ["Inventory", "Semantic Analysis", "Observation Extraction"],
@@ -47,6 +64,7 @@ public sealed class PipelineCancellationTests
 
     [Fact]
     [Trait("Requirement", "STOR-58")]
+    [Trait("Requirement", "APR-06")]
     public async Task AnalyzeAsync_CancelWithFilesystemStore_LeavesNoStagingAndKeepsLastPackage()
     {
         var outputPath = Path.Combine(Path.GetTempPath(), "csharp2md-fs-" + Guid.NewGuid().ToString("N"));
@@ -60,7 +78,7 @@ public sealed class PipelineCancellationTests
             seed.Stage(FactualSnapshot.Empty);
             seed.Commit();
             var child = Path.Combine(outputPath, ChildName(canonical));
-            var prior = SnapshotFiles(child);
+            var prior = PackageSnapshot.Capture(child);
 
             using var cts = new CancellationTokenSource();
             var executed = new List<string>();
@@ -87,12 +105,7 @@ public sealed class PipelineCancellationTests
                 executed);
             Assert.False(Directory.Exists(child + ".staging"));
             Assert.Empty(Directory.EnumerateFileSystemEntries(outputPath, "*.staging"));
-            var after = SnapshotFiles(child);
-            Assert.Equal(prior.Keys.Order(StringComparer.Ordinal), after.Keys.Order(StringComparer.Ordinal));
-            foreach (var key in prior.Keys)
-            {
-                Assert.True(prior[key].AsSpan().SequenceEqual(after[key]), $"Bytes at '{key}' changed.");
-            }
+            PackageSnapshot.AssertEqual(prior, PackageSnapshot.Capture(child));
         }
         finally
         {
@@ -109,11 +122,4 @@ public sealed class PipelineCancellationTests
         var hex = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(identity)))[..32];
         return "s-" + hex;
     }
-
-    private static IReadOnlyDictionary<string, byte[]> SnapshotFiles(string directory) =>
-        Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
-            .ToDictionary(
-                path => Path.GetRelativePath(directory, path).Replace('\\', '/'),
-                File.ReadAllBytes,
-                StringComparer.Ordinal);
 }

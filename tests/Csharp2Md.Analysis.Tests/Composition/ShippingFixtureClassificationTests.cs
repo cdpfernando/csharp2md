@@ -55,10 +55,8 @@ public sealed class ShippingFixtureClassificationTests
         var outcome = Assert.Single(result.Solutions);
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
-        var fragment = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == "facts/architecture.json");
-        return CanonicalJson.Read<ArchitectureFactsShard>(fragment.Payload.AsSpan());
+        return ShardedFactsReader.Read<ArchitectureFactsShard>(
+            publication.ArtifactsInPublicationOrder, "facts/architecture.json");
     }
 
     private static string FixtureSolution(string folder, string file)

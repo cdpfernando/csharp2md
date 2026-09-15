@@ -358,21 +358,37 @@ public sealed class ComponentPassTests
         return (outcome, publication);
     }
 
-    private static T ReadShard<T>(CommittedPublication publication, string canonicalKey)
-    {
-        var fragment = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == canonicalKey);
-        return CanonicalJson.Read<T>(fragment.Payload.AsSpan());
-    }
+    private static T ReadShard<T>(CommittedPublication publication, string canonicalKey) =>
+        ShardedFactsReader.Read<T>(publication.ArtifactsInPublicationOrder, canonicalKey);
 
+    /// <summary>
+    /// T52 made the derived ~32 KiB ceiling the live default, so this flat record-array family may now
+    /// legitimately be sharded into "&lt;stem&gt;.&lt;bucket&gt;.json" artifacts instead of staying one
+    /// file at its base key -- this merges every shard back into one array, matching what
+    /// <c>FactualPackageReader.ReadShardedArray</c> does for a real reader.
+    /// </summary>
     private static ImmutableArray<ConfirmedRelationDto> ReadRelations(
         CommittedPublication publication,
-        string canonicalKey) =>
-        CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(
-            Assert.Single(
-                publication.ArtifactsInPublicationOrder,
-                artifact => artifact.CanonicalKey == canonicalKey).Payload.AsSpan());
+        string canonicalKey)
+    {
+        var stem = canonicalKey.EndsWith(".json", StringComparison.Ordinal)
+            ? canonicalKey[..^".json".Length]
+            : canonicalKey;
+        var shardKeys = publication.ArtifactsInPublicationOrder
+            .Select(static artifact => artifact.CanonicalKey)
+            .Where(key => key == canonicalKey
+                || (key.StartsWith(stem + ".", StringComparison.Ordinal) && key.EndsWith(".json", StringComparison.Ordinal)))
+            .OrderBy(static key => key, StringComparer.Ordinal);
+
+        var records = ImmutableArray.CreateBuilder<ConfirmedRelationDto>();
+        foreach (var key in shardKeys)
+        {
+            var fragment = publication.ArtifactsInPublicationOrder.Single(artifact => artifact.CanonicalKey == key);
+            records.AddRange(CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(fragment.Payload.AsSpan()));
+        }
+
+        return records.ToImmutable();
+    }
 
     private static string AcmeOrdersSolutionPath() => FixtureSolution("Acme.Orders", "Acme.Orders.slnx");
 

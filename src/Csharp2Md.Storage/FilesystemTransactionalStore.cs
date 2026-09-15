@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Csharp2Md.Analysis.Storage;
 using Csharp2Md.Storage.Mapping;
+using Csharp2Md.Storage.Validation;
 using Csharp2Md.Storage.Wire;
 
 namespace Csharp2Md.Storage;
@@ -13,13 +14,34 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
     private readonly IPackageProjector? _projector;
     private readonly IBatchComposer? _composer;
     private readonly FilesystemRetryPolicy _retry;
+    private readonly int? _readingBudgetTokens;
+    private readonly int? _maxFileReadsPerScenario;
+    private readonly ImmutableArray<string> _allowlist;
     private readonly Dictionary<string, SolutionContribution> _contributions = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// <paramref name="readingBudgetTokens"/> and <paramref name="maxFileReadsPerScenario"/> (the CLI's
+    /// <c>--reading-budget-tokens</c> and <c>--max-file-reads-per-scenario</c>), absent an override, are
+    /// the same declared defaults <see cref="Mapping.CeilingCalculator"/> already derives the enforced
+    /// per-artifact ceiling from on every publish; <paramref name="allowlist"/> is the same allowlist
+    /// <see cref="Analysis.AnalysisRequest"/> already admitted through the pipeline, threaded here
+    /// only so its digest reaches the published provenance (GCPC-058).
+    /// </summary>
     public FilesystemTransactionalStore(
         string outputRoot,
         IPackageProjector? projector = null,
-        IBatchComposer? composer = null)
-        : this(outputRoot, projector, composer, FilesystemRetryPolicy.Default)
+        IBatchComposer? composer = null,
+        int? readingBudgetTokens = null,
+        int? maxFileReadsPerScenario = null,
+        ImmutableArray<string> allowlist = default)
+        : this(
+            outputRoot,
+            projector,
+            composer,
+            FilesystemRetryPolicy.Default,
+            readingBudgetTokens,
+            maxFileReadsPerScenario,
+            allowlist)
     {
     }
 
@@ -36,6 +58,18 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         IPackageProjector? projector,
         IBatchComposer? composer,
         FilesystemRetryPolicy retry)
+        : this(outputRoot, projector, composer, retry, null, null, default)
+    {
+    }
+
+    internal FilesystemTransactionalStore(
+        string outputRoot,
+        IPackageProjector? projector,
+        IBatchComposer? composer,
+        FilesystemRetryPolicy retry,
+        int? readingBudgetTokens,
+        int? maxFileReadsPerScenario,
+        ImmutableArray<string> allowlist)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(outputRoot);
         ArgumentOutOfRangeException.ThrowIfLessThan(retry.MaxAttempts, 1);
@@ -43,9 +77,25 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
         _projector = projector;
         _composer = composer;
         _retry = retry;
+        _readingBudgetTokens = readingBudgetTokens;
+        _maxFileReadsPerScenario = maxFileReadsPerScenario;
+        _allowlist = allowlist;
     }
 
     internal IReadOnlyDictionary<string, SolutionContribution> AccumulatedContributions => _contributions;
+
+    /// <summary>
+    /// Registers a contribution built by re-reading an already-published package (<see
+    /// cref="ContributionReader"/>, the <c>compose</c> path) as if it had come from a live <see
+    /// cref="IStoreSession.Commit"/> on this store instance, so <see cref="PublishBatch"/> composes it
+    /// through the exact same path a live <c>analyze</c> batch uses -- no second write path is introduced.
+    /// </summary>
+    public void SeedContribution(string solutionIdentity, SolutionContribution contribution)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(solutionIdentity);
+        ArgumentNullException.ThrowIfNull(contribution);
+        _contributions[solutionIdentity] = contribution;
+    }
 
     public IStoreSession Open(SolutionCoordinate coordinate, ISourceDocumentReader sourceReader)
     {
@@ -368,9 +418,14 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
                     Path.GetFileName(_childPath),
                     _projector,
                     _composer,
-                    _sourceReader);
+                    _sourceReader,
+                    createView: null,
+                    _store._readingBudgetTokens,
+                    _store._maxFileReadsPerScenario,
+                    _store._allowlist);
                 var artifacts = outcome.Fragments.AddRange(_deferred);
                 WriteStaging(artifacts);
+                RewriteManifestWithWrittenByteSizes();
                 SwapStagingIntoChild();
                 if (outcome.Contribution is not null)
                 {
@@ -419,6 +474,58 @@ public sealed class FilesystemTransactionalStore : ITransactionalStore
                 stream.Write(fragment.ReadPayload().AsSpan());
             }
         }
+
+        /// <summary>
+        /// GCPC-057/GCPC-061: deferred source fragments must remain single-read, so their real size is
+        /// unknowable when <see cref="Mapping.ManifestBuilder"/> first constructs the manifest. Once all
+        /// fragments have been written into the still-private staging directory, rebuild the manifest
+        /// from those actual file lengths and re-shard it under the same published ceiling. Any failure
+        /// still aborts staging before the atomic directory swap.
+        /// </summary>
+        private void RewriteManifestWithWrittenByteSizes()
+        {
+            var manifestPath = Path.Combine(_stagingPath, PackagePublisher.ManifestKey);
+            var root = PackageValidator.ReadPayloadOrThrow<ManifestEnvelope>(
+                File.ReadAllBytes(manifestPath), PackagePublisher.ManifestKey);
+            var resolved = ManifestSharder.Resolve(root, path => ReadStagedFile(path));
+            var entries = resolved.Artifacts
+                .Where(static entry => entry.Role != ManifestSharder.PartRole)
+                .Select(entry => WithWrittenCardinality(entry, ReadStagedFile(entry.Path)))
+                .ToImmutableArray();
+            var rewritten = root with { Artifacts = entries };
+            var ceilingBytes = root.Provenance?.ArtifactCeilingBytes ?? int.MaxValue;
+            var fragments = ManifestSharder.ToFragments(rewritten, ceilingBytes);
+
+            File.Delete(manifestPath);
+            FilesystemIo.DeleteDirectory(Path.Combine(_stagingPath, "manifest"), _retry);
+            foreach (var fragment in fragments)
+            {
+                var destination = Path.Combine(
+                    _stagingPath,
+                    fragment.CanonicalKey.Replace('/', Path.DirectorySeparatorChar));
+                var directory = Path.GetDirectoryName(destination);
+                ArgumentException.ThrowIfNullOrEmpty(directory);
+                Directory.CreateDirectory(directory);
+                using var stream = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None);
+                stream.Write(fragment.Payload.AsSpan());
+            }
+        }
+
+        private ImmutableArray<byte> ReadStagedFile(string relativePath) =>
+            File.ReadAllBytes(Path.Combine(
+                _stagingPath,
+                relativePath.Replace('/', Path.DirectorySeparatorChar))).ToImmutableArray();
+
+        private static ManifestEntry WithWrittenCardinality(
+            ManifestEntry entry,
+            ImmutableArray<byte> bytes) =>
+            entry with
+            {
+                ByteSize = bytes.Length,
+                Count = entry.Path == PackagePublisher.RegistryKey
+                    ? entry.Count
+                    : ManifestBuilder.CountTopLevelEntries(bytes.AsSpan()),
+            };
 
         private void SwapStagingIntoChild()
         {

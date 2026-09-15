@@ -126,8 +126,17 @@ public sealed class InventoryStageTests
     [Fact]
     [Trait("Requirement", "CDC-25")]
     [Trait("Requirement", "CDC-34")]
-    public async Task ExecuteAsync_AcmeOrders_PublishesBothAppsettingsFilesWithoutUnsupportedDiagnostic()
+    [Trait("Requirement", "GCPC-026")]
+    [Trait("Requirement", "GCPC-027")]
+    [Trait("Requirement", "GCPC-028")]
+    [Trait("Requirement", "GCPC-033")]
+    public async Task ExecuteAsync_AcmeOrders_PublishesBothAppsettingsFilesAndCsprojWithNoIndividualUnsupportedDiagnostic()
     {
+        // Acme.Orders carries .cs, .csproj and appsettings*.json documents, all accepted by the
+        // supported-document policy (GCPC-026, GCPC-027); its own Acme.Orders.slnx solution file also
+        // lives in the project directory and is excluded (no classifier consumes a .slnx), so exactly
+        // one aggregated diagnostic is published for it (GCPC-033) and no individual unsupported-document
+        // diagnostic remains for any document (GCPC-028). fixtures/SyntheticSolution is immutable.
         var solutionPath = AcmeOrdersSolutionPath();
         var context = new PipelineContext(new SwallowingSession(), solutionPath);
 
@@ -145,16 +154,15 @@ public sealed class InventoryStageTests
         Assert.DoesNotContain(
             diagnostics,
             record => string.Equals(record.Code, "unsupported-document", StringComparison.Ordinal)
-                && string.Equals(record.IdentityOrKey, "Acme.Orders/appsettings.json", StringComparison.Ordinal));
-        Assert.DoesNotContain(
+                && record.IdentityOrKey is not null);
+        var aggregated = Assert.Single(
             diagnostics,
-            record => string.Equals(record.Code, "unsupported-document", StringComparison.Ordinal)
-                && string.Equals(record.IdentityOrKey, "Acme.Orders/appsettings.Development.json", StringComparison.Ordinal));
+            record => string.Equals(record.Code, "unsupported-document", StringComparison.Ordinal));
+        Assert.Contains("1 document(s)", aggregated.Message, StringComparison.Ordinal);
+        Assert.Contains(".slnx", aggregated.Message, StringComparison.Ordinal);
         Assert.Contains(
-            diagnostics,
-            record => string.Equals(record.Code, "unsupported-document", StringComparison.Ordinal)
-                && record.IdentityOrKey is not null
-                && record.IdentityOrKey.EndsWith(".csproj", StringComparison.Ordinal));
+            context.Accumulator.ToSnapshot().Facts.OfType<Document>(),
+            document => string.Equals(document.RelativePath, "Acme.Orders/Acme.Orders.csproj", StringComparison.Ordinal));
     }
 
     private static string AcmeOrdersSolutionPath()

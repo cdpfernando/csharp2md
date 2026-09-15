@@ -6,7 +6,7 @@ public sealed class AnalyzeSuccessTests
     [Trait("Requirement", "ENG-41")]
     [Trait("Requirement", "ENG-44")]
     [Trait("Requirement", "ROSE-02")]
-    public async Task Analyze_WithExistingSolution_Exits0WithSummaryOnStdout()
+    public async Task Analyze_WithExistingDegradedSolution_Exits3WithSummaryOnStdout()
     {
         var solutionPath = Path.Combine(
             CliTestPaths.RepoRoot,
@@ -22,7 +22,7 @@ public sealed class AnalyzeSuccessTests
             var (exitCode, stdout, stderr) = await CliInvoke.RunAsync(
                 ["analyze", "--solution", solutionPath, "--output", outputPath]);
 
-            Assert.Equal(0, exitCode);
+            Assert.Equal(ExitCodes.Degraded, exitCode);
             Assert.False(string.IsNullOrWhiteSpace(stdout));
             Assert.Contains(solutionPath.Replace('\\', '/'), stdout, StringComparison.Ordinal);
             Assert.DoesNotContain("csharp2md:", stdout, StringComparison.Ordinal);
@@ -53,7 +53,7 @@ public sealed class AnalyzeSuccessTests
             var (exitCode, _, _) = await CliInvoke.RunAsync(
                 ["analyze", "--solution", solutionPath, "--output", outputPath]);
 
-            Assert.Equal(0, exitCode);
+            Assert.Equal(ExitCodes.Degraded, exitCode);
             var manifest = Assert.Single(
                 Directory.EnumerateFiles(outputPath, "manifest.json", SearchOption.AllDirectories));
             Assert.Equal("manifest.json", Path.GetFileName(manifest));

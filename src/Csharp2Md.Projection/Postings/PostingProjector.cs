@@ -81,18 +81,30 @@ internal static class PostingProjector
         AddIndexed(
             fragments,
             UnknownsKey,
-            "relations/unresolved.json",
             view.Document.Unresolved.Select(static (record, ordinal) => (record.Source.Id, ordinal)),
+            view.TryLocateUnresolved,
             ceilingBytes);
         AddIndexed(
             fragments,
             FrontiersKey,
-            "relations/frontiers.json",
             view.Document.Frontiers.Select(static (frontier, ordinal) => (frontier.Occurrence.Owner.Id, ordinal)),
+            view.TryLocateFrontier,
             ceilingBytes);
         return fragments.ToImmutable();
     }
 
+    /// <summary>
+    /// GCPC-091: a contract's producer publishes it, its consumer handles it. For a messaging binding
+    /// -- the only kind <c>ContractPass</c> creates today -- that distinction is
+    /// <see cref="BoundaryOperationDto.Direction"/> (outbound publishes, inbound handles), never
+    /// <see cref="ContractBindingDto.PayloadRole"/>: <c>ContractPass</c> assigns every messaging
+    /// binding, producer and consumer alike, the same <c>"request"</c> payload role (EBC-22/EBC-26;
+    /// there is no messaging "response"), so a role-only split would put every messaging operation in
+    /// <c>consumers</c> and leave <c>producers</c> permanently empty. Scoped to
+    /// <c>Protocol == "messaging"</c> only: a non-messaging (HTTP-shaped) binding uses
+    /// <see cref="ContractBindingDto.PayloadRole"/> (RP-25 -- role decides, not the operation's own
+    /// name or direction).
+    /// </summary>
     private static void AddContractRole(
         PublishedPackageView view,
         Dictionary<string, List<PostingEntryDto>> producers,
@@ -105,6 +117,22 @@ internal static class PostingProjector
             && string.Equals(candidate.Contract.Id, relation.Target.Id, StringComparison.Ordinal));
         if (binding is null)
         {
+            return;
+        }
+
+        var operation = view.Document.BoundaryOperations.FirstOrDefault(candidate =>
+            string.Equals(candidate.Identity.Id, binding.Operation.Id, StringComparison.Ordinal));
+        if (operation is not null && string.Equals(operation.Protocol, "messaging", StringComparison.Ordinal))
+        {
+            if (string.Equals(operation.Direction, "outbound", StringComparison.Ordinal))
+            {
+                Add(producers, relation.Target.Id, entry);
+            }
+            else if (string.Equals(operation.Direction, "inbound", StringComparison.Ordinal))
+            {
+                Add(consumers, relation.Target.Id, entry);
+            }
+
             return;
         }
 
@@ -184,17 +212,34 @@ internal static class PostingProjector
         fragments.AddRange(ShardWriter.Write(key, Nodes(payload), ceilingBytes));
     }
 
+    /// <summary>Resolves the citation for the record at <paramref name="index"/> in a family's own
+    /// document-order array (<see cref="PublishedPackageView.TryLocateUnresolved"/> and
+    /// <see cref="PublishedPackageView.TryLocateFrontier"/>), matching <c>out</c>-parameter delegates
+    /// <see cref="Func{T,TResult}"/> cannot express.</summary>
+    private delegate bool TryLocateIndexed(int index, out ArtifactCitation citation);
+
+    /// <summary>
+    /// GCPC-040/GCPC-041: <paramref name="items"/>'s ordinal is the record's position in the document's own
+    /// (unsplit) array, not necessarily its ordinal inside whatever artifact the family split into --
+    /// <paramref name="locate"/> resolves the real, shard-aware citation instead of assuming the family
+    /// stayed in a single base-key artifact.
+    /// </summary>
     private static void AddIndexed(
         ImmutableArray<StagedFragment>.Builder fragments,
         string postingKey,
-        string artifactKey,
         IEnumerable<(string FactId, int Ordinal)> items,
+        TryLocateIndexed locate,
         int ceilingBytes)
     {
         var groups = new Dictionary<string, List<PostingEntryDto>>(StringComparer.Ordinal);
         foreach (var (factId, ordinal) in items)
         {
-            Add(groups, factId, new PostingEntryDto(artifactKey, ordinal));
+            if (!locate(ordinal, out var citation))
+            {
+                continue;
+            }
+
+            Add(groups, factId, new PostingEntryDto(citation.ArtifactKey, citation.Ordinal));
         }
 
         Add(fragments, postingKey, groups, ceilingBytes);

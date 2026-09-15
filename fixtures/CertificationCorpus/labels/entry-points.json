@@ -1,0 +1,34 @@
+[
+  {
+    "id": "entry-getwidget",
+    "kind": "positive",
+    "expected": "present",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Api/EntryPointShapes.cs",
+    "symbol": "GetWidget",
+    "rationale": "Public action carrying an explicit HttpGet route; proven entry capability by an externally reachable declaration plus a route attribute (GCPC-020, GCPC-022)."
+  },
+  {
+    "id": "entry-index",
+    "kind": "positive",
+    "expected": "present",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Api/EntryPointShapes.cs",
+    "symbol": "Index",
+    "rationale": "Public conventional action with no route attribute; still published as EntryPoint with its missing-route diagnostic, preserving the legitimate EBC-08 case (GCPC-022)."
+  },
+  {
+    "id": "entry-changeuriplaceholder",
+    "kind": "lookalike",
+    "expected": "absent",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Api/EntryPointShapes.cs",
+    "symbol": "ChangeUriPlaceholder",
+    "rationale": "Private static helper declared on a ControllerBase descendant; syntactically resembles an action but carries no ExternallyReachable evidence, so it must never be published as an EntryPoint (GCPC-020, GCPC-021). This is the audit's CatalogController.ChangeUriPlaceholder false-positive regression."
+  },
+  {
+    "id": "entry-orderqueries-getorderstatus",
+    "kind": "negative",
+    "expected": "absent",
+    "sourceFile": "fixtures/CertificationCorpus/Certification.Queries/OrderQueries.cs",
+    "symbol": "GetOrderStatus",
+    "rationale": "Plain class method with no ControllerBase ancestor, no route and no framework entry evidence of any kind; an unambiguous non-entry-point with nothing to confuse the classifier."
+  }
+]

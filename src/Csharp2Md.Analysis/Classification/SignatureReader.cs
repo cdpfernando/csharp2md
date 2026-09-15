@@ -1,11 +1,12 @@
 using Csharp2Md.Domain.Facts;
+using Csharp2Md.Domain.Identity;
 
 namespace Csharp2Md.Analysis.Classification;
 
 /// <summary>
-/// Reads the components of a <see cref="Csharp2Md.Domain.Identity.CanonicalSymbolSignature"/>.
-/// Workstream 5A's passes each keep a private <c>ReadField</c> copy and PK-43 forbids touching them,
-/// so this is the shared reader every persistence type uses instead of adding a fourth copy.
+/// Symbol-shaped access to the components of a
+/// <see cref="Csharp2Md.Domain.Identity.CanonicalSymbolSignature"/>. Decoding itself belongs to the
+/// signature contract in Domain; this type only names the components classifiers ask for.
 /// </summary>
 internal static class SignatureReader
 {
@@ -15,33 +16,13 @@ internal static class SignatureReader
     /// <summary>The fully-qualified type or namespace that declares the symbol.</summary>
     public static string? Container(Symbol symbol) => FieldOf(symbol, "container");
 
-    /// <summary>The symbol's metadata name.</summary>
     public static string? Metadata(Symbol symbol) => FieldOf(symbol, "metadata");
 
     /// <summary>The symbol's fully-qualified type - a property's type, a method's return type.</summary>
     public static string? Type(Symbol symbol) => FieldOf(symbol, "type");
 
-    /// <summary>
-    /// The decoded value of <paramref name="key"/> in <paramref name="signature"/>, or null when the
-    /// component is absent or carries the <c>-</c> sentinel that stands for an omitted component.
-    /// </summary>
-    public static string? Field(string signature, string key)
-    {
-        ArgumentNullException.ThrowIfNull(signature);
-        ArgumentNullException.ThrowIfNull(key);
-
-        var marker = ";" + key + "=";
-        var start = signature.IndexOf(marker, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += marker.Length;
-        var end = signature.IndexOf(';', start);
-        var encoded = end < 0 ? signature[start..] : signature[start..end];
-        return encoded.Length == 0 || encoded == "-" ? null : Uri.UnescapeDataString(encoded);
-    }
+    public static string? Field(string signature, string key) =>
+        CanonicalSymbolSignature.Component(signature, key);
 
     /// <summary>
     /// The single type argument of a constructed generic type name - the <c>TEntity</c> of a

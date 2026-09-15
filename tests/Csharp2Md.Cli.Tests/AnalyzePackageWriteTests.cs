@@ -44,10 +44,16 @@ public sealed class AnalyzePackageWriteTests
                 ["analyze", "--solution", solutionPath, "--output", outputPath]);
             var after = FileSetHash(outputPath);
 
-            Assert.Equal(0, exitCode);
+            Assert.Equal(ExitCodes.Degraded, exitCode);
             Assert.Equal(before, after);
 
-            var child = Assert.Single(Directory.GetDirectories(outputPath));
+            // GCPC-068 (T51) wired a BatchComposer into the real `analyze` store, so a run whose solution
+            // carries composition facts (components, deployment units, ...) now also writes a top-level
+            // composition/ directory alongside the package directory -- filter for the package's own
+            // deterministic "s-<hash>" name rather than assuming it is the only directory under --output.
+            var child = Assert.Single(
+                Directory.GetDirectories(outputPath),
+                static path => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(path), "^s-[0-9a-f]{32}$"));
             Assert.Matches("^s-[0-9a-f]{32}$", Path.GetFileName(child));
 
             var result = FactualPackageReader.Read(child);
@@ -79,14 +85,21 @@ public sealed class AnalyzePackageWriteTests
 
             var manifestPath = Path.Combine(child, "manifest.json");
             Assert.True(File.Exists(manifestPath), $"manifest was not found at '{manifestPath}'.");
-            var manifest = CanonicalJson.Read<ManifestEnvelope>(File.ReadAllBytes(manifestPath));
-            Assert.Contains(manifest.Artifacts, static entry => entry.CanonicalKey == "facts/structural" && entry.Count > 0);
+            var manifestEntries = PublishedManifestTestFile.ReadEntries(child);
             Assert.Contains(
-                manifest.Artifacts,
+                manifestEntries,
+                static entry => (entry.CanonicalKey == "facts/structural" || entry.CanonicalKey.StartsWith("facts/structural.", StringComparison.Ordinal))
+                    && entry.Count > 0);
+            Assert.Contains(
+                manifestEntries,
                 static entry => entry.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal) && entry.Count > 0);
+            // T52 made the derived ~32 KiB ceiling the live default: "contains" is one of the families
+            // that can now legitimately split into shards ("relations/confirmed/contains.<bucket>") rather
+            // than staying a single "relations/confirmed/contains" artifact, so this checks the family by
+            // prefix, matching the "observations/" assertion just above it.
             Assert.Contains(
-                manifest.Artifacts,
-                static entry => entry.CanonicalKey == "relations/confirmed/contains" && entry.Count > 0);
+                manifestEntries,
+                static entry => entry.CanonicalKey.StartsWith("relations/confirmed/contains", StringComparison.Ordinal) && entry.Count > 0);
         }
         finally
         {

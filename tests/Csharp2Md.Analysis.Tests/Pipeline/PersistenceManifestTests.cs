@@ -31,37 +31,46 @@ public sealed class PersistenceManifestTests
         Assert.All(artifacts[..^1], fragment => Assert.Equal(ArtifactRole.Payload, fragment.Role));
 
         var payloadKeys = artifacts[..^1].Select(fragment => fragment.CanonicalKey).ToArray();
-        var structuralFragment = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "facts/structural.json");
-        var structural = CanonicalJson.Read<StructuralFactsShard>(structuralFragment.Payload.AsSpan());
+        var structural = ShardedFactsReader.Read<StructuralFactsShard>(artifacts, "facts/structural.json");
         Assert.NotEmpty(structural.Solutions);
         Assert.NotEmpty(structural.Projects);
         Assert.NotEmpty(structural.Documents);
         Assert.NotEmpty(structural.Symbols);
         Assert.Contains(payloadKeys, key => key.StartsWith("observations/", StringComparison.Ordinal));
-        var containsFragment = Assert.Single(
-            artifacts,
-            fragment => fragment.CanonicalKey == "relations/confirmed/contains.json");
-        var contains = CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(containsFragment.Payload.AsSpan());
+        // T52 made the derived ~32 KiB ceiling the live default: "contains" may now legitimately be
+        // sharded into "relations/confirmed/contains.<bucket>.json" artifacts instead of staying one file
+        // at its base key -- merge every shard back into one array, as FactualPackageReader would.
+        var containsFragments = artifacts
+            .Where(fragment => fragment.CanonicalKey == "relations/confirmed/contains.json"
+                || fragment.CanonicalKey.StartsWith("relations/confirmed/contains.", StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(containsFragments);
+        var contains = containsFragments
+            .SelectMany(fragment => CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(fragment.Payload.AsSpan()))
+            .ToArray();
         Assert.NotEmpty(contains);
 
         var registry = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "contracts/taxonomy-registry.json");
         var expectedRegistry = DomainMapper.ToWire(FactualSnapshot.Empty, new ManifestContext("s", "s")).TaxonomyRegistryCopy;
         Assert.True(registry.Payload.AsSpan().SequenceEqual(expectedRegistry.AsSpan()));
 
-        var manifest = CanonicalJson.Read<ManifestEnvelope>(artifacts[^1].Payload.AsSpan());
-        Assert.Contains(manifest.Artifacts, entry => entry.CanonicalKey == "facts/structural" && entry.Count > 0);
+        var manifest = PublishedManifestTestData.Read(publication);
+        Assert.Contains(
+            manifest.Artifacts,
+            entry => (entry.CanonicalKey == "facts/structural" || entry.CanonicalKey.StartsWith("facts/structural.", StringComparison.Ordinal))
+                && entry.Count > 0);
         Assert.Contains(
             manifest.Artifacts,
             entry => entry.CanonicalKey.StartsWith("observations/", StringComparison.Ordinal) && entry.Count > 0);
         Assert.Contains(
             manifest.Artifacts,
-            entry => entry.CanonicalKey == "relations/confirmed/contains" && entry.Count > 0);
+            entry => entry.CanonicalKey.StartsWith("relations/confirmed/contains", StringComparison.Ordinal) && entry.Count > 0);
         Assert.Equal(SolutionCoordinate.For(publication.SolutionKey).Identity.Value, manifest.SolutionKey);
 
         var coverage = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "coverage.json");
         CanonicalJson.Read<CoverageEnvelope>(coverage.Payload.AsSpan());
         var certification = Assert.Single(artifacts, fragment => fragment.CanonicalKey == "run-certification.json");
-        Assert.Equal("not_evaluated", CanonicalJson.Read<RunCertificationEnvelope>(certification.Payload.AsSpan()).Status);
+        Assert.Equal("degraded", CanonicalJson.Read<RunCertificationEnvelope>(certification.Payload.AsSpan()).Status);
     }
 
     private static async Task<CommittedPublication> PublishDefaultPipeline()

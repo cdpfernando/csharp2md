@@ -54,7 +54,7 @@ internal sealed record InclusionEdge(
 internal sealed record UnreachedComponent(string ComponentName, EvidenceChain Evidence);
 
 /// <summary>
-/// Run-coverage counts for the grouping walk. The coverage diagnostic itself is CDC-56 / T35.
+/// Run-coverage counts for the grouping walk. The coverage diagnostic itself is CDC-56.
 /// </summary>
 internal sealed record TopologyCoverage(
     int ProjectsGrouped,

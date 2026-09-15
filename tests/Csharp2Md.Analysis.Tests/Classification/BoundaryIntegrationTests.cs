@@ -41,10 +41,8 @@ public sealed class BoundaryIntegrationTests
         Assert.IsType<ClassificationAndPromotionStage>(PipelineStages.CreateDefault()[3]);
 
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
-        var architectureFragment = Assert.Single(
-            publication.ArtifactsInPublicationOrder,
-            artifact => artifact.CanonicalKey == "facts/architecture.json");
-        var architecture = CanonicalJson.Read<ArchitectureFactsShard>(architectureFragment.Payload.AsSpan());
+        var architecture = ShardedFactsReader.Read<ArchitectureFactsShard>(
+            publication.ArtifactsInPublicationOrder, "facts/architecture.json");
         var candidatesFragment = Assert.Single(
             publication.ArtifactsInPublicationOrder,
             artifact => artifact.CanonicalKey == "relations/candidates.json");

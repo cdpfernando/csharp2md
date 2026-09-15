@@ -134,10 +134,8 @@ public sealed class ExecutesPassTests
         Assert.Equal(PublicationStatus.Committed, outcome.Status);
         Assert.True(store.TryGetPublication(Path.GetFullPath(solutionPath), out var publication));
 
-        var architecture = CanonicalJson.Read<ArchitectureFactsShard>(
-            Assert.Single(
-                publication.ArtifactsInPublicationOrder,
-                artifact => artifact.CanonicalKey == "facts/architecture.json").Payload.AsSpan());
+        var architecture = ShardedFactsReader.Read<ArchitectureFactsShard>(
+            publication.ArtifactsInPublicationOrder, "facts/architecture.json");
         var executes = CanonicalJson.Read<ImmutableArray<ConfirmedRelationDto>>(
             Assert.Single(
                 publication.ArtifactsInPublicationOrder,

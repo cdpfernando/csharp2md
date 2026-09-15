@@ -37,30 +37,24 @@ public sealed class BatchIsolationTests
     [Trait("Requirement", "MSC-08")]
     public async Task Analyze_SingleSolution_PublishesOneManifestEntryAndNoCrossSolutionArtifacts()
     {
-        var output = Path.Combine(Path.GetTempPath(), "csharp2md-batch-single-" + Guid.NewGuid().ToString("N"));
-        try
-        {
-            var run = await CompositionBatch.AnalyzeAsync(output, CompositionBatch.OrdersSolutionPath());
-            Assert.Equal(PublicationStatus.Committed, Assert.Single(run.Result.Solutions).Status);
+        using var output = TempOutputRoot.Uncreated("csharp2md-batch-single-");
 
-            var manifest = CanonicalJson.Read<BatchManifestEnvelope>(run.Files["batch-manifest.json"]);
-            Assert.Equal("Acme.Orders.slnx", Assert.Single(manifest.Solutions).SolutionFileName);
-            Assert.True(manifest.Complete);
+        var run = await CompositionBatch.AnalyzeAsync(output.DirectoryPath, CompositionBatch.OrdersSolutionPath());
+        Assert.Equal(PublicationStatus.Committed, Assert.Single(run.Result.Solutions).Status);
 
-            Assert.False(run.Files.ContainsKey("composition/cross-solution-relations.json"));
-            Assert.False(run.Files.ContainsKey("composition/shared-contracts.json"));
-            Assert.False(run.Files.ContainsKey("composition/correlation-candidates.json"));
-            Assert.DoesNotContain(
-                manifest.Artifacts,
-                artifact => artifact.CanonicalKey is
-                    "composition/cross-solution-relations.json"
-                    or "composition/shared-contracts.json"
-                    or "composition/correlation-candidates.json");
-        }
-        finally
-        {
-            TryDelete(output);
-        }
+        var manifest = CanonicalJson.Read<BatchManifestEnvelope>(run.Files["batch-manifest.json"]);
+        Assert.Equal("Acme.Orders.slnx", Assert.Single(manifest.Solutions).SolutionFileName);
+        Assert.True(manifest.Complete);
+
+        Assert.False(run.Files.ContainsKey("composition/cross-solution-relations.json"));
+        Assert.False(run.Files.ContainsKey("composition/shared-contracts.json"));
+        Assert.False(run.Files.ContainsKey("composition/correlation-candidates.json"));
+        Assert.DoesNotContain(
+            manifest.Artifacts,
+            artifact => artifact.CanonicalKey is
+                "composition/cross-solution-relations.json"
+                or "composition/shared-contracts.json"
+                or "composition/correlation-candidates.json");
     }
 
     private static IReadOnlyDictionary<string, byte[]> PackageNamed(CompositionBatch.BatchRun run, string solutionFileName)
@@ -80,18 +74,4 @@ public sealed class BatchIsolationTests
                 || key.StartsWith("quarantine/", StringComparison.Ordinal))
             .Order(StringComparer.Ordinal)
             .ToArray();
-
-    private static void TryDelete(string path)
-    {
-        try
-        {
-            if (Directory.Exists(path))
-            {
-                Directory.Delete(path, recursive: true);
-            }
-        }
-        catch (IOException)
-        {
-        }
-    }
 }

@@ -23,6 +23,16 @@ public sealed partial record TaxonomyTables
         ObservationKinds = ObservationKindTable.All,
         FacetAxes = FacetAxisTable.All,
         ProofAxes = ProofAxisTable.All,
-        Versions = TaxonomyVersions.Initial,
+        // F3: this feature interned the wire encoding, changed the manifest shape, added envelopes,
+        // changed what is extracted and changed how it is classified -- schema_version,
+        // extractor_set_version and classifier_set_version advance to 2 alongside taxonomy_version.
+        // observation_schema_version is untouched by this feature and stays at 1.
+        Versions = TaxonomyVersions.Initial with
+        {
+            SchemaVersion = 2,
+            TaxonomyVersion = 2,
+            ExtractorSetVersion = 2,
+            ClassifierSetVersion = 2,
+        },
     };
 }

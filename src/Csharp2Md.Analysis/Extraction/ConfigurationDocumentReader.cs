@@ -13,7 +13,25 @@ namespace Csharp2Md.Analysis.Extraction;
 
 internal static class ConfigurationDocumentReader
 {
+    /// <summary>
+    /// The configuration-parsing policy stated explicitly (GCPC-105), matching what
+    /// <c>Microsoft.Extensions.Configuration.Json</c> accepts: line comments (<c>//</c>), block
+    /// comments (<c>/* */</c>), a trailing comma before a closing <c>}</c> or <c>]</c>, and a
+    /// leading UTF-8 byte-order mark. A duplicate key at the same level (compared
+    /// case-insensitively, matching configuration key comparison) is rejected, also matching the
+    /// provider. Carried into provenance by a later phase.
+    /// </summary>
+    public const string ParsingPolicy =
+        "Accepts line comments, block comments, a trailing comma and a UTF-8 BOM; "
+            + "rejects a duplicate key (case-insensitive), matching Microsoft.Extensions.Configuration.Json.";
+
     private static readonly BindingDiagnostic Configured = new("configured", "configured");
+
+    private static readonly JsonDocumentOptions TolerantOptions = new()
+    {
+        CommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true,
+    };
 
     public static int Emit(PipelineContext context, CancellationToken cancellationToken)
     {
@@ -44,7 +62,8 @@ internal static class ConfigurationDocumentReader
         JsonDocument parsed;
         try
         {
-            parsed = JsonDocument.Parse(File.ReadAllBytes(absolute));
+            var bytes = File.ReadAllBytes(absolute);
+            parsed = JsonDocument.Parse(StripUtf8Bom(bytes), TolerantOptions);
         }
         catch (JsonException)
         {
@@ -59,6 +78,17 @@ internal static class ConfigurationDocumentReader
         {
             var leaves = new List<Leaf>();
             Walk(parsed.RootElement, path: "", leaves);
+
+            if (HasDuplicateKey(leaves))
+            {
+                context.Accumulator.AddDiagnostic(new DiagnosticRecord(
+                    "malformed-configuration-document",
+                    $"The configuration document '{document.RelativePath}' contains a duplicate key, "
+                        + "which the .NET configuration provider rejects.",
+                    document.RelativePath));
+                return 0;
+            }
+
             leaves.Sort(static (left, right) => StringComparer.Ordinal.Compare(left.KeyPath, right.KeyPath));
 
             var ordinal = 1;
@@ -82,6 +112,26 @@ internal static class ConfigurationDocumentReader
 
             return leaves.Count;
         }
+    }
+
+    private static bool HasDuplicateKey(List<Leaf> leaves)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var leaf in leaves)
+        {
+            if (!seen.Add(leaf.KeyPath))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static ReadOnlyMemory<byte> StripUtf8Bom(byte[] bytes)
+    {
+        var hasBom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+        return hasBom ? bytes.AsMemory(3) : bytes;
     }
 
     private static ObservationDraft Materialize(
