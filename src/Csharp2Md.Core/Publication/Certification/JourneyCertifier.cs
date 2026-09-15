@@ -51,12 +51,11 @@ internal static class JourneyCertifier
     internal static PackageCertification Certify(MeasuredPackageReader reader)
     {
         ArgumentNullException.ThrowIfNull(reader);
-        return new PackageCertification([
-            CertifyLocate(reader),
-            CertifyEvidence(reader),
-            NotApplicable(JourneyKind.FollowFlow, "handled-by-graph-certifier"),
-            NotApplicable(JourneyKind.ReverseImpact, "handled-by-graph-certifier"),
-        ]);
+        var journeys = ImmutableArray.CreateBuilder<JourneyCertification>();
+        journeys.Add(CertifyLocate(reader));
+        journeys.Add(CertifyEvidence(reader));
+        journeys.AddRange(GraphJourneyCertifier.Certify(reader));
+        return new PackageCertification(journeys.ToImmutable());
     }
 
     private static JourneyCertification CertifyLocate(MeasuredPackageReader reader)

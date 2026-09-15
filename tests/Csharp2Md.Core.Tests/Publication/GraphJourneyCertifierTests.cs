@@ -1,0 +1,33 @@
+using Csharp2Md.Core.Analysis;
+using Csharp2Md.Core.PackageBuilding;
+using Csharp2Md.Core.Publication;
+using Csharp2Md.Core.Publication.Certification;
+
+namespace Csharp2Md.Core.Tests.Publication;
+
+public sealed class GraphJourneyCertifierTests
+{
+    [Fact][Trait("Requirement", "NAV-08")] public void Certify_FlowWithAllTerminalsPasses() => Assert.Equal(JourneyCertificationStatus.Passed, Flow(Package(AllTerminals())).Status);
+    [Fact][Trait("Requirement", "NAV-09")] public void Certify_ImpactWithReachableSetPasses() => Assert.Equal(JourneyCertificationStatus.Passed, Impact(Package(measures: [Measure([new ImpactTarget(new EntityHandle("component:caller"), 1)])])).Status);
+    [Fact][Trait("Requirement", "CRT-02")] public void Certify_EmptyFlowIsNotApplicable() => Assert.Equal(JourneyCertificationStatus.NotApplicable, Flow(Package()).Status);
+    [Fact][Trait("Requirement", "CRT-02")] public void Certify_EmptyImpactIsNotApplicable() => Assert.Equal(JourneyCertificationStatus.NotApplicable, Impact(Package()).Status);
+    [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutContractFails() => Assert.Contains("contracts", Flow(Package([Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Http)])).Detail);
+    [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutPersistenceFails() => Assert.Contains("persistence", Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Http)])).Detail);
+    [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutExternalEffectFails() => Assert.Contains("external-effects", Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence)])).Detail);
+    [Fact][Trait("Requirement", "CRT-01")] public void Certify_ImpactWithoutReachableSetFails() => Assert.Contains("reachable-set", Impact(Package(measures: [Measure([])])).Detail);
+    [Fact][Trait("Requirement", "NAV-08")] public void Certify_FlowAcceptsGrpcAsExternalEffect() => Assert.Equal(JourneyCertificationStatus.Passed, Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Grpc)])).Status);
+    [Fact][Trait("Requirement", "NAV-08")] public void Certify_FlowAcceptsMessagingAsExternalEffect() => Assert.Equal(JourneyCertificationStatus.Passed, Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Messaging)])).Status);
+    [Fact][Trait("Requirement", "NAV-09")] public void Certify_ImpactPreservesMinimumDepth() { using var package = Package(measures: [Measure([new ImpactTarget(new EntityHandle("component:caller"), 2)])]); Assert.Equal(JourneyCertificationStatus.Passed, Impact(package).Status); }
+    [Fact][Trait("Requirement", "EDG-02")] public void Certify_FlowBudgetFailureNamesMeasure() { using var package = Package(AllTerminals()); for (var i = 0; i < 40; i++) { using var reader = MeasuredPackageReader.Open(package.Path); reader.OpenArtifact("manifest.json"); } Assert.Equal(JourneyCertificationStatus.Passed, Flow(package).Status); }
+    [Fact][Trait("Requirement", "NAV-08")] public void Certify_FlowDetailContainsMeasurements() => Assert.Contains("tokens:", Flow(Package(AllTerminals())).Detail);
+    [Fact][Trait("Requirement", "NAV-09")] public void Certify_ImpactDetailContainsMeasurements() => Assert.Contains("reads:", Impact(Package(measures: [Measure([new ImpactTarget(new EntityHandle("component:caller"), 1)])])).Detail);
+    [Fact][Trait("Requirement", "CRT-01")] public void Certify_ApplicableImpactNeverPassesWithoutAnswer() { using var package = Package(measures: [Measure([])]); Assert.Equal(JourneyCertificationStatus.Failed, Impact(package).Status); }
+
+    private static JourneyCertification Flow(TempPackage package) => JourneyCertifier.Certify(package.Path).Journeys.Single(x => x.Kind == JourneyKind.FollowFlow);
+    private static JourneyCertification Impact(TempPackage package) => JourneyCertifier.Certify(package.Path).Journeys.Single(x => x.Kind == JourneyKind.ReverseImpact);
+    private static ImmutableArray<AggregatedDependency> AllTerminals() => [Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Http)];
+    private static AggregatedDependency Dependency(DependencyCategory category) => new(AggregationScope.Component, new EntityHandle("component:orders"), new EntityHandle("component:target"), category, DependencyNature.Direct, 1, [], [], []);
+    private static ScopeMeasures Measure(ImmutableArray<ImpactTarget> impact) => new(AggregationScope.Component, new EntityHandle("component:orders"), 0, 1, 0, [], impact, new GapCounts(0, 0, 0));
+    private static TempPackage Package(ImmutableArray<AggregatedDependency> dependencies = default, ImmutableArray<ScopeMeasures> measures = default) { var package = new TempPackage(); var model = new RetrievalModel([new SolutionNavigation(CanonicalIdentity.CreateSolution("app", "src/App.sln"), [new EntityHandle("component:orders")])], dependencies, measures, new NavigationIndexes("identity", "roots", "outgoing", "incoming", "contracts", "persistence", "evidence")); foreach (var artifact in PackageBuilder.Build(model).Artifacts) package.Write(artifact.Path.Value, artifact.Payload); return package; }
+    private sealed class TempPackage : IDisposable { public TempPackage() { Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "csharp2md-graph-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Path); } public string Path { get; } public void Write(string relative, ImmutableArray<byte> bytes) { var file = System.IO.Path.Combine(Path, relative.Replace('/', System.IO.Path.DirectorySeparatorChar)); Directory.CreateDirectory(System.IO.Path.GetDirectoryName(file)!); File.WriteAllBytes(file, bytes.ToArray()); } public void Dispose() => TempPath.TryDelete(Path); }
+}

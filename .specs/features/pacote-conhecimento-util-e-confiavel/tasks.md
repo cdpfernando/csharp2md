@@ -867,7 +867,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: quick  
 **Commit**: `feat(certification): certify locate and evidence journeys`
 
-### T35: Certify flow and reverse-impact journeys
+### T35: Certify flow and reverse-impact journeys ✅ Complete
 
 **What**: Add causal-flow and reverse-impact traversal certification over declared indexes and terminals.  
 **Where**: `src/Csharp2Md.Core/Publication/Certification/GraphJourneyCertifier.cs`  
