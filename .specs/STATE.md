@@ -29,10 +29,10 @@
 ## Handoff
 
 - **Feature**: `pacote-conhecimento-util-e-confiavel` / `.specs/features/pacote-conhecimento-util-e-confiavel`
-- **Phase / Task**: Execute / Batch 1 (Phase 1, T1-T7) dispatched
-- **Completed**: spec, contexto, design e `tasks.md` aprovados; AD-001..AD-003; 6 batches sequenciais aceitos; T1-T44 ainda abertas
-- **In-progress** (file:line): Batch 1 worker starting T1
-- **Next step**: esperar resumo compacto do Batch 1; depois despachar Batch 2 (T8-T15)
-- **Blockers**: none
+- **Phase / Task**: Execute / Batch 1 complete; ready for Batch 2 (T8-T15)
+- **Completed**: T1-T7; AD-001..AD-003; interim Core-only build gate until T44 (user-approved)
+- **In-progress** (file:line): none
+- **Next step**: despachar Batch 2 (Phase 2, T8-T15) com o mesmo gate interim
+- **Blockers**: full-solution legacy test suites fail until T44 cutover (missing historical taxonomy specs, CertificationCorpus drift, Pitstop LocalCorpus)
 - **Uncommitted files**: `AGENTS.md`, `docs/specs/pacote-conhecimento-util-e-confiavel.md`, `research/2026-09-15-agent-harness-portability.md`
 - **Branch**: `feature/simplif`

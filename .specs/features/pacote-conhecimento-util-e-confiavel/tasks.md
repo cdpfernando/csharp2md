@@ -233,14 +233,17 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Canonical keys are solution-scoped, deterministic and independent of absolute checkout paths.
-- [ ] Logical locators reject rooted, escaping and non-normalized paths.
-- [ ] At least 10 grammar, equality and path-safety cases pass.
-- [ ] Build gate passes.
+- [x] Canonical keys are solution-scoped, deterministic and independent of absolute checkout paths.
+- [x] Logical locators reject rooted, escaping and non-normalized paths.
+- [x] At least 10 grammar, equality and path-safety cases pass.
+- [x] Build gate passes.
 
 **Tests**: unit — ≥10 focused cases  
 **Gate**: build  
 **Commit**: `feat(core): add canonical identity primitives`
+
+**Status**: ✅ Complete  
+**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (legacy Domain/Analysis/CLI suites fail on removed historical specs and non-Synthetic corpora; user-approved 2026-09-15).
 
 ## Phase 2: Isolated factual analysis
 
