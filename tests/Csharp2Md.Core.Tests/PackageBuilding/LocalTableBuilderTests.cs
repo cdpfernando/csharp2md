@@ -23,4 +23,5 @@ public sealed class LocalTableBuilderTests
     [Fact][Trait("Requirement", "STO-05")] public void Resolve_MissingKeyRejectsDirectLookup() => Assert.Throws<KeyNotFoundException>(() => LocalTableBuilder.Build("s", ["a"]).Resolve("b"));
     [Fact][Trait("Requirement", "VAR-06")] public void Build_UsesCanonicalKeysNotInputOrder() { var a=LocalTableBuilder.Build("s",["z","a"]); var b=LocalTableBuilder.Build("s",["a","z"]); Assert.Equal(a.Handles,b.Handles); }
     [Fact][Trait("Requirement", "STO-03")] public void LocalHandle_IsLimitedToSixCharacters() => Assert.True(LocalTableBuilder.Build("s", ["a"]).Resolve("a").Value.Length <= 6);
+    [Fact][Trait("Requirement", "STO-04")] public void HandleForOrdinal_RejectsTheFirstOrdinalAboveSixBase36Characters() => Assert.Throws<LocalHandleOverflowException>(() => LocalTableBuilder.HandleForOrdinal(2_176_782_336));
 }

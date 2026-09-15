@@ -34,20 +34,21 @@ internal static class LocalTableBuilder
         var handles = new Dictionary<string, LocalHandle>(keys.Length, StringComparer.Ordinal);
         for (var ordinal = 0; ordinal < keys.Length; ordinal++)
         {
-            handles.Add(keys[ordinal], new LocalHandle(ToBase36(ordinal)));
+            handles.Add(keys[ordinal], new LocalHandle(HandleForOrdinal(ordinal)));
         }
 
         return new LocalTable(solutionKey, handles);
     }
 
-    private static string ToBase36(int ordinal)
+    internal static string HandleForOrdinal(long ordinal)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(ordinal);
         const string alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
         Span<char> result = stackalloc char[6];
         var position = result.Length;
         do
         {
-            result[--position] = alphabet[ordinal % 36];
+            result[--position] = alphabet[(int)(ordinal % 36)];
             ordinal /= 36;
         } while (ordinal > 0 && position > 0);
 
