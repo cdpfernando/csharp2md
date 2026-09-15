@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Csharp2Md.Analysis/Csharp2Md.Analysis.csproj" />
     <Project Path="src/Csharp2Md.Cli/Csharp2Md.Cli.csproj" />
+    <Project Path="src/Csharp2Md.Core/Csharp2Md.Core.csproj" />
     <Project Path="src/Csharp2Md.Domain/Csharp2Md.Domain.csproj" />
     <Project Path="src/Csharp2Md.Projection/Csharp2Md.Projection.csproj" />
     <Project Path="src/Csharp2Md.Storage/Csharp2Md.Storage.csproj" />
@@ -9,6 +10,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj" />
     <Project Path="tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj" />
+    <Project Path="tests/Csharp2Md.Core.Tests/Csharp2Md.Core.Tests.csproj" />
     <Project Path="tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj" />
     <Project Path="tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj" />
     <Project Path="tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj" />

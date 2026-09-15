@@ -101,14 +101,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Core references Roslyn Workspaces 5.6.0 but no `Microsoft.Build.*`; CLI can reference Core without breaking legacy paths.
-- [ ] Core exposes internals only to Core tests; Core tests use the existing xUnit/Verify stack.
-- [ ] At least 3 topology/surface tests pass and assert target framework, dependency direction and forbidden packages.
-- [ ] Build gate passes with no existing project removed.
+- [x] Core references Roslyn Workspaces 5.6.0 but no `Microsoft.Build.*`; CLI can reference Core without breaking legacy paths.
+- [x] Core exposes internals only to Core tests; Core tests use the existing xUnit/Verify stack.
+- [x] At least 3 topology/surface tests pass and assert target framework, dependency direction and forbidden packages.
+- [x] Build gate passes with no existing project removed.
 
 **Tests**: unit — ≥3 focused cases  
 **Gate**: build  
-**Commit**: `build(core): scaffold knowledge engine projects`
+**Commit**: `build(core): scaffold knowledge engine projects`  
+**Status**: ✅ Complete
 
 ### T2: Define the public KnowledgeEngine facade
 

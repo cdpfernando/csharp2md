@@ -29,11 +29,13 @@ public sealed class SolutionTopologyTests
     [
         "src/Csharp2Md.Analysis/Csharp2Md.Analysis.csproj",
         "src/Csharp2Md.Cli/Csharp2Md.Cli.csproj",
+        "src/Csharp2Md.Core/Csharp2Md.Core.csproj",
         "src/Csharp2Md.Domain/Csharp2Md.Domain.csproj",
         "src/Csharp2Md.Projection/Csharp2Md.Projection.csproj",
         "src/Csharp2Md.Storage/Csharp2Md.Storage.csproj",
         "tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj",
         "tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj",
+        "tests/Csharp2Md.Core.Tests/Csharp2Md.Core.Tests.csproj",
         "tests/Csharp2Md.Domain.Tests/Csharp2Md.Domain.Tests.csproj",
         "tests/Csharp2Md.Projection.Tests/Csharp2Md.Projection.Tests.csproj",
         "tests/Csharp2Md.Storage.Tests/Csharp2Md.Storage.Tests.csproj",

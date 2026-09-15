@@ -72,22 +72,22 @@ public sealed class DomainIsolationTests
 
     [Fact]
     [Trait("Requirement", "ENG-47")]
-    public void CoreTestsDirectory_DoesNotExist()
+    public void CoreTestsDirectory_Exists()
     {
         var path = Path.Combine(DomainTestPaths.RepoRoot, "tests", "Csharp2Md.Core.Tests");
-        Assert.False(
+        Assert.True(
             Directory.Exists(path),
-            $"Repository must not contain '{path}'.");
+            $"Repository must contain '{path}'.");
     }
 
     [Fact]
     [Trait("Requirement", "ENG-46")]
-    public void CoreDirectory_DoesNotExist()
+    public void CoreDirectory_Exists()
     {
         var path = Path.Combine(DomainTestPaths.RepoRoot, "src", "Csharp2Md.Core");
-        Assert.False(
+        Assert.True(
             Directory.Exists(path),
-            $"Repository must not contain '{path}'.");
+            $"Repository must contain '{path}'.");
     }
 
     [Fact]

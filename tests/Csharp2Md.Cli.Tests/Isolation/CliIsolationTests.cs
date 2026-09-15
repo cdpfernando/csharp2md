@@ -7,6 +7,7 @@ public sealed class CliIsolationTests
     private static readonly string[] ExpectedProjectReferences =
     [
         "Csharp2Md.Analysis",
+        "Csharp2Md.Core",
         "Csharp2Md.Projection",
         "Csharp2Md.Storage",
     ];
@@ -22,7 +23,6 @@ public sealed class CliIsolationTests
             .ToArray();
 
         Assert.DoesNotContain("Csharp2Md.Domain", names);
-        Assert.DoesNotContain("Csharp2Md.Core", names);
         Assert.Equal(ExpectedProjectReferences, names);
     }
 

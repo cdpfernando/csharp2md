@@ -60,7 +60,7 @@ public sealed class ProjectionIsolationTests
         var names = ReadProjectReferenceNames(CsprojPath("Csharp2Md.Cli"));
 
         Assert.DoesNotContain("Csharp2Md.Domain", names);
-        Assert.Equal(["Csharp2Md.Analysis", "Csharp2Md.Projection", "Csharp2Md.Storage"], names);
+        Assert.Equal(["Csharp2Md.Analysis", "Csharp2Md.Core", "Csharp2Md.Projection", "Csharp2Md.Storage"], names);
     }
 
     private static void AssertNoProjectReference(string csprojPath, string forbiddenProject)
