@@ -776,6 +776,9 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: build  
 **Commit**: `feat(package): build complete package plans`
 
+**Status**: ✅ Complete
+**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests --configuration Release --no-build` passed (358 tests); full legacy test suite remains deferred by the user-approved interim rule.
+
 ## Phase 5: Validation, certification and atomic publication
 
 ### T31: Enforce typed and lexical publication safety
