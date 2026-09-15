@@ -537,14 +537,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] SCCs identify self-cycles and multi-node cycles without mixing scopes or solutions.
-- [ ] Cycle IDs and member order are deterministic under input permutation.
-- [ ] At least 10 acyclic, cyclic, self-loop, disconnected and permutation cases pass.
-- [ ] Quick gate passes.
+- [x] SCCs identify self-cycles and multi-node cycles without mixing scopes or solutions.
+- [x] Cycle IDs and member order are deterministic under input permutation.
+- [x] At least 10 acyclic, cyclic, self-loop, disconnected and permutation cases pass.
+- [x] Quick gate passes.
 
 **Tests**: unit — ≥10 focused cases  
 **Gate**: quick  
 **Commit**: `feat(package): calculate directed cycles`
+**Status**: ✅ Complete
 
 ### T21: Calculate reverse impact and gap counts
 
