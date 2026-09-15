@@ -835,10 +835,12 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] The same reader and validator entry point serves staging and public `validate`.
-- [ ] Every corruptible field/family has a mutation test that reports code, stage, family/artifact and cause.
-- [ ] Validation never touches source solutions or mutates the package.
-- [ ] At least 18 integrity, corruption and diagnostic cases pass; quick gate passes.
+- [x] The same reader and validator entry point serves staging and public `validate`.
+- [x] Every corruptible field/family has a mutation test that reports code, stage, family/artifact and cause.
+- [x] Validation never touches source solutions or mutates the package.
+- [x] At least 18 integrity, corruption and diagnostic cases pass; quick gate passes.
+
+**Status**: ✅ Complete
 
 **Tests**: integration — ≥18 focused cases  
 **Gate**: quick  

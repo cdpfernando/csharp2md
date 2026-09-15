@@ -18,6 +18,8 @@ internal sealed class PackageReader : IDisposable
 
     internal PackageManifest Manifest { get; }
 
+    internal string PackageDirectory => _packageDirectory;
+
     internal static PackageReader Open(string packageDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(packageDirectory);
@@ -55,6 +57,9 @@ internal sealed class PackageReader : IDisposable
         ThrowIfDisposed();
         var paths = Manifest.Indexes.Select(index => index.Path)
             .Append("manifest.json")
+            .Append("markdown/index.md")
+            .Append("certification.json")
+            .Append("measurements.json")
             .Concat(Manifest.Roots.Select(root => root.MarkdownPath))
             .Concat(Manifest.Journeys.Select(journey => journey.EntryPath))
             .Distinct(StringComparer.Ordinal)
