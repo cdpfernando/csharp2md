@@ -395,12 +395,12 @@ T12 -> T13
 
 **Done when**:
 
-- [ ] A test analyzes this fixture and finds the builder constructor `Symbol`
-- [ ] That symbol's own observations are only `Invocation` and/or `DataAccess`
-- [ ] The containing document has at least one qualifying structural observation
-- [ ] After T4, the published document-to-symbol `contains` edge for that symbol has a non-empty structural chain (asserted here once T4 is already on the branch; this task's own commit lands after T8, and Execute runs phases in order so T4 is already committed)
-- [ ] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"`
-- [ ] Test count reported; a drop is a silent deletion
+- [x] A test analyzes this fixture and finds the builder constructor `Symbol`
+- [x] That symbol's own observations are only `Invocation` and/or `DataAccess`
+- [x] The containing document has at least one qualifying structural observation
+- [x] After T4, the published document-to-symbol `contains` edge for that symbol has a non-empty structural chain (asserted here once T4 is already on the branch; this task's own commit lands after T8, and Execute runs phases in order so T4 is already committed)
+- [x] Gate check passes: `dotnet test tests/Csharp2Md.Analysis.Tests/Csharp2Md.Analysis.Tests.csproj --filter "Category!=LocalCorpus"` (Analysis 862 passed, 0 failed)
+- [x] Test count reported; Analysis 862 pass; total 2131 (Domain 575, Analysis 862, Storage 396, Cli 64, Projection 234). Floor after T8 was 2130; 1 new T9 test, no drop.
 
 **Tests**: integration
 **Gate**: quick
