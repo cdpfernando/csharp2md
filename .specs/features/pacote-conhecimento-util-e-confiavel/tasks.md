@@ -846,7 +846,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: quick  
 **Commit**: `feat(publication): validate package integrity`
 
-### T34: Certify locate and evidence journeys
+### T34: Certify locate and evidence journeys ✅ Complete
 
 **What**: Add a measured reader plus Locate and Evidence/Disposition certification with applicability semantics.  
 **Where**: `src/Csharp2Md.Core/Publication/Certification/JourneyCertifier.cs`  
