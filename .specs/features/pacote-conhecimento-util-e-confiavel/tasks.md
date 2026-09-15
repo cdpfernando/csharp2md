@@ -493,14 +493,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Edges aggregate by solution/scope/source/target/category and include count, variants, relations and deduplicated evidence.
-- [ ] Low-level relation payload is referenced across scopes, not copied.
-- [ ] Candidate/Unknown/Open Frontier never contribute to confirmed counts; unproven upper scopes are omitted.
-- [ ] At least 16 independently calculated aggregation/category/scope cases pass; quick gate passes.
+- [x] Edges aggregate by solution/scope/source/target/category and include count, variants, relations and deduplicated evidence.
+- [x] Low-level relation payload is referenced across scopes, not copied.
+- [x] Candidate/Unknown/Open Frontier never contribute to confirmed counts; unproven upper scopes are omitted.
+- [x] At least 16 independently calculated aggregation/category/scope cases pass; quick gate passes.
 
 **Tests**: unit — ≥16 focused cases  
 **Gate**: quick  
 **Commit**: `feat(package): aggregate scoped dependencies`
+**Status**: ✅ Complete
 
 ### T19: Calculate direct dependency measures
 
