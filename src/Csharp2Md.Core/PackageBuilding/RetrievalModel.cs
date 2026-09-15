@@ -1,4 +1,5 @@
 using Csharp2Md.Core.Analysis;
+using System.Text.Json.Serialization;
 
 namespace Csharp2Md.Core.PackageBuilding;
 
@@ -32,35 +33,35 @@ internal readonly record struct EntityHandle
 {
     public string Value { get; }
 
-    public EntityHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
+    [JsonConstructor] public EntityHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
 }
 
 internal readonly record struct VariantHandle
 {
     public string Value { get; }
 
-    public VariantHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
+    [JsonConstructor] public VariantHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
 }
 
 internal readonly record struct RelationHandle
 {
     public string Value { get; }
 
-    public RelationHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
+    [JsonConstructor] public RelationHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
 }
 
 internal readonly record struct EvidenceHandle
 {
     public string Value { get; }
 
-    public EvidenceHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
+    [JsonConstructor] public EvidenceHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
 }
 
 internal readonly record struct CycleHandle
 {
     public string Value { get; }
 
-    public CycleHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
+    [JsonConstructor] public CycleHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
 }
 
 internal sealed record RetainedGraph

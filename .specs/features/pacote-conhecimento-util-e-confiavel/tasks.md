@@ -753,6 +753,8 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: quick  
 **Commit**: `feat(publication): verify markdown machine equivalence`
 
+**Status**: ✅ Complete
+
 ### T30: Build the complete deterministic PackagePlan
 
 **What**: Orchestrate retention, retrieval, tables, renderers, packing, manifest and measurements into all final pre-certification bytes.  

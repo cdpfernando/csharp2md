@@ -31,7 +31,7 @@ internal static class MachineArtifactWriter
 
             foreach (var index in IndexPaths(prefix))
             {
-                Add(artifacts, index.Path, ArtifactFamily.Index, model.Indexes, 1);
+                AddIndex(artifacts, index, model, solution);
                 indexes.Add(new IndexManifestEntry(index.Name, index.Path));
             }
 
@@ -62,9 +62,21 @@ internal static class MachineArtifactWriter
 
     private static IEnumerable<(string Name, string Path)> IndexPaths(string prefix)
     {
-        foreach (var name in new[] { "identity", "roots", "outgoing", "incoming", "contracts", "persistence", "evidence" })
+        foreach (var name in new[] { "identity", "roots", "outgoing", "incoming", "contracts", "persistence", "evidence", "measures" })
         {
             yield return (name, $"{prefix}/indexes/{name}.json");
+        }
+    }
+
+    private static void AddIndex(ImmutableArray<PlannedArtifact>.Builder artifacts, (string Name, string Path) index, RetrievalModel model, SolutionNavigation solution)
+    {
+        switch (index.Name)
+        {
+            case "identity": Add(artifacts, index.Path, ArtifactFamily.Index, ImmutableArray.Create(solution), 1); break;
+            case "roots": Add(artifacts, index.Path, ArtifactFamily.Index, solution.Roots, solution.Roots.Length); break;
+            case "outgoing" or "incoming": Add(artifacts, index.Path, ArtifactFamily.Index, model.Dependencies, model.Dependencies.Length); break;
+            case "measures": Add(artifacts, index.Path, ArtifactFamily.Index, model.Measures, model.Measures.Length); break;
+            default: Add(artifacts, index.Path, ArtifactFamily.Index, model.Indexes, 1); break;
         }
     }
 
