@@ -2,18 +2,17 @@
 
 English | [Português](README.pt-BR.md)
 
-`csharp2md` is being restructured as an architecture knowledge engine for C#/.NET. It will analyze `1..N` explicit solutions and publish precise, evidence-backed facts, observations, causal relations and directly navigable source projections for LLM consumption.
+`csharp2md` analyzes `1..N` explicit C#/.NET solutions and publishes precise, evidence-backed facts, observations, causal relations and directly navigable source projections for LLM consumption.
 
-## Migration status
+## Project status
 
-The target architecture is approved but not implemented. Current source code, CLI behavior and schemas are legacy and are not the future product contract. The first replacement feature spec has intentionally not been created yet.
+The architecture-knowledge-engine baseline was implemented through workstreams 1–8. The follow-up `analysis-publication-resilience` workstream is also closed with a PASS. The current source, CLI and schemas are the operational baseline, but they are not the contract for the next incompatible replacement. [The proposed package contract](docs/specs/pacote-conhecimento-util-e-confiavel.md) exists as a local specification and its implementation has not started.
 
 Start here:
 
 1. [Domain language](CONTEXT.md)
-2. [Target architecture](docs/architecture/README.md)
-3. [Active decisions](.specs/STATE.md)
-4. [Replacement roadmap](architecture-knowledge-engine-roadmap.md)
+2. [Active decisions and handoff](.specs/STATE.md)
+3. [Proposed next package contract](docs/specs/pacote-conhecimento-util-e-confiavel.md)
 
 ## Product boundaries
 
@@ -57,7 +56,7 @@ To replace an existing installation with a newly built package, run `dotnet tool
 
 ## Run the current CLI
 
-These commands describe the current implementation during migration; they are not a commitment to the future CLI contract.
+These commands describe the current operational baseline. The proposed next package contract may replace them incompatibly.
 
 Restore the solution you want to analyze, then provide its `.sln` or `.slnx` file and an output directory:
 
@@ -113,4 +112,4 @@ dotnet build csharp2md.slnx
 dotnet test csharp2md.slnx
 ```
 
-Do not infer target semantics from the legacy implementation. New implementation work begins only by explicitly starting the next roadmap workstream through `tlc-spec-driven`.
+Do not infer the next replacement's semantics from the current implementation. Implementation begins only when the proposed package contract is explicitly converted into an executable feature through `tlc-spec-driven`.

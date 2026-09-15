@@ -2,18 +2,17 @@
 
 [English](README.md) | Português
 
-O `csharp2md` está sendo reestruturado como um motor de conhecimento arquitetural para C#/.NET. Ele analisará `1..N` soluções explícitas e publicará fatos, observações, relações causais e projeções de fonte precisas, auditáveis e diretamente navegáveis por uma LLM.
+O `csharp2md` analisa `1..N` soluções C#/.NET explícitas e publica fatos, observações, relações causais e projeções de fonte precisas, auditáveis e diretamente navegáveis por uma LLM.
 
-## Estado da migração
+## Estado do projeto
 
-A arquitetura alvo está aprovada, mas ainda não foi implementada. O código-fonte, o comportamento do CLI e os schemas atuais são legados e não representam o contrato futuro. A primeira spec da substituição ainda não foi criada, intencionalmente.
+A base do motor de conhecimento arquitetural foi implementada pelos workstreams 1–8. O workstream posterior `analysis-publication-resilience` também foi encerrado com PASS. O código-fonte, o CLI e os schemas atuais são a base operacional, mas não definem o contrato da próxima substituição incompatível. [A proposta para o próximo contrato do pacote](docs/specs/pacote-conhecimento-util-e-confiavel.md) existe como especificação local e sua implementação não foi iniciada.
 
 Comece por:
 
 1. [Linguagem do domínio](CONTEXT.md)
-2. [Arquitetura alvo](docs/architecture/README.md)
-3. [Decisões ativas](.specs/STATE.md)
-4. [Roadmap da substituição](architecture-knowledge-engine-roadmap.md)
+2. [Decisões ativas e handoff](.specs/STATE.md)
+3. [Proposta para o próximo contrato do pacote](docs/specs/pacote-conhecimento-util-e-confiavel.md)
 
 ## Limites do produto
 
@@ -57,7 +56,7 @@ Para substituir uma instalação existente por um pacote recém-gerado, execute 
 
 ## Executar o CLI atual
 
-Os comandos abaixo descrevem a implementação atual durante a migração; não representam um compromisso com o contrato futuro do CLI.
+Os comandos abaixo descrevem a base operacional atual. A proposta para o próximo contrato do pacote pode substituí-los de forma incompatível.
 
 Restaure a solução que deseja analisar e informe seu arquivo `.sln` ou `.slnx` e um diretório de saída:
 
@@ -113,4 +112,4 @@ dotnet build csharp2md.slnx
 dotnet test csharp2md.slnx
 ```
 
-Não deduza a semântica alvo a partir da implementação legada. O novo desenvolvimento só começa quando o próximo workstream do roadmap for iniciado explicitamente pelo processo `tlc-spec-driven`.
+Não deduza a semântica da próxima substituição a partir da implementação atual. O trabalho começa somente quando a proposta do pacote for convertida explicitamente em uma feature executável pelo processo `tlc-spec-driven`.

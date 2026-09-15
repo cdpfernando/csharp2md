@@ -4,19 +4,20 @@
 
 Workstreams 1 through 8 have been executed. Workstream 8,
 [`generator-cli-projections-certification`](features/generator-cli-projections-certification/spec.md),
-is **closed with two known Major gaps deferred** (AD-028) rather than on a clean PASS; the Handoff at the
-end of this file is the authority on what remains and where it is recorded.
+closed with the gaps recorded by AD-028. The follow-up
+[`analysis-publication-resilience`](features/analysis-publication-resilience/spec.md) closed with a PASS
+for its separate publication-resilience scope; it did not reopen the AD-028 gaps. The current
+implementation is the operational baseline. The next incompatible replacement is only a proposal; its
+implementation has not started.
 
-Per-workstream ordering, scope and outcome live in
-[`architecture-knowledge-engine-roadmap.md`](../architecture-knowledge-engine-roadmap.md)'s Workstreams
-table — this file does not restate them. Each feature's own Verifier report
-(`features/<feature>/validation.md`) is the authority on its verdict, test count and accepted criteria.
+Each completed feature's spec and Verifier report are the authority on its scope, verdict, test count and
+accepted criteria. The Handoff at the end of this file records the latest execution state.
 
 Normative documentation:
 
-- [`CONTEXT.md`](../CONTEXT.md)
-- [`docs/architecture/`](../docs/architecture/README.md)
-- [`architecture-knowledge-engine-roadmap.md`](../architecture-knowledge-engine-roadmap.md)
+- [`CONTEXT.md`](../CONTEXT.md) defines the product language.
+- [`docs/specs/pacote-conhecimento-util-e-confiavel.md`](../docs/specs/pacote-conhecimento-util-e-confiavel.md) defines the proposed next product contract.
+- This file owns active decisions and execution state.
 
 ## Decisions
 
@@ -227,8 +228,8 @@ Normative documentation:
 
 - **Decision**: the feature closes on iteration 3's FAIL report (`validation.md`) rather than taking a 4th fix→re-verify round. The four gaps iteration 2 routed (GCPC-004, GCPC-038, GCPC-057, GCPC-061, GCPC-069/070) are confirmed genuinely closed. The two Major gaps iteration 3's independent re-derivation surfaced — GCPC-012/016/034/088 (three computed accounting/policy envelopes never cross the Storage boundary onto the wire) and GCPC-018 (`InvokesPass.ConcreteImplementors` publishes a fabricated self-referencing candidate) — plus the Minor (GCPC-117 fixture-digest reproducibility) and Cosmetic (GCPC-037/045 derivable-not-published fields) gaps, are explicitly deferred, not silently dropped: each is recorded as a Deferred Idea in `context.md` with root cause and fix-task shape, and `spec.md`'s Requirement Traceability table is updated from `Verified` to `⚠️ Deferred` for every affected ID (GCPC-012, GCPC-016, GCPC-018, GCPC-034, GCPC-037, GCPC-045, GCPC-088, GCPC-117, GCPC-120). GCPC-116 is corrected the other way, from its stale `⚠️ Partial` to `Verified` — F6 closed it for real.
 - **Reason**: `validate.md`'s fix→re-verify loop is bounded to 3 iterations before escalating to the user (`sub-agents.md`'s Verifier section, `validate.md` step 8); iteration 3 was that bound. Presented with the choice (authorize a 4th round / accept with a spec amendment / split into a follow-up feature and close), the user chose the third: stop iterating on this feature now, track the remainder as future work.
-- **Trade-off**: `python3 .claude/skills/tlc-spec-driven/scripts/validate_state.py generator-cli-projections-certification` will keep exiting 1 for this feature — `validation.md`'s verdict stays the true, unedited iteration-3 FAIL (evidence integrity: the Verifier's own report is never rewritten to a false PASS), so this feature can never pass the skill's deterministic completion gate as-is. That is accepted: the gate's purpose (don't silently call undone work done) is served by the honest FAIL plus this decision record, not defeated by it. A future workstream that wants to close the remaining gaps starts as its own feature (Specify → ... → Execute → Verifier) per the roadmap's "Delivery rules" — CLAUDE.md's standing rule against pre-creating a feature spec before its workstream starts still applies, so no `.specs/features/<name>/` is created by this decision alone.
-- **Scope**: `generator-cli-projections-certification` (closed), its `spec.md`/`context.md`/`validation.md`, `architecture-knowledge-engine-roadmap.md` workstream 8, and whatever future workstream picks up GCPC-012/016/018/034/037/045/088/117.
+- **Trade-off**: `python3 .claude/skills/tlc-spec-driven/scripts/validate_state.py generator-cli-projections-certification` will keep exiting 1 for this feature — `validation.md`'s verdict stays the true, unedited iteration-3 FAIL (evidence integrity: the Verifier's own report is never rewritten to a false PASS), so this feature can never pass the skill's deterministic completion gate as-is. That is accepted: the gate's purpose (don't silently call undone work done) is served by the honest FAIL plus this decision record, not defeated by it. A future workstream that wants to close the remaining gaps starts as its own feature (Specify → ... → Execute → Verifier). The standing project rule against pre-creating an executable feature before its workstream starts still applies, so no `.specs/features/<name>/` is created by this decision alone.
+- **Scope**: `generator-cli-projections-certification` (closed), its `spec.md`/`context.md`/`validation.md`, and any future workstream that picks up GCPC-012/016/018/034/037/045/088/117.
 - **Date**: 2026-09-11.
 - **Status**: active.
 
