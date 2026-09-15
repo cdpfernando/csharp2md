@@ -449,14 +449,15 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Closure starts at all four proven root kinds and follows only confirmed causal relations to approved terminals.
-- [ ] Required membership, occurrences and evidence are retained; disconnected inventory is absent.
-- [ ] A confirmed relation without resolvable endpoints/evidence is demoted with known disposition or rejects the build.
-- [ ] At least 12 closure and invalid-evidence cases pass; quick gate passes.
+- [x] Closure starts at all four proven root kinds and follows only confirmed causal relations to approved terminals.
+- [x] Required membership, occurrences and evidence are retained; disconnected inventory is absent.
+- [x] A confirmed relation without resolvable endpoints/evidence is demoted with known disposition or rejects the build.
+- [x] At least 12 closure and invalid-evidence cases pass; quick gate passes.
 
 **Tests**: unit — ≥12 focused cases  
 **Gate**: quick  
 **Commit**: `feat(package): retain confirmed journey closure`
+**Status**: ✅ Complete
 
 ### T17: Retain relevant gaps and cited sources
 
