@@ -814,10 +814,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Reader starts only at root `manifest.json` and opens reachable files in its immutable generation.
-- [ ] Rooted, `..`, drive, malformed and symlink-escape paths are rejected before open.
-- [ ] Reader holds the shared lock for the complete validation view.
-- [ ] At least 14 valid, traversal, symlink, missing and concurrent-reader cases pass; quick gate passes.
+- [x] Reader starts only at root `manifest.json` and opens reachable files in its immutable generation.
+- [x] Rooted, `..`, drive, malformed and symlink-escape paths are rejected before open.
+- [x] Reader holds the shared lock for the complete validation view.
+- [x] At least 14 valid, traversal, symlink, missing and concurrent-reader cases pass; quick gate passes.
 
 **Tests**: integration — ≥14 focused cases  
 **Gate**: quick  
