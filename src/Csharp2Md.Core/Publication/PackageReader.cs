@@ -68,13 +68,14 @@ internal sealed class PackageReader : IDisposable
     internal IReadOnlyDictionary<string, ImmutableArray<byte>> ReadDeclaredArtifacts()
     {
         ThrowIfDisposed();
-        var paths = Manifest.Indexes.Select(index => index.Path)
+        var paths = Manifest.Solutions
+            .SelectMany(solution => solution.Indexes.Select(index => index.EntryPath)
+                .Concat(solution.Roots.Select(root => root.MarkdownPath))
+                .Concat(solution.Journeys.Select(journey => solution.Indexes.Single(index => index.Kind == journey.EntryIndex).EntryPath)))
             .Append("manifest.json")
             .Append("markdown/index.md")
             .Append("certification.json")
             .Append("measurements.json")
-            .Concat(Manifest.Roots.Select(root => root.MarkdownPath))
-            .Concat(Manifest.Journeys.Select(journey => journey.EntryPath))
             .Distinct(StringComparer.Ordinal)
             .OrderBy(static path => path, StringComparer.Ordinal);
         return paths.ToDictionary(path => path, ReadArtifact, StringComparer.Ordinal);

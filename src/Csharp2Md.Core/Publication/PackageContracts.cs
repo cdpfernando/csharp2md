@@ -1,4 +1,6 @@
 using Csharp2Md.Core.Analysis;
+using Csharp2Md.Core.PackageBuilding.Identity;
+using System.Text.Json.Serialization;
 
 namespace Csharp2Md.Core.Publication;
 
@@ -84,20 +86,11 @@ internal sealed record PackageManifest
 
     public ImmutableArray<SolutionManifestEntry> Solutions { get; }
 
-    public ImmutableArray<RootManifestEntry> Roots { get; }
-
-    public ImmutableArray<IndexManifestEntry> Indexes { get; }
-
-    public ImmutableArray<JourneyManifestEntry> Journeys { get; }
-
     public PackageManifest(
         string tokenEstimator,
         double tokenDivisor,
         bool includeTests,
-        ImmutableArray<SolutionManifestEntry> solutions,
-        ImmutableArray<RootManifestEntry> roots,
-        ImmutableArray<IndexManifestEntry> indexes,
-        ImmutableArray<JourneyManifestEntry> journeys)
+        ImmutableArray<SolutionManifestEntry> solutions)
     {
         if (tokenEstimator != TokenEstimatorName)
         {
@@ -109,19 +102,16 @@ internal sealed record PackageManifest
             throw new ArgumentException("The token divisor must be 4.0.", nameof(tokenDivisor));
         }
 
-        var ownedJourneys = journeys.IsDefault ? ImmutableArray<JourneyManifestEntry>.Empty : ImmutableArray.CreateRange(journeys);
-        if (ownedJourneys.Length != 4)
+        var ownedSolutions = solutions.IsDefault ? ImmutableArray<SolutionManifestEntry>.Empty : ImmutableArray.CreateRange(solutions);
+        if (ownedSolutions.Select(solution => solution.Id).Distinct().Count() != ownedSolutions.Length)
         {
-            throw new ArgumentException("The manifest must declare the four supported journeys.", nameof(journeys));
+            throw new ArgumentException("The manifest cannot declare the same solution ID more than once.", nameof(solutions));
         }
 
         TokenEstimator = tokenEstimator;
         TokenDivisor = tokenDivisor;
         IncludeTests = includeTests;
-        Solutions = solutions.IsDefault ? ImmutableArray<SolutionManifestEntry>.Empty : ImmutableArray.CreateRange(solutions);
-        Roots = roots.IsDefault ? ImmutableArray<RootManifestEntry>.Empty : ImmutableArray.CreateRange(roots);
-        Indexes = indexes.IsDefault ? ImmutableArray<IndexManifestEntry>.Empty : ImmutableArray.CreateRange(indexes);
-        Journeys = ownedJourneys;
+        Solutions = ownedSolutions;
     }
 
 }
@@ -135,11 +125,47 @@ internal sealed record PackageGenerationPointer
 
 internal sealed record SolutionManifestEntry
 {
+    public SolutionId Id { get; }
+
     public string LogicalRelativePath { get; }
 
-    public SolutionManifestEntry(string logicalRelativePath)
+    public ImmutableArray<RootManifestEntry> Roots { get; }
+
+    public ImmutableArray<IndexManifestEntry> Indexes { get; }
+
+    public ImmutableArray<JourneyManifestEntry> Journeys { get; }
+
+    public SolutionManifestEntry(
+        SolutionId id,
+        string logicalRelativePath,
+        ImmutableArray<RootManifestEntry> roots,
+        ImmutableArray<IndexManifestEntry> indexes,
+        ImmutableArray<JourneyManifestEntry> journeys)
     {
+        var ownedIndexes = indexes.IsDefault ? ImmutableArray<IndexManifestEntry>.Empty : ImmutableArray.CreateRange(indexes);
+        var expectedIndexes = Enum.GetValues<NavigationIndexKind>();
+        if (ownedIndexes.Length != expectedIndexes.Length || ownedIndexes.Select(index => index.Kind).Distinct().Count() != expectedIndexes.Length)
+        {
+            throw new ArgumentException("A solution manifest must declare exactly one index of every supported kind.", nameof(indexes));
+        }
+
+        var ownedJourneys = journeys.IsDefault ? ImmutableArray<JourneyManifestEntry>.Empty : ImmutableArray.CreateRange(journeys);
+        var expectedJourneys = Enum.GetValues<JourneyKind>();
+        if (ownedJourneys.Length != expectedJourneys.Length || ownedJourneys.Select(journey => journey.Kind).Distinct().Count() != expectedJourneys.Length)
+        {
+            throw new ArgumentException("A solution manifest must declare exactly one entry for every supported journey.", nameof(journeys));
+        }
+
+        if (ownedJourneys.Any(journey => ownedIndexes.All(index => index.Kind != journey.EntryIndex)))
+        {
+            throw new ArgumentException("Every journey entry must reference a declared index.", nameof(journeys));
+        }
+
+        Id = id;
         LogicalRelativePath = LogicalPath.RequireRelative(logicalRelativePath, nameof(logicalRelativePath));
+        Roots = roots.IsDefault ? ImmutableArray<RootManifestEntry>.Empty : ImmutableArray.CreateRange(roots);
+        Indexes = ownedIndexes;
+        Journeys = ownedJourneys;
     }
 }
 
@@ -164,24 +190,11 @@ internal sealed record RootManifestEntry
 
 internal sealed record IndexManifestEntry
 {
-    public string Name { get; }
-
-    public string Path { get; }
-
-    public IndexManifestEntry(string name, string path)
-    {
-        Name = CanonicalText.Require(name, nameof(name));
-        Path = LogicalPath.RequireRelative(path, nameof(path));
-    }
-}
-
-internal sealed record JourneyManifestEntry
-{
-    public JourneyKind Kind { get; }
+    public NavigationIndexKind Kind { get; }
 
     public string EntryPath { get; }
 
-    public JourneyManifestEntry(JourneyKind kind, string entryPath)
+    public IndexManifestEntry(NavigationIndexKind kind, string entryPath)
     {
         if (!Enum.IsDefined(kind))
         {
@@ -190,6 +203,29 @@ internal sealed record JourneyManifestEntry
 
         Kind = kind;
         EntryPath = LogicalPath.RequireRelative(entryPath, nameof(entryPath));
+    }
+}
+
+internal sealed record JourneyManifestEntry
+{
+    public JourneyKind Kind { get; }
+
+    public NavigationIndexKind EntryIndex { get; }
+
+    public JourneyManifestEntry(JourneyKind kind, NavigationIndexKind entryIndex)
+    {
+        if (!Enum.IsDefined(kind))
+        {
+            throw new ArgumentOutOfRangeException(nameof(kind));
+        }
+
+        if (!Enum.IsDefined(entryIndex))
+        {
+            throw new ArgumentOutOfRangeException(nameof(entryIndex));
+        }
+
+        Kind = kind;
+        EntryIndex = entryIndex;
     }
 }
 
@@ -249,10 +285,25 @@ internal sealed record CommittedPackage
 
 internal sealed record PackageCertification
 {
+    public ImmutableArray<SolutionCertification> Solutions { get; }
+
+    public PackageCertification(ImmutableArray<SolutionCertification> solutions)
+    {
+        Solutions = solutions.IsDefault
+            ? ImmutableArray<SolutionCertification>.Empty
+            : ImmutableArray.CreateRange(solutions);
+    }
+}
+
+internal sealed record SolutionCertification
+{
+    public SolutionId SolutionId { get; }
+
     public ImmutableArray<JourneyCertification> Journeys { get; }
 
-    public PackageCertification(ImmutableArray<JourneyCertification> journeys)
+    public SolutionCertification(SolutionId solutionId, ImmutableArray<JourneyCertification> journeys)
     {
+        SolutionId = solutionId;
         Journeys = journeys.IsDefault
             ? ImmutableArray<JourneyCertification>.Empty
             : ImmutableArray.CreateRange(journeys);
@@ -306,12 +357,26 @@ internal enum ArtifactFamily
     Measurement,
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<NavigationIndexKind>))]
+internal enum NavigationIndexKind
+{
+    [JsonStringEnumMemberName("identity")] Identity,
+    [JsonStringEnumMemberName("roots")] Roots,
+    [JsonStringEnumMemberName("outgoing")] Outgoing,
+    [JsonStringEnumMemberName("incoming")] Incoming,
+    [JsonStringEnumMemberName("contracts")] Contracts,
+    [JsonStringEnumMemberName("persistence")] Persistence,
+    [JsonStringEnumMemberName("evidence")] Evidence,
+    [JsonStringEnumMemberName("measures")] Measures,
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<JourneyKind>))]
 internal enum JourneyKind
 {
-    Locate,
-    FollowFlow,
-    ReverseImpact,
-    EvidenceDisposition,
+    [JsonStringEnumMemberName("locate")] Locate,
+    [JsonStringEnumMemberName("follow_flow")] FollowFlow,
+    [JsonStringEnumMemberName("reverse_impact")] ReverseImpact,
+    [JsonStringEnumMemberName("evidence_disposition")] EvidenceDisposition,
 }
 
 internal enum JourneyCertificationStatus

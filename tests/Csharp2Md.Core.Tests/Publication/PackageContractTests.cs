@@ -1,4 +1,5 @@
 using Csharp2Md.Core.Analysis;
+using Csharp2Md.Core.PackageBuilding.Identity;
 using Csharp2Md.Core.Publication;
 
 namespace Csharp2Md.Core.Tests.Publication;
@@ -47,17 +48,19 @@ public sealed class PackageContractTests
         var manifest = Manifest(includeTests: true);
 
         Assert.True(manifest.IncludeTests);
-        Assert.Equal("src/Acme.sln", Assert.Single(manifest.Solutions).LogicalRelativePath);
-        var root = Assert.Single(manifest.Roots);
+        var solution = Assert.Single(manifest.Solutions);
+        Assert.Equal("src/Acme.sln", solution.LogicalRelativePath);
+        var root = Assert.Single(solution.Roots);
         Assert.Equal("Orders", root.DisplayName);
         Assert.Equal("0", root.Handle);
         Assert.Equal("indexes/roots.json#0", root.MachineCitation);
         Assert.Equal("markdown/components/0.md", root.MarkdownPath);
-        Assert.Equal("indexes/identity.json", Assert.Single(manifest.Indexes).Path);
-        Assert.Equal(4, manifest.Journeys.Length);
+        Assert.Equal(8, solution.Indexes.Length);
+        Assert.Contains(solution.Indexes, index => index.Kind == NavigationIndexKind.Identity);
+        Assert.Equal(4, solution.Journeys.Length);
         Assert.Equal(
             [JourneyKind.Locate, JourneyKind.FollowFlow, JourneyKind.ReverseImpact, JourneyKind.EvidenceDisposition],
-            manifest.Journeys.Select(journey => journey.Kind).ToArray());
+            solution.Journeys.Select(journey => journey.Kind).ToArray());
     }
 
     [Fact]
@@ -110,11 +113,13 @@ public sealed class PackageContractTests
             "packages/acme",
             "digest-package",
             new PackageCertification(ImmutableArray.Create(
-                new JourneyCertification(JourneyKind.Locate, JourneyCertificationStatus.Passed, "complete"))));
+                new SolutionCertification(
+                    new SolutionId("sol_0123456789abcdef"),
+                    ImmutableArray.Create(new JourneyCertification(JourneyKind.Locate, JourneyCertificationStatus.Passed, "complete"))))));
 
         Assert.Equal("packages/acme", committed.PackageDirectory);
         Assert.Equal("digest-package", committed.PackageDigest);
-        Assert.Equal(JourneyCertificationStatus.Passed, Assert.Single(committed.Certification.Journeys).Status);
+        Assert.Equal(JourneyCertificationStatus.Passed, Assert.Single(Assert.Single(committed.Certification.Solutions).Journeys).Status);
     }
 
     [Fact]
@@ -126,10 +131,7 @@ public sealed class PackageContractTests
                 "other.estimator",
                 4.0,
                 includeTests: false,
-                ImmutableArray.Create(new SolutionManifestEntry("src/Acme.sln")),
-                ImmutableArray.Create(Root()),
-                ImmutableArray.Create(new IndexManifestEntry("identity", "indexes/identity.json")),
-                Journeys()));
+                ImmutableArray.Create(Solution())));
         Assert.Equal("tokenEstimator", exception.ParamName);
     }
 
@@ -150,21 +152,44 @@ public sealed class PackageContractTests
             PackageManifest.TokenEstimatorName,
             PackageManifest.TokenDivisorValue,
             includeTests,
-            ImmutableArray.Create(new SolutionManifestEntry("src/Acme.sln")),
+            ImmutableArray.Create(Solution()));
+
+    private static SolutionManifestEntry Solution() =>
+        new(
+            new SolutionId("sol_0123456789abcdef"),
+            "src/Acme.sln",
             ImmutableArray.Create(Root()),
-            ImmutableArray.Create(new IndexManifestEntry("identity", "indexes/identity.json")),
+            Indexes(),
             Journeys());
 
     private static RootManifestEntry Root() =>
         new("Orders", "0", "indexes/roots.json#0", "markdown/components/0.md");
 
+    private static ImmutableArray<IndexManifestEntry> Indexes() =>
+        Enum.GetValues<NavigationIndexKind>()
+            .Select(kind => new IndexManifestEntry(kind, $"indexes/{Snake(kind)}.json"))
+            .ToImmutableArray();
+
     private static ImmutableArray<JourneyManifestEntry> Journeys() =>
         [
-            new(JourneyKind.Locate, "indexes/roots.json"),
-            new(JourneyKind.FollowFlow, "indexes/outgoing.json"),
-            new(JourneyKind.ReverseImpact, "indexes/incoming.json"),
-            new(JourneyKind.EvidenceDisposition, "indexes/evidence.json"),
+            new(JourneyKind.Locate, NavigationIndexKind.Roots),
+            new(JourneyKind.FollowFlow, NavigationIndexKind.Outgoing),
+            new(JourneyKind.ReverseImpact, NavigationIndexKind.Incoming),
+            new(JourneyKind.EvidenceDisposition, NavigationIndexKind.Evidence),
         ];
+
+    private static string Snake(NavigationIndexKind kind) => kind switch
+    {
+        NavigationIndexKind.Identity => "identity",
+        NavigationIndexKind.Roots => "roots",
+        NavigationIndexKind.Outgoing => "outgoing",
+        NavigationIndexKind.Incoming => "incoming",
+        NavigationIndexKind.Contracts => "contracts",
+        NavigationIndexKind.Persistence => "persistence",
+        NavigationIndexKind.Evidence => "evidence",
+        NavigationIndexKind.Measures => "measures",
+        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+    };
 
     private static PlannedArtifact ManifestArtifact() =>
         new(new RelativeArtifactPath("manifest.json"), ArtifactFamily.Manifest, ImmutableArray.Create<byte>(1, 2), 1, "digest-manifest");

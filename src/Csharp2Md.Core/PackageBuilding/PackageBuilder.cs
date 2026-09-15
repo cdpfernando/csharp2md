@@ -30,9 +30,10 @@ internal static class PackageBuilder
         var machine = MachineArtifactWriter.Write(model, includeTests);
         var payloads = machine.Artifacts.Where(artifact => artifact.Path.Value != "manifest.json")
             .ToImmutableArray().AddRange(MarkdownRenderer.Render(model, machine.Manifest));
-        var extraction = model.RetainedGraph is null
+        var retained = model.Solutions.Select(solution => solution.RetainedGraph).Where(graph => graph is not null).Cast<RetainedGraph>().ToArray();
+        var extraction = retained.Length == 0
             ? new ExtractionMeasurements(0, 0)
-            : new ExtractionMeasurements(model.RetainedGraph.Measurements.RetainedCount, model.RetainedGraph.Measurements.FilteredCount);
+            : new ExtractionMeasurements(retained.Sum(graph => graph.Measurements.RetainedCount), retained.Sum(graph => graph.Measurements.FilteredCount));
         var measurement = new PublicationMeasurements(extraction, payloads.Length + 3, [new FilteredCount("retention", extraction.FilteredCount)]);
         payloads = payloads.Add(Artifact("measurements.json", ArtifactFamily.Measurement, measurement, 1));
         payloads = payloads.Add(Artifact("certification.json", ArtifactFamily.Certification, new PackageCertification([]), 0));

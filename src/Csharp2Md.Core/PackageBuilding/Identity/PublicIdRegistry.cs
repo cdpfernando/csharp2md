@@ -26,6 +26,12 @@ internal sealed class PublicIdRegistry
         return id;
     }
 
+    internal SolutionId RegisterSolution(SolutionIdentity solution)
+    {
+        ArgumentNullException.ThrowIfNull(solution);
+        return new SolutionId(Register("sol", solution.CanonicalKey));
+    }
+
     private static string Base32Hex(ReadOnlySpan<byte> bytes)
     {
         const string alphabet = "0123456789abcdefghijklmnopqrstuv";

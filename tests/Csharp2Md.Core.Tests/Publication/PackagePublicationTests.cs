@@ -24,10 +24,15 @@ public sealed class PackagePublicationTests
     [Fact][Trait("Requirement", "EDG-05")] public void Publish_InvalidMarkdownPlanIsRejectedBeforeManifestSwap() { using var output = new TempOutput(); var plan = Plan(); var broken = new PackagePlan(plan.Manifest, plan.Artifacts.Select(a => a.Path.Value == "markdown/index.md" ? new PlannedArtifact(a.Path, a.Family, "broken"u8.ToArray().ToImmutableArray(), a.RecordCount, a.ContentDigest) : a).ToImmutableArray(), plan.PackageDigest, plan.Measurements); Assert.Throws<PackagePublicationException>(() => PackagePublication.Publish(broken, output.Path)); Assert.False(File.Exists(Path.Combine(output.Path, "manifest.json"))); }
     [Fact][Trait("Requirement", "PUB-08")] public void Publish_CertificationFailurePreventsManifestCommit() { using var output = new TempOutput(); var plan = Plan(); Assert.NotNull(plan); }
     [Fact][Trait("Requirement", "PUB-01")] public void Publish_PreservesPlanDigest() { using var output = new TempOutput(); var plan = Plan(); Assert.Equal(plan.PackageDigest, PackagePublication.Publish(plan, output.Path).PackageDigest); }
-    [Fact][Trait("Requirement", "PUB-02")] public void Publish_RecordsAllFourJourneys() { using var output = new TempOutput(); Assert.Equal(4, PackagePublication.Publish(Plan(), output.Path).Certification.Journeys.Length); }
+    [Fact][Trait("Requirement", "PUB-02")] public void Publish_RecordsAllFourJourneys() { using var output = new TempOutput(); Assert.Equal(4, Assert.Single(PackagePublication.Publish(Plan(), output.Path).Certification.Solutions).Journeys.Length); }
     [Fact][Trait("Requirement", "PUB-04")] public void Publish_ValidationHasNoInterpretationDifference() { using var output = new TempOutput(); PackagePublication.Publish(Plan(), output.Path); Assert.True(PackagePublication.Validate(output.Path).Succeeded); }
     [Fact][Trait("Requirement", "PUB-05")] public void Publish_UsesExclusiveLockFile() { using var output = new TempOutput(); PackagePublication.Publish(Plan(), output.Path); Assert.True(File.Exists(Path.Combine(output.Path, "package.lock"))); }
     private static PackagePlan Plan(string solution = "app") => PackageBuilder.Build(Model(solution));
-    private static RetrievalModel Model(string solution = "app") => new([new SolutionNavigation(CanonicalIdentity.CreateSolution(solution, $"src/{solution}.sln"), [new EntityHandle("component:orders")])], [], [], new NavigationIndexes("identity", "roots", "outgoing", "incoming", "contracts", "persistence", "evidence"));
+    private static RetrievalModel Model(string solution = "app") =>
+        new([new SolutionRetrievalModel(
+            CanonicalIdentity.CreateSolution(solution, $"src/{solution}.sln"),
+            [new EntityHandle("component:orders")],
+            [],
+            [])]);
     private sealed class TempOutput : IDisposable { public TempOutput() { Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "csharp2md-publish-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Path); } public string Path { get; } public void Dispose() => TempPath.TryDelete(Path); }
 }

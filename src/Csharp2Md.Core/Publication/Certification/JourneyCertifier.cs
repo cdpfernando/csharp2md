@@ -21,6 +21,13 @@ internal sealed class MeasuredPackageReader : IDisposable
 
     internal static MeasuredPackageReader Open(string packageDirectory) => new(PackageReader.Open(packageDirectory));
 
+    internal void BeginJourney()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _opened.Clear();
+        _bytes = 0;
+    }
+
     internal ImmutableArray<byte> OpenArtifact(string path)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -51,25 +58,36 @@ internal static class JourneyCertifier
     internal static PackageCertification Certify(MeasuredPackageReader reader)
     {
         ArgumentNullException.ThrowIfNull(reader);
-        var journeys = ImmutableArray.CreateBuilder<JourneyCertification>();
-        journeys.Add(CertifyLocate(reader));
-        journeys.Add(CertifyEvidence(reader));
-        journeys.AddRange(GraphJourneyCertifier.Certify(reader));
-        return new PackageCertification(journeys.ToImmutable());
+        var solutions = ImmutableArray.CreateBuilder<SolutionCertification>();
+        foreach (var solution in reader.Manifest.Solutions.OrderBy(entry => entry.Id.Value, StringComparer.Ordinal))
+        {
+            var journeys = ImmutableArray.CreateBuilder<JourneyCertification>();
+            reader.BeginJourney();
+            journeys.Add(CertifyLocate(reader, solution));
+            reader.BeginJourney();
+            journeys.Add(GraphJourneyCertifier.CertifyFlow(reader, solution));
+            reader.BeginJourney();
+            journeys.Add(GraphJourneyCertifier.CertifyImpact(reader, solution));
+            reader.BeginJourney();
+            journeys.Add(CertifyEvidence(reader, solution));
+            solutions.Add(new SolutionCertification(solution.Id, journeys.ToImmutable()));
+        }
+
+        return new PackageCertification(solutions.ToImmutable());
     }
 
-    private static JourneyCertification CertifyLocate(MeasuredPackageReader reader)
+    private static JourneyCertification CertifyLocate(MeasuredPackageReader reader, SolutionManifestEntry solution)
     {
-        if (reader.Manifest.Roots.IsDefaultOrEmpty)
+        if (solution.Roots.IsDefaultOrEmpty)
         {
             return NotApplicable(JourneyKind.Locate, "no-root");
         }
 
-        var root = reader.Manifest.Roots[0];
+        var root = solution.Roots[0];
         try
         {
             reader.OpenArtifact("manifest.json");
-            reader.OpenArtifact(Entry(reader.Manifest, JourneyKind.Locate));
+            reader.OpenArtifact(Entry(solution, JourneyKind.Locate));
             reader.OpenArtifact(root.MarkdownPath);
             return Budget(JourneyKind.Locate, reader.Measurement, root.DisplayName.StartsWith("component:", StringComparison.Ordinal) ? 5 : 8, 12_000);
         }
@@ -79,9 +97,9 @@ internal static class JourneyCertifier
         }
     }
 
-    private static JourneyCertification CertifyEvidence(MeasuredPackageReader reader)
+    private static JourneyCertification CertifyEvidence(MeasuredPackageReader reader, SolutionManifestEntry solution)
     {
-        if (reader.Manifest.Indexes.All(index => index.Name != "evidence"))
+        if (solution.Indexes.All(index => index.Kind != NavigationIndexKind.Evidence))
         {
             return NotApplicable(JourneyKind.EvidenceDisposition, "no-evidence-index");
         }
@@ -89,7 +107,7 @@ internal static class JourneyCertifier
         try
         {
             reader.OpenArtifact("manifest.json");
-            reader.OpenArtifact(Entry(reader.Manifest, JourneyKind.EvidenceDisposition));
+            reader.OpenArtifact(Entry(solution, JourneyKind.EvidenceDisposition));
             return Budget(JourneyKind.EvidenceDisposition, reader.Measurement, 12, 25_000);
         }
         catch (FileNotFoundException)
@@ -98,7 +116,11 @@ internal static class JourneyCertifier
         }
     }
 
-    private static string Entry(PackageManifest manifest, JourneyKind kind) => manifest.Journeys.Single(journey => journey.Kind == kind).EntryPath;
+    internal static string Entry(SolutionManifestEntry solution, JourneyKind kind)
+    {
+        var journey = solution.Journeys.Single(candidate => candidate.Kind == kind);
+        return solution.Indexes.Single(index => index.Kind == journey.EntryIndex).EntryPath;
+    }
 
     private static JourneyCertification Budget(JourneyKind kind, JourneyMeasurement measurement, int reads, long tokens) =>
         measurement.Reads > reads ? Failed(kind, $"reads-exceeded:{measurement.Reads}>{reads}") :

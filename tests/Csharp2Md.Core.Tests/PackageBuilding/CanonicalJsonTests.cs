@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.PackageBuilding;
+using Csharp2Md.Core.PackageBuilding.Identity;
 using Csharp2Md.Core.Publication;
 
 namespace Csharp2Md.Core.Tests.PackageBuilding;
@@ -112,14 +113,18 @@ public sealed class CanonicalJsonTests
             PackageManifest.TokenEstimatorName,
             PackageManifest.TokenDivisorValue,
             includeTests: false,
-            ImmutableArray.Create(new SolutionManifestEntry("src/Acme.sln")),
-            ImmutableArray.Create(new RootManifestEntry("Orders", "0", "indexes/roots.json#0", "markdown/components/0.md")),
-            ImmutableArray.Create(new IndexManifestEntry("identity", "indexes/identity.json")),
-            ImmutableArray.Create(
-                new JourneyManifestEntry(JourneyKind.Locate, "indexes/roots.json"),
-                new JourneyManifestEntry(JourneyKind.FollowFlow, "indexes/outgoing.json"),
-                new JourneyManifestEntry(JourneyKind.ReverseImpact, "indexes/incoming.json"),
-                new JourneyManifestEntry(JourneyKind.EvidenceDisposition, "indexes/evidence.json")));
+            ImmutableArray.Create(new SolutionManifestEntry(
+                new SolutionId("sol_0123456789abcdef"),
+                "src/Acme.sln",
+                ImmutableArray.Create(new RootManifestEntry("Orders", "0", "indexes/roots.json#0", "markdown/components/0.md")),
+                Enum.GetValues<NavigationIndexKind>()
+                    .Select(kind => new IndexManifestEntry(kind, $"indexes/{kind.ToString().ToLowerInvariant()}.json"))
+                    .ToImmutableArray(),
+                ImmutableArray.Create(
+                    new JourneyManifestEntry(JourneyKind.Locate, NavigationIndexKind.Roots),
+                    new JourneyManifestEntry(JourneyKind.FollowFlow, NavigationIndexKind.Outgoing),
+                    new JourneyManifestEntry(JourneyKind.ReverseImpact, NavigationIndexKind.Incoming),
+                    new JourneyManifestEntry(JourneyKind.EvidenceDisposition, NavigationIndexKind.Evidence)))));
 
     private sealed record UnregisteredContract(string Name);
 }

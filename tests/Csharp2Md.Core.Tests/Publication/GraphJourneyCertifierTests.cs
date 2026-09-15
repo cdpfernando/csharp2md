@@ -23,11 +23,25 @@ public sealed class GraphJourneyCertifierTests
     [Fact][Trait("Requirement", "NAV-09")] public void Certify_ImpactDetailContainsMeasurements() => Assert.Contains("reads:", Impact(Package(measures: [Measure([new ImpactTarget(new EntityHandle("component:caller"), 1)])])).Detail);
     [Fact][Trait("Requirement", "CRT-01")] public void Certify_ApplicableImpactNeverPassesWithoutAnswer() { using var package = Package(measures: [Measure([])]); Assert.Equal(JourneyCertificationStatus.Failed, Impact(package).Status); }
 
-    private static JourneyCertification Flow(TempPackage package) => JourneyCertifier.Certify(package.Path).Journeys.Single(x => x.Kind == JourneyKind.FollowFlow);
-    private static JourneyCertification Impact(TempPackage package) => JourneyCertifier.Certify(package.Path).Journeys.Single(x => x.Kind == JourneyKind.ReverseImpact);
+    private static JourneyCertification Flow(TempPackage package) => Assert.Single(JourneyCertifier.Certify(package.Path).Solutions).Journeys.Single(x => x.Kind == JourneyKind.FollowFlow);
+    private static JourneyCertification Impact(TempPackage package) => Assert.Single(JourneyCertifier.Certify(package.Path).Solutions).Journeys.Single(x => x.Kind == JourneyKind.ReverseImpact);
     private static ImmutableArray<AggregatedDependency> AllTerminals() => [Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Http)];
     private static AggregatedDependency Dependency(DependencyCategory category) => new(AggregationScope.Component, new EntityHandle("component:orders"), new EntityHandle("component:target"), category, DependencyNature.Direct, 1, [], [], []);
     private static ScopeMeasures Measure(ImmutableArray<ImpactTarget> impact) => new(AggregationScope.Component, new EntityHandle("component:orders"), 0, 1, 0, [], impact, new GapCounts(0, 0, 0));
-    private static TempPackage Package(ImmutableArray<AggregatedDependency> dependencies = default, ImmutableArray<ScopeMeasures> measures = default) { var package = new TempPackage(); var model = new RetrievalModel([new SolutionNavigation(CanonicalIdentity.CreateSolution("app", "src/App.sln"), [new EntityHandle("component:orders")])], dependencies, measures, new NavigationIndexes("identity", "roots", "outgoing", "incoming", "contracts", "persistence", "evidence")); foreach (var artifact in PackageBuilder.Build(model).Artifacts) package.Write(artifact.Path.Value, artifact.Payload); return package; }
+    private static TempPackage Package(ImmutableArray<AggregatedDependency> dependencies = default, ImmutableArray<ScopeMeasures> measures = default)
+    {
+        var package = new TempPackage();
+        var model = new RetrievalModel([new SolutionRetrievalModel(
+            CanonicalIdentity.CreateSolution("app", "src/App.sln"),
+            [new EntityHandle("component:orders")],
+            dependencies.IsDefault ? [] : dependencies,
+            measures.IsDefault ? [] : measures)]);
+        foreach (var artifact in PackageBuilder.Build(model).Artifacts)
+        {
+            package.Write(artifact.Path.Value, artifact.Payload);
+        }
+
+        return package;
+    }
     private sealed class TempPackage : IDisposable { public TempPackage() { Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "csharp2md-graph-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Path); } public string Path { get; } public void Write(string relative, ImmutableArray<byte> bytes) { var file = System.IO.Path.Combine(Path, relative.Replace('/', System.IO.Path.DirectorySeparatorChar)); Directory.CreateDirectory(System.IO.Path.GetDirectoryName(file)!); File.WriteAllBytes(file, bytes.ToArray()); } public void Dispose() => TempPath.TryDelete(Path); }
 }

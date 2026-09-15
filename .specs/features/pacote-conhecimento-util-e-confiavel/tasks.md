@@ -74,13 +74,13 @@ T23 -> T24 -> T25 -> T26 -> T27 -> T28 -> T29 -> T30
 ### Phase 5: Validation, certification and atomic publication
 
 ```text
-T31 -> T32 -> T33 -> T34 -> T35 -> T36 -> T37
+T31 -> T32 -> T33 -> T34 -> T35 -> T36 -> T37 -> T38
 ```
 
 ### Phase 6: CLI acceptance and clean cut
 
 ```text
-T38 -> T39 -> T40 -> T41 -> T42 -> T43 -> T44
+T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45
 ```
 
 The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
@@ -243,7 +243,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Commit**: `feat(core): add canonical identity primitives`
 
 **Status**: ✅ Complete
-**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (legacy Domain/Analysis/CLI suites fail on removed historical specs and non-Synthetic corpora; user-approved 2026-09-15).
+**Gate note**: interim until T45 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (legacy Domain/Analysis/CLI suites fail on removed historical specs and non-Synthetic corpora; user-approved 2026-09-15).
 
 ## Phase 2: Isolated factual analysis
 
@@ -269,7 +269,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Commit**: `feat(analysis): build authorized source inventory`
 
 **Status**: ✅ Complete  
-**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
+**Gate note**: interim until T45 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T9: Discover project-specific variants
 
@@ -293,7 +293,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Commit**: `feat(analysis): discover project variants`
 
 **Status**: ✅ Complete  
-**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
+**Gate note**: interim until T45 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T10: Load each project variant in isolation
 
@@ -317,7 +317,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Commit**: `feat(analysis): isolate project variant workspaces`
 
 **Status**: ✅ Complete  
-**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
+**Gate note**: interim until T45 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T11: Merge logical entities across variants
 
@@ -341,7 +341,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Commit**: `feat(analysis): merge variant occurrences`
 
 **Status**: ✅ Complete  
-**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
+**Gate note**: interim until T45 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T12: Extract structural and architectural roots
 
@@ -365,7 +365,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Commit**: `feat(analysis): extract architectural roots`
 
 **Status**: ✅ Complete  
-**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
+**Gate note**: interim until T45 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T13: Extract causal and boundary relations
 
@@ -389,7 +389,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Commit**: `feat(analysis): extract causal relations`
 
 **Status**: ✅ Complete
-**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
+**Gate note**: interim until T45 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests` (user-approved 2026-09-15).
 
 ### T14: Extract configuration and persistence facts safely
 
@@ -590,7 +590,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: build  
 **Commit**: `feat(package): assemble retrieval model`
 **Status**: ✅ Complete
-**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests --configuration Release --no-build` passed (249 tests); full legacy test suite remains deferred by the user-approved interim rule.
+**Gate note**: interim until T45 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests --configuration Release --no-build` passed (249 tests); full legacy test suite remains deferred by the user-approved interim rule.
 
 ## Phase 4: Identity, layout and retrieval artifacts
 
@@ -777,7 +777,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Commit**: `feat(package): build complete package plans`
 
 **Status**: ✅ Complete
-**Gate note**: interim until T44 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests --configuration Release --no-build` passed (358 tests); full legacy test suite remains deferred by the user-approved interim rule.
+**Gate note**: interim until T45 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests --configuration Release --no-build` passed (358 tests); full legacy test suite remains deferred by the user-approved interim rule.
 
 ## Phase 5: Validation, certification and atomic publication
 
@@ -910,11 +910,36 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: quick  
 **Commit**: `feat(publication): commit immutable generations`
 
-### T37: Wire KnowledgeEngine analysis and validation
+### T37: Qualify retrieval and publication by solution
+
+**What**: Group retrieval data, manifest navigation and certification structurally by typed `SolutionId`, with stable textual enum values.  
+**Where**: `src/Csharp2Md.Core/PackageBuilding/RetrievalModel.cs`, `src/Csharp2Md.Core/Publication/PackageContracts.cs`  
+**Depends on**: T36  
+**Reuses**: `PublicIdRegistry`, solution-local handles, canonical JSON and the existing manifest-led reader  
+**Requirement**: PKG-01, NAV-01, NAV-05, VAR-06, STO-05, STO-07, PUB-03, CRT-01, CRT-03
+
+**Tools**: MCP: Context7 for current `System.Text.Json` enum/source-generation behavior; Skills: `tlc-spec-driven`, `dotnet-skills:serialization`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] `RetrievalModel` contains only solution-scoped models; roots, dependencies, measures and retained facts cannot cross a solution boundary by construction.
+- [x] The manifest groups roots, exactly one index of every kind and four semantic journey entries under a typed `SolutionId`; index and journey enum values are stable snake-case strings.
+- [x] The reader resolves solution then index kind, rejects duplicate/missing indexes and detects corruption in any solution without exposing composite keys to callers.
+- [x] Certification produces four independently measured journey results for every solution and package publication fails when any solution journey fails.
+- [x] Tests cover two solutions with equal local handles/index kinds and distinct causal data, deterministic reordering, duplicate/missing index rejection and corruption isolated to the second solution; build gate passes.
+
+**Tests**: unit + integration — focused contract, writer/reader and certification cases  
+**Gate**: build  
+**Commit**: `refactor(publication): isolate package data by solution`
+
+**Status**: ✅ Complete  
+**Gate note**: interim until T45 — `dotnet build csharp2md.slnx --configuration Release` + `dotnet test tests/Csharp2Md.Core.Tests --configuration Release` passed (470 tests); full legacy test suite remains deferred by the user-approved interim rule.
+
+### T38: Wire KnowledgeEngine analysis and validation
 
 **What**: Connect the facade to Analysis, PackageBuilding and Publication and return committed status only after certification.  
 **Where**: `src/Csharp2Md.Core/KnowledgeEngine.cs`  
-**Depends on**: T36  
+**Depends on**: T37  
 **Reuses**: public contracts from T2 and internal result seams completed in T15/T30/T36  
 **Requirement**: PKG-08, PUB-03, PUB-04, PUB-08, VAR-06
 
@@ -933,11 +958,11 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 ## Phase 6: CLI acceptance and clean cut
 
-### T38: Wire the analyze CLI command
+### T39: Wire the analyze CLI command
 
 **What**: Replace analyze wiring with `KnowledgeEngine`, supporting one-or-more solutions, output and explicit test inclusion.  
 **Where**: `src/Csharp2Md.Cli/CommandFactory.cs`  
-**Depends on**: T37  
+**Depends on**: T38  
 **Reuses**: current System.CommandLine parsing conventions, not legacy engine/store/projector wiring  
 **Requirement**: PKG-01, PKG-08, PUB-04, PUB-08, VAR-06
 
@@ -954,11 +979,11 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: full  
 **Commit**: `feat(cli): wire knowledge package analysis`
 
-### T39: Wire validate and remove compose
+### T40: Wire validate and remove compose
 
 **What**: Route validate through `KnowledgeEngine.Validate` and remove the compose command and batch-manifest path.  
 **Where**: `src/Csharp2Md.Cli/CommandFactory.cs`  
-**Depends on**: T38  
+**Depends on**: T39  
 **Reuses**: existing in-process CLI test harness  
 **Requirement**: PKG-10, PUB-03, PUB-04
 
@@ -975,11 +1000,11 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: full  
 **Commit**: `feat(cli): validate current package contract`
 
-### T40: Expand the versioned synthetic fixture
+### T41: Expand the versioned synthetic fixture
 
 **What**: Add one coherent fixture scenario covering per-project multi-targeting, production/test distinction, repeated calls, component dependency, runtime integration, cycle, safety inputs and one controlled gap.  
 **Where**: `fixtures/SyntheticSolution`  
-**Depends on**: T39  
+**Depends on**: T40  
 **Reuses**: existing Acme projects and manual fixture-manifest/oracle style; no new versioned corpus  
 **Requirement**: CRT-08, VAR-01, VAR-02, VAR-03, PUB-06, PUB-07
 
@@ -996,12 +1021,12 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: full  
 **Commit**: `test(fixture): cover knowledge package journeys`
 
-### T41: Prove the four journeys end to end
+### T42: Prove the four journeys end to end
 
 **What**: Analyze the fixture, open from root manifest, complete all four journeys, validate immediately and compare to manual expectations.  
 **Where**: `tests/Csharp2Md.Cli.Tests/KnowledgePackageJourneyTests.cs`  
-**Depends on**: T40  
-**Reuses**: `CliInvoke`, temporary output helpers and T40's independent oracle  
+**Depends on**: T41  
+**Reuses**: `CliInvoke`, temporary output helpers and T41's independent oracle  
 **Requirement**: PKG-01, PKG-02, PKG-03, PKG-04, PKG-05, PKG-06, PKG-07, PKG-08, PKG-09, DEP-01, DEP-02, DEP-03, DEP-04, DEP-05, DEP-06, DEP-07, MET-01, MET-02, MET-03, MET-04, MET-05, MET-06, MET-07, MET-08, NAV-01, NAV-02, NAV-03, NAV-04, NAV-05, NAV-06, NAV-07, NAV-08, NAV-09, NAV-10, CRT-01, CRT-02, CRT-03, CRT-09
 
 **Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
@@ -1017,11 +1042,11 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: full  
 **Commit**: `test(cli): certify knowledge package journeys`
 
-### T42: Prove rejection preserves the committed package
+### T43: Prove rejection preserves the committed package
 
 **What**: Exercise every specified rejection class from a valid baseline and prove byte-for-byte atomic preservation.  
 **Where**: `tests/Csharp2Md.Cli.Tests/KnowledgePackageFailureTests.cs`  
-**Depends on**: T41  
+**Depends on**: T42  
 **Reuses**: real temporary-directory failure injection patterns from Storage/CLI tests  
 **Requirement**: STO-02, PUB-05, PUB-06, PUB-07, PUB-08, EDG-01, EDG-02, EDG-03, EDG-04, EDG-05
 
@@ -1038,11 +1063,11 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: full  
 **Commit**: `test(cli): prove atomic rejection behavior`
 
-### T43: Certify optional local corpora
+### T44: Certify optional local corpora
 
 **What**: Update LocalCorpus acceptance to assert eShop variant isolation and the eShopOnContainers/Pitstop committed-package ceilings.  
 **Where**: `tests/Csharp2Md.Cli.Tests/LocalCorpusAnalyzeTests.cs`  
-**Depends on**: T42  
+**Depends on**: T43  
 **Reuses**: dynamic skip convention and gitignored local clone paths  
 **Requirement**: CRT-04, CRT-05, CRT-06, CRT-07
 
@@ -1059,11 +1084,11 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 **Gate**: full + LocalCorpus when present  
 **Commit**: `test(cli): certify optional local corpora`
 
-### T44: Complete the clean-cut repository topology
+### T45: Complete the clean-cut repository topology
 
 **What**: Remove legacy product/test projects and obsolete contracts, point CLI solely at Core, update solution/package/docs, and prove only the current contract remains.  
 **Where**: `csharp2md.slnx`  
-**Depends on**: T43  
+**Depends on**: T44  
 **Reuses**: only source/test code explicitly ported by earlier tasks; no compatibility facade, converter, feature flag or version reader  
 **Requirement**: PKG-10
 
@@ -1085,46 +1110,46 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 | Requirements | Owning task(s) | Acceptance seam |
 | ------------ | -------------- | --------------- |
-| PKG-01 | T2, T5, T27, T30, T38, T41 | CLI journey package |
-| PKG-02 | T3, T12, T16, T41 | CLI roots/closure |
-| PKG-03 | T3, T15, T16, T30, T41 | CLI retained set |
-| PKG-04 | T3, T17, T30, T41 | CLI relevant gaps |
-| PKG-05 | T8, T17, T30, T41 | CLI exclusions |
-| PKG-06 | T8, T17, T30, T41 | CLI cited sources |
-| PKG-07 | T3, T7, T8, T14, T31, T41 | CLI safety/config |
-| PKG-08 | T5, T8, T17, T30, T37, T38, T41 | CLI policy identity |
-| PKG-09 | T3, T12-T16, T41 | factual graph + CLI |
-| PKG-10 | T1, T39, T44 | topology surface |
-| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T41 | hand-recalculated dependencies |
-| MET-01..MET-04 | T4, T19, T41 | hand-recalculated direct measures |
-| MET-05 | T4, T20, T41 | hand-recalculated SCCs |
-| MET-06..MET-08 | T4, T17, T21-T22, T41 | hand-recalculated impact/gaps |
-| NAV-01 | T26-T27, T32, T41 | manifest/index traversal |
-| NAV-02..NAV-05 | T22, T27-T29, T41 | machine/Markdown equivalence |
-| NAV-06..NAV-07 | T26, T34, T41 | locate budgets |
-| NAV-08..NAV-09 | T26, T35, T41 | graph journey budgets |
-| NAV-10 | T26, T34, T41 | evidence budget |
-| VAR-01..VAR-02 | T9-T10, T40 | real workspace fixture |
-| VAR-03..VAR-05 | T3, T7, T11, T40 | occurrence/collision tests |
-| VAR-06 | T7, T11, T15, T24, T37-T38 | multi-solution CLI |
-| STO-01..STO-02 | T23, T33, T42 | vectors/collision/rejection |
-| STO-03..STO-05 | T5, T24, T27, T33 | tables and resolver |
-| STO-06..STO-07 | T6, T25, T30, T33 | byte/shard determinism |
+| PKG-01 | T2, T5, T27, T30, T37, T39, T42 | CLI journey package |
+| PKG-02 | T3, T12, T16, T42 | CLI roots/closure |
+| PKG-03 | T3, T15, T16, T30, T42 | CLI retained set |
+| PKG-04 | T3, T17, T30, T42 | CLI relevant gaps |
+| PKG-05 | T8, T17, T30, T42 | CLI exclusions |
+| PKG-06 | T8, T17, T30, T42 | CLI cited sources |
+| PKG-07 | T3, T7, T8, T14, T31, T42 | CLI safety/config |
+| PKG-08 | T5, T8, T17, T30, T38-T39, T42 | CLI policy identity |
+| PKG-09 | T3, T12-T16, T42 | factual graph + CLI |
+| PKG-10 | T1, T40, T45 | topology surface |
+| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42 | hand-recalculated dependencies |
+| MET-01..MET-04 | T4, T19, T42 | hand-recalculated direct measures |
+| MET-05 | T4, T20, T42 | hand-recalculated SCCs |
+| MET-06..MET-08 | T4, T17, T21-T22, T42 | hand-recalculated impact/gaps |
+| NAV-01 | T26-T27, T32, T37, T42 | manifest/index traversal |
+| NAV-02..NAV-05 | T22, T27-T29, T37, T42 | machine/Markdown equivalence |
+| NAV-06..NAV-07 | T26, T34, T42 | locate budgets |
+| NAV-08..NAV-09 | T26, T35, T42 | graph journey budgets |
+| NAV-10 | T26, T34, T42 | evidence budget |
+| VAR-01..VAR-02 | T9-T10, T41 | real workspace fixture |
+| VAR-03..VAR-05 | T3, T7, T11, T41 | occurrence/collision tests |
+| VAR-06 | T7, T11, T15, T24, T37-T39 | multi-solution CLI |
+| STO-01..STO-02 | T23, T33, T43 | vectors/collision/rejection |
+| STO-03..STO-05 | T5, T24, T27, T33, T37 | tables and resolver |
+| STO-06..STO-07 | T6, T25, T30, T33, T37 | byte/shard determinism |
 | PUB-01 | T5-T6, T36 | single materialization path |
 | PUB-02 | T5, T32-T33, T36 | staged rehydration |
-| PUB-03..PUB-04 | T2, T29, T32-T33, T37-T39 | shared public validation |
-| PUB-05 | T32-T33, T36, T42 | byte preservation |
-| PUB-06..PUB-07 | T31, T40, T42 | safety fixture/rejection |
-| PUB-08 | T2, T15, T36-T38, T42 | structured diagnostics |
-| CRT-01..CRT-03 | T15, T30, T34-T35, T41 | journey certification |
-| CRT-04..CRT-07 | T9, T43 | optional corpora |
-| CRT-08 | T8, T12-T14, T31, T40 | fixture integrity |
-| CRT-09 | T41 | CLI E2E |
-| EDG-01 | T13, T16-T17, T33, T42 | evidence rejection |
-| EDG-02 | T34-T36, T42 | journey budget rejection |
-| EDG-03 | T25, T30, T36, T42 | package budget rejection |
-| EDG-04 | T11, T13, T18, T42 | variant-qualified dependency |
-| EDG-05 | T29, T33, T36, T42 | representation divergence |
+| PUB-03..PUB-04 | T2, T29, T32-T33, T37-T40 | shared public validation |
+| PUB-05 | T32-T33, T36, T43 | byte preservation |
+| PUB-06..PUB-07 | T31, T41, T43 | safety fixture/rejection |
+| PUB-08 | T2, T15, T36, T38-T39, T43 | structured diagnostics |
+| CRT-01..CRT-03 | T15, T30, T34-T37, T42 | journey certification |
+| CRT-04..CRT-07 | T9, T44 | optional corpora |
+| CRT-08 | T8, T12-T14, T31, T41 | fixture integrity |
+| CRT-09 | T42 | CLI E2E |
+| EDG-01 | T13, T16-T17, T33, T43 | evidence rejection |
+| EDG-02 | T34-T36, T43 | journey budget rejection |
+| EDG-03 | T25, T30, T36, T43 | package budget rejection |
+| EDG-04 | T11, T13, T18, T43 | variant-qualified dependency |
+| EDG-05 | T29, T33, T36, T43 | representation divergence |
 
 All 71 requirements have at least one focused owning task and a final acceptance seam.
 
@@ -1137,13 +1162,15 @@ All 71 requirements have at least one focused owning task and a final acceptance
 | T8-T15 | One inventory/planner/workspace/accumulator/extractor/orchestrator component each | ✅ Granular |
 | T16-T22 | One retention/measure/model-builder component each | ✅ Granular |
 | T23-T30 | One identity/layout/index/renderer/reader/orchestrator component each | ✅ Granular |
-| T31-T37 | One safety/reader/validator/certifier/publisher/facade component each | ✅ Granular |
-| T38-T39 | One CLI command surface per task | ✅ Granular |
-| T40 | One coherent fixture scenario | ✅ Cohesive fixture deliverable |
-| T41-T43 | One acceptance concern per task | ✅ Granular |
-| T44 | One final repository topology cutover | ✅ Cohesive clean-cut deliverable |
+| T31-T36 | One safety/reader/validator/certifier/publisher component each | ✅ Granular |
+| T37 | One solution-scoped retrieval/publication contract | ✅ Cohesive cross-layer invariant |
+| T38 | One facade workflow component | ✅ Granular |
+| T39-T40 | One CLI command surface per task | ✅ Granular |
+| T41 | One coherent fixture scenario | ✅ Cohesive fixture deliverable |
+| T42-T44 | One acceptance concern per task | ✅ Granular |
+| T45 | One final repository topology cutover | ✅ Cohesive clean-cut deliverable |
 
-T1, T40 and T44 necessarily touch multiple physical files, but each is one indivisible deliverable. Splitting any of them would create an invalid scaffold, a fixture with no stable oracle, or a repository with mixed contracts.
+T1, T37, T41 and T45 necessarily touch multiple physical files, but each is one indivisible deliverable. Splitting any of them would create an invalid scaffold, a partially qualified package contract, a fixture with no stable oracle, or a repository with mixed contracts.
 
 ## Diagram-Definition Cross-Check
 
@@ -1186,13 +1213,14 @@ T1, T40 and T44 necessarily touch multiple physical files, but each is one indiv
 | T35 | T34 | T34 -> T35 | ✅ Match |
 | T36 | T35 | T35 -> T36 | ✅ Match |
 | T37 | T36 | T36 -> T37 | ✅ Match |
-| T38 | T37 | phase 6 after phase 5 | ✅ Match |
-| T39 | T38 | T38 -> T39 | ✅ Match |
+| T38 | T37 | T37 -> T38 | ✅ Match |
+| T39 | T38 | phase 6 after phase 5 | ✅ Match |
 | T40 | T39 | T39 -> T40 | ✅ Match |
 | T41 | T40 | T40 -> T41 | ✅ Match |
 | T42 | T41 | T41 -> T42 | ✅ Match |
 | T43 | T42 | T42 -> T43 | ✅ Match |
 | T44 | T43 | T43 -> T44 | ✅ Match |
+| T45 | T44 | T44 -> T45 | ✅ Match |
 
 Cross-phase dependencies are represented by the ordered phase chain; all intra-phase edges match exactly.
 
@@ -1236,14 +1264,15 @@ Cross-phase dependencies are represented by the ordered phase chain; all intra-p
 | T34 | Locate/evidence certifier | integration | integration | ✅ OK |
 | T35 | Flow/impact certifier | integration | integration | ✅ OK |
 | T36 | Atomic publisher | integration | integration | ✅ OK |
-| T37 | Facade workflow | integration | integration | ✅ OK |
-| T38 | Analyze CLI | e2e | e2e | ✅ OK |
-| T39 | Validate CLI | e2e | e2e | ✅ OK |
-| T40 | Versioned fixture | e2e | e2e | ✅ OK |
-| T41 | Journey acceptance | e2e | e2e | ✅ OK |
-| T42 | Failure acceptance | e2e | e2e | ✅ OK |
-| T43 | Optional corpora | e2e | e2e | ✅ OK |
-| T44 | Topology + CLI current contract | unit + e2e + build | unit + e2e + build | ✅ OK |
+| T37 | Solution-scoped retrieval/publication contract | unit + integration | unit + integration | ✅ OK |
+| T38 | Facade workflow | integration | integration | ✅ OK |
+| T39 | Analyze CLI | e2e | e2e | ✅ OK |
+| T40 | Validate CLI | e2e | e2e | ✅ OK |
+| T41 | Versioned fixture | e2e | e2e | ✅ OK |
+| T42 | Journey acceptance | e2e | e2e | ✅ OK |
+| T43 | Failure acceptance | e2e | e2e | ✅ OK |
+| T44 | Optional corpora | e2e | e2e | ✅ OK |
+| T45 | Topology + CLI current contract | unit + e2e + build | unit + e2e + build | ✅ OK |
 
 No task defers its required tests to a later task. Later E2E tests add acceptance coverage; they do not substitute for the focused tests committed with the component that they exercise.
 
@@ -1251,7 +1280,7 @@ No task defers its required tests to a later task. Later E2E tests add acceptanc
 
 Proposed task tooling:
 
-- MCP: Context7 only for Roslyn (`T9`, `T10`, `T31`) and System.CommandLine (`T38`) API verification; none for the remaining tasks.
+- MCP: Context7 for Roslyn (`T9`, `T10`, `T31`), `System.Text.Json` (`T37`) and System.CommandLine (`T39`) API verification; none for the remaining tasks.
 - Skills: `tlc-spec-driven` throughout; `dotnet-test:code-testing-agent` for test authoring; `dotnet-test:run-tests` for every gate; `dotnet-skills:serialization` for canonical JSON/package readers; `dotnet-skills:csharp-concurrency-patterns` for publication locking; `dotnet-skills:api-design` for the public facade.
 
 The task list was approved by the user on 2026-09-15. Confirm the proposed tool choices and the sequential batch/sub-agent strategy when Execute begins.

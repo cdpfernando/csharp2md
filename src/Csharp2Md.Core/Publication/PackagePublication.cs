@@ -24,7 +24,7 @@ internal static class PackagePublication
             WriteAll(staging, plan.Artifacts);
             EnsureValid(staging);
             var certification = JourneyCertifier.Certify(staging);
-            if (certification.Journeys.Any(journey => journey.Status == JourneyCertificationStatus.Failed)) throw new PackagePublicationException("journey-certification");
+            if (certification.Solutions.SelectMany(solution => solution.Journeys).Any(journey => journey.Status == JourneyCertificationStatus.Failed)) throw new PackagePublicationException("journey-certification");
             Write(staging, "certification.json", CanonicalJson.Write(certification));
             EnsureValid(staging);
             var generation = Path.Combine(output, "generations", plan.PackageDigest);

@@ -18,8 +18,13 @@ public sealed class PackageBuilderTests
     [Fact][Trait("Requirement", "CRT-03")] public void Build_RecordsFilteredReason() => Assert.Equal("retention", Assert.Single(Plan().Measurements.FilteredByReason).Reason);
     [Fact][Trait("Requirement", "EDG-03")] public void Build_FailsBeforePublicationWhenArtifactCeilingIsExceeded() => Assert.Equal("package-budget: 'artifacts'.", Assert.Throws<PackageBudgetExceededException>(() => PackageBuilder.Build(Model(), false, new PackageBudget(1, long.MaxValue))).Message);
     [Fact][Trait("Requirement", "EDG-03")] public void Build_FailsBeforePublicationWhenByteCeilingIsExceeded() => Assert.Equal("package-budget: 'bytes'.", Assert.Throws<PackageBudgetExceededException>(() => PackageBuilder.Build(Model(), false, new PackageBudget(int.MaxValue, 1))).Message);
-    [Fact][Trait("Requirement", "PKG-01")] public void Build_AcceptsMultipleSolutions() { var model=Model(); var extra=new SolutionNavigation(CanonicalIdentity.CreateSolution("other","src/Other.sln"),[new EntityHandle("component:other")]); var plan=PackageBuilder.Build(new RetrievalModel(model.Solutions.Add(extra),model.Dependencies,model.Measures,model.Indexes)); Assert.Equal(2, plan.Manifest.Solutions.Length); }
+    [Fact][Trait("Requirement", "PKG-01")] public void Build_AcceptsMultipleSolutions() { var model=Model(); var extra=new SolutionRetrievalModel(CanonicalIdentity.CreateSolution("other","src/Other.sln"),[new EntityHandle("component:other")], [], []); var plan=PackageBuilder.Build(new RetrievalModel(model.Solutions.Add(extra))); Assert.Equal(2, plan.Manifest.Solutions.Length); }
     [Fact][Trait("Requirement", "STO-04")] public void Build_AssignsOneArtifactPathPerPayload() => Assert.Equal(Plan().Artifacts.Length, Plan().Artifacts.Select(artifact => artifact.Path.Value).Distinct(StringComparer.Ordinal).Count());
     private static PackagePlan Plan() => PackageBuilder.Build(Model());
-    private static RetrievalModel Model() { var solution=CanonicalIdentity.CreateSolution("app", "src/App.sln"); return new RetrievalModel([new SolutionNavigation(solution,[new EntityHandle("component:orders")])],[new AggregatedDependency(AggregationScope.Component,new EntityHandle("component:orders"),new EntityHandle("component:billing"),DependencyCategory.Http,DependencyNature.Direct,1,[],[],[])],[new ScopeMeasures(AggregationScope.Component,new EntityHandle("component:orders"),0,1,0,[],[],new GapCounts(0,0,0))],new NavigationIndexes("identity","roots","outgoing","incoming","contracts","persistence","evidence")); }
+    private static RetrievalModel Model() =>
+        new([new SolutionRetrievalModel(
+            CanonicalIdentity.CreateSolution("app", "src/App.sln"),
+            [new EntityHandle("component:orders")],
+            [new AggregatedDependency(AggregationScope.Component, new EntityHandle("component:orders"), new EntityHandle("component:billing"), DependencyCategory.Http, DependencyNature.Direct, 1, [], [], [])],
+            [new ScopeMeasures(AggregationScope.Component, new EntityHandle("component:orders"), 0, 1, 0, [], [], new GapCounts(0, 0, 0))])]);
 }

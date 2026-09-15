@@ -4,15 +4,11 @@ namespace Csharp2Md.Core.Publication.Certification;
 
 internal static class GraphJourneyCertifier
 {
-    internal static ImmutableArray<JourneyCertification> Certify(MeasuredPackageReader reader) =>
-    [
-        CertifyFlow(reader),
-        CertifyImpact(reader),
-    ];
-
-    private static JourneyCertification CertifyFlow(MeasuredPackageReader reader)
+    internal static JourneyCertification CertifyFlow(MeasuredPackageReader reader, SolutionManifestEntry solution)
     {
-        var dependencies = ReadDependencies(reader, JourneyKind.FollowFlow);
+        ArgumentNullException.ThrowIfNull(reader);
+        ArgumentNullException.ThrowIfNull(solution);
+        var dependencies = ReadDependencies(reader, solution);
         if (dependencies.IsDefaultOrEmpty) return NotApplicable(JourneyKind.FollowFlow, "no-causal-root");
         var categories = dependencies.Select(dependency => dependency.Category).ToHashSet();
         var missing = new[]
@@ -25,27 +21,37 @@ internal static class GraphJourneyCertifier
         return Budget(JourneyKind.FollowFlow, reader.Measurement);
     }
 
-    private static JourneyCertification CertifyImpact(MeasuredPackageReader reader)
+    internal static JourneyCertification CertifyImpact(MeasuredPackageReader reader, SolutionManifestEntry solution)
     {
+        ArgumentNullException.ThrowIfNull(reader);
+        ArgumentNullException.ThrowIfNull(solution);
         reader.OpenArtifact("manifest.json");
-        reader.OpenArtifact(Entry(reader.Manifest, JourneyKind.ReverseImpact));
-        var measuresPath = reader.Manifest.Indexes.Single(index => index.Name == "measures").Path;
+        reader.OpenArtifact(JourneyCertifier.Entry(solution, JourneyKind.ReverseImpact));
+        var measuresPath = solution.Indexes.Single(index => index.Kind == NavigationIndexKind.Measures).EntryPath;
         var measures = CanonicalJson.Read<ImmutableArray<ScopeMeasures>>(reader.OpenArtifact(measuresPath).AsSpan());
         if (measures.IsDefaultOrEmpty) return NotApplicable(JourneyKind.ReverseImpact, "no-impact-root");
         if (measures.All(measure => measure.ReverseImpact.IsDefaultOrEmpty)) return Failed(JourneyKind.ReverseImpact, "missing-terminal:reachable-set");
         return Budget(JourneyKind.ReverseImpact, reader.Measurement);
     }
 
-    private static ImmutableArray<AggregatedDependency> ReadDependencies(MeasuredPackageReader reader, JourneyKind kind)
+    private static ImmutableArray<AggregatedDependency> ReadDependencies(MeasuredPackageReader reader, SolutionManifestEntry solution)
     {
         reader.OpenArtifact("manifest.json");
-        reader.OpenArtifact(Entry(reader.Manifest, kind));
-        foreach (var index in reader.Manifest.Indexes.Where(index => index.Name is "contracts" or "persistence")) reader.OpenArtifact(index.Path);
-        return CanonicalJson.Read<ImmutableArray<AggregatedDependency>>(reader.OpenArtifact(Entry(reader.Manifest, JourneyKind.FollowFlow)).AsSpan());
+        reader.OpenArtifact(JourneyCertifier.Entry(solution, JourneyKind.FollowFlow));
+        foreach (var index in solution.Indexes.Where(index => index.Kind is NavigationIndexKind.Contracts or NavigationIndexKind.Persistence))
+        {
+            reader.OpenArtifact(index.EntryPath);
+        }
+
+        return CanonicalJson.Read<ImmutableArray<AggregatedDependency>>(
+            reader.OpenArtifact(JourneyCertifier.Entry(solution, JourneyKind.FollowFlow)).AsSpan());
     }
 
-    private static string Entry(PackageManifest manifest, JourneyKind kind) => manifest.Journeys.Single(journey => journey.Kind == kind).EntryPath;
-    private static JourneyCertification Budget(JourneyKind kind, JourneyMeasurement measurement) => measurement.Reads > 32 ? Failed(kind, $"reads-exceeded:{measurement.Reads}>32") : measurement.Tokens > 125_000 ? Failed(kind, $"tokens-exceeded:{measurement.Tokens}>125000") : new JourneyCertification(kind, JourneyCertificationStatus.Passed, $"reads:{measurement.Reads};bytes:{measurement.Bytes};tokens:{measurement.Tokens}");
+    private static JourneyCertification Budget(JourneyKind kind, JourneyMeasurement measurement) =>
+        measurement.Reads > 32 ? Failed(kind, $"reads-exceeded:{measurement.Reads}>32") :
+        measurement.Tokens > 125_000 ? Failed(kind, $"tokens-exceeded:{measurement.Tokens}>125000") :
+        new JourneyCertification(kind, JourneyCertificationStatus.Passed, $"reads:{measurement.Reads};bytes:{measurement.Bytes};tokens:{measurement.Tokens}");
+
     private static JourneyCertification NotApplicable(JourneyKind kind, string reason) => new(kind, JourneyCertificationStatus.NotApplicable, $"not_applicable:{reason}");
     private static JourneyCertification Failed(JourneyKind kind, string detail) => new(kind, JourneyCertificationStatus.Failed, detail);
 }

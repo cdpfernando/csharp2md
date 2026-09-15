@@ -59,7 +59,7 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 
 **Acceptance Criteria**:
 
-1. **PKG-01:** The gerador SHALL publicar um único manifesto de entrada que liste as soluções, componentes, Deployment Units, pontos de entrada, operações de fronteira e links para as quatro jornadas.
+1. **PKG-01:** The gerador SHALL publicar um único manifesto de entrada agrupado por solução; cada grupo SHALL declarar seu `SolutionId`, caminho lógico, raízes, índices e as quatro jornadas.
 2. **PKG-02:** The pacote padrão SHALL iniciar o grafo retido em Component, Deployment Unit, Entry Point e Boundary Operation comprovados.
 3. **PKG-03:** The pacote padrão SHALL reter apenas fatos, relações, observações e evidências que sustentem uma jornada retida ou expliquem uma lacuna relevante dessa jornada.
 4. **PKG-04:** The pacote padrão SHALL publicar Candidate, Unknown e Open Frontier somente quando o item puder alterar ou interromper uma jornada retida.
@@ -124,7 +124,7 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 
 **Acceptance Criteria**:
 
-1. **NAV-01:** The manifesto SHALL apontar diretamente para índices de identidade, ponto de entrada/operação, outgoing, incoming, contrato, persistência e evidência/disposição.
+1. **NAV-01:** Para cada solução, the manifesto SHALL declarar exatamente um índice de identidade, roots, outgoing, incoming, contrato, persistência, evidência/disposição e medidas; cada jornada SHALL referenciar seu índice de entrada por tipo, e cada índice SHALL apontar para sua entrada lógica sem exigir escolha de shard.
 2. **NAV-02:** The resumo Markdown SHALL apresentar componentes, Deployment Units, ciclos, maiores fan-in e fan-out e as quatro jornadas disponíveis.
 3. **NAV-03:** The páginas Markdown de componentes, serviços e documentos retidos SHALL apresentar outgoing, incoming, medidas, efeitos e lacunas com links Markdown existentes.
 4. **NAV-04:** WHEN o consumidor seguir uma jornada Markdown normal THEN o pacote SHALL dispensar enumeração de diretório, escolha manual de shard e decodificação de ID.
@@ -152,7 +152,7 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 3. **VAR-03:** WHEN ocorrências compatíveis de várias variantes representarem a mesma entidade lógica THEN o analisador SHALL produzir uma identidade lógica única.
 4. **VAR-04:** The localizador e a evidência de uma ocorrência SHALL declarar a Analysis Variant que os produziu.
 5. **VAR-05:** IF duas ocorrências incompatíveis surgirem dentro da mesma Analysis Variant THEN o analisador SHALL rejeitar a colisão estrutural.
-6. **VAR-06:** WHEN várias soluções forem analisadas no mesmo lote THEN identidades, variantes, deduplicação e handles SHALL permanecer isolados por pacote de solução.
+6. **VAR-06:** WHEN várias soluções forem analisadas no mesmo lote THEN identidades, variantes, deduplicação, handles, raízes, dependências e medidas SHALL permanecer estruturalmente isolados por solução, inclusive quando handles e tipos de índice coincidirem.
 
 **Independent Test**: Usar uma fixture com projeto web e cliente multi-target, identidade compartilhada e divergência real controlada.
 
@@ -207,9 +207,9 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 
 **Acceptance Criteria**:
 
-1. **CRT-01:** WHEN uma jornada for aplicável ao corpus THEN a certificação SHALL exercitá-la e falhar se ela não alcançar a resposta esperada.
+1. **CRT-01:** WHEN uma jornada for aplicável ao corpus THEN a certificação SHALL exercitá-la separadamente em cada solução e falhar se qualquer solução não alcançar a resposta esperada.
 2. **CRT-02:** WHEN uma jornada não for aplicável ao corpus THEN a certificação SHALL registrá-la como não aplicável com motivo, sem marcá-la como aprovada.
-3. **CRT-03:** The pacote SHALL registrar métricas separadas de extração e publicação, itens filtrados por motivo e medidas por família, jornada e corpus.
+3. **CRT-03:** The pacote SHALL registrar métricas separadas de extração e publicação, itens filtrados por motivo e medidas por família, solução, jornada e corpus; cada budget de jornada SHALL iniciar com medição zerada.
 4. **CRT-04:** WHEN eShopOnContainers estiver presente THEN o pacote comprometido SHALL conter no máximo 1.500 arquivos e 64 MiB.
 5. **CRT-05:** WHEN Pitstop estiver presente THEN o pacote comprometido SHALL conter no máximo 750 arquivos e 25 MiB.
 6. **CRT-06:** WHEN eShop estiver presente THEN a análise SHALL concluir sem colisão causada por aplicar uma variante de projeto a outro projeto.

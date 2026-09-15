@@ -120,18 +120,16 @@ public sealed class RetrievalContractTests
     [Trait("Requirement", "NAV-05")]
     public void RetrievalModel_OwnsDependenciesAndMeasuresFromTheSameRetainedSet()
     {
-        var model = new RetrievalModel(
-            ImmutableArray.Create(new SolutionNavigation(
-                new SolutionIdentity("solution:acme", "src/Acme.sln"),
-                ImmutableArray.Create(new EntityHandle("component:orders")))),
+        var model = new RetrievalModel(ImmutableArray.Create(new SolutionRetrievalModel(
+            new SolutionIdentity("solution:acme", "src/Acme.sln"),
+            ImmutableArray.Create(new EntityHandle("component:orders")),
             ImmutableArray.Create(Dependency(DependencyNature.Direct)),
-            ImmutableArray.Create(Measures(1, 1, new GapCounts(0, 0, 0))),
-            new NavigationIndexes("identity", "roots", "outgoing", "incoming", "contracts", "persistence", "evidence"));
+            ImmutableArray.Create(Measures(1, 1, new GapCounts(0, 0, 0))))));
 
-        Assert.Equal("component:orders", Assert.Single(Assert.Single(model.Solutions).Roots).Value);
-        Assert.Equal(DependencyNature.Direct, Assert.Single(model.Dependencies).Nature);
-        Assert.Equal(1, Assert.Single(model.Measures).FanIn);
-        Assert.Equal("identity", model.Indexes.Identity);
+        var solution = Assert.Single(model.Solutions);
+        Assert.Equal("component:orders", Assert.Single(solution.Roots).Value);
+        Assert.Equal(DependencyNature.Direct, Assert.Single(solution.Dependencies).Nature);
+        Assert.Equal(1, Assert.Single(solution.Measures).FanIn);
     }
 
     [Theory]
@@ -174,15 +172,9 @@ public sealed class RetrievalContractTests
     [Trait("Requirement", "NAV-05")]
     public void RetrievalModel_DefaultCollections_AreOwnedEmptyArrays()
     {
-        var model = new RetrievalModel(
-            default,
-            default,
-            default,
-            new NavigationIndexes("identity", "roots", "outgoing", "incoming", "contracts", "persistence", "evidence"));
+        var model = new RetrievalModel(default);
 
-        Assert.False(model.Dependencies.IsDefault);
-        Assert.Empty(model.Dependencies);
-        Assert.Empty(model.Measures);
+        Assert.False(model.Solutions.IsDefault);
         Assert.Empty(model.Solutions);
     }
 

@@ -257,79 +257,46 @@ internal sealed record ScopeMeasures
     }
 }
 
-internal sealed record NavigationIndexes
-{
-    public string Identity { get; }
-
-    public string Roots { get; }
-
-    public string Outgoing { get; }
-
-    public string Incoming { get; }
-
-    public string Contracts { get; }
-
-    public string Persistence { get; }
-
-    public string Evidence { get; }
-
-    public NavigationIndexes(
-        string identity,
-        string roots,
-        string outgoing,
-        string incoming,
-        string contracts,
-        string persistence,
-        string evidence)
-    {
-        Identity = CanonicalText.Require(identity, nameof(identity));
-        Roots = CanonicalText.Require(roots, nameof(roots));
-        Outgoing = CanonicalText.Require(outgoing, nameof(outgoing));
-        Incoming = CanonicalText.Require(incoming, nameof(incoming));
-        Contracts = CanonicalText.Require(contracts, nameof(contracts));
-        Persistence = CanonicalText.Require(persistence, nameof(persistence));
-        Evidence = CanonicalText.Require(evidence, nameof(evidence));
-    }
-}
-
-internal sealed record SolutionNavigation
+internal sealed record SolutionRetrievalModel
 {
     public SolutionIdentity Solution { get; }
 
     public ImmutableArray<EntityHandle> Roots { get; }
 
-    public SolutionNavigation(SolutionIdentity solution, ImmutableArray<EntityHandle> roots)
+    public ImmutableArray<AggregatedDependency> Dependencies { get; }
+
+    public ImmutableArray<ScopeMeasures> Measures { get; }
+
+    public RetainedGraph? RetainedGraph { get; }
+
+    public SolutionRetrievalModel(
+        SolutionIdentity solution,
+        ImmutableArray<EntityHandle> roots,
+        ImmutableArray<AggregatedDependency> dependencies,
+        ImmutableArray<ScopeMeasures> measures,
+        RetainedGraph? retainedGraph = null)
     {
         ArgumentNullException.ThrowIfNull(solution);
         Solution = solution;
         Roots = roots.IsDefault ? ImmutableArray<EntityHandle>.Empty : ImmutableArray.CreateRange(roots);
+        Dependencies = dependencies.IsDefault ? ImmutableArray<AggregatedDependency>.Empty : ImmutableArray.CreateRange(dependencies);
+        Measures = measures.IsDefault ? ImmutableArray<ScopeMeasures>.Empty : ImmutableArray.CreateRange(measures);
+        RetainedGraph = retainedGraph;
     }
 }
 
 internal sealed record RetrievalModel
 {
-    public ImmutableArray<SolutionNavigation> Solutions { get; }
+    public ImmutableArray<SolutionRetrievalModel> Solutions { get; }
 
-    public ImmutableArray<AggregatedDependency> Dependencies { get; }
-
-    public ImmutableArray<ScopeMeasures> Measures { get; }
-
-    public NavigationIndexes Indexes { get; }
-
-    public RetainedGraph? RetainedGraph { get; }
-
-    public RetrievalModel(
-        ImmutableArray<SolutionNavigation> solutions,
-        ImmutableArray<AggregatedDependency> dependencies,
-        ImmutableArray<ScopeMeasures> measures,
-        NavigationIndexes indexes,
-        RetainedGraph? retainedGraph = null)
+    public RetrievalModel(ImmutableArray<SolutionRetrievalModel> solutions)
     {
-        ArgumentNullException.ThrowIfNull(indexes);
-        Solutions = solutions.IsDefault ? ImmutableArray<SolutionNavigation>.Empty : ImmutableArray.CreateRange(solutions);
-        Dependencies = dependencies.IsDefault ? ImmutableArray<AggregatedDependency>.Empty : ImmutableArray.CreateRange(dependencies);
-        Measures = measures.IsDefault ? ImmutableArray<ScopeMeasures>.Empty : ImmutableArray.CreateRange(measures);
-        Indexes = indexes;
-        RetainedGraph = retainedGraph;
+        var owned = solutions.IsDefault ? ImmutableArray<SolutionRetrievalModel>.Empty : ImmutableArray.CreateRange(solutions);
+        if (owned.Select(solution => solution.Solution.CanonicalKey).Distinct(StringComparer.Ordinal).Count() != owned.Length)
+        {
+            throw new ArgumentException("A retrieval model cannot contain the same solution more than once.", nameof(solutions));
+        }
+
+        Solutions = owned;
     }
 }

@@ -225,7 +225,7 @@ Toda Confirmed Relation retida precisa resolver origem, destino e ao menos uma e
 
 #### Retrieval model and renderers
 
-`RetrievalModel` é o único input dos dois renderers:
+`RetrievalModel` é o único input dos dois renderers. Seu agrupamento por solução é estrutural: raízes, dependências, medidas e grafo retido pertencem a um único `SolutionRetrievalModel` e nunca existem em coleções globais:
 
 - `MachineArtifactWriter` produz tabelas, grafo, índices, dependências, medidas e impacto.
 - `MarkdownRenderer` produz resumo, páginas de Component, Deployment Unit apresentada como serviço e documentos retidos.
@@ -355,11 +355,17 @@ internal sealed record ScopeMeasures(
     GapCounts Gaps);
 
 internal sealed record RetrievalModel(
-    ImmutableArray<SolutionNavigation> Solutions,
+    ImmutableArray<SolutionRetrievalModel> Solutions);
+
+internal sealed record SolutionRetrievalModel(
+    SolutionIdentity Solution,
+    ImmutableArray<EntityHandle> Roots,
     ImmutableArray<AggregatedDependency> Dependencies,
     ImmutableArray<ScopeMeasures> Measures,
-    NavigationIndexes Indexes);
+    RetainedGraph? RetainedGraph);
 ```
+
+`RetrievalModel` não contém paths nem `NavigationIndexes`. O writer é dono do layout e deriva os índices a partir dos dados da solução.
 
 ### Identity and table models
 
@@ -406,6 +412,34 @@ internal sealed record CommittedPackage(
     string PackageDirectory,
     string PackageDigest,
     PackageCertification Certification);
+
+internal sealed record PackageManifest(
+    string TokenEstimator,
+    double TokenDivisor,
+    bool IncludeTests,
+    ImmutableArray<SolutionManifestEntry> Solutions);
+
+internal sealed record SolutionManifestEntry(
+    SolutionId Id,
+    string LogicalRelativePath,
+    ImmutableArray<RootManifestEntry> Roots,
+    ImmutableArray<IndexManifestEntry> Indexes,
+    ImmutableArray<JourneyManifestEntry> Journeys);
+
+internal sealed record IndexManifestEntry(
+    NavigationIndexKind Kind,
+    string EntryPath);
+
+internal sealed record JourneyManifestEntry(
+    JourneyKind Kind,
+    NavigationIndexKind EntryIndex);
+
+internal sealed record PackageCertification(
+    ImmutableArray<SolutionCertification> Solutions);
+
+internal sealed record SolutionCertification(
+    SolutionId SolutionId,
+    ImmutableArray<JourneyCertification> Journeys);
 ```
 
 O plano contém os bytes finais de todos os artefatos. Não existe fragmento diferido depois de `Build`. O staging pode escrever em streaming, mas não pode descobrir novos artefatos nem mudar payload fora do ciclo explícito de certificação.
@@ -455,7 +489,9 @@ O plano contém os bytes finais de todos os artefatos. Não existe fragmento dif
                 └── source/<document-handle>.<extension>
 ```
 
-`manifest.json` lista soluções e suas raízes arquiteturais com nome legível, handle, citação de máquina e link Markdown. Também aponta diretamente para identidade, roots, outgoing, incoming, contratos, persistência, evidência/disposição e as quatro jornadas.
+`manifest.json` agrupa cada solução por `SolutionId`. O mesmo ID público tipado `sol_...` nomeia o diretório da solução. Cada grupo lista raízes arquiteturais com nome legível, handle, citação de máquina e link Markdown, além de exatamente um índice de cada tipo e quatro jornadas. A jornada referencia semanticamente `EntryIndex`; somente o índice contém `EntryPath`, que aponta para o índice-raiz/router lógico e nunca para um shard arbitrário.
+
+`NavigationIndexKind`, `JourneyKind` e seus valores persistidos são strings estáveis em snake case (`identity`, `outgoing`, `follow_flow`), nunca ordinais numéricos. O reader resolve primeiro `SolutionId -> SolutionManifestEntry` e depois `NavigationIndexKind -> IndexManifestEntry`.
 
 Bulk JSON usa target de 64 KiB e hard ceiling de 96 KiB por shard. O packer ordena registros pela chave canônica, mede o JSON canônico real e cria shards ordinais estáveis. Um registro bulk maior que o hard ceiling falha como `oversized-record`. Fontes citadas e páginas Markdown são artefatos de navegação, não registros bulk; continuam sujeitas aos budgets das jornadas e do corpus.
 
@@ -478,7 +514,7 @@ Arquivos `<range>` usam sequência ordinal determinística, não prefixo variáv
 
 ## Navigation and Certification
 
-`JourneyCertifier` lê somente por um `MeasuredPackageReader`. Cada `Open` registra path, bytes UTF-8 e uma leitura. O certifier não acessa diretório diretamente.
+`JourneyCertifier` lê somente por um `MeasuredPackageReader`. Cada `Open` registra path, bytes UTF-8 e uma leitura. O certifier não acessa diretório diretamente. Ele certifica todas as soluções e reinicia a medição antes de cada jornada, de modo que corrupção ou excesso de budget em qualquer solução reprove o pacote sem contaminar a medição das demais jornadas.
 
 | Journey | Start | Required terminal | Budget |
 | --- | --- | --- | --- |
@@ -619,6 +655,7 @@ Todos os 71 requisitos têm ownership de design. Tasks deverá expandir esta tab
 | Publication commit | Gerações imutáveis e troca do manifest raiz | Reduz o commit a um ponto atômico e mantém a geração anterior intacta até a nova ser validada. |
 | Publication plan | Todos os payloads completos antes de staging | Elimina rotas deferred que escapem da validação. |
 | Human/machine equivalence | Ambos derivam de `RetrievalModel`; validator rerenderiza Markdown | Evita duas semânticas e torna divergência detectável após reidratação. |
+| Isolamento multi-solução | `RetrievalModel`, manifesto e certificação são agrupados por `SolutionId` | Impede colisão de handles/tipos de índice e vazamento de raízes, dependências ou medidas entre soluções. |
 | Shard sizing | 64 KiB target, 96 KiB hard ceiling para bulk JSON | Reduz arquivos sem produzir shards grandes demais para as jornadas; bytes reais decidem packing. |
 | Transitive knowledge | Impact e alcance são medidas/projeções, nunca Confirmed Relations | Preserva a fronteira factual e mantém causalidade observada separada de travessia. |
 | Filesystem testing | Diretórios temporários reais, sem `IFileSystem` público | Filesystem é local-substitutable; uma interface adicional seria um seam hipotético. |

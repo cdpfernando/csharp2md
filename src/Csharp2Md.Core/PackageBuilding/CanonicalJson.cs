@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.PackageBuilding;
+using Csharp2Md.Core.PackageBuilding.Identity;
 using Csharp2Md.Core.Publication;
 
 namespace Csharp2Md.Core.PackageBuilding;
@@ -73,13 +74,13 @@ internal static class CanonicalJson
 [JsonSerializable(typeof(FilteredCount))]
 [JsonSerializable(typeof(ExtractionMeasurements))]
 [JsonSerializable(typeof(PackageCertification))]
+[JsonSerializable(typeof(SolutionCertification))]
 [JsonSerializable(typeof(JourneyCertification))]
 [JsonSerializable(typeof(RetrievalModel))]
-[JsonSerializable(typeof(SolutionNavigation))]
+[JsonSerializable(typeof(SolutionRetrievalModel))]
 [JsonSerializable(typeof(AggregatedDependency))]
 [JsonSerializable(typeof(ScopeMeasures))]
 [JsonSerializable(typeof(GapCounts))]
-[JsonSerializable(typeof(NavigationIndexes))]
 [JsonSerializable(typeof(ImpactTarget))]
 [JsonSerializable(typeof(EntityHandle))]
 [JsonSerializable(typeof(VariantHandle))]
@@ -87,6 +88,8 @@ internal static class CanonicalJson
 [JsonSerializable(typeof(EvidenceHandle))]
 [JsonSerializable(typeof(CycleHandle))]
 [JsonSerializable(typeof(SolutionIdentity))]
+[JsonSerializable(typeof(SolutionId))]
+[JsonSerializable(typeof(EvidenceRecord))]
 [JsonSerializable(typeof(EngineDiagnostic))]
 [JsonSerializable(typeof(ImmutableArray<SolutionManifestEntry>))]
 [JsonSerializable(typeof(ImmutableArray<RootManifestEntry>))]
@@ -94,7 +97,8 @@ internal static class CanonicalJson
 [JsonSerializable(typeof(ImmutableArray<JourneyManifestEntry>))]
 [JsonSerializable(typeof(ImmutableArray<FilteredCount>))]
 [JsonSerializable(typeof(ImmutableArray<JourneyCertification>))]
-[JsonSerializable(typeof(ImmutableArray<SolutionNavigation>))]
+[JsonSerializable(typeof(ImmutableArray<SolutionCertification>))]
+[JsonSerializable(typeof(ImmutableArray<SolutionRetrievalModel>))]
 [JsonSerializable(typeof(ImmutableArray<AggregatedDependency>))]
 [JsonSerializable(typeof(ImmutableArray<ScopeMeasures>))]
 [JsonSerializable(typeof(ImmutableArray<ImpactTarget>))]
@@ -103,4 +107,6 @@ internal static class CanonicalJson
 [JsonSerializable(typeof(ImmutableArray<RelationHandle>))]
 [JsonSerializable(typeof(ImmutableArray<EvidenceHandle>))]
 [JsonSerializable(typeof(ImmutableArray<CycleHandle>))]
+[JsonSerializable(typeof(ImmutableArray<SolutionIdentity>))]
+[JsonSerializable(typeof(ImmutableArray<EvidenceRecord>))]
 internal partial class CoreJsonContext : JsonSerializerContext;

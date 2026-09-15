@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Csharp2Md.Core.PackageBuilding.Identity;
 using Csharp2Md.Core.Publication;
 
 namespace Csharp2Md.Core.PackageBuilding.Rendering;
@@ -12,9 +13,14 @@ internal static class MarkdownRenderer
         ArgumentNullException.ThrowIfNull(manifest);
         var artifacts = ImmutableArray.CreateBuilder<PlannedArtifact>();
         Add(artifacts, "markdown/index.md", Summary(model, manifest), 1);
-        foreach (var root in manifest.Roots.OrderBy(root => root.MarkdownPath, StringComparer.Ordinal))
+        var solutions = SolutionsById(model);
+        foreach (var manifestSolution in manifest.Solutions)
         {
-            Add(artifacts, root.MarkdownPath, EntityPage(model, root), 1);
+            var solution = solutions[manifestSolution.Id];
+            foreach (var root in manifestSolution.Roots.OrderBy(root => root.MarkdownPath, StringComparer.Ordinal))
+            {
+                Add(artifacts, root.MarkdownPath, EntityPage(solution, root), 1);
+            }
         }
 
         return artifacts.ToImmutable();
@@ -23,17 +29,17 @@ internal static class MarkdownRenderer
     private static string Summary(RetrievalModel model, PackageManifest manifest)
     {
         var lines = new List<string> { "# Knowledge package", "", "## Components and Deployment Units" };
-        lines.AddRange(manifest.Roots.OrderBy(root => root.DisplayName, StringComparer.Ordinal).Select(root => $"- [{Escape(root.DisplayName)}]({root.MarkdownPath})"));
+        lines.AddRange(manifest.Solutions.SelectMany(solution => solution.Roots.Select(root => (solution.Id, Root: root))).OrderBy(item => item.Id.Value, StringComparer.Ordinal).ThenBy(item => item.Root.DisplayName, StringComparer.Ordinal).Select(item => $"- [{Escape(item.Root.DisplayName)}]({item.Root.MarkdownPath})"));
         lines.AddRange(["", "## Top fan-in and fan-out"]);
-        lines.AddRange(model.Measures.OrderByDescending(measure => measure.FanIn).ThenBy(measure => measure.Entity.Value, StringComparer.Ordinal).Take(5).Select(measure => $"- {Escape(measure.Entity.Value)}: fan-in {measure.FanIn}, fan-out {measure.FanOut}"));
+        lines.AddRange(model.Solutions.SelectMany(solution => solution.Measures).OrderByDescending(measure => measure.FanIn).ThenBy(measure => measure.Entity.Value, StringComparer.Ordinal).Take(5).Select(measure => $"- {Escape(measure.Entity.Value)}: fan-in {measure.FanIn}, fan-out {measure.FanOut}"));
         lines.AddRange(["", "## Cycles"]);
-        lines.AddRange(model.Measures.SelectMany(measure => measure.Cycles).Distinct().OrderBy(cycle => cycle.Value, StringComparer.Ordinal).Select(cycle => $"- {Escape(cycle.Value)}"));
+        lines.AddRange(model.Solutions.SelectMany(solution => solution.Measures).SelectMany(measure => measure.Cycles).Distinct().OrderBy(cycle => cycle.Value, StringComparer.Ordinal).Select(cycle => $"- {Escape(cycle.Value)}"));
         lines.AddRange(["", "## Journeys"]);
-        lines.AddRange(manifest.Journeys.OrderBy(journey => journey.Kind).Select(journey => $"- [{journey.Kind}]({journey.EntryPath})"));
+        lines.AddRange(manifest.Solutions.SelectMany(solution => solution.Journeys.Select(journey => (Solution: solution, Journey: journey))).OrderBy(item => item.Solution.Id.Value, StringComparer.Ordinal).ThenBy(item => item.Journey.Kind).Select(item => $"- {item.Solution.Id.Value}: {item.Journey.Kind} via {item.Journey.EntryIndex}"));
         return string.Join('\n', lines) + "\n";
     }
 
-    private static string EntityPage(RetrievalModel model, RootManifestEntry root)
+    private static string EntityPage(SolutionRetrievalModel model, RootManifestEntry root)
     {
         var entity = root.DisplayName;
         var outgoing = model.Dependencies.Where(dependency => dependency.Source.Value == entity).OrderBy(dependency => dependency.Target.Value, StringComparer.Ordinal).ToArray();
@@ -56,4 +62,10 @@ internal static class MarkdownRenderer
     }
 
     private static string Escape(string value) => value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("[", "\\[", StringComparison.Ordinal).Replace("]", "\\]", StringComparison.Ordinal);
+
+    private static IReadOnlyDictionary<SolutionId, SolutionRetrievalModel> SolutionsById(RetrievalModel model)
+    {
+        var registry = new PublicIdRegistry();
+        return model.Solutions.ToDictionary(solution => registry.RegisterSolution(solution.Solution));
+    }
 }

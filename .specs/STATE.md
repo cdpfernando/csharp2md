@@ -29,10 +29,10 @@
 ## Handoff
 
 - **Feature**: `pacote-conhecimento-util-e-confiavel` / `.specs/features/pacote-conhecimento-util-e-confiavel`
-- **Phase / Task**: Execute / Batch 2 — T12 complete; next T13
-- **Completed**: T1-T12; interim Core-only build gate until T44 (user-approved)
+- **Phase / Task**: Execute / Batch 5; T37 complete, next is T38
+- **Completed**: T1-T37; T37 solution-scoped retrieval/publication commit pending this handoff update
 - **In-progress** (file:line): none
-- **Next step**: T13 CausalRelationExtractor
-- **Blockers**: full-solution legacy suites still fail until T44; sub-agents blocked by usage limits (executing inline)
-- **Uncommitted files**: `AGENTS.md`, `docs/specs/pacote-conhecimento-util-e-confiavel.md`, `research/2026-09-15-agent-harness-portability.md`
+- **Next step**: Execute T38 (wire KnowledgeEngine), then T39-T45 and the independent Verifier
+- **Blockers**: none for T38; interim Core-only test gate remains approved until T45; full legacy suites still expected to fail until cutover
+- **Uncommitted files**: see git status after T37 commit; leftover docs/research/AGENTS edits may remain outside the feature commit
 - **Branch**: `feature/simplif`
