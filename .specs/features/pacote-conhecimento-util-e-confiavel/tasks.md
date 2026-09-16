@@ -997,14 +997,19 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] CLI exposes only current analyze/validate behavior; compose and version/compatibility dispatch are absent.
-- [ ] Validate reads only the package, returns the same certification interpretation as pre-commit validation and never mutates it.
-- [ ] At least 10 command-surface, offline-source, corruption and exit-code cases pass.
-- [ ] Full gate passes.
+- [x] CLI exposes only current analyze/validate behavior; compose and version/compatibility dispatch are absent.
+- [x] Validate reads only the package, returns the same certification interpretation as pre-commit validation and never mutates it.
+- [x] At least 10 command-surface, offline-source, corruption and exit-code cases pass.
+- [x] Full gate passes under the approved pre-T45 legacy-suite exception.
 
 **Tests**: e2e — ≥10 focused cases  
 **Gate**: full  
 **Commit**: `feat(cli): validate current package contract`
+
+**Status**: Complete
+**Gate note**: `KnowledgeValidateCommandTests` passed (10 tests). The declared full solution gate was run; retained legacy test projects fail only on removed compose/version/compatibility contracts and the missing superseded taxonomy spec. The approved interim exception remains in effect until T45 removes those projects and tests.
+
+**Adequacy**: PKG-10 is asserted by `KnowledgeValidateCommandTests.cs:18` and `:146-151`; PUB-03/PUB-04 validation delegation, immutable input and structured outcomes are asserted by `:59`, `:82-83`, `:105` and `:127-134`. Every focused test maps to those task criteria; no shallow or speculative assertions were added.
 
 ### T41: Expand the versioned synthetic fixture
 
