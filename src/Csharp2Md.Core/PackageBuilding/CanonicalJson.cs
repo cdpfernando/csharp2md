@@ -86,6 +86,8 @@ internal static class CanonicalJson
 [JsonSerializable(typeof(SolutionRetrievalModel))]
 [JsonSerializable(typeof(NavigationIndexData))]
 [JsonSerializable(typeof(NavigationIndexEntry))]
+[JsonSerializable(typeof(EvidenceIndexData))]
+[JsonSerializable(typeof(EvidenceShardEntry))]
 [JsonSerializable(typeof(DependencyPayload))]
 [JsonSerializable(typeof(StoredRelation))]
 [JsonSerializable(typeof(AggregatedDependency))]
@@ -118,5 +120,6 @@ internal static class CanonicalJson
 [JsonSerializable(typeof(ImmutableArray<EvidenceHandle>))]
 [JsonSerializable(typeof(ImmutableArray<CycleHandle>))]
 [JsonSerializable(typeof(ImmutableArray<SolutionIdentity>))]
+[JsonSerializable(typeof(ImmutableArray<EvidenceShardEntry>))]
 [JsonSerializable(typeof(ImmutableArray<EvidenceRecord>))]
 internal partial class CoreJsonContext : JsonSerializerContext;

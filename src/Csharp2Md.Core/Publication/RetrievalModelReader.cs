@@ -41,7 +41,7 @@ internal static class RetrievalModelReader
             }
 
             var payload = Read<DependencyPayload>(artifacts, outgoing.ArtifactPath);
-            var evidenceRows = Read<ImmutableArray<EvidenceRecord>>(artifacts, indexes[NavigationIndexKind.Evidence]);
+            var evidenceRows = ReadEvidenceTable(artifacts, indexes[NavigationIndexKind.Evidence]);
             if (!payload.Evidence.SequenceEqual(evidenceRows.Select(item => item.CanonicalKey), StringComparer.Ordinal))
                 throw new PackageCorruptionException(indexes[NavigationIndexKind.Evidence]);
             var dependencies = ExpandDependencies(payload, identities[0].CanonicalKey, outgoing.ArtifactPath);
@@ -82,6 +82,29 @@ internal static class RetrievalModelReader
                 throw new PackageCorruptionException(artifact.Path.Value);
             }
         }
+    }
+
+    private static ImmutableArray<EvidenceRecord> ReadEvidenceTable(IReadOnlyDictionary<string, ImmutableArray<byte>> artifacts, string indexPath)
+    {
+        var index = Read<EvidenceIndexData>(artifacts, indexPath);
+        var rows = ImmutableArray.CreateBuilder<EvidenceRecord>();
+        foreach (var shard in index.Shards)
+        {
+            if (shard.FirstOrdinal != rows.Count)
+            {
+                throw new PackageCorruptionException(indexPath);
+            }
+
+            var records = Read<ImmutableArray<EvidenceRecord>>(artifacts, shard.ArtifactPath);
+            if (records.Length != shard.Count)
+            {
+                throw new PackageCorruptionException(shard.ArtifactPath);
+            }
+
+            rows.AddRange(records);
+        }
+
+        return rows.ToImmutable();
     }
 
     private static IReadOnlyDictionary<NavigationIndexKind, string> ResolveIndexes(SolutionManifestEntry entry)

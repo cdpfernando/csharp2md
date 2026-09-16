@@ -1,4 +1,6 @@
+using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.PackageBuilding;
+using Csharp2Md.Core.PackageBuilding.Rendering;
 
 namespace Csharp2Md.Core.Publication.Certification;
 
@@ -99,15 +101,28 @@ internal static class JourneyCertifier
 
     private static JourneyCertification CertifyEvidence(MeasuredPackageReader reader, SolutionManifestEntry solution)
     {
-        if (solution.Indexes.All(index => index.Kind != NavigationIndexKind.Evidence))
-        {
-            return NotApplicable(JourneyKind.EvidenceDisposition, "no-evidence-index");
-        }
-
         try
         {
             reader.OpenArtifact("manifest.json");
-            reader.OpenArtifact(Entry(solution, JourneyKind.EvidenceDisposition));
+            var index = CanonicalJson.Read<EvidenceIndexData>(reader.OpenArtifact(Entry(solution, JourneyKind.EvidenceDisposition)).AsSpan());
+            if (index.Shards.IsDefaultOrEmpty)
+            {
+                return NotApplicable(JourneyKind.EvidenceDisposition, "no-evidence-index");
+            }
+
+            const int selected = 0;
+            var shard = index.Shards.SingleOrDefault(entry => selected >= entry.FirstOrdinal && selected < entry.FirstOrdinal + entry.Count);
+            if (shard is null)
+            {
+                return Failed(JourneyKind.EvidenceDisposition, "missing-terminal:evidence-shard");
+            }
+
+            var records = CanonicalJson.Read<ImmutableArray<EvidenceRecord>>(reader.OpenArtifact(shard.ArtifactPath).AsSpan());
+            if (selected - shard.FirstOrdinal >= records.Length)
+            {
+                return Failed(JourneyKind.EvidenceDisposition, "missing-terminal:evidence-record");
+            }
+
             return Budget(JourneyKind.EvidenceDisposition, reader.Measurement, 12, 25_000);
         }
         catch (FileNotFoundException)

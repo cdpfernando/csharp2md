@@ -1204,13 +1204,18 @@ T46-T50 were added after T43 was complete, so they carry higher numbers than the
 
 **Done when**:
 
-- [ ] The evidence entry index resolves a selected evidence record or disposition within 12 reads and 25,000 estimated tokens.
-- [ ] The index does not repeat the full evidence payload and rejects a broken pointer during validation.
-- [ ] Pitstop's evidence journey passes when its optional clone is present; quick gate passes.
+- [x] The evidence entry index resolves a selected evidence record or disposition within 12 reads and 25,000 estimated tokens.
+- [x] The index does not repeat the full evidence payload and rejects a broken pointer during validation.
+- [x] Pitstop's evidence journey passes when its optional clone is present; quick gate passes.
 
 **Tests**: unit + integration — ≥6 index/resolution/budget cases  
 **Gate**: quick + Pitstop journey when present  
 **Commit**: `fix(publication): bound evidence journey reads`
+
+**Status**: Complete
+**Gate note**: Core Release quick gate passed: 531 passed, 0 failed, 0 skipped. `KnowledgePackageJourneyTests` and `KnowledgePackageFailureTests` passed 32 of 32 cases. Pitstop's evidence journey now passes at 3 reads and 17,572 tokens, down from `tokens-exceeded:372295>25000`; its plan holds 135 artifacts against the 750-file ceiling. Publication still rejects Pitstop on `FollowFlow:missing-terminal:contracts`, which no task owns and which T44 needs settled.
+**Deviation**: `MachineArtifactWriter.cs:19-22` packs the evidence table at 32 KiB instead of the 64 KiB bulk target in `design.md:496`. At 64 KiB the journey measured 102,050 bytes against NAV-10's 100,000-byte ceiling; the manifest alone is 33,899 bytes for Pitstop. The `ShardPacker` default is unchanged for every other family.
+**Adequacy**: `EvidenceEntryIndexTests.cs:122-125` asserts the journey passes at 3 reads and within 25,000 tokens for both a single-shard and a 36-shard table, matching NAV-10. `:44-46` resolves every evidence ordinal through the router to the record carrying that canonical key, digest and local handle, matching NAV-01. `:25-26` asserts the index payload carries neither `content_digest` nor `document_canonical_key`, so the router does not repeat the evidence payload. `:78-80`, `:92-94` and `:106-108` reject a shard pointer that names a missing artifact, a shard whose declared count disagrees with its rows, and a range that skips an ordinal, each naming the offending artifact. `:57-65` asserts contiguous ordinal partitioning. `:138-139` and `:150-151` assert the certification coordinates for a deleted shard and for a solution with no retained evidence. The four pre-existing tests that fixed the old array-shaped index (`CompactDependencyReferenceTests.cs:49-57` and `:96-105`, `SolutionCertificationTests.cs:44-56`, `JourneyCertifierTests.cs:32-50`) were repointed at the router without weakening any assertion; the two certification fixtures now carry retained evidence, so their passing evidence journey is a real result rather than an empty array.
 
 ### T44: Certify optional local corpora
 

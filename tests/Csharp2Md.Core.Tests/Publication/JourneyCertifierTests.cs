@@ -29,11 +29,25 @@ public sealed class JourneyCertifierTests
     {
         var package = new TempPackage();
         var actualRoots = roots.IsDefault ? ImmutableArray.Create(new EntityHandle(root)) : roots;
+        var solution = CanonicalIdentity.CreateSolution("app", "src/App.sln");
+        var facts = new RetainedGraph(
+            [],
+            [],
+            [],
+            [new EvidenceRecord(
+                "evidence:a",
+                CanonicalIdentity.CreateDocumentKey(solution, "src/Handler.cs"),
+                CanonicalIdentity.CreateVariant("net10.0", "Release", [], "ci"),
+                new SourceSpan(1, 1, 1, 1),
+                "digest-a")],
+            [],
+            new RetentionMeasurements(1, 0));
         var model = new RetrievalModel([new SolutionRetrievalModel(
-            CanonicalIdentity.CreateSolution("app", "src/App.sln"),
+            solution,
             actualRoots,
             [],
-            [])]);
+            [],
+            facts)]);
         var plan = PackageBuilder.Build(model);
         foreach (var artifact in plan.Artifacts) package.Write(artifact.Path.Value, artifact.Payload);
         return package;

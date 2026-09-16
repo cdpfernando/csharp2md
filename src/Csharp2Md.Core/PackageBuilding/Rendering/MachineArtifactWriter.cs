@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.PackageBuilding.Identity;
+using Csharp2Md.Core.PackageBuilding.Layout;
 using Csharp2Md.Core.Publication;
 
 namespace Csharp2Md.Core.PackageBuilding.Rendering;
@@ -10,9 +11,16 @@ internal sealed record NavigationIndexData(string ArtifactPath, ImmutableArray<N
 internal sealed record NavigationIndexEntry(string Key, ImmutableArray<int> Ordinals, ImmutableArray<DependencyCategory> Categories, bool HasReachableSet);
 internal sealed record DependencyPayload(ImmutableArray<StoredRelation> Relations, ImmutableArray<string> Evidence, ImmutableArray<AggregatedDependency> Dependencies);
 internal sealed record StoredRelation(string CanonicalKey, string SourceCanonicalKey, string TargetCanonicalKey, string Category, ImmutableArray<EvidenceHandle> Evidence);
+internal sealed record EvidenceIndexData(ImmutableArray<EvidenceShardEntry> Shards);
+internal sealed record EvidenceShardEntry(string ArtifactPath, int FirstOrdinal, int Count);
 
 internal static class MachineArtifactWriter
 {
+    // SPEC_DEVIATION: the evidence table packs at 32 KiB instead of the 64 KiB bulk target in design.md.
+    // Reason: NAV-10 gives the evidence journey 25,000 tokens for the manifest, this router and one shard.
+    // A 64 KiB shard leaves too little room for a real corpus manifest (Pitstop measured 102,050 of 100,000 bytes).
+    private const int EvidenceShardTargetBytes = 32 * 1024;
+
     internal static MachineArtifactSet Write(RetrievalModel model, bool includeTests)
     {
         ArgumentNullException.ThrowIfNull(model);
@@ -34,10 +42,11 @@ internal static class MachineArtifactWriter
             AddCompact(artifacts, dependenciesPath, ArtifactFamily.Measure, BuildDependencyPayload(solution), solution.Dependencies.Length);
             Add(artifacts, measuresPath, ArtifactFamily.Measure, solution.Measures, solution.Measures.Length);
 
+            var evidenceIndex = AddEvidenceTable(artifacts, $"{prefix}/tables/evidence", solution.RetainedGraph?.Evidence ?? []);
             var indexes = IndexPaths(prefix).ToImmutableArray();
             foreach (var index in indexes)
             {
-                AddIndex(artifacts, index, solution, dependenciesPath, measuresPath);
+                AddIndex(artifacts, index, solution, dependenciesPath, measuresPath, evidenceIndex);
             }
 
             var roots = ImmutableArray.CreateBuilder<RootManifestEntry>();
@@ -72,7 +81,7 @@ internal static class MachineArtifactWriter
         }
     }
 
-    private static void AddIndex(ImmutableArray<PlannedArtifact>.Builder artifacts, IndexManifestEntry index, SolutionRetrievalModel solution, string dependenciesPath, string measuresPath)
+    private static void AddIndex(ImmutableArray<PlannedArtifact>.Builder artifacts, IndexManifestEntry index, SolutionRetrievalModel solution, string dependenciesPath, string measuresPath, EvidenceIndexData evidenceIndex)
     {
         switch (index.Kind)
         {
@@ -95,8 +104,7 @@ internal static class MachineArtifactWriter
                 AddDependencyIndex(artifacts, index.EntryPath, dependenciesPath, solution.Dependencies, static dependency => dependency.Source.Value, DependencyCategory.Persistence);
                 break;
             case NavigationIndexKind.Evidence:
-                var evidence = solution.RetainedGraph?.Evidence.OrderBy(item => item.CanonicalKey, StringComparer.Ordinal).ToImmutableArray() ?? [];
-                Add(artifacts, index.EntryPath, ArtifactFamily.Index, evidence, evidence.Length);
+                AddCompact(artifacts, index.EntryPath, ArtifactFamily.Index, evidenceIndex, evidenceIndex.Shards.Length);
                 break;
             case NavigationIndexKind.Measures:
                 var measureIndex = BuildMeasuresIndex(measuresPath, solution.Measures);
@@ -150,6 +158,25 @@ internal static class MachineArtifactWriter
                 group.Any(item => !item.measure.ReverseImpact.IsDefaultOrEmpty)))
             .ToImmutableArray();
         return new NavigationIndexData(measuresPath, entries);
+    }
+
+    private static EvidenceIndexData AddEvidenceTable(ImmutableArray<PlannedArtifact>.Builder artifacts, string family, ImmutableArray<EvidenceRecord> evidence)
+    {
+        var records = evidence.DistinctBy(record => record.CanonicalKey, StringComparer.Ordinal)
+            .OrderBy(record => record.CanonicalKey, StringComparer.Ordinal).ToImmutableArray();
+        var byKey = records.ToDictionary(record => record.CanonicalKey, StringComparer.Ordinal);
+        var shards = ShardPacker.Pack(family, records.Select(record => new ShardRecord(record.CanonicalKey, CanonicalJson.WriteCompact(record).AsSpan())), EvidenceShardTargetBytes);
+        var entries = ImmutableArray.CreateBuilder<EvidenceShardEntry>(shards.Length);
+        var ordinal = 0;
+        foreach (var shard in shards)
+        {
+            var rows = shard.Records.Select(record => byKey[record.CanonicalKey]).ToImmutableArray();
+            AddCompact(artifacts, shard.Path, ArtifactFamily.Table, rows, rows.Length);
+            entries.Add(new EvidenceShardEntry(shard.Path, ordinal, rows.Length));
+            ordinal += rows.Length;
+        }
+
+        return new EvidenceIndexData(entries.ToImmutable());
     }
 
     private static DependencyPayload BuildDependencyPayload(SolutionRetrievalModel solution)

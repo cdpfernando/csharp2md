@@ -90,6 +90,16 @@ internal sealed class PackageReader : IDisposable
         {
             artifacts.TryAdd(pointerPath, ReadArtifact(pointerPath));
         }
+        var shardPaths = Manifest.Solutions
+            .SelectMany(solution => solution.Indexes)
+            .Where(index => index.Kind is NavigationIndexKind.Evidence)
+            .SelectMany(index => CanonicalJson.Read<EvidenceIndexData>(artifacts[index.EntryPath].AsSpan()).Shards)
+            .Select(shard => shard.ArtifactPath)
+            .Distinct(StringComparer.Ordinal);
+        foreach (var shardPath in shardPaths)
+        {
+            artifacts.TryAdd(shardPath, ReadArtifact(shardPath));
+        }
         return artifacts;
     }
 

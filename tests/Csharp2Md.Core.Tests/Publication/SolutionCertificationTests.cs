@@ -1,5 +1,6 @@
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.PackageBuilding;
+using Csharp2Md.Core.PackageBuilding.Rendering;
 using Csharp2Md.Core.Publication;
 using Csharp2Md.Core.Publication.Certification;
 
@@ -41,14 +42,17 @@ public sealed class SolutionCertificationTests
         var evidencePath = Assert.Single(
             manifestSolution.Indexes,
             index => index.Kind == NavigationIndexKind.Evidence).EntryPath;
+        var shardPath = Assert.Single(
+            CanonicalJson.Read<EvidenceIndexData>(reader.ReadArtifact(evidencePath).AsSpan()).Shards).ArtifactPath;
         var expectedEvidenceBytes = new FileInfo(Path.Combine(package.Path, "manifest.json")).Length
-            + new FileInfo(Path.Combine(package.Path, evidencePath.Replace('/', Path.DirectorySeparatorChar))).Length;
+            + new FileInfo(Path.Combine(package.Path, evidencePath.Replace('/', Path.DirectorySeparatorChar))).Length
+            + new FileInfo(Path.Combine(package.Path, shardPath.Replace('/', Path.DirectorySeparatorChar))).Length;
         var evidenceMeasurement = Measurement(solution, JourneyKind.EvidenceDisposition);
 
         Assert.Equal(3, Reads(solution, JourneyKind.Locate));
         Assert.Equal(4, Reads(solution, JourneyKind.FollowFlow));
         Assert.Equal(3, Reads(solution, JourneyKind.ReverseImpact));
-        Assert.Equal(2, Reads(solution, JourneyKind.EvidenceDisposition));
+        Assert.Equal(3, Reads(solution, JourneyKind.EvidenceDisposition));
         Assert.Equal(expectedEvidenceBytes, evidenceMeasurement.Bytes);
         Assert.Equal(
             (long)Math.Ceiling(expectedEvidenceBytes / PackageManifest.TokenDivisorValue),
@@ -131,7 +135,25 @@ public sealed class SolutionCertificationTests
                 [],
                 [new ImpactTarget(new EntityHandle($"component:{name}-caller"), 1)],
                 new GapCounts(0, 0, 0))],
-            retainedGraph: null);
+            Facts(name));
+    }
+
+    private static RetainedGraph Facts(string name)
+    {
+        var solution = CanonicalIdentity.CreateSolution(name, $"src/{name}.sln");
+        var variant = CanonicalIdentity.CreateVariant("net10.0", "Release", [], "ci");
+        return new RetainedGraph(
+            [],
+            [],
+            [],
+            [new EvidenceRecord(
+                $"evidence:{name}",
+                CanonicalIdentity.CreateDocumentKey(solution, "src/Handler.cs"),
+                variant,
+                new SourceSpan(1, 1, 1, 1),
+                $"digest-{name}")],
+            [],
+            new RetentionMeasurements(1, 0));
     }
 
     private static AggregatedDependency Dependency(

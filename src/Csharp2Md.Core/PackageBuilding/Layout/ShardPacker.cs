@@ -19,9 +19,10 @@ internal static class ShardPacker
     internal const int TargetBytes = 64 * 1024;
     internal const int HardCeilingBytes = 96 * 1024;
 
-    internal static ImmutableArray<PackedShard> Pack(string family, IEnumerable<ShardRecord> records)
+    internal static ImmutableArray<PackedShard> Pack(string family, IEnumerable<ShardRecord> records, int targetBytes = TargetBytes)
     {
         ArgumentNullException.ThrowIfNull(records);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetBytes);
         family = CanonicalText.Require(family, nameof(family));
         var ordered = records.OrderBy(record => record.CanonicalKey, StringComparer.Ordinal).ToArray();
         var shards = ImmutableArray.CreateBuilder<PackedShard>();
@@ -34,7 +35,7 @@ internal static class ShardPacker
                 throw new OversizedRecordException(record.CanonicalKey);
             }
 
-            if (current.Count > 0 && bytes + record.Payload.Length > TargetBytes)
+            if (current.Count > 0 && bytes + record.Payload.Length > targetBytes)
             {
                 shards.Add(new PackedShard(Path(family, shards.Count), current.ToImmutable(), bytes));
                 current.Clear(); bytes = 0;

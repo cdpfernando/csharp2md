@@ -51,8 +51,7 @@ public sealed class CompactDependencyReferenceTests
     {
         var machine = Write();
         var payload = Payload(machine);
-        var path = Assert.Single(Assert.Single(machine.Manifest.Solutions).Indexes, index => index.Kind == NavigationIndexKind.Evidence).EntryPath;
-        var evidence = CanonicalJson.Read<ImmutableArray<EvidenceRecord>>(Artifact(machine, path).Payload.AsSpan());
+        var evidence = EvidenceTable(machine);
         Assert.Equal(payload.Evidence.ToArray(), evidence.Select(record => record.CanonicalKey));
         Assert.Equal("evidence:b", evidence[0].CanonicalKey);
         Assert.Equal("digest-b", evidence[0].ContentDigest);
@@ -99,11 +98,11 @@ public sealed class CompactDependencyReferenceTests
     public void Reader_RejectsAnEvidenceIndexThatNoLongerMatchesLocalHandles()
     {
         var machine = Write();
-        var path = Assert.Single(Assert.Single(machine.Manifest.Solutions).Indexes, index => index.Kind == NavigationIndexKind.Evidence).EntryPath;
-        var evidence = CanonicalJson.Read<ImmutableArray<EvidenceRecord>>(Artifact(machine, path).Payload.AsSpan());
+        var indexPath = EvidenceIndexPath(machine);
+        var shard = Assert.Single(CanonicalJson.Read<EvidenceIndexData>(Artifact(machine, indexPath).Payload.AsSpan()).Shards);
         var artifacts = machine.Artifacts.ToDictionary(artifact => artifact.Path.Value, artifact => artifact.Payload, StringComparer.Ordinal);
-        artifacts[path] = CanonicalJson.Write(evidence.Reverse().ToImmutableArray());
-        Assert.Equal(path, Assert.Throws<PackageCorruptionException>(() => RetrievalModelReader.Read(artifacts)).Artifact);
+        artifacts[shard.ArtifactPath] = CanonicalJson.WriteCompact(EvidenceTable(machine).Reverse().ToImmutableArray());
+        Assert.Equal(indexPath, Assert.Throws<PackageCorruptionException>(() => RetrievalModelReader.Read(artifacts)).Artifact);
     }
 
     [Fact] [Trait("Requirement", "EDG-01")]
@@ -125,6 +124,14 @@ public sealed class CompactDependencyReferenceTests
         var second = Write();
         Assert.True(Artifact(first, DependencyPath(first)).Payload.AsSpan().SequenceEqual(Artifact(second, DependencyPath(second)).Payload.AsSpan()));
     }
+
+    private static ImmutableArray<EvidenceRecord> EvidenceTable(MachineArtifactSet machine) =>
+        CanonicalJson.Read<EvidenceIndexData>(Artifact(machine, EvidenceIndexPath(machine)).Payload.AsSpan()).Shards
+            .SelectMany(shard => CanonicalJson.Read<ImmutableArray<EvidenceRecord>>(Artifact(machine, shard.ArtifactPath).Payload.AsSpan()))
+            .ToImmutableArray();
+
+    private static string EvidenceIndexPath(MachineArtifactSet machine) =>
+        Assert.Single(Assert.Single(machine.Manifest.Solutions).Indexes, index => index.Kind == NavigationIndexKind.Evidence).EntryPath;
 
     private static DependencyPayload Payload(MachineArtifactSet machine) =>
         CanonicalJson.Read<DependencyPayload>(Artifact(machine, DependencyPath(machine)).Payload.AsSpan());
