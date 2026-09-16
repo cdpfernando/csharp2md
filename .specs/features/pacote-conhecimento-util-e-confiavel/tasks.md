@@ -1353,14 +1353,28 @@ Every journey of every corpus is Passed except Pitstop's `follow_flow`, which st
 
 **Done when**:
 
-- [ ] eShop completes without cross-project variant collision when present.
-- [ ] eShopOnContainers is ≤1,500 reachable committed files and ≤64 MiB; Pitstop is ≤750 files and ≤25 MiB.
-- [ ] Missing clones dynamically skip with reason and do not fail CI; clones are never staged or committed.
-- [ ] At least 3 corpus-level cases exist; LocalCorpus gate runs for each clone currently present and full gate passes.
+- [x] eShop completes without cross-project variant collision when present.
+- [x] eShopOnContainers is ≤1,500 reachable committed files and ≤64 MiB; Pitstop is ≤750 files and ≤25 MiB.
+- [x] Missing clones dynamically skip with reason and do not fail CI; clones are never staged or committed.
+- [x] At least 3 corpus-level cases exist; LocalCorpus gate runs for each clone currently present and full gate passes.
 
 **Tests**: e2e — ≥3 corpus cases  
 **Gate**: full + LocalCorpus when present  
 **Commit**: `test(cli): certify optional local corpora`
+
+**Status**: Complete
+**Gate note**: `dotnet build csharp2md.slnx --configuration Release` passed with 0 warnings/errors. The LocalCorpus gate passed 6 of 6 with all three clones present, each running the real CLI end to end: eShop, eShopOnContainers and Pitstop all commit and certify. `Csharp2Md.Core.Tests` 567 of 567; `Csharp2Md.Storage.Tests` 396 of 396; `Csharp2Md.Projection.Tests` 234 of 234.
+
+| Corpus | Committed bytes | Ceiling | Files | Ceiling |
+| --- | --- | --- | --- | --- |
+| Pitstop | 7,928,785 (7.56 MiB) | 25 MiB | 140 | 750 |
+| eShop | 51,603,565 (49.21 MiB) | 64 MiB | 220 | 1,500 |
+| eShopOnContainers | 31,040,219 (29.60 MiB) | 64 MiB | 253 | 1,500 |
+
+**Deviation**: the `Reuses` field named the project's dynamic-skip convention - throwing an exception whose message starts with `$XunitDynamicSkip$`. **That convention does not work here.** The token is an xunit v3 feature; this repository pins xunit 2.9.3, where the runner reports such a test as **Failed**, not Skipped. A probe confirmed it: a case throwing the token reported `Com falha: 1`. The convention therefore breaks the `AGENTS.md` rule that a missing local clone must not fail CI, in this file and in `tests/Csharp2Md.Analysis.Tests/Readiness/LocalCorpusReadinessTests.cs:35` which copied it. This task replaces it in its own file with `LocalCorpusFactAttribute`, a `FactAttribute` subclass that resolves the clone at discovery and sets `Skip` with the same named reason - a genuine skip on xunit 2 with no new dependency. A probe with this exact attribute reported `Ignorado` for an absent clone and ran the body for a present one. `LocalCorpusReadinessTests` is left alone: it belongs to the legacy `Csharp2Md.Analysis.Tests` project that T45 removes.
+**Scope change**: the `[Trait("Requirement", ...)]` attributes the first draft carried were removed. Two legacy guards - `Csharp2Md.Storage.Tests/Surface/RequirementCoverageTests.cs:140` and its `Csharp2Md.Analysis.Tests` mirror - scan every `.cs` file under `tests/Csharp2Md.Cli.Tests` and accept only a hard-coded allowlist of legacy requirement prefixes (`ENG-`, `ROSE-`, `EBC-`, `PK-`, `CLLF-`, `CDC-`, `RP-`, `MSC-`, `GCPC-`, `APR-`, `STOR-NN`). This feature's `CRT-` ids are not in it, so carrying them failed both guards. `Csharp2Md.Core.Tests` is not scanned, which is why its `Requirement` traits are unaffected. Editing the allowlist would mean changing files T45 deletes, so the traits were dropped; CRT-04..CRT-07 traceability lives in this file's traceability table and the Adequacy block below.
+**Adequacy**: `LocalCorpusAnalyzeTests.cs:23` asserts eShop's analysis emits no `variant-collision` (CRT-06), on top of `:103` `Assert.True(exitCode == ExitCodes.Success)` and `:104` `Assert.Contains("committed and certified", stdout)`, so a run that builds but fails certification is caught. `:33` with `:122-123` asserts eShopOnContainers commits within 1,500 reachable files and 64 MiB and `:50` the same for Pitstop within 750 files and 25 MiB, counting the generation's files plus the root manifest pointer (CRT-04, CRT-05). `:71-73` asserts an absent clone yields exactly `local eShop clone is not present at '<path>'` and `:79` that a present clone leaves `Skip` null, so a clone that exists is never skipped away (CRT-07). `:89-91` asserts all three clone directories are git-ignored and `:92-95` that the analysis output path lies outside the repository (CRT-07).
+**Pre-existing**: with a clean `fixtures/SyntheticSolution` tree, `Csharp2Md.Cli.Tests` fails 43 of 138 on legacy suites, and the failing set is byte-identical to a worktree at `e2f2ac2`; `Csharp2Md.Analysis.Tests` fails 28 of 864 and `Csharp2Md.Domain.Tests` 1 of 575 in both trees. `SyntheticSolutionFixtureTests.Fixture_HasOnlySourceInputs_NoBuildOutputs` is the 44th CLI failure whenever `Csharp2Md.Core.Tests` runs first, because its workflow tests analyze `fixtures/SyntheticSolution` and leave `bin`/`obj` behind. All of it is T45's cutover.
 
 ### T45: Complete the clean-cut repository topology
 
