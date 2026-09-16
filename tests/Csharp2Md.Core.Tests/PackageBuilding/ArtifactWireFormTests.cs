@@ -13,9 +13,9 @@ public sealed class ArtifactWireFormTests
     {
         var machine = Write();
         var text = Text(machine, DependencyPath(machine));
-        Assert.Contains("\"source\":\"entity:a\"", text, StringComparison.Ordinal);
-        Assert.Contains("\"target\":\"entity:b\"", text, StringComparison.Ordinal);
-        Assert.Contains("\"variants\":[\"variant:v\"]", text, StringComparison.Ordinal);
+        Assert.Contains("\"source\":\"0\"", text, StringComparison.Ordinal);
+        Assert.Contains("\"target\":\"1\"", text, StringComparison.Ordinal);
+        Assert.Contains("\"variants\":[\"0\"]", text, StringComparison.Ordinal);
         Assert.Contains("\"relations\":[\"0\"]", text, StringComparison.Ordinal);
         Assert.Contains("\"evidence\":[\"0\"]", text, StringComparison.Ordinal);
         Assert.DoesNotContain("{\"value\"", text, StringComparison.Ordinal);
@@ -36,9 +36,9 @@ public sealed class ArtifactWireFormTests
     {
         var machine = Write();
         var text = Text(machine, MeasuresPath(machine));
-        Assert.Contains("\"entity\":\"entity:a\"", text, StringComparison.Ordinal);
-        Assert.Contains("\"cycles\":[\"cycle:a\"]", text, StringComparison.Ordinal);
-        Assert.Contains("\"reverse_impact\":[{\"entity\":\"entity:b\",\"depth\":1}]", text, StringComparison.Ordinal);
+        Assert.Contains("\"entity\":\"0\"", text, StringComparison.Ordinal);
+        Assert.Contains("\"cycles\":[\"0\"]", text, StringComparison.Ordinal);
+        Assert.Contains("\"reverse_impact\":[{\"entity\":\"1\",\"depth\":1}]", text, StringComparison.Ordinal);
         Assert.DoesNotContain("{\"value\"", text, StringComparison.Ordinal);
     }
 
@@ -65,7 +65,7 @@ public sealed class ArtifactWireFormTests
         var machine = Write();
         var path = MeasuresPath(machine);
         var artifacts = Artifacts(machine);
-        artifacts[path] = Replace(artifacts[path], "\"entity\":\"entity:a\"", "\"entity\":1");
+        artifacts[path] = Replace(artifacts[path], "\"entity\":\"0\"", "\"entity\":1");
         Assert.Equal(path, Assert.Throws<PackageCorruptionException>(() => RetrievalModelReader.Read(artifacts)).Artifact);
     }
 
@@ -75,7 +75,7 @@ public sealed class ArtifactWireFormTests
         var machine = Write();
         var path = MeasuresPath(machine);
         var artifacts = Artifacts(machine);
-        artifacts[path] = Replace(artifacts[path], "\"entity\":\"entity:a\"", "\"entity\":\" \"");
+        artifacts[path] = Replace(artifacts[path], "\"entity\":\"0\"", "\"entity\":\" \"");
         Assert.Equal(path, Assert.Throws<PackageCorruptionException>(() => RetrievalModelReader.Read(artifacts)).Artifact);
     }
 
@@ -92,7 +92,7 @@ public sealed class ArtifactWireFormTests
     public void Write_CompactSummaryRehydratesToTheSameMeasures()
     {
         var machine = Write();
-        var measure = Assert.Single(CanonicalJson.Read<ImmutableArray<ScopeMeasures>>(Artifact(machine, MeasuresPath(machine)).Payload.AsSpan()));
+        var measure = Assert.Single(RetrievalModelReader.Read(Artifacts(machine)).Solutions[0].Measures);
         var expected = Model().Solutions[0].Measures[0];
         Assert.Equal(expected.Scope, measure.Scope);
         Assert.Equal(expected.Entity, measure.Entity);

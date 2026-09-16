@@ -40,8 +40,8 @@ public sealed class CompactDependencyReferenceTests
         var relation = payload.Relations[0];
         Assert.Equal("0", Assert.Single(dependency.Relations).Value);
         Assert.Equal("relation:a", relation.CanonicalKey);
-        Assert.Equal("entity:a", relation.SourceCanonicalKey);
-        Assert.Equal("entity:b", relation.TargetCanonicalKey);
+        Assert.Equal("0", relation.SourceCanonicalKey);
+        Assert.Equal("1", relation.TargetCanonicalKey);
         Assert.Equal("contract", relation.Category);
         Assert.Equal("0", Assert.Single(relation.Evidence).Value);
     }

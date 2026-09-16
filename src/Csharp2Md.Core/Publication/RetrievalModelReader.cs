@@ -40,12 +40,20 @@ internal static class RetrievalModelReader
                 throw new PackageCorruptionException(indexes[NavigationIndexKind.Measures]);
             }
 
+            var tables = $"solutions/{entry.Id.Value}/tables";
+            var entities = ReadTable(artifacts, $"{tables}/entities.000000.json", identities[0].CanonicalKey);
+            var variants = ReadTable(artifacts, $"{tables}/variants.000000.json", identities[0].CanonicalKey);
+            var cycles = ReadTable(artifacts, $"{tables}/cycles.000000.json", identities[0].CanonicalKey);
             var payload = Read<DependencyPayload>(artifacts, outgoing.ArtifactPath);
             var evidenceRows = ReadEvidenceTable(artifacts, indexes[NavigationIndexKind.Evidence]);
             if (!payload.Evidence.SequenceEqual(evidenceRows.Select(item => item.CanonicalKey), StringComparer.Ordinal))
                 throw new PackageCorruptionException(indexes[NavigationIndexKind.Evidence]);
-            var dependencies = ExpandDependencies(payload, identities[0].CanonicalKey, outgoing.ArtifactPath);
-            var measures = Read<ImmutableArray<ScopeMeasures>>(artifacts, measuresIndex.ArtifactPath);
+            var dependencies = ExpandDependencies(payload, identities[0].CanonicalKey, outgoing.ArtifactPath, entities, variants);
+            var measures = ExpandMeasures(
+                Read<ImmutableArray<ScopeMeasures>>(artifacts, measuresIndex.ArtifactPath),
+                measuresIndex.ArtifactPath,
+                entities,
+                cycles);
             VerifyIndex(NavigationIndexKind.Outgoing, MachineArtifactWriter.BuildDependencyIndex(outgoing.ArtifactPath, dependencies, static dependency => dependency.Source.Value));
             VerifyIndex(NavigationIndexKind.Incoming, MachineArtifactWriter.BuildDependencyIndex(outgoing.ArtifactPath, dependencies, static dependency => dependency.Target.Value));
             VerifyIndex(NavigationIndexKind.Contracts, MachineArtifactWriter.BuildDependencyIndex(outgoing.ArtifactPath, dependencies, static dependency => dependency.Source.Value, DependencyCategory.Contract));
@@ -129,7 +137,58 @@ internal static class RetrievalModelReader
         return indexes;
     }
 
-    private static ImmutableArray<AggregatedDependency> ExpandDependencies(DependencyPayload payload, string solutionKey, string path)
+    private static IReadOnlyDictionary<string, string> ReadTable(
+        IReadOnlyDictionary<string, ImmutableArray<byte>> artifacts,
+        string path,
+        string solutionKey)
+    {
+        var keys = Read<ImmutableArray<string>>(artifacts, path);
+        if (!keys.SequenceEqual(keys.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal), StringComparer.Ordinal))
+        {
+            throw new PackageCorruptionException(path);
+        }
+
+        try
+        {
+            return LocalTableBuilder.Build(solutionKey, keys).Handles
+                .ToDictionary(pair => pair.Value.Value, pair => pair.Key, StringComparer.Ordinal);
+        }
+        catch (ArgumentException)
+        {
+            throw new PackageCorruptionException(path);
+        }
+    }
+
+    private static ImmutableArray<ScopeMeasures> ExpandMeasures(
+        ImmutableArray<ScopeMeasures> measures,
+        string path,
+        IReadOnlyDictionary<string, string> entities,
+        IReadOnlyDictionary<string, string> cycles)
+    {
+        try
+        {
+            return measures.Select(measure => new ScopeMeasures(
+                measure.Scope,
+                new EntityHandle(entities[measure.Entity.Value]),
+                measure.FanIn,
+                measure.FanOut,
+                measure.CrossComponentEdges,
+                measure.Cycles.Select(cycle => new CycleHandle(cycles[cycle.Value])).ToImmutableArray(),
+                measure.ReverseImpact.Select(target => new ImpactTarget(new EntityHandle(entities[target.Entity.Value]), target.Depth)).ToImmutableArray(),
+                measure.Gaps)).ToImmutableArray();
+        }
+        catch (Exception exception) when (exception is KeyNotFoundException or ArgumentException)
+        {
+            throw new PackageCorruptionException(path);
+        }
+    }
+
+    private static ImmutableArray<AggregatedDependency> ExpandDependencies(
+        DependencyPayload payload,
+        string solutionKey,
+        string path,
+        IReadOnlyDictionary<string, string> entities,
+        IReadOnlyDictionary<string, string> variants)
     {
         try
         {
@@ -147,8 +206,8 @@ internal static class RetrievalModelReader
                 .ToDictionary(pair => pair.Value.Value, pair => pair.Key, StringComparer.Ordinal);
             foreach (var relation in payload.Relations)
             {
-                if (string.IsNullOrWhiteSpace(relation.SourceCanonicalKey)
-                    || string.IsNullOrWhiteSpace(relation.TargetCanonicalKey)
+                if (!entities.ContainsKey(relation.SourceCanonicalKey)
+                    || !entities.ContainsKey(relation.TargetCanonicalKey)
                     || string.IsNullOrWhiteSpace(relation.Category)
                     || relation.Evidence.Any(handle => !evidence.ContainsKey(handle.Value)))
                     throw new PackageCorruptionException(path);
@@ -156,12 +215,12 @@ internal static class RetrievalModelReader
 
             return payload.Dependencies.Select(dependency => new AggregatedDependency(
                 dependency.Scope,
-                dependency.Source,
-                dependency.Target,
+                new EntityHandle(entities[dependency.Source.Value]),
+                new EntityHandle(entities[dependency.Target.Value]),
                 dependency.Category,
                 dependency.Nature,
                 dependency.OccurrenceCount,
-                dependency.Variants,
+                dependency.Variants.Select(handle => new VariantHandle(variants[handle.Value])).ToImmutableArray(),
                 dependency.Relations.Select(handle => new RelationHandle(relations[handle.Value])).ToImmutableArray(),
                 dependency.Evidence.Select(handle => new EvidenceHandle(evidence[handle.Value])).ToImmutableArray()))
                 .ToImmutableArray();

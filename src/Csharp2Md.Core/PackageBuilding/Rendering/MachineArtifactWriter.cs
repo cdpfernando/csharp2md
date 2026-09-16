@@ -37,10 +37,19 @@ internal static class MachineArtifactWriter
             var entitiesPath = $"{prefix}/graph/entities.000000.json";
             var dependenciesPath = $"{prefix}/measures/dependencies.000000.json";
             var measuresPath = $"{prefix}/measures/summary.json";
-            Add(artifacts, $"{prefix}/tables/identities.000000.json", ArtifactFamily.Table, ImmutableArray.Create(solution.Solution), 1);
-            Add(artifacts, entitiesPath, ArtifactFamily.Graph, solution.Roots, solution.Roots.Length);
-            AddCompact(artifacts, dependenciesPath, ArtifactFamily.Measure, BuildDependencyPayload(solution), solution.Dependencies.Length);
-            AddCompact(artifacts, measuresPath, ArtifactFamily.Measure, solution.Measures, solution.Measures.Length);
+            var entityKeys = EntityKeys(solution);
+            var variantKeys = Keys(solution.Dependencies.SelectMany(dependency => dependency.Variants.Select(variant => variant.Value)));
+            var cycleKeys = Keys(solution.Measures.SelectMany(measure => measure.Cycles.Select(cycle => cycle.Value)));
+            var entities = LocalTableBuilder.Build(solution.Solution.CanonicalKey, entityKeys);
+            var variants = LocalTableBuilder.Build(solution.Solution.CanonicalKey, variantKeys);
+            var cycles = LocalTableBuilder.Build(solution.Solution.CanonicalKey, cycleKeys);
+            AddCompact(artifacts, $"{prefix}/tables/identities.000000.json", ArtifactFamily.Table, ImmutableArray.Create(solution.Solution), 1);
+            AddCompact(artifacts, $"{prefix}/tables/entities.000000.json", ArtifactFamily.Table, entityKeys, entityKeys.Length);
+            AddCompact(artifacts, $"{prefix}/tables/variants.000000.json", ArtifactFamily.Table, variantKeys, variantKeys.Length);
+            AddCompact(artifacts, $"{prefix}/tables/cycles.000000.json", ArtifactFamily.Table, cycleKeys, cycleKeys.Length);
+            AddCompact(artifacts, entitiesPath, ArtifactFamily.Graph, solution.Roots, solution.Roots.Length);
+            AddCompact(artifacts, dependenciesPath, ArtifactFamily.Measure, BuildDependencyPayload(solution, entities, variants), solution.Dependencies.Length);
+            AddCompact(artifacts, measuresPath, ArtifactFamily.Measure, BuildMeasures(solution.Measures, entities, cycles), solution.Measures.Length);
 
             var evidenceIndex = AddEvidenceTable(artifacts, $"{prefix}/tables/evidence", solution.RetainedGraph?.Evidence ?? []);
             var indexes = IndexPaths(prefix).ToImmutableArray();
@@ -69,7 +78,7 @@ internal static class MachineArtifactWriter
             PackageManifest.TokenDivisorValue,
             includeTests,
             manifestSolutions.OrderBy(solution => solution.Id.Value, StringComparer.Ordinal).ToImmutableArray());
-        Add(artifacts, "manifest.json", ArtifactFamily.Manifest, manifest, 1);
+        AddCompact(artifacts, "manifest.json", ArtifactFamily.Manifest, manifest, 1);
         return new MachineArtifactSet(manifest, artifacts.OrderBy(artifact => artifact.Path.Value, StringComparer.Ordinal).ToImmutableArray());
     }
 
@@ -86,10 +95,10 @@ internal static class MachineArtifactWriter
         switch (index.Kind)
         {
             case NavigationIndexKind.Identity:
-                Add(artifacts, index.EntryPath, ArtifactFamily.Index, ImmutableArray.Create(solution.Solution), 1);
+                AddCompact(artifacts, index.EntryPath, ArtifactFamily.Index, ImmutableArray.Create(solution.Solution), 1);
                 break;
             case NavigationIndexKind.Roots:
-                Add(artifacts, index.EntryPath, ArtifactFamily.Index, solution.Roots, solution.Roots.Length);
+                AddCompact(artifacts, index.EntryPath, ArtifactFamily.Index, solution.Roots, solution.Roots.Length);
                 break;
             case NavigationIndexKind.Outgoing:
                 AddDependencyIndex(artifacts, index.EntryPath, dependenciesPath, solution.Dependencies, static dependency => dependency.Source.Value);
@@ -108,7 +117,7 @@ internal static class MachineArtifactWriter
                 break;
             case NavigationIndexKind.Measures:
                 var measureIndex = BuildMeasuresIndex(measuresPath, solution.Measures);
-                Add(artifacts, index.EntryPath, ArtifactFamily.Index, measureIndex, measureIndex.Entries.Length);
+                AddCompact(artifacts, index.EntryPath, ArtifactFamily.Index, measureIndex, measureIndex.Entries.Length);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(index));
@@ -124,7 +133,7 @@ internal static class MachineArtifactWriter
         DependencyCategory? category = null)
     {
         var data = BuildDependencyIndex(dependenciesPath, dependencies, key, category);
-        Add(artifacts, indexPath, ArtifactFamily.Index, data, data.Entries.Length);
+        AddCompact(artifacts, indexPath, ArtifactFamily.Index, data, data.Entries.Length);
     }
 
     internal static NavigationIndexData BuildDependencyIndex(
@@ -179,7 +188,27 @@ internal static class MachineArtifactWriter
         return new EvidenceIndexData(entries.ToImmutable());
     }
 
-    private static DependencyPayload BuildDependencyPayload(SolutionRetrievalModel solution)
+    internal static ImmutableArray<string> EntityKeys(SolutionRetrievalModel solution) =>
+        Keys(solution.Dependencies.SelectMany(dependency => new[] { dependency.Source.Value, dependency.Target.Value })
+            .Concat(solution.RetainedGraph?.Relations.SelectMany(relation => new[] { relation.SourceCanonicalKey, relation.TargetCanonicalKey }) ?? [])
+            .Concat(solution.Measures.Select(measure => measure.Entity.Value))
+            .Concat(solution.Measures.SelectMany(measure => measure.ReverseImpact.Select(target => target.Entity.Value))));
+
+    private static ImmutableArray<string> Keys(IEnumerable<string> canonicalKeys) =>
+        canonicalKeys.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray();
+
+    private static ImmutableArray<ScopeMeasures> BuildMeasures(ImmutableArray<ScopeMeasures> measures, LocalTable entities, LocalTable cycles) =>
+        measures.Select(measure => new ScopeMeasures(
+            measure.Scope,
+            new EntityHandle(entities.Resolve(measure.Entity.Value).Value),
+            measure.FanIn,
+            measure.FanOut,
+            measure.CrossComponentEdges,
+            measure.Cycles.Select(cycle => new CycleHandle(cycles.Resolve(cycle.Value).Value)).ToImmutableArray(),
+            measure.ReverseImpact.Select(target => new ImpactTarget(new EntityHandle(entities.Resolve(target.Entity.Value).Value), target.Depth)).ToImmutableArray(),
+            measure.Gaps)).ToImmutableArray();
+
+    private static DependencyPayload BuildDependencyPayload(SolutionRetrievalModel solution, LocalTable entities, LocalTable variants)
     {
         var relationKeys = solution.Dependencies.SelectMany(dependency => dependency.Relations.Select(handle => handle.Value))
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray();
@@ -201,19 +230,19 @@ internal static class MachineArtifactWriter
                 throw new InvalidOperationException($"A dependency references missing confirmed relation '{key}'.");
             return new StoredRelation(
                 key,
-                fact.SourceCanonicalKey,
-                fact.TargetCanonicalKey,
+                entities.Resolve(fact.SourceCanonicalKey).Value,
+                entities.Resolve(fact.TargetCanonicalKey).Value,
                 fact.Category,
                 fact.EvidenceCanonicalKeys.Select(evidence => new EvidenceHandle(evidenceTable.Resolve(evidence).Value)).ToImmutableArray());
         }).ToImmutableArray();
         var dependencies = solution.Dependencies.Select(dependency => new AggregatedDependency(
             dependency.Scope,
-            dependency.Source,
-            dependency.Target,
+            new EntityHandle(entities.Resolve(dependency.Source.Value).Value),
+            new EntityHandle(entities.Resolve(dependency.Target.Value).Value),
             dependency.Category,
             dependency.Nature,
             dependency.OccurrenceCount,
-            dependency.Variants,
+            dependency.Variants.Select(variant => new VariantHandle(variants.Resolve(variant.Value).Value)).ToImmutableArray(),
             dependency.Relations.Select(relation => new RelationHandle(relationTable.Resolve(relation.Value).Value)).ToImmutableArray(),
             dependency.Evidence.Select(evidence => new EvidenceHandle(evidenceTable.Resolve(evidence.Value).Value)).ToImmutableArray()))
             .ToImmutableArray();
@@ -240,12 +269,6 @@ internal static class MachineArtifactWriter
         NavigationIndexKind.Measures => "measures",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
-
-    private static void Add<T>(ImmutableArray<PlannedArtifact>.Builder artifacts, string path, ArtifactFamily family, T value, int records)
-    {
-        var bytes = CanonicalJson.Write(value);
-        artifacts.Add(new PlannedArtifact(new RelativeArtifactPath(path), family, bytes, records, Convert.ToHexStringLower(SHA256.HashData(bytes.AsSpan()))));
-    }
 
     private static void AddCompact<T>(ImmutableArray<PlannedArtifact>.Builder artifacts, string path, ArtifactFamily family, T value, int records)
     {

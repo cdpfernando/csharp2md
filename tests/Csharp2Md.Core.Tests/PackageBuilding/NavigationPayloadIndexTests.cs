@@ -41,7 +41,7 @@ public sealed class NavigationPayloadIndexTests
         var index = Index(package, NavigationIndexKind.Outgoing);
         Assert.Equal(dependencies.Length, index.Entries.Sum(entry => entry.Ordinals.Length));
         Assert.All(index.Entries, entry => Assert.All(entry.Ordinals, ordinal =>
-            Assert.Equal(entry.Key, dependencies[ordinal].Source.Value)));
+            Assert.Equal(entry.Key, EntityKey(package, dependencies[ordinal].Source.Value))));
     }
 
     [Fact] [Trait("Requirement", "DEP-07")]
@@ -52,7 +52,7 @@ public sealed class NavigationPayloadIndexTests
         var index = Index(package, NavigationIndexKind.Incoming);
         Assert.Equal(dependencies.Length, index.Entries.Sum(entry => entry.Ordinals.Length));
         Assert.All(index.Entries, entry => Assert.All(entry.Ordinals, ordinal =>
-            Assert.Equal(entry.Key, dependencies[ordinal].Target.Value)));
+            Assert.Equal(entry.Key, EntityKey(package, dependencies[ordinal].Target.Value))));
     }
 
     [Fact] [Trait("Requirement", "DEP-07")]
@@ -60,6 +60,13 @@ public sealed class NavigationPayloadIndexTests
 
     [Fact] [Trait("Requirement", "DEP-07")]
     public void PersistenceIndex_ResolvesOnlyPersistence() => CategoryIndexResolvesOnly(NavigationIndexKind.Persistence, DependencyCategory.Persistence);
+
+    private static string EntityKey(MachineArtifactSet package, string handle)
+    {
+        var path = Assert.Single(package.Artifacts, artifact => artifact.Path.Value.EndsWith("/tables/entities.000000.json", StringComparison.Ordinal)).Path.Value;
+        var keys = CanonicalJson.Read<ImmutableArray<string>>(Artifact(package, path).Payload.AsSpan());
+        return keys[keys.Select((_, ordinal) => ordinal).Single(ordinal => Csharp2Md.Core.PackageBuilding.Identity.LocalTableBuilder.HandleForOrdinal(ordinal) == handle)];
+    }
 
     private static void CategoryIndexResolvesOnly(NavigationIndexKind kind, DependencyCategory category)
     {
@@ -79,7 +86,7 @@ public sealed class NavigationPayloadIndexTests
         var index = Index(package, NavigationIndexKind.Measures);
         Assert.Equal(measures.Length, index.Entries.Sum(entry => entry.Ordinals.Length));
         Assert.All(index.Entries, entry => Assert.All(entry.Ordinals, ordinal =>
-            Assert.Equal(entry.Key, measures[ordinal].Entity.Value)));
+            Assert.Equal(entry.Key, EntityKey(package, measures[ordinal].Entity.Value))));
         Assert.Contains(index.Entries, entry => entry.HasReachableSet);
     }
 

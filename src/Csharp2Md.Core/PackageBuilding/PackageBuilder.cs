@@ -52,7 +52,7 @@ internal static class PackageBuilder
         var measurement = new PublicationMeasurements(extraction, payloads.Length + 3, [new FilteredCount("retention", extraction.FilteredCount)]);
         payloads = payloads.Add(Artifact("measurements.json", ArtifactFamily.Measurement, measurement, 1));
         payloads = payloads.Add(Artifact("certification.json", ArtifactFamily.Certification, new PackageCertification([]), 0));
-        payloads = payloads.Add(Artifact("manifest.json", ArtifactFamily.Manifest, machine.Manifest, 1));
+        payloads = payloads.Add(CompactArtifact("manifest.json", ArtifactFamily.Manifest, machine.Manifest, 1));
         var ordered = payloads.OrderBy(artifact => artifact.Path.Value, StringComparer.Ordinal).ToImmutableArray();
         var bytes = ordered.Sum(artifact => (long)artifact.Payload.Length);
         if (ordered.Length > budget.MaximumArtifacts)
@@ -263,6 +263,12 @@ internal static class PackageBuilder
         ImmutableArray<EntityHandle> Projects,
         ImmutableArray<EntityHandle> Components,
         ImmutableArray<EntityHandle> DeploymentUnits);
+
+    private static PlannedArtifact CompactArtifact<T>(string path, ArtifactFamily family, T value, int records)
+    {
+        var payload = CanonicalJson.WriteCompact(value);
+        return new PlannedArtifact(new RelativeArtifactPath(path), family, payload, records, Convert.ToHexStringLower(SHA256.HashData(payload.AsSpan())));
+    }
 
     private static PlannedArtifact Artifact<T>(string path, ArtifactFamily family, T value, int records)
     {

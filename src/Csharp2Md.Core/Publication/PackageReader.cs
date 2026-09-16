@@ -80,6 +80,14 @@ internal sealed class PackageReader : IDisposable
             .Distinct(StringComparer.Ordinal)
             .OrderBy(static path => path, StringComparer.Ordinal);
         var artifacts = paths.ToDictionary(path => path, ReadArtifact, StringComparer.Ordinal);
+        var tablePaths = Manifest.Solutions
+            .SelectMany(solution => new[] { "entities", "variants", "cycles" }
+                .Select(name => $"solutions/{solution.Id.Value}/tables/{name}.000000.json"));
+        foreach (var tablePath in tablePaths)
+        {
+            artifacts.TryAdd(tablePath, ReadArtifact(tablePath));
+        }
+
         var pointerPaths = Manifest.Solutions
             .SelectMany(solution => solution.Indexes)
             .Where(index => index.Kind is NavigationIndexKind.Outgoing or NavigationIndexKind.Incoming

@@ -1270,8 +1270,8 @@ T46-T53 were added after T43 was complete, so they carry higher numbers than the
 
 ### T53: Resolve entity and cycle keys through the local table
 
-**What**: Replace repeated entity, variant and cycle canonical keys inside stored relations, aggregated dependencies and scope measures with solution-local handles resolvable through the declared table.
-**Where**: `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`, `src/Csharp2Md.Core/PackageBuilding/RetrievalModel.cs`, `src/Csharp2Md.Core/Publication/RetrievalModelReader.cs`
+**What**: Replace repeated entity, variant and cycle canonical keys inside stored relations, aggregated dependencies and scope measures with solution-local handles resolvable through the declared table, and write the navigation indexes and manifest compactly so the journey budgets are measured against the same wire form.
+**Where**: `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`, `src/Csharp2Md.Core/PackageBuilding/PackageBuilder.cs`, `src/Csharp2Md.Core/Publication/RetrievalModelReader.cs`, `src/Csharp2Md.Core/Publication/PackageReader.cs`
 **Depends on**: T52
 **Reuses**: `LocalTableBuilder` and the relation/evidence handle table contract T49 established
 **Requirement**: DEP-03, DEP-05, STO-03, STO-04, STO-05, CRT-04, CRT-06
@@ -1280,14 +1280,29 @@ T46-T53 were added after T43 was complete, so they carry higher numbers than the
 
 **Done when**:
 
-- [ ] `StoredRelation` source/target keys, `AggregatedDependency` source/target/variants, `ScopeMeasures` entity and cycle references, and reverse-impact targets carry deterministic solution-local handles, with each canonical identity stored once in its declared table.
-- [ ] A consumer resolves each handle to the canonical entity, variant or cycle identity through one declared table artifact without scanning unrelated artifacts.
-- [ ] Rehydration restores the same canonical values and rejects missing, duplicate or invalid table mappings by artifact name.
-- [ ] eShopOnContainers is at most 64 MiB and eShop completes analysis when the optional clones are present; Pitstop stays at most 25 MiB; the quick gate passes.
+- [x] `StoredRelation` source/target keys, `AggregatedDependency` source/target/variants, `ScopeMeasures` entity and cycle references, and reverse-impact targets carry deterministic solution-local handles, with each canonical identity stored once in its declared table.
+- [x] A consumer resolves each handle to the canonical entity, variant or cycle identity through one declared table artifact without scanning unrelated artifacts.
+- [x] Rehydration restores the same canonical values and rejects missing, duplicate or invalid table mappings by artifact name.
+- [x] Navigation index keys stay canonical so a consumer still locates an entity by name; only the wire form is compacted.
+- [x] eShopOnContainers is at most 64 MiB and eShop completes analysis when the optional clones are present; Pitstop stays at most 25 MiB; the quick gate passes.
 
 **Tests**: unit - >=8 handle/table/rehydration/rejection cases
 **Gate**: quick + local corpora when present
 **Commit**: `fix(package-building): resolve entity keys through local table`
+
+**Status**: Complete
+**Gate note**: `dotnet build csharp2md.slnx --configuration Release` passed with 0 warnings/errors. `Csharp2Md.Core.Tests` passed 554 of 554 (0 failed, 0 skipped), up from 543 by this task's 11 cases. The synthetic CLI suites (`KnowledgePackageJourneyTests`, `KnowledgePackageFailureTests`, `KnowledgeAnalyzeCommandTests`, `KnowledgeValidateCommandTests`, `SyntheticSolutionFixtureTests`, `KnowledgeEngineWorkflowTests`) passed 73 of 73. Local corpora, all measured with the clones present:
+
+| Corpus | Committed bytes before T52 | After T53 | Ceiling | Files |
+| --- | --- | --- | --- | --- |
+| Pitstop | 20,445,642 (19.50 MiB) | 7,952,722 (7.58 MiB) | 25 MiB | 140 / 750 |
+| eShopOnContainers | rejected at 117,080,074 | 31,085,041 (29.65 MiB) plan | 64 MiB | 251 / 1,500 |
+| eShop | rejected at 156,285,412 | 51,622,291 (49.23 MiB) | 64 MiB | 220 / 1,500 |
+
+Pitstop and eShop commit and certify; eShop had never committed before. eShopOnContainers clears the byte ceiling and is no longer rejected at `package-building`, but publication still rejects it - see Blocker.
+**Scope change**: The user widened this task on 2026-09-16 to include the navigation indexes after the byte ceiling alone left three journeys over the token budget. The widening is encoding only - every index key stays a canonical entity key, so locating an entity by name still needs no table lookup. Measured on Pitstop, indentation was 47% of `indexes/incoming.json`; writing every remaining bulk artifact compactly took eShopOnContainers' `incoming.json` from 388,292 to 209,438 bytes and its manifest from 59,309 to 50,661, which cleared `ReverseImpact` (154,927 -> under 125,000 tokens) and `EvidenceDisposition` (26,085 -> under 25,000).
+**Blocker**: eShopOnContainers still fails `Locate:tokens-exceeded:19405>12000`. The journey reads manifest.json (50,661 bytes), `indexes/roots.json` (26,689) and one markdown page (270) = 77,620 against the 48,000-byte ceiling. The manifest alone exceeds the ceiling, so no encoding change can close this: `PackageManifest` carries every root inline, and per root `machine_citation` and `markdown_path` are a repeated per-solution prefix (48% of the roots array on Pitstop). Closing it means the manifest stops carrying every root inline - a manifest contract change, in the shard-router shape T50 used for evidence. No task owns it; T44 cannot certify eShopOnContainers until it is settled.
+**Adequacy**: `CanonicalKeyTableTests.cs:14` and `:21-22` assert one sorted, deduplicated row per entity, variant and cycle canonical key in its declared table. `:29-30`, `:37-39` and `:46-48` assert relation endpoints, dependency endpoints/variants, and measure entity/cycle/reverse-impact references are local handles. `:56-62` reads every kind back to its canonical value through `RetrievalModelReader`. `:79` rejects a dependency entity handle with no table row and `:92` a measure cycle handle with no row, each naming the consuming artifact; `:102` rejects duplicate keys in the entity table and `:112` a missing cycle table, each naming the table. `:122-123` asserts byte-identical repeat output for all three tables. `NavigationPayloadIndexTests.cs:43`, `:55` and `:82` were repointed to resolve the indexed record through the entity table rather than compare a raw field, which keeps the index-to-record claim and adds the table hop; `SolutionScopedRetrievalTests.cs:68-73` now resolves each solution's target through that solution's own entity table, so the isolation claim is proved per solution rather than by string comparison.
 
 ### T44: Certify optional local corpora
 

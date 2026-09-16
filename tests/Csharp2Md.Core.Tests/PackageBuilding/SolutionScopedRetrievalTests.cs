@@ -65,10 +65,12 @@ public sealed class SolutionScopedRetrievalTests
         var ordersMeasures = Read<ImmutableArray<ScopeMeasures>>(machine, ordersMeasureIndex.ArtifactPath);
         var shippingMeasures = Read<ImmutableArray<ScopeMeasures>>(machine, shippingMeasureIndex.ArtifactPath);
 
-        Assert.Equal("component:orders-target", Assert.Single(ordersDependencies).Target.Value);
-        Assert.DoesNotContain(ordersDependencies, dependency => dependency.Target.Value == "component:shipping-target");
-        Assert.Equal("component:shipping-target", Assert.Single(shippingDependencies).Target.Value);
-        Assert.DoesNotContain(shippingDependencies, dependency => dependency.Target.Value == "component:orders-target");
+        var ordersEntities = EntityTable(machine, orders);
+        var shippingEntities = EntityTable(machine, shipping);
+        Assert.Equal("component:orders-target", ordersEntities[Assert.Single(ordersDependencies).Target.Value]);
+        Assert.DoesNotContain("component:shipping-target", ordersEntities.Values);
+        Assert.Equal("component:shipping-target", shippingEntities[Assert.Single(shippingDependencies).Target.Value]);
+        Assert.DoesNotContain("component:orders-target", shippingEntities.Values);
         Assert.Equal(11, Assert.Single(ordersMeasures).FanOut);
         Assert.Equal(22, Assert.Single(shippingMeasures).FanOut);
     }
@@ -167,6 +169,13 @@ public sealed class SolutionScopedRetrievalTests
                 [],
                 new GapCounts(0, 0, 0))],
             retainedGraph: null);
+    }
+
+    private static IReadOnlyDictionary<string, string> EntityTable(MachineArtifactSet machine, SolutionManifestEntry solution)
+    {
+        var keys = Read<ImmutableArray<string>>(machine, $"solutions/{solution.Id.Value}/tables/entities.000000.json");
+        return keys.Select((key, ordinal) => (Handle: Csharp2Md.Core.PackageBuilding.Identity.LocalTableBuilder.HandleForOrdinal(ordinal), Key: key))
+            .ToDictionary(pair => pair.Handle, pair => pair.Key, StringComparer.Ordinal);
     }
 
     private static string Entry(SolutionManifestEntry solution, NavigationIndexKind kind) =>
