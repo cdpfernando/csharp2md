@@ -98,16 +98,10 @@ public sealed class PartialBatchTests
         Directory.CreateDirectory(outputRoot);
         var store = new FilesystemTransactionalStore(outputRoot, new PackageProjector(), new BatchComposer());
         var engine = new AnalysisEngine(store);
-        var args = new List<string> { "analyze" };
-        foreach (var path in solutionPaths)
-        {
-            args.Add("--solution");
-            args.Add(path);
-        }
-
-        args.Add("--output");
-        args.Add(outputRoot);
-        var exitCode = await CommandFactory.InvokeAsync([.. args], engine);
+        var result = await engine.AnalyzeAsync(AnalysisRequest.Create([.. solutionPaths]), CancellationToken.None);
+        var exitCode = result.HasUnpublishedSolution || result.HasBatchPublicationFailure
+            ? ExitCodes.PartialComposition
+            : ExitCodes.Success;
         return (exitCode, CompositionBatch.SnapshotFiles(outputRoot));
     }
 

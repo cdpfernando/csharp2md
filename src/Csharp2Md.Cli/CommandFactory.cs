@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Csharp2Md.Analysis;
 using Csharp2Md.Analysis.Storage;
+using Csharp2Md.Core;
 using Csharp2Md.Projection;
 using Csharp2Md.Projection.Composition;
 using Csharp2Md.Storage;
@@ -8,14 +9,19 @@ using Csharp2Md.Storage.Mapping;
 using Csharp2Md.Storage.Retrieval;
 using Csharp2Md.Storage.Validation;
 using Csharp2Md.Storage.Wire;
+using CoreAnalyzeRequest = Csharp2Md.Core.AnalyzeRequest;
+using CoreAnalyzeResult = Csharp2Md.Core.AnalyzeResult;
 
 namespace Csharp2Md.Cli;
 
 internal static class CommandFactory
 {
-    internal static RootCommand CreateRootCommand(IAnalysisEngine? engine = null)
+    internal static RootCommand CreateRootCommand(
+        Func<CoreAnalyzeRequest, CancellationToken, Task<CoreAnalyzeResult>>? analyzeAsync = null)
     {
         var rootCommand = new RootCommand("Analyze .NET solutions into a knowledge graph.");
+        var knowledgeEngine = new KnowledgeEngine();
+        analyzeAsync ??= knowledgeEngine.AnalyzeAsync;
 
         var solutionOption = new Option<string[]>("--solution")
         {
@@ -26,125 +32,86 @@ internal static class CommandFactory
 
         var outputOption = new Option<string>("--output")
         {
-            Description = "Directory that receives the factual package for each requested solution.",
+            Description = "Directory that receives the committed multi-solution knowledge package.",
             Required = true,
         };
 
-        var allowlistOption = new Option<string[]>("--allowlist")
+        var includeTestsOption = new Option<bool>("--include-tests")
         {
-            Description = "A document path, relative to a requested solution's authorized root, to admit even "
-                + "though the supported-document policy would otherwise exclude it. Repeat for each document.",
-            Arity = ArgumentArity.ZeroOrMore,
-        };
-
-        var readingBudgetOption = new Option<int?>("--reading-budget-tokens")
-        {
-            Description = "The declared per-scenario reading budget in tokens, used to derive the enforced "
-                + $"per-artifact byte ceiling. Must be positive. Defaults to {CeilingCalculator.DefaultReadingBudgetTokens}.",
-        };
-
-        var maxFileReadsOption = new Option<int?>("--max-file-reads-per-scenario")
-        {
-            Description = "The declared per-scenario maximum file reads, used to derive the enforced "
-                + $"per-artifact byte ceiling. Must be positive. Defaults to {CeilingCalculator.DefaultMaxFileReadsPerScenario}.",
+            Description = "Include test projects and documents in analysis and record that policy in the package identity.",
         };
 
         var analyze = new Command("analyze", "Analyze one or more solutions.");
         analyze.Options.Add(solutionOption);
         analyze.Options.Add(outputOption);
-        analyze.Options.Add(allowlistOption);
-        analyze.Options.Add(readingBudgetOption);
-        analyze.Options.Add(maxFileReadsOption);
+        analyze.Options.Add(includeTestsOption);
         analyze.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
             var paths = parseResult.GetValue(solutionOption) ?? [];
-            foreach (var path in paths)
+            var normalizedPaths = ImmutableArray.CreateBuilder<string>(paths.Length);
+            var seen = new HashSet<string>(CanonicalPathComparer);
+            foreach (var candidate in paths)
             {
-                if (!Path.Exists(path))
+                string path;
+                try
+                {
+                    path = Path.GetFullPath(candidate);
+                }
+                catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+                {
+                    return Invalid(parseResult, $"invalid solution path: {candidate}");
+                }
+
+                if (!File.Exists(path))
                 {
                     return Invalid(parseResult, $"solution path does not exist: {path}");
                 }
+
+                if (!seen.Add(path))
+                {
+                    return Invalid(parseResult, $"solution path is specified more than once: {path}");
+                }
+
+                normalizedPaths.Add(path);
             }
 
-            // GCPC-036/GCPC-037: the declared per-scenario budget, validated before any analysis begins so
-            // a malformed value publishes nothing (GCPC-073). Absent an override, CeilingCalculator's own
-            // declared defaults apply -- the same ceiling PublicationPipeline.Publish enforces by default.
-            var readingBudgetTokens = parseResult.GetValue(readingBudgetOption);
-            var maxFileReadsPerScenario = parseResult.GetValue(maxFileReadsOption);
-            CeilingCalculation ceiling;
-            try
-            {
-                ceiling = CeilingCalculator.Derive(
-                    readingBudgetTokens ?? CeilingCalculator.DefaultReadingBudgetTokens,
-                    maxFileReadsPerScenario ?? CeilingCalculator.DefaultMaxFileReadsPerScenario);
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                return Invalid(
-                    parseResult,
-                    "--reading-budget-tokens and --max-file-reads-per-scenario must be positive");
-            }
-
-            var allowlist = parseResult.GetValue(allowlistOption) ?? [];
-
-            AnalysisRequest request;
-            try
-            {
-                request = AnalysisRequest.Create([.. paths], [.. allowlist]);
-            }
-            catch (ArgumentException exception)
-            {
-                return Invalid(parseResult, exception.Message);
-            }
-
-            var outputPath = parseResult.GetValue(outputOption);
-            if (string.IsNullOrWhiteSpace(outputPath))
+            var outputCandidate = parseResult.GetValue(outputOption);
+            if (string.IsNullOrWhiteSpace(outputCandidate))
             {
                 return Invalid(parseResult, "--output");
             }
 
-            var analysisEngine = engine;
-            if (analysisEngine is null)
-            {
-                // A BatchComposer alongside the projector: without it, FilesystemTransactionalStore's own
-                // composer field stays null, PublicationPipeline.Publish's composer.Contribute branch never
-                // runs, and PublishBatch's composer?.Compose(view) is permanently [].
-                //
-                // PackageProjector's own ceiling is passed the same derived bytes as the store: GCPC-039
-                // names catalogs and postings alongside facts, observations and relations as artifacts that
-                // must split under the ceiling, so the projector cannot keep sharding at its own unrelated
-                // 1 MiB default (ShardWriter.DefaultCeilingBytes) once the store enforces the real one.
-                analysisEngine = new AnalysisEngine(
-                    new FilesystemTransactionalStore(
-                        outputPath,
-                        new PackageProjector(ceiling.CeilingBytes),
-                        new BatchComposer(),
-                        readingBudgetTokens,
-                        maxFileReadsPerScenario,
-                        [.. allowlist]));
-            }
-
-            AnalysisResult result;
+            string outputPath;
             try
             {
-                result = await analysisEngine.AnalyzeAsync(request, cancellationToken).ConfigureAwait(false);
+                outputPath = Path.GetFullPath(outputCandidate);
             }
-            catch (ArgumentException exception)
+            catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
             {
-                return Invalid(parseResult, exception.Message);
+                return Invalid(parseResult, $"invalid output path: {outputCandidate}");
             }
 
+            if (File.Exists(outputPath))
+            {
+                return Invalid(parseResult, $"output path is a file: {outputPath}");
+            }
+
+            var request = new CoreAnalyzeRequest(
+                normalizedPaths.ToImmutable(),
+                outputPath,
+                parseResult.GetValue(includeTestsOption));
+            var result = await analyzeAsync(request, cancellationToken).ConfigureAwait(false);
             var stdout = parseResult.InvocationConfiguration.Output;
             var error = parseResult.InvocationConfiguration.Error;
 
-            WriteDiagnostics(result, error);
-            stdout.WriteLine(FormatSummary(result));
-            if (result.HasUnpublishedSolution || result.HasBatchPublicationFailure)
+            WriteDiagnostics(result.Diagnostics, error);
+            if (!result.Committed)
             {
-                return ExitCodes.PartialComposition;
+                return RejectedExitCode(result.Diagnostics);
             }
 
-            return PublishedCertificationExitCode(outputPath, result);
+            stdout.WriteLine($"Knowledge package committed and certified: {outputPath}");
+            return ExitCodes.Success;
         });
 
         rootCommand.Subcommands.Add(analyze);
@@ -328,9 +295,9 @@ internal static class CommandFactory
 
     internal static Task<int> InvokeAsync(
         string[] args,
-        IAnalysisEngine? engine = null,
+        Func<CoreAnalyzeRequest, CancellationToken, Task<CoreAnalyzeResult>>? analyzeAsync = null,
         InvocationConfiguration? configuration = null) =>
-        CreateRootCommand(engine).Parse(args).InvokeAsync(configuration);
+        CreateRootCommand(analyzeAsync).Parse(args).InvokeAsync(configuration);
 
     internal static int Invalid(ParseResult parseResult, string message)
     {
@@ -338,102 +305,40 @@ internal static class CommandFactory
         return ExitCodes.InvalidInvocation;
     }
 
-    /// <summary>
-    /// GCPC-069/GCPC-070: maps the certification status from the package this invocation just published.
-    /// The batch manifest supplies the exact solution-to-package mapping, avoiding both directory-name
-    /// assumptions and unrelated packages that may already exist under the output root. An engine that
-    /// publishes nothing writes no batch manifest and reports success.
-    /// </summary>
-    private static int PublishedCertificationExitCode(string outputPath, AnalysisResult result)
+    private static void WriteDiagnostics(ImmutableArray<EngineDiagnostic> diagnostics, TextWriter error)
     {
-        var batchManifestPath = Path.Combine(outputPath, "batch-manifest.json");
-        if (!File.Exists(batchManifestPath))
+        foreach (var diagnostic in diagnostics)
         {
-            return ExitCodes.Success;
-        }
-
-        var requestedIdentities = result.Solutions
-            .Where(static outcome => outcome.Status == PublicationStatus.Committed)
-            .Select(static outcome => SolutionCoordinate.For(outcome.SolutionPath).Identity.Value)
-            .ToHashSet(StringComparer.Ordinal);
-        var batch = PackageValidator.ReadPayloadOrThrow<BatchManifestEnvelope>(
-            File.ReadAllBytes(batchManifestPath), "batch-manifest.json");
-
-        var exitCode = ExitCodes.Success;
-        foreach (var solution in batch.Solutions)
-        {
-            if (!requestedIdentities.Contains(solution.Identity) || solution.Status != "committed")
+            var fields = new List<string>
             {
-                continue;
-            }
-
-            var certificationPath = Path.Combine(outputPath, solution.PackageDirectory, "run-certification.json");
-            if (!File.Exists(certificationPath))
-            {
-                continue;
-            }
-
-            var certification = PackageValidator.ReadPayloadOrThrow<RunCertificationEnvelope>(
-                File.ReadAllBytes(certificationPath), "run-certification.json");
-            if (certification.Status == "failed")
-            {
-                return ExitCodes.CertificationFailed;
-            }
-
-            if (certification.Status == "degraded")
-            {
-                exitCode = ExitCodes.Degraded;
-            }
-        }
-
-        return exitCode;
-    }
-
-    private static void WriteDiagnostics(AnalysisResult result, TextWriter error)
-    {
-        foreach (var outcome in result.Solutions)
-        {
-            if (outcome.Status is not PublicationStatus.Unpublished)
-            {
-                continue;
-            }
-
-            var detail = outcome.FailingStage is { Length: > 0 } stage
-                ? $" unpublished at {stage}"
-                : " unpublished";
-            if (outcome.StructuralCorruption)
-            {
-                detail += " (structural corruption)";
-            }
-
-            if (outcome.Detail is { Length: > 0 } named)
-            {
-                detail += $" {named}";
-            }
-
-            error.WriteLine($"csharp2md:{detail} {outcome.LogicalRelativePath}");
-        }
-
-        if (result.HasBatchPublicationFailure)
-        {
-            var reason = result.BatchPublicationGate ?? "batch";
-            var message = result.BatchPublicationDetail is { Length: > 0 } named
-                ? $"{reason}: {named}"
-                : reason;
-            error.WriteLine($"csharp2md: {message}");
+                $"code={diagnostic.Code}",
+                $"stage={diagnostic.Stage}",
+                $"cause={diagnostic.Cause}",
+            };
+            AddCoordinate(fields, "solution", diagnostic.Solution);
+            AddCoordinate(fields, "project", diagnostic.Project);
+            AddCoordinate(fields, "variant", diagnostic.Variant);
+            AddCoordinate(fields, "family", diagnostic.Family);
+            AddCoordinate(fields, "artifact", diagnostic.Artifact);
+            error.WriteLine($"csharp2md: {string.Join(' ', fields)}");
         }
     }
 
-    private static string FormatSummary(AnalysisResult result)
+    private static void AddCoordinate(List<string> fields, string name, string? value)
     {
-        var lines = result.Solutions.Select(static outcome =>
+        if (!string.IsNullOrWhiteSpace(value))
         {
-            var facts = outcome.Stages.Sum(static stage => stage.FactCount);
-            var observations = outcome.Stages.Sum(static stage => stage.ObservationCount);
-            var relations = outcome.Stages.Sum(static stage => stage.RelationCount);
-            return $"{outcome.LogicalRelativePath}: {outcome.Status}; facts={facts} observations={observations} relations={relations}";
-        });
-
-        return "Analysis complete." + Environment.NewLine + string.Join(Environment.NewLine, lines);
+            fields.Add($"{name}={value}");
+        }
     }
+
+    private static int RejectedExitCode(ImmutableArray<EngineDiagnostic> diagnostics) =>
+        diagnostics.Any(static diagnostic => string.Equals(diagnostic.Stage, "invocation", StringComparison.Ordinal))
+            ? ExitCodes.InvalidInvocation
+            : diagnostics.Any(static diagnostic => string.Equals(diagnostic.Stage, "certification", StringComparison.Ordinal))
+                ? ExitCodes.CertificationFailed
+                : ExitCodes.StructuralCorruption;
+
+    private static StringComparer CanonicalPathComparer =>
+        OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 }

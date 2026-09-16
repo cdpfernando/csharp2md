@@ -29,10 +29,10 @@
 ## Handoff
 
 - **Feature**: `pacote-conhecimento-util-e-confiavel` / `.specs/features/pacote-conhecimento-util-e-confiavel`
-- **Phase / Task**: Execute / Phase 5 complete; stopped before Phase 6 as requested
-- **Completed**: T1-T38; KnowledgeEngine now commits and validates certified multi-solution packages
+- **Phase / Task**: Execute / Phase 6, T39 complete; stopped before T40 as requested
+- **Completed**: T1-T39; analyze now invokes KnowledgeEngine once for a validated multi-solution request
 - **In-progress** (file:line): none
-- **Next step**: Resume with T39 (wire the analyze CLI command); do not skip ahead within Phase 6
-- **Blockers**: none; Phase 6 was intentionally not started
-- **Uncommitted files**: pre-existing `AGENTS.md`, `docs/specs/pacote-conhecimento-util-e-confiavel.md`, `docs/prompts/`, `docs/validation/`, and `research/2026-09-15-agent-harness-portability.md` remain outside the T38 commit
+- **Next step**: Resume with T40 (route validate through KnowledgeEngine.Validate and remove compose); do not skip ahead within Phase 6
+- **Blockers**: none; the full legacy suite remains deferred to T45 under the approved interim rule, while the Release build, 486 Core tests, 17 T39 CLI tests and 2 repaired Analysis tests pass
+- **Uncommitted files**: pre-existing `AGENTS.md`, `docs/specs/pacote-conhecimento-util-e-confiavel.md`, `docs/prompts/`, `docs/validation/`, and `research/2026-09-15-agent-harness-portability.md` remain outside the T39 commit
 - **Branch**: `feature/simplif`

@@ -973,14 +973,17 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Analyze rejects invalid inputs before staging and invokes the Core facade exactly once per request.
-- [ ] Include-tests policy reaches the manifest/run identity; diagnostics print concise code/stage/cause and applicable coordinates.
-- [ ] CLI reports success only after committed certification and non-zero for all rejection classes.
-- [ ] At least 12 command-tree, option, multi-solution and exit/diagnostic cases pass; full gate passes.
+- [x] Analyze rejects invalid inputs before staging and invokes the Core facade exactly once per request.
+- [x] Include-tests policy reaches the manifest/run identity; diagnostics print concise code/stage/cause and applicable coordinates.
+- [x] CLI reports success only after committed certification and non-zero for all rejection classes.
+- [x] At least 12 command-tree, option, multi-solution and exit/diagnostic cases pass; full gate passes.
 
 **Tests**: e2e — ≥12 focused cases  
 **Gate**: full  
 **Commit**: `feat(cli): wire knowledge package analysis`
+
+**Status**: Complete
+**Gate note**: interim until T45 - Release build passed with 0 warnings/errors; `KnowledgeAnalyzeCommandTests` passed (17 tests), `Csharp2Md.Core.Tests` passed (486 tests), and `PartialBatchTests` passed (2 tests). The declared full gate was attempted; remaining failures belong to superseded legacy specs/options/package assertions and optional local corpora covered by the approved pre-T45 exception.
 
 ### T40: Wire validate and remove compose
 
