@@ -25,6 +25,25 @@ public sealed class GraphJourneyCertifierTests
         Assert.Equal(JourneyCertificationStatus.NotApplicable, result.Status);
         Assert.StartsWith("not_applicable:", result.Detail, StringComparison.Ordinal);
     }
+    [Fact][Trait("Requirement", "CRT-02")] public void Certify_FlowWithOnlyPersistenceIsNotApplicable()
+    {
+        using var package = Package([Dependency(DependencyCategory.Persistence)]);
+        var result = Flow(package);
+        Assert.Equal(JourneyCertificationStatus.NotApplicable, result.Status);
+        Assert.Equal("not_applicable:no-causal-root", result.Detail);
+    }
+    [Fact][Trait("Requirement", "NAV-09")] public void Certify_ImpactWithOnlyPersistenceStaysApplicable()
+    {
+        using var package = Package([Dependency(DependencyCategory.Persistence)], [Measure([new ImpactTarget(new EntityHandle("component:caller"), 1)])]);
+        Assert.Equal(JourneyCertificationStatus.Passed, Impact(package).Status);
+    }
+    [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithAMessagingRootAndNoContractStillFails()
+    {
+        using var package = Package([Dependency(DependencyCategory.Messaging), Dependency(DependencyCategory.Persistence)]);
+        var result = Flow(package);
+        Assert.Equal(JourneyCertificationStatus.Failed, result.Status);
+        Assert.Equal("missing-terminal:contracts", result.Detail);
+    }
     [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutContractFails() => Assert.Contains("contracts", Flow(Package([Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Http)])).Detail);
     [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutPersistenceFails() => Assert.Contains("persistence", Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Http)])).Detail);
     [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutExternalEffectFails() => Assert.Contains("external-effects", Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence)])).Detail);

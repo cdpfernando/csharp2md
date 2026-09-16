@@ -14,7 +14,9 @@ internal static class GraphJourneyCertifier
         ReadIndex(reader, solution, NavigationIndexKind.Contracts);
         ReadIndex(reader, solution, NavigationIndexKind.Persistence);
         var categories = outgoing.Entries.SelectMany(entry => entry.Categories).ToHashSet();
-        if (!categories.Overlaps([DependencyCategory.Http, DependencyCategory.Grpc, DependencyCategory.Messaging, DependencyCategory.Contract, DependencyCategory.Persistence]))
+        // Persistence is a terminal of the flow, never its root: a solution whose only causal facts are
+        // persistence has no flow to follow, so the journey is not applicable rather than incomplete.
+        if (!categories.Overlaps([DependencyCategory.Http, DependencyCategory.Grpc, DependencyCategory.Messaging, DependencyCategory.Contract]))
         {
             return NotApplicable(JourneyKind.FollowFlow, "no-causal-root");
         }

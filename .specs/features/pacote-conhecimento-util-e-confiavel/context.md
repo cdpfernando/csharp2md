@@ -59,8 +59,13 @@ Substituir o contrato publicado pelo csharp2md por um pacote compacto, factual, 
 - `docs/specs/pacote-conhecimento-util-e-confiavel.md` contém o diagnóstico, as 58 histórias originais, as decisões de implementação e as baselines medidas em 2026-09-15.
 - O pedido “sempre mantenha simples” é uma restrição transversal deste workstream.
 
+## Known Limitations
+
+- A extração causal reconhece efeitos externos por nome de método (`CausalRelationExtractor.cs:218-227`) e só emite `contract` a partir de publicação de mensagem genérica. Stacks .NET comuns ficam invisíveis: o Pitstop declara HTTP por atributo com Refit (`WebApp/RESTClients/CustomerManagementAPI.cs:11`) e publica por `IMessagePublisher.PublishMessageAsync(string, object, string)`, então mediu zero fatos de HTTP, gRPC, messaging e contrato em 2026-09-16. Alargar a extração para clientes HTTP declarados por atributo, endpoints de controller e publicação não-genérica com payload resolvível é um workstream próprio, ainda não iniciado.
+
 ## Deferred Ideas
 
+- Alargamento da extração causal descrito em `Known Limitations`.
 - Query engine, embeddings, wiki, UI e interpretação de regras de negócio.
 - Compatibilidade ou migração de pacotes legados.
 - Otimização geral do tempo de análise.

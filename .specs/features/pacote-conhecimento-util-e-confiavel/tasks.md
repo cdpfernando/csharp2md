@@ -80,10 +80,10 @@ T31 -> T32 -> T33 -> T34 -> T35 -> T36 -> T37 -> T38
 ### Phase 6: CLI acceptance and clean cut
 
 ```text
-T39 -> T40 -> T41 -> T42 -> T43 -> T48 -> T46 -> T47 -> T49 -> T50 -> T44 -> T45
+T39 -> T40 -> T41 -> T42 -> T43 -> T48 -> T46 -> T47 -> T49 -> T50 -> T51 -> T44 -> T45
 ```
 
-T46-T50 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+T46-T51 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -1216,6 +1216,31 @@ T46-T50 were added after T43 was complete, so they carry higher numbers than the
 **Gate note**: Core Release quick gate passed: 531 passed, 0 failed, 0 skipped. `KnowledgePackageJourneyTests` and `KnowledgePackageFailureTests` passed 32 of 32 cases. Pitstop's evidence journey now passes at 3 reads and 17,572 tokens, down from `tokens-exceeded:372295>25000`; its plan holds 135 artifacts against the 750-file ceiling. Publication still rejects Pitstop on `FollowFlow:missing-terminal:contracts`, which no task owns and which T44 needs settled.
 **Deviation**: `MachineArtifactWriter.cs:19-22` packs the evidence table at 32 KiB instead of the 64 KiB bulk target in `design.md:496`. At 64 KiB the journey measured 102,050 bytes against NAV-10's 100,000-byte ceiling; the manifest alone is 33,899 bytes for Pitstop. The `ShardPacker` default is unchanged for every other family.
 **Adequacy**: `EvidenceEntryIndexTests.cs:122-125` asserts the journey passes at 3 reads and within 25,000 tokens for both a single-shard and a 36-shard table, matching NAV-10. `:44-46` resolves every evidence ordinal through the router to the record carrying that canonical key, digest and local handle, matching NAV-01. `:25-26` asserts the index payload carries neither `content_digest` nor `document_canonical_key`, so the router does not repeat the evidence payload. `:78-80`, `:92-94` and `:106-108` reject a shard pointer that names a missing artifact, a shard whose declared count disagrees with its rows, and a range that skips an ordinal, each naming the offending artifact. `:57-65` asserts contiguous ordinal partitioning. `:138-139` and `:150-151` assert the certification coordinates for a deleted shard and for a solution with no retained evidence. The four pre-existing tests that fixed the old array-shaped index (`CompactDependencyReferenceTests.cs:49-57` and `:96-105`, `SolutionCertificationTests.cs:44-56`, `JourneyCertifierTests.cs:32-50`) were repointed at the router without weakening any assertion; the two certification fixtures now carry retained evidence, so their passing evidence journey is a real result rather than an empty array.
+
+### T51: Narrow the causal flow root to external effects
+
+**What**: Stop persistence alone from making the flow journey applicable, so a solution whose causal facts hold no contract, HTTP, gRPC or messaging edge records `not_applicable` instead of failing on a terminal it can never reach.  
+**Where**: `src/Csharp2Md.Core/Publication/Certification/GraphJourneyCertifier.cs`  
+**Depends on**: T50  
+**Reuses**: the causal-category applicability checks T48 settled  
+**Requirement**: CRT-01, CRT-02, NAV-08, NAV-09
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] A solution whose only causal category is persistence records `not_applicable:no-causal-root` for the flow journey.
+- [x] A solution carrying a flow root still fails with its missing terminal named, and reverse impact keeps persistence as a valid root.
+- [x] Pitstop commits within CRT-05's ceilings when its optional clone is present; quick gate passes.
+
+**Tests**: unit — ≥2 applicability cases  
+**Gate**: quick + Pitstop publication when present  
+**Commit**: `fix(publication): narrow causal flow root`
+
+**Status**: Complete
+**Gate note**: Core Release quick gate passed: 534 passed, 0 failed, 0 skipped. Pitstop committed for the first time: 136 reachable files and 20,445,642 bytes (19.50 MiB) against CRT-05's 750-file and 25 MiB ceilings, with `locate`, `reverse_impact` and `evidence_disposition` passed and `follow_flow` `not_applicable:no-causal-root`.
+**Decision**: Measured on 2026-09-16, Pitstop's extracted dependencies are `InternalInvocation=983, Persistence=85, ProjectReference=12, StructuralTypeUse=2352` — no contract, HTTP, gRPC or messaging edge at all. `design.md:524` lists the flow journey's start as an operation or entry point and persistence as one of its terminals, so persistence alone is not a root and the journey is not applicable. The corpus-level cause is an extraction limitation recorded in `context.md`, not a certification defect; the rule keeps failing any solution that does have a flow root but cannot reach a terminal.
+**Adequacy**: `GraphJourneyCertifierTests.cs:28-34` asserts the persistence-only flow records exactly `not_applicable:no-causal-root`. `:35-39` asserts reverse impact still passes for a persistence-only solution with a reachable set, so NAV-09's data root is not narrowed with it. `:40-46` asserts a messaging root with no contract still fails with `missing-terminal:contracts`, so the narrowing cannot convert a real incompleteness into a silent pass. The five pre-existing terminal assertions at `:47-52` are unchanged.
 
 ### T44: Certify optional local corpora
 
