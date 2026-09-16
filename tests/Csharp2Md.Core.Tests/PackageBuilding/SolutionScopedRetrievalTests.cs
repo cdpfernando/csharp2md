@@ -54,18 +54,16 @@ public sealed class SolutionScopedRetrievalTests
                 Assert.DoesNotContain(".000000.", index.EntryPath, StringComparison.Ordinal);
             });
 
-        var ordersDependencies = Read<ImmutableArray<AggregatedDependency>>(
-            machine,
-            Entry(orders, NavigationIndexKind.Outgoing));
-        var shippingDependencies = Read<ImmutableArray<AggregatedDependency>>(
-            machine,
-            Entry(shipping, NavigationIndexKind.Outgoing));
-        var ordersMeasures = Read<ImmutableArray<ScopeMeasures>>(
-            machine,
-            Entry(orders, NavigationIndexKind.Measures));
-        var shippingMeasures = Read<ImmutableArray<ScopeMeasures>>(
-            machine,
-            Entry(shipping, NavigationIndexKind.Measures));
+        var ordersDependencyIndex = Read<NavigationIndexData>(machine, Entry(orders, NavigationIndexKind.Outgoing));
+        var shippingDependencyIndex = Read<NavigationIndexData>(machine, Entry(shipping, NavigationIndexKind.Outgoing));
+        var ordersMeasureIndex = Read<NavigationIndexData>(machine, Entry(orders, NavigationIndexKind.Measures));
+        var shippingMeasureIndex = Read<NavigationIndexData>(machine, Entry(shipping, NavigationIndexKind.Measures));
+        Assert.StartsWith($"solutions/{orders.Id.Value}/measures/", ordersDependencyIndex.ArtifactPath, StringComparison.Ordinal);
+        Assert.StartsWith($"solutions/{shipping.Id.Value}/measures/", shippingDependencyIndex.ArtifactPath, StringComparison.Ordinal);
+        var ordersDependencies = Read<ImmutableArray<AggregatedDependency>>(machine, ordersDependencyIndex.ArtifactPath);
+        var shippingDependencies = Read<ImmutableArray<AggregatedDependency>>(machine, shippingDependencyIndex.ArtifactPath);
+        var ordersMeasures = Read<ImmutableArray<ScopeMeasures>>(machine, ordersMeasureIndex.ArtifactPath);
+        var shippingMeasures = Read<ImmutableArray<ScopeMeasures>>(machine, shippingMeasureIndex.ArtifactPath);
 
         Assert.Equal("component:orders-target", Assert.Single(ordersDependencies).Target.Value);
         Assert.DoesNotContain(ordersDependencies, dependency => dependency.Target.Value == "component:shipping-target");

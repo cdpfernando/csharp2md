@@ -6,6 +6,7 @@ using System.Text.Json.Serialization.Metadata;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.PackageBuilding;
 using Csharp2Md.Core.PackageBuilding.Identity;
+using Csharp2Md.Core.PackageBuilding.Rendering;
 using Csharp2Md.Core.Publication;
 
 namespace Csharp2Md.Core.PackageBuilding;
@@ -78,6 +79,8 @@ internal static class CanonicalJson
 [JsonSerializable(typeof(JourneyCertification))]
 [JsonSerializable(typeof(RetrievalModel))]
 [JsonSerializable(typeof(SolutionRetrievalModel))]
+[JsonSerializable(typeof(NavigationIndexData))]
+[JsonSerializable(typeof(NavigationIndexEntry))]
 [JsonSerializable(typeof(AggregatedDependency))]
 [JsonSerializable(typeof(ScopeMeasures))]
 [JsonSerializable(typeof(GapCounts))]

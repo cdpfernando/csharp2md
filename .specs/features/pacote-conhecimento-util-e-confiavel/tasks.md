@@ -80,10 +80,10 @@ T31 -> T32 -> T33 -> T34 -> T35 -> T36 -> T37 -> T38
 ### Phase 6: CLI acceptance and clean cut
 
 ```text
-T39 -> T40 -> T41 -> T42 -> T43 -> T48 -> T46 -> T47 -> T44 -> T45
+T39 -> T40 -> T41 -> T42 -> T43 -> T48 -> T46 -> T47 -> T49 -> T50 -> T44 -> T45
 ```
 
-T46-T48 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+T46-T50 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -1143,19 +1143,19 @@ T46-T48 were added after T43 was complete, so they carry higher numbers than the
 ### T47: Index dependencies without copying payload
 
 **What**: Serialize the confirmed dependency and measure sets once per solution and make the navigation indexes carry keys and pointers into them instead of verbatim copies.  
-**Where**: `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`, `src/Csharp2Md.Core/Publication/Certification/GraphJourneyCertifier.cs`  
+**Where**: `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`, `src/Csharp2Md.Core/PackageBuilding/CanonicalJson.cs`, `src/Csharp2Md.Core/Publication/PackageReader.cs`, `src/Csharp2Md.Core/Publication/RetrievalModelReader.cs`, `src/Csharp2Md.Core/Publication/Certification/GraphJourneyCertifier.cs`  
 **Depends on**: T46  
 **Reuses**: the existing `NavigationIndexKind` contract, manifest entry paths and `PackageReader` path resolution  
 **Requirement**: DEP-05, DEP-07
 
 **Done when**:
 
-- [ ] The confirmed dependency set is serialized exactly once per solution; no second path repeats it.
-- [ ] The measure set is serialized exactly once per solution; no second path repeats it.
-- [ ] `outgoing`, `incoming`, `contracts` and `persistence` carry keys and resolvable pointers, never a copy of the edge set.
-- [ ] Every index kind stays declared exactly once in the manifest and resolves through `PackageReader` without exposing composite keys.
-- [ ] The four journeys certify from the same entry indexes with unchanged interpretation and resolvable relation and evidence references.
-- [ ] At least 8 single-serialization, pointer-resolution and journey cases pass; quick gate passes.
+- [x] The confirmed dependency set is serialized exactly once per solution; no second path repeats it.
+- [x] The measure set is serialized exactly once per solution; no second path repeats it.
+- [x] `outgoing`, `incoming`, `contracts` and `persistence` carry keys and resolvable pointers, never a copy of the edge set.
+- [x] Every index kind stays declared exactly once in the manifest and resolves through `PackageReader` without exposing composite keys.
+- [x] The four journeys certify on the synthetic fixture from the same entry indexes with unchanged interpretation; canonical dependency records retain their relation and evidence handles.
+- [x] At least 8 single-serialization, pointer-resolution and journey cases pass; quick gate passes.
 
 **Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
 
@@ -1163,11 +1163,56 @@ T46-T48 were added after T43 was complete, so they carry higher numbers than the
 **Gate**: quick  
 **Commit**: `fix(package-building): index dependencies without copying payload`
 
+**Status**: Complete
+**Gate note**: Core Release quick gate passed: 509 passed, 0 failed, 0 skipped. The synthetic CLI journey suite passed 16 of 16 cases. Pitstop's plan fell from 141.0 MiB to 38.13 MiB; publication still rejects on flow applicability and the evidence token budget, with size and evidence work assigned to T49-T50.
+**Adequacy**: `NavigationPayloadIndexTests.cs:14-27` asserts single dependency/measure storage; `:31-34` asserts exactly one of every index kind; `:42-55` proves outgoing/incoming ordinals resolve; `:59-71` proves category filtering; `:80-83` proves measure pointers; `:91-97` proves rehydration and retained relation/evidence handles; `:118-119` proves `PackageReader` follows pointers; `:136` and `:147` reject broken pointers. `KnowledgePackageJourneyTests.cs:70-83` asserts all four synthetic journey budgets.
+
+### T49: Compact repeated relation and evidence references
+
+**What**: Replace repeated canonical relation and evidence IDs inside aggregated dependencies with solution-local handles and one directly resolvable table for each kind.  
+**Where**: `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`, `src/Csharp2Md.Core/Publication/RetrievalModelReader.cs`  
+**Depends on**: T47  
+**Reuses**: `LocalTableBuilder`, retained factual relations and evidence, and the existing dependency payload path  
+**Requirement**: DEP-03, DEP-05, DEP-07, STO-03, STO-04, STO-05, CRT-05
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] Relation and evidence references in each dependency use deterministic solution-local handles, with each canonical identity stored once in its declared table.
+- [ ] A consumer resolves each handle to the supporting confirmed relation or evidence without guessing a composite key or scanning unrelated artifacts.
+- [ ] Rehydration restores the same relation/evidence reference values and rejects missing, duplicate or invalid table mappings.
+- [ ] Pitstop's plan is at most 25 MiB when the optional clone is present; the quick gate passes.
+
+**Tests**: unit — ≥8 handle/table/rehydration cases  
+**Gate**: quick + Pitstop plan when present  
+**Commit**: `fix(package-building): compact dependency references`
+
+### T50: Bound evidence journey reads
+
+**What**: Make the evidence entry index direct and small enough to certify the evidence/disposition journey against the local-corpus token budget.  
+**Where**: `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`, `src/Csharp2Md.Core/Publication/Certification/JourneyCertifier.cs`  
+**Depends on**: T49  
+**Reuses**: solution-local evidence handles and the existing measured reader  
+**Requirement**: NAV-01, NAV-10, CRT-04, CRT-05
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] The evidence entry index resolves a selected evidence record or disposition within 12 reads and 25,000 estimated tokens.
+- [ ] The index does not repeat the full evidence payload and rejects a broken pointer during validation.
+- [ ] Pitstop's evidence journey passes when its optional clone is present; quick gate passes.
+
+**Tests**: unit + integration — ≥6 index/resolution/budget cases  
+**Gate**: quick + Pitstop journey when present  
+**Commit**: `fix(publication): bound evidence journey reads`
+
 ### T44: Certify optional local corpora
 
 **What**: Update LocalCorpus acceptance to assert eShop variant isolation and the eShopOnContainers/Pitstop committed-package ceilings.  
 **Where**: `tests/Csharp2Md.Cli.Tests/LocalCorpusAnalyzeTests.cs`  
-**Depends on**: T47  
+**Depends on**: T50  
 **Reuses**: dynamic skip convention and gitignored local clone paths  
 **Requirement**: CRT-04, CRT-05, CRT-06, CRT-07
 
@@ -1220,7 +1265,7 @@ T46-T48 were added after T43 was complete, so they carry higher numbers than the
 | PKG-08 | T5, T8, T17, T30, T38-T39, T42 | CLI policy identity |
 | PKG-09 | T3, T12-T16, T42 | factual graph + CLI |
 | PKG-10 | T1, T40, T45 | topology surface |
-| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42, T46-T47 | hand-recalculated dependencies |
+| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42, T46-T47, T49 | hand-recalculated dependencies |
 | MET-01..MET-04 | T4, T19, T42 | hand-recalculated direct measures |
 | MET-05 | T4, T20, T42 | hand-recalculated SCCs |
 | MET-06..MET-08 | T4, T17, T21-T22, T42 | hand-recalculated impact/gaps |
@@ -1228,12 +1273,12 @@ T46-T48 were added after T43 was complete, so they carry higher numbers than the
 | NAV-02..NAV-05 | T22, T27-T29, T37, T42 | machine/Markdown equivalence |
 | NAV-06..NAV-07 | T26, T34, T42 | locate budgets |
 | NAV-08..NAV-09 | T26, T35, T42 | graph journey budgets |
-| NAV-10 | T26, T34, T42 | evidence budget |
+| NAV-10 | T26, T34, T42, T50 | evidence budget |
 | VAR-01..VAR-02 | T9-T10, T41 | real workspace fixture |
 | VAR-03..VAR-05 | T3, T7, T11, T41 | occurrence/collision tests |
 | VAR-06 | T7, T11, T15, T24, T37-T39 | multi-solution CLI |
 | STO-01..STO-02 | T23, T33, T43 | vectors/collision/rejection |
-| STO-03..STO-05 | T5, T24, T27, T33, T37 | tables and resolver |
+| STO-03..STO-05 | T5, T24, T27, T33, T37, T49 | tables and resolver |
 | STO-06..STO-07 | T6, T25, T30, T33, T37 | byte/shard determinism |
 | PUB-01 | T5-T6, T36 | single materialization path |
 | PUB-02 | T5, T32-T33, T36 | staged rehydration |
@@ -1242,7 +1287,7 @@ T46-T48 were added after T43 was complete, so they carry higher numbers than the
 | PUB-06..PUB-07 | T31, T41, T43 | safety fixture/rejection |
 | PUB-08 | T2, T15, T36, T38-T39, T43 | structured diagnostics |
 | CRT-01..CRT-03 | T15, T30, T34-T37, T42, T48 | journey certification |
-| CRT-04..CRT-07 | T9, T47, T44 | optional corpora |
+| CRT-04..CRT-07 | T9, T47, T49-T50, T44 | optional corpora |
 | CRT-08 | T8, T12-T14, T31, T41 | fixture integrity |
 | CRT-09 | T42 | CLI E2E |
 | EDG-01 | T13, T16-T17, T33, T43 | evidence rejection |
@@ -1271,6 +1316,8 @@ All 71 requirements have at least one focused owning task and a final acceptance
 | T48 | One journey-applicability correction | ✅ Granular |
 | T46 | One scope-pairing correction | ✅ Granular |
 | T47 | One artifact-duplication correction | ✅ Cohesive write/read contract |
+| T49 | One local-reference compaction contract | ✅ Cohesive write/read contract |
+| T50 | One bounded evidence-entry contract | ✅ Cohesive write/read contract |
 | T45 | One final repository topology cutover | ✅ Cohesive clean-cut deliverable |
 
 T1, T37, T41, T45, T47 and T48 necessarily touch multiple physical files, but each is one indivisible deliverable. Splitting any of them would create an invalid scaffold, a partially qualified package contract, a fixture with no stable oracle, a repository with mixed contracts, or a clarified rule without matching fixtures.
@@ -1325,7 +1372,9 @@ T1, T37, T41, T45, T47 and T48 necessarily touch multiple physical files, but ea
 | T48 | T43 | T43 -> T48 | ✅ Match |
 | T46 | T48 | T48 -> T46 | ✅ Match |
 | T47 | T46 | T46 -> T47 | ✅ Match |
-| T44 | T47 | T47 -> T44 | ✅ Match |
+| T49 | T47 | T47 -> T49 | ✅ Match |
+| T50 | T49 | T49 -> T50 | ✅ Match |
+| T44 | T50 | T50 -> T44 | ✅ Match |
 | T45 | T44 | T44 -> T45 | ✅ Match |
 
 Cross-phase dependencies are represented by the ordered phase chain; all intra-phase edges match exactly.
@@ -1380,6 +1429,8 @@ Cross-phase dependencies are represented by the ordered phase chain; all intra-p
 | T48 | Journey applicability | unit | unit | ✅ OK |
 | T46 | Scope pairing | unit | unit | ✅ OK |
 | T47 | Artifact indexing | unit | unit | ✅ OK |
+| T49 | Local reference compaction | unit | unit | ✅ OK |
+| T50 | Bounded evidence journey | unit + integration | unit + integration | ✅ OK |
 | T44 | Optional corpora | e2e | e2e | ✅ OK |
 | T45 | Topology + CLI current contract | unit + e2e + build | unit + e2e + build | ✅ OK |
 

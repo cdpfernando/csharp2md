@@ -27,11 +27,40 @@ internal static class RetrievalModelReader
                 throw new PackageCorruptionException(indexes[NavigationIndexKind.Identity]);
             }
 
+            var outgoing = Read<NavigationIndexData>(artifacts, indexes[NavigationIndexKind.Outgoing]);
+            var measuresIndex = Read<NavigationIndexData>(artifacts, indexes[NavigationIndexKind.Measures]);
+            var prefix = $"solutions/{entry.Id.Value}/measures";
+            if (outgoing.ArtifactPath != $"{prefix}/dependencies.000000.json")
+            {
+                throw new PackageCorruptionException(indexes[NavigationIndexKind.Outgoing]);
+            }
+            if (measuresIndex.ArtifactPath != $"{prefix}/summary.json")
+            {
+                throw new PackageCorruptionException(indexes[NavigationIndexKind.Measures]);
+            }
+
+            var dependencies = Read<ImmutableArray<AggregatedDependency>>(artifacts, outgoing.ArtifactPath);
+            var measures = Read<ImmutableArray<ScopeMeasures>>(artifacts, measuresIndex.ArtifactPath);
+            VerifyIndex(NavigationIndexKind.Outgoing, MachineArtifactWriter.BuildDependencyIndex(outgoing.ArtifactPath, dependencies, static dependency => dependency.Source.Value));
+            VerifyIndex(NavigationIndexKind.Incoming, MachineArtifactWriter.BuildDependencyIndex(outgoing.ArtifactPath, dependencies, static dependency => dependency.Target.Value));
+            VerifyIndex(NavigationIndexKind.Contracts, MachineArtifactWriter.BuildDependencyIndex(outgoing.ArtifactPath, dependencies, static dependency => dependency.Source.Value, DependencyCategory.Contract));
+            VerifyIndex(NavigationIndexKind.Persistence, MachineArtifactWriter.BuildDependencyIndex(outgoing.ArtifactPath, dependencies, static dependency => dependency.Source.Value, DependencyCategory.Persistence));
+            VerifyIndex(NavigationIndexKind.Measures, MachineArtifactWriter.BuildMeasuresIndex(measuresIndex.ArtifactPath, measures));
             solutions.Add(new SolutionRetrievalModel(
                 identities[0],
                 Read<ImmutableArray<EntityHandle>>(artifacts, indexes[NavigationIndexKind.Roots]),
-                Read<ImmutableArray<AggregatedDependency>>(artifacts, indexes[NavigationIndexKind.Outgoing]),
-                Read<ImmutableArray<ScopeMeasures>>(artifacts, indexes[NavigationIndexKind.Measures])));
+                dependencies,
+                measures));
+
+            void VerifyIndex(NavigationIndexKind kind, NavigationIndexData expected)
+            {
+                var path = indexes[kind];
+                var actual = Read<NavigationIndexData>(artifacts, path);
+                if (!CanonicalJson.Write(actual).AsSpan().SequenceEqual(CanonicalJson.Write(expected).AsSpan()))
+                {
+                    throw new PackageCorruptionException(path);
+                }
+            }
         }
 
         return new RetrievalModel(solutions.ToImmutable());

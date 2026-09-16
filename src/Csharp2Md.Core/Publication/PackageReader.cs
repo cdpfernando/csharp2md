@@ -1,5 +1,6 @@
 using Csharp2Md.Core.Analysis.Inventory;
 using Csharp2Md.Core.PackageBuilding;
+using Csharp2Md.Core.PackageBuilding.Rendering;
 
 namespace Csharp2Md.Core.Publication;
 
@@ -78,7 +79,18 @@ internal sealed class PackageReader : IDisposable
             .Append("measurements.json")
             .Distinct(StringComparer.Ordinal)
             .OrderBy(static path => path, StringComparer.Ordinal);
-        return paths.ToDictionary(path => path, ReadArtifact, StringComparer.Ordinal);
+        var artifacts = paths.ToDictionary(path => path, ReadArtifact, StringComparer.Ordinal);
+        var pointerPaths = Manifest.Solutions
+            .SelectMany(solution => solution.Indexes)
+            .Where(index => index.Kind is NavigationIndexKind.Outgoing or NavigationIndexKind.Incoming
+                or NavigationIndexKind.Contracts or NavigationIndexKind.Persistence or NavigationIndexKind.Measures)
+            .Select(index => CanonicalJson.Read<NavigationIndexData>(artifacts[index.EntryPath].AsSpan()).ArtifactPath)
+            .Distinct(StringComparer.Ordinal);
+        foreach (var pointerPath in pointerPaths)
+        {
+            artifacts.TryAdd(pointerPath, ReadArtifact(pointerPath));
+        }
+        return artifacts;
     }
 
     private static bool TryReadPointer(ImmutableArray<byte> bytes, out PackageGenerationPointer pointer)

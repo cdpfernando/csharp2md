@@ -1,4 +1,5 @@
 using Csharp2Md.Core.PackageBuilding;
+using Csharp2Md.Core.PackageBuilding.Rendering;
 
 namespace Csharp2Md.Core.Publication.Certification;
 
@@ -8,9 +9,11 @@ internal static class GraphJourneyCertifier
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(solution);
-        var dependencies = ReadDependencies(reader, solution);
-        if (dependencies.IsDefaultOrEmpty) return NotApplicable(JourneyKind.FollowFlow, "no-causal-root");
-        var categories = dependencies.Select(dependency => dependency.Category).ToHashSet();
+        reader.OpenArtifact("manifest.json");
+        var outgoing = ReadIndex(reader, solution, NavigationIndexKind.Outgoing);
+        ReadIndex(reader, solution, NavigationIndexKind.Contracts);
+        ReadIndex(reader, solution, NavigationIndexKind.Persistence);
+        var categories = outgoing.Entries.SelectMany(entry => entry.Categories).ToHashSet();
         if (!categories.Overlaps([DependencyCategory.Http, DependencyCategory.Grpc, DependencyCategory.Messaging, DependencyCategory.Contract, DependencyCategory.Persistence]))
         {
             return NotApplicable(JourneyKind.FollowFlow, "no-causal-root");
@@ -29,33 +32,23 @@ internal static class GraphJourneyCertifier
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(solution);
-        var dependencies = ReadDependencies(reader, solution);
-        if (dependencies.IsDefaultOrEmpty
-            || !dependencies.Any(dependency => dependency.Category is DependencyCategory.Http or DependencyCategory.Grpc or DependencyCategory.Messaging or DependencyCategory.Contract or DependencyCategory.Persistence))
+        reader.OpenArtifact("manifest.json");
+        var incoming = ReadIndex(reader, solution, NavigationIndexKind.Incoming);
+        if (!incoming.Entries.SelectMany(entry => entry.Categories)
+            .Any(category => category is DependencyCategory.Http or DependencyCategory.Grpc or DependencyCategory.Messaging or DependencyCategory.Contract or DependencyCategory.Persistence))
         {
             return NotApplicable(JourneyKind.ReverseImpact, "no-impact-root");
         }
-        reader.BeginJourney();
-        reader.OpenArtifact("manifest.json");
-        reader.OpenArtifact(JourneyCertifier.Entry(solution, JourneyKind.ReverseImpact));
-        var measuresPath = solution.Indexes.Single(index => index.Kind == NavigationIndexKind.Measures).EntryPath;
-        var measures = CanonicalJson.Read<ImmutableArray<ScopeMeasures>>(reader.OpenArtifact(measuresPath).AsSpan());
-        if (measures.IsDefaultOrEmpty) return NotApplicable(JourneyKind.ReverseImpact, "no-impact-root");
-        if (measures.All(measure => measure.ReverseImpact.IsDefaultOrEmpty)) return Failed(JourneyKind.ReverseImpact, "missing-terminal:reachable-set");
+        var measures = ReadIndex(reader, solution, NavigationIndexKind.Measures);
+        if (measures.Entries.IsDefaultOrEmpty) return NotApplicable(JourneyKind.ReverseImpact, "no-impact-root");
+        if (measures.Entries.All(entry => !entry.HasReachableSet)) return Failed(JourneyKind.ReverseImpact, "missing-terminal:reachable-set");
         return Budget(JourneyKind.ReverseImpact, reader.Measurement);
     }
 
-    private static ImmutableArray<AggregatedDependency> ReadDependencies(MeasuredPackageReader reader, SolutionManifestEntry solution)
+    private static NavigationIndexData ReadIndex(MeasuredPackageReader reader, SolutionManifestEntry solution, NavigationIndexKind kind)
     {
-        reader.OpenArtifact("manifest.json");
-        reader.OpenArtifact(JourneyCertifier.Entry(solution, JourneyKind.FollowFlow));
-        foreach (var index in solution.Indexes.Where(index => index.Kind is NavigationIndexKind.Contracts or NavigationIndexKind.Persistence))
-        {
-            reader.OpenArtifact(index.EntryPath);
-        }
-
-        return CanonicalJson.Read<ImmutableArray<AggregatedDependency>>(
-            reader.OpenArtifact(JourneyCertifier.Entry(solution, JourneyKind.FollowFlow)).AsSpan());
+        var path = solution.Indexes.Single(index => index.Kind == kind).EntryPath;
+        return CanonicalJson.Read<NavigationIndexData>(reader.OpenArtifact(path).AsSpan());
     }
 
     private static JourneyCertification Budget(JourneyKind kind, JourneyMeasurement measurement) =>
