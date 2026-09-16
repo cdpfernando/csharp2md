@@ -1,8 +1,15 @@
+using Csharp2Md.Core.Analysis;
+using Csharp2Md.Core.Analysis.Semantics;
+using Csharp2Md.Core.PackageBuilding;
+using Csharp2Md.Core.PackageBuilding.Retention;
+using Csharp2Md.Core.Publication;
+using Csharp2Md.Core.Publication.Certification;
+
 namespace Csharp2Md.Core;
 
 public sealed class KnowledgeEngine
 {
-    public Task<AnalyzeResult> AnalyzeAsync(
+    public async Task<AnalyzeResult> AnalyzeAsync(
         AnalyzeRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -12,11 +19,83 @@ public sealed class KnowledgeEngine
         var diagnostics = ValidateAnalyzeRequest(request);
         if (diagnostics.Length > 0)
         {
-            return Task.FromResult(new AnalyzeResult(committed: false, diagnostics));
+            return new AnalyzeResult(committed: false, diagnostics);
         }
 
-        cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(new AnalyzeResult(committed: false, ImmutableArray<EngineDiagnostic>.Empty));
+        try
+        {
+            var graphs = ImmutableArray.CreateBuilder<FactualGraph>(request.SolutionPaths.Length);
+            foreach (var solutionPath in request.SolutionPaths)
+            {
+                graphs.Add(await SolutionAnalyzer.AnalyzeAsync(
+                    solutionPath,
+                    request.IncludeTests,
+                    cancellationToken).ConfigureAwait(false));
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            var plan = PackageBuilder.Build(graphs.ToImmutable(), request.IncludeTests);
+            var committed = PackagePublication.Publish(plan, request.OutputDirectory);
+            if (committed.Certification.Solutions
+                .SelectMany(static solution => solution.Journeys)
+                .Any(static journey => journey.Status == JourneyCertificationStatus.Failed))
+            {
+                return Failure(new EngineDiagnostic(
+                    "journey-certification",
+                    "certification",
+                    "failed-journey"));
+            }
+
+            return new AnalyzeResult(committed: true, ImmutableArray<EngineDiagnostic>.Empty);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (VariantPlanException exception)
+        {
+            return Failure(new EngineDiagnostic(exception.Code, "analysis", exception.Cause));
+        }
+        catch (SolutionAnalysisException exception)
+        {
+            return Failure(new EngineDiagnostic(
+                "analysis-failed",
+                "analysis",
+                exception.Cause,
+                exception.Solution.LogicalRelativePath,
+                exception.Project?.LogicalRelativePath,
+                exception.Variant is null ? null : CanonicalIdentity.VariantKey(exception.Variant)));
+        }
+        catch (OccurrenceCollisionException exception)
+        {
+            return Failure(new EngineDiagnostic(
+                "variant-collision",
+                "analysis",
+                "incompatible-shape",
+                variant: exception.VariantKey));
+        }
+        catch (RetentionException exception)
+        {
+            return Failure(new EngineDiagnostic("retention-failed", "retention", exception.Cause));
+        }
+        catch (PackageBudgetExceededException exception)
+        {
+            return Failure(new EngineDiagnostic("package-budget", "package-building", exception.Message));
+        }
+        catch (PackagePublicationException exception)
+        {
+            return Failure(new EngineDiagnostic(
+                "publication-rejected",
+                "publication",
+                PublicationCause(exception)));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+        {
+            return Failure(new EngineDiagnostic(
+                "analysis-failed",
+                "analysis",
+                exception.GetType().Name));
+        }
     }
 
     public PackageValidationResult Validate(ValidateRequest request)
@@ -29,7 +108,42 @@ public sealed class KnowledgeEngine
             return new PackageValidationResult(succeeded: false, diagnostics);
         }
 
-        return new PackageValidationResult(succeeded: false, ImmutableArray<EngineDiagnostic>.Empty);
+        var report = PackagePublication.Validate(request.PackageDirectory);
+        if (!report.Succeeded)
+        {
+            return new PackageValidationResult(
+                succeeded: false,
+                report.Failures.Select(static failure => new EngineDiagnostic(
+                    failure.Code,
+                    failure.Stage,
+                    failure.Cause,
+                    family: failure.Family,
+                    artifact: failure.Artifact)).ToImmutableArray());
+        }
+
+        try
+        {
+            var certification = JourneyCertifier.Certify(request.PackageDirectory);
+            var failures = certification.Solutions
+                .SelectMany(solution => solution.Journeys
+                    .Where(static journey => journey.Status == JourneyCertificationStatus.Failed)
+                    .Select(journey => new EngineDiagnostic(
+                        "journey-certification",
+                        "certification",
+                        journey.Detail,
+                        solution: solution.SolutionId.Value)))
+                .ToImmutableArray();
+            return new PackageValidationResult(failures.IsDefaultOrEmpty, failures);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+        {
+            return new PackageValidationResult(
+                succeeded: false,
+                ImmutableArray.Create(new EngineDiagnostic(
+                    "package-corruption",
+                    "validation",
+                    exception.GetType().Name)));
+        }
     }
 
     private static ImmutableArray<EngineDiagnostic> ValidateAnalyzeRequest(AnalyzeRequest request)
@@ -60,6 +174,18 @@ public sealed class KnowledgeEngine
 
     private static EngineDiagnostic InvocationDiagnostic(string cause) =>
         new("invalid-request", "invocation", cause);
+
+    private static AnalyzeResult Failure(EngineDiagnostic diagnostic) =>
+        new(committed: false, ImmutableArray.Create(diagnostic));
+
+    private static string PublicationCause(PackagePublicationException exception)
+    {
+        const string prefix = "publication: '";
+        return exception.Message.StartsWith(prefix, StringComparison.Ordinal)
+            && exception.Message.EndsWith("'.", StringComparison.Ordinal)
+                ? exception.Message[prefix.Length..^2]
+                : "publication-failed";
+    }
 }
 
 public sealed record AnalyzeRequest

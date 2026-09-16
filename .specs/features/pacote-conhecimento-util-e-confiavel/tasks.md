@@ -947,14 +947,17 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Multiple input solutions produce isolated graphs and one package plan/atomic commit.
-- [ ] `Validate` uses the same reader, validator and certifier and never opens a source solution.
-- [ ] Success is returned only for a committed/certified package; expected failures are structured and non-successful.
-- [ ] At least 12 facade integration, multi-solution, cancellation and failure cases pass; build gate passes.
+- [x] Multiple input solutions produce isolated graphs and one package plan/atomic commit.
+- [x] `Validate` uses the same reader, validator and certifier and never opens a source solution.
+- [x] Success is returned only for a committed/certified package; expected failures are structured and non-successful.
+- [x] At least 12 facade integration, multi-solution, cancellation and failure cases pass; build gate passes.
 
 **Tests**: integration — ≥12 focused cases  
 **Gate**: build  
 **Commit**: `feat(core): wire knowledge engine workflow`
+
+**Status**: âœ… Complete
+**Gate note**: interim until T45 â€” `dotnet build csharp2md.slnx --configuration Release` passed with 0 warnings/errors; `dotnet test tests/Csharp2Md.Core.Tests/Csharp2Md.Core.Tests.csproj --configuration Release --no-build` passed (486 tests); full legacy test suite remains deferred by the user-approved interim rule.
 
 ## Phase 6: CLI acceptance and clean cut
 
