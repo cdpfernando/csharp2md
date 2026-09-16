@@ -606,10 +606,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] IDs match `^[a-z]{3}_[0-9a-v]{16}$`, use unique kind prefixes and exactly the first 80 SHA-256 bits.
-- [ ] A forced collision names the ID and both canonical categories without leaking absolute paths.
-- [ ] At least 12 vector, grammar, prefix and collision cases pass.
-- [ ] Quick gate passes.
+- [x] IDs match `^[a-z]{3}_[0-9a-v]{16}$`, use unique kind prefixes and exactly the first 80 SHA-256 bits.
+- [x] A forced collision names the ID and both canonical categories without leaking absolute paths.
+- [x] At least 12 vector, grammar, prefix and collision cases pass.
+- [x] Quick gate passes.
 
 **Tests**: unit — ≥12 focused cases  
 **Gate**: quick  
@@ -629,10 +629,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Tables sort by canonical key and assign lowercase base36 ordinals from `0`.
-- [ ] Handles resolve directly; overflow above six characters rejects the build.
-- [ ] Deduplication never crosses solution boundaries and projection records use handles instead of repeated payload.
-- [ ] At least 14 ordering, deduplication, overflow and isolation cases pass; quick gate passes.
+- [x] Tables sort by canonical key and assign lowercase base36 ordinals from `0`.
+- [x] Handles resolve directly; overflow above six characters rejects the build.
+- [x] Deduplication never crosses solution boundaries and projection records use handles instead of repeated payload.
+- [x] At least 14 ordering, deduplication, overflow and isolation cases pass; quick gate passes.
 
 **Tests**: unit — ≥14 focused cases  
 **Gate**: quick  
@@ -652,10 +652,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Records sort canonically and every bulk shard respects the hard ceiling.
-- [ ] A single oversized record fails as `oversized-record`; normal records are never emitted one-file-per-record.
-- [ ] Identical logical inputs produce identical shard boundaries, paths and bytes.
-- [ ] At least 12 boundary, oversized, permutation and reproducibility cases pass; quick gate passes.
+- [x] Records sort canonically and every bulk shard respects the hard ceiling.
+- [x] A single oversized record fails as `oversized-record`; normal records are never emitted one-file-per-record.
+- [x] Identical logical inputs produce identical shard boundaries, paths and bytes.
+- [x] At least 12 boundary, oversized, permutation and reproducibility cases pass; quick gate passes.
 
 **Tests**: unit — ≥12 focused cases  
 **Gate**: quick  
@@ -675,10 +675,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Every supported start key resolves to artifact plus ordinal without directory enumeration, manual shard choice or ID decoding.
-- [ ] Index links remain within the same solution and resolve to retained records/evidence.
-- [ ] At least 14 direct-resolution, missing-key, scope and solution-isolation cases pass.
-- [ ] Quick gate passes.
+- [x] Every supported start key resolves to artifact plus ordinal without directory enumeration, manual shard choice or ID decoding.
+- [x] Index links remain within the same solution and resolve to retained records/evidence.
+- [x] At least 14 direct-resolution, missing-key, scope and solution-isolation cases pass.
+- [x] Quick gate passes.
 
 **Tests**: unit — ≥14 focused cases  
 **Gate**: quick  
@@ -698,10 +698,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] The root manifest lists solutions and all proven roots with readable name, handle, machine citation and Markdown link.
-- [ ] All required families and journey entry paths are declared; every manifest path is normalized and relative.
-- [ ] At least 12 artifact-layout, manifest-link and canonical-byte cases pass.
-- [ ] Quick gate passes.
+- [x] The root manifest lists solutions and all proven roots with readable name, handle, machine citation and Markdown link.
+- [x] All required families and journey entry paths are declared; every manifest path is normalized and relative.
+- [x] At least 12 artifact-layout, manifest-link and canonical-byte cases pass.
+- [x] Quick gate passes.
 
 **Tests**: unit — ≥12 focused cases  
 **Gate**: quick  
@@ -721,10 +721,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Summary shows components, Deployment Units, cycles, top fan-in/out and all four journeys.
-- [ ] Entity pages show outgoing, incoming, measures, effects and relevant gaps with existing relative links.
-- [ ] No page invents Service/Deployment Unit identity or omits an equivalent machine dependency/measure.
-- [ ] At least 12 content, escaping, link and equivalence cases pass; quick gate passes.
+- [x] Summary shows components, Deployment Units, cycles, top fan-in/out and all four journeys.
+- [x] Entity pages show outgoing, incoming, measures, effects and relevant gaps with existing relative links.
+- [x] No page invents Service/Deployment Unit identity or omits an equivalent machine dependency/measure.
+- [x] At least 12 content, escaping, link and equivalence cases pass; quick gate passes.
 
 **Tests**: unit — ≥12 focused cases  
 **Gate**: quick  
@@ -744,10 +744,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Rehydration reads only manifest-declared machine paths and resolves all handles/references.
-- [ ] Any machine/Markdown divergence reports package corruption with the offending artifact.
-- [ ] At least 10 round-trip, missing-reference and Markdown-mutation cases pass.
-- [ ] Quick gate passes.
+- [x] Rehydration reads only manifest-declared machine paths and resolves all handles/references.
+- [x] Any machine/Markdown divergence reports package corruption with the offending artifact.
+- [x] At least 10 round-trip, missing-reference and Markdown-mutation cases pass.
+- [x] Quick gate passes.
 
 **Tests**: integration — ≥10 focused cases  
 **Gate**: quick  
@@ -767,10 +767,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Plan contains all artifact bytes and reserves deterministic certification/measurement artifacts before staging.
-- [ ] Measurements separate extraction/publication and filtered reasons by family, journey and corpus.
-- [ ] Same graphs/policy under input permutation produce byte-identical plans and digest; package ceilings fail before publication.
-- [ ] At least 14 orchestration, determinism, multi-solution and budget cases pass; build gate passes.
+- [x] Plan contains all artifact bytes and reserves deterministic certification/measurement artifacts before staging.
+- [x] Measurements separate extraction/publication and filtered reasons by family, journey and corpus.
+- [x] Same graphs/policy under input permutation produce byte-identical plans and digest; package ceilings fail before publication.
+- [x] At least 14 orchestration, determinism, multi-solution and budget cases pass; build gate passes.
 
 **Tests**: integration — ≥14 focused cases  
 **Gate**: build  
@@ -858,10 +858,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Every open records path, UTF-8 bytes and one read; tokens use `ceil(bytes / 4.0)`.
-- [ ] Component locate fits 5 reads; other roots fit 8 reads/12,000 tokens; evidence fits 12 reads/25,000 tokens.
-- [ ] Inapplicable journeys record `not_applicable` plus reason and never count as pass.
-- [ ] At least 12 applicable, N/A, missing-terminal and over-budget cases pass; quick gate passes.
+- [x] Every open records path, UTF-8 bytes and one read; tokens use `ceil(bytes / 4.0)`.
+- [x] Component locate fits 5 reads; other roots fit 8 reads/12,000 tokens; evidence fits 12 reads/25,000 tokens.
+- [x] Inapplicable journeys record `not_applicable` plus reason and never count as pass.
+- [x] At least 12 applicable, N/A, missing-terminal and over-budget cases pass; quick gate passes.
 
 **Tests**: integration — ≥12 focused cases  
 **Gate**: quick  
@@ -879,10 +879,10 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Applicable flow reaches contracts, external effects and persistence in ≤32 reads/125,000 tokens.
-- [ ] Reverse impact supports file, project, Component, Deployment Unit, contract and data roots with minimum depths in the same budget.
-- [ ] Missing answers or exceeded reads/tokens fail and name journey plus exceeded measure.
-- [ ] At least 14 hand-oracle flow, impact, N/A and budget cases pass; quick gate passes.
+- [x] Applicable flow reaches contracts, external effects and persistence in ≤32 reads/125,000 tokens.
+- [x] Reverse impact supports file, project, Component, Deployment Unit, contract and data roots with minimum depths in the same budget.
+- [x] Missing answers or exceeded reads/tokens fail and name journey plus exceeded measure.
+- [x] At least 14 hand-oracle flow, impact, N/A and budget cases pass; quick gate passes.
 
 **Tests**: integration — ≥14 focused cases  
 **Gate**: quick  
@@ -900,11 +900,11 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] All planned bytes are staged on the same volume, rehydrated and validated before manifest swap.
-- [ ] Certification/measurements are rewritten only in their reserved artifacts and final validation repeats before commit.
-- [ ] Move plus root-manifest replacement is the only commit point; failure before it preserves the old package byte-for-byte.
-- [ ] Concurrent writer/read behavior and cleanup diagnostics match the approved lock model.
-- [ ] At least 18 success, injected-failure, lock, preservation and cleanup cases pass; quick gate passes.
+- [x] All planned bytes are staged on the same volume, rehydrated and validated before manifest swap.
+- [x] Certification/measurements are rewritten only in their reserved artifacts and final validation repeats before commit.
+- [x] Move plus root-manifest replacement is the only commit point; failure before it preserves the old package byte-for-byte.
+- [x] Concurrent writer/read behavior and cleanup diagnostics match the approved lock model.
+- [x] At least 18 success, injected-failure, lock, preservation and cleanup cases pass; quick gate passes.
 
 **Tests**: integration — ≥18 focused cases  
 **Gate**: quick  
