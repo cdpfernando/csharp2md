@@ -8,20 +8,34 @@ namespace Csharp2Md.Core.Tests.Publication;
 public sealed class GraphJourneyCertifierTests
 {
     [Fact][Trait("Requirement", "NAV-08")] public void Certify_FlowWithAllTerminalsPasses() => Assert.Equal(JourneyCertificationStatus.Passed, Flow(Package(AllTerminals())).Status);
-    [Fact][Trait("Requirement", "NAV-09")] public void Certify_ImpactWithReachableSetPasses() => Assert.Equal(JourneyCertificationStatus.Passed, Impact(Package(measures: [Measure([new ImpactTarget(new EntityHandle("component:caller"), 1)])])).Status);
+    [Fact][Trait("Requirement", "NAV-09")] public void Certify_ImpactWithReachableSetPasses() => Assert.Equal(JourneyCertificationStatus.Passed, Impact(Package(dependencies: [Dependency(DependencyCategory.Contract)], measures: [Measure([new ImpactTarget(new EntityHandle("component:caller"), 1)])])).Status);
     [Fact][Trait("Requirement", "CRT-02")] public void Certify_EmptyFlowIsNotApplicable() => Assert.Equal(JourneyCertificationStatus.NotApplicable, Flow(Package()).Status);
     [Fact][Trait("Requirement", "CRT-02")] public void Certify_EmptyImpactIsNotApplicable() => Assert.Equal(JourneyCertificationStatus.NotApplicable, Impact(Package()).Status);
+    [Fact][Trait("Requirement", "CRT-02")] public void Certify_FlowWithOnlyInternalInvocationIsNotApplicable()
+    {
+        using var package = Package([Dependency(DependencyCategory.InternalInvocation)]);
+        var result = Flow(package);
+        Assert.Equal(JourneyCertificationStatus.NotApplicable, result.Status);
+        Assert.StartsWith("not_applicable:", result.Detail, StringComparison.Ordinal);
+    }
+    [Fact][Trait("Requirement", "CRT-02")] public void Certify_ImpactWithOnlyInternalInvocationIsNotApplicable()
+    {
+        using var package = Package([Dependency(DependencyCategory.InternalInvocation)], [Measure([new ImpactTarget(new EntityHandle("component:caller"), 1)])]);
+        var result = Impact(package);
+        Assert.Equal(JourneyCertificationStatus.NotApplicable, result.Status);
+        Assert.StartsWith("not_applicable:", result.Detail, StringComparison.Ordinal);
+    }
     [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutContractFails() => Assert.Contains("contracts", Flow(Package([Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Http)])).Detail);
     [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutPersistenceFails() => Assert.Contains("persistence", Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Http)])).Detail);
     [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutExternalEffectFails() => Assert.Contains("external-effects", Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence)])).Detail);
-    [Fact][Trait("Requirement", "CRT-01")] public void Certify_ImpactWithoutReachableSetFails() => Assert.Contains("reachable-set", Impact(Package(measures: [Measure([])])).Detail);
+    [Fact][Trait("Requirement", "CRT-01")] public void Certify_ImpactWithoutReachableSetFails() => Assert.Contains("reachable-set", Impact(Package(dependencies: [Dependency(DependencyCategory.Contract)], measures: [Measure([])])).Detail);
     [Fact][Trait("Requirement", "NAV-08")] public void Certify_FlowAcceptsGrpcAsExternalEffect() => Assert.Equal(JourneyCertificationStatus.Passed, Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Grpc)])).Status);
     [Fact][Trait("Requirement", "NAV-08")] public void Certify_FlowAcceptsMessagingAsExternalEffect() => Assert.Equal(JourneyCertificationStatus.Passed, Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Messaging)])).Status);
-    [Fact][Trait("Requirement", "NAV-09")] public void Certify_ImpactPreservesMinimumDepth() { using var package = Package(measures: [Measure([new ImpactTarget(new EntityHandle("component:caller"), 2)])]); Assert.Equal(JourneyCertificationStatus.Passed, Impact(package).Status); }
+    [Fact][Trait("Requirement", "NAV-09")] public void Certify_ImpactPreservesMinimumDepth() { using var package = Package(dependencies: [Dependency(DependencyCategory.Contract)], measures: [Measure([new ImpactTarget(new EntityHandle("component:caller"), 2)])]); Assert.Equal(JourneyCertificationStatus.Passed, Impact(package).Status); }
     [Fact][Trait("Requirement", "EDG-02")] public void Certify_FlowBudgetFailureNamesMeasure() { using var package = Package(AllTerminals()); for (var i = 0; i < 40; i++) { using var reader = MeasuredPackageReader.Open(package.Path); reader.OpenArtifact("manifest.json"); } Assert.Equal(JourneyCertificationStatus.Passed, Flow(package).Status); }
     [Fact][Trait("Requirement", "NAV-08")] public void Certify_FlowDetailContainsMeasurements() => Assert.Contains("tokens:", Flow(Package(AllTerminals())).Detail);
-    [Fact][Trait("Requirement", "NAV-09")] public void Certify_ImpactDetailContainsMeasurements() => Assert.Contains("reads:", Impact(Package(measures: [Measure([new ImpactTarget(new EntityHandle("component:caller"), 1)])])).Detail);
-    [Fact][Trait("Requirement", "CRT-01")] public void Certify_ApplicableImpactNeverPassesWithoutAnswer() { using var package = Package(measures: [Measure([])]); Assert.Equal(JourneyCertificationStatus.Failed, Impact(package).Status); }
+    [Fact][Trait("Requirement", "NAV-09")] public void Certify_ImpactDetailContainsMeasurements() => Assert.Contains("reads:", Impact(Package(dependencies: [Dependency(DependencyCategory.Contract)], measures: [Measure([new ImpactTarget(new EntityHandle("component:caller"), 1)])])).Detail);
+    [Fact][Trait("Requirement", "CRT-01")] public void Certify_ApplicableImpactNeverPassesWithoutAnswer() { using var package = Package(dependencies: [Dependency(DependencyCategory.Contract)], measures: [Measure([])]); Assert.Equal(JourneyCertificationStatus.Failed, Impact(package).Status); }
 
     private static JourneyCertification Flow(TempPackage package) => Assert.Single(JourneyCertifier.Certify(package.Path).Solutions).Journeys.Single(x => x.Kind == JourneyKind.FollowFlow);
     private static JourneyCertification Impact(TempPackage package) => Assert.Single(JourneyCertifier.Certify(package.Path).Solutions).Journeys.Single(x => x.Kind == JourneyKind.ReverseImpact);

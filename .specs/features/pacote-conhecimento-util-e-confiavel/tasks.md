@@ -80,10 +80,10 @@ T31 -> T32 -> T33 -> T34 -> T35 -> T36 -> T37 -> T38
 ### Phase 6: CLI acceptance and clean cut
 
 ```text
-T39 -> T40 -> T41 -> T42 -> T43 -> T44 -> T45
+T39 -> T40 -> T41 -> T42 -> T43 -> T48 -> T46 -> T47 -> T44 -> T45
 ```
 
-The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+T46-T48 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -1089,11 +1089,81 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Adequacy**: The nine specified rejection classes and every applicable diagnostic coordinate are asserted by `KnowledgePackageFailureTests.cs:13-51`. Root-manifest, index, safety and Markdown/equivalence rejection with byte-identical package snapshots are asserted by `:54-110` and `:155-183`; the Markdown family coordinate is classified at `PackageValidator.cs:68-76`. Real lock-contention rejection, staging cleanup and cancellation preservation are asserted by `KnowledgePackageFailureTests.cs:113-152`. The isolated fixture copy at `:191-206` keeps generated build outputs out of the versioned fixture. Each focused assertion maps to T43's failure, coordinate, atomicity or cleanup criterion; no shallow or speculative assertion was added.
 
+### T48: Define causal journey applicability
+
+**What**: Apply the confirmed CRT-02 rule to the certifier fixtures while retaining their passed and failed outcome assertions.  
+**Where**: `.specs/features/pacote-conhecimento-util-e-confiavel/spec.md`, `tests/Csharp2Md.Core.Tests/Publication/GraphJourneyCertifierTests.cs`  
+**Depends on**: T43  
+**Reuses**: the existing causal-category applicability checks in `GraphJourneyCertifier`  
+**Requirement**: CRT-01, CRT-02
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] Flow and reverse impact are not applicable for a solution with no HTTP, gRPC, Messaging, Contract or Persistence dependency.
+- [x] An impact fixture with a causal dependency and a reachable set passes; one without the expected reachable set fails.
+- [x] Existing passed/failed outcome assertions remain unchanged, and the quick gate passes.
+
+**Tests**: unit — ≥2 noncausal cases and the 5 corrected applicable fixtures  
+**Gate**: quick  
+**Commit**: `fix(publication): define causal journey applicability`
+
+**Status**: Complete
+**Gate note**: Core Release quick gate passed: 495 passed, 0 failed, 0 skipped. The run included the uncommitted T46 builder change; T48's certifier assertions are independent of that builder path.
+**Adequacy**: `GraphJourneyCertifierTests.cs:18-19` and `:25-26` assert NotApplicable status and a reason for noncausal flow and impact. `:11`, `:31`, `:34`, `:37-38` retain the five impact passed/failed assertions with causal fixtures. CRT-02's applicability rule is explicit in `spec.md:211`.
+
+### T46: Pair scoped edges by evidence document
+
+**What**: Derive document-scope and project-scope dependency edges from each evidence record's own document instead of the membership cross product.  
+**Where**: `src/Csharp2Md.Core/PackageBuilding/PackageBuilder.cs`  
+**Depends on**: T48  
+**Reuses**: `EvidenceRecord.DocumentCanonicalKey` and the existing aggregation, measure and impact pipeline  
+**Requirement**: DEP-01, DEP-03, DEP-04, EDG-03
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] A document-scope edge exists only between the document that holds the evidence and a document with proven target membership.
+- [ ] A project-scope edge exists only between a proven owner of the evidence document and a project with proven target membership.
+- [ ] Component and deployment-unit scope keep their proven-membership derivation unchanged.
+- [ ] `occurrence_count` equals the number of confirmed evidences for that exact source, target, scope and category, with no cross-product inflation.
+- [ ] No edge is emitted for a document or project pair that no confirmed evidence supports.
+- [ ] At least 6 pairing, count and scope-isolation cases pass; quick gate passes and the synthetic fixture still certifies all four journeys.
+
+**Tests**: unit — ≥6 pairing/count/scope cases  
+**Gate**: quick  
+**Commit**: `fix(package-building): pair scoped edges by evidence document`
+
+### T47: Index dependencies without copying payload
+
+**What**: Serialize the confirmed dependency and measure sets once per solution and make the navigation indexes carry keys and pointers into them instead of verbatim copies.  
+**Where**: `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`, `src/Csharp2Md.Core/Publication/Certification/GraphJourneyCertifier.cs`  
+**Depends on**: T46  
+**Reuses**: the existing `NavigationIndexKind` contract, manifest entry paths and `PackageReader` path resolution  
+**Requirement**: DEP-05, DEP-07
+
+**Done when**:
+
+- [ ] The confirmed dependency set is serialized exactly once per solution; no second path repeats it.
+- [ ] The measure set is serialized exactly once per solution; no second path repeats it.
+- [ ] `outgoing`, `incoming`, `contracts` and `persistence` carry keys and resolvable pointers, never a copy of the edge set.
+- [ ] Every index kind stays declared exactly once in the manifest and resolves through `PackageReader` without exposing composite keys.
+- [ ] The four journeys certify from the same entry indexes with unchanged interpretation and resolvable relation and evidence references.
+- [ ] At least 8 single-serialization, pointer-resolution and journey cases pass; quick gate passes.
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
+
+**Tests**: unit — ≥8 index/pointer/journey cases  
+**Gate**: quick  
+**Commit**: `fix(package-building): index dependencies without copying payload`
+
 ### T44: Certify optional local corpora
 
 **What**: Update LocalCorpus acceptance to assert eShop variant isolation and the eShopOnContainers/Pitstop committed-package ceilings.  
 **Where**: `tests/Csharp2Md.Cli.Tests/LocalCorpusAnalyzeTests.cs`  
-**Depends on**: T43  
+**Depends on**: T47  
 **Reuses**: dynamic skip convention and gitignored local clone paths  
 **Requirement**: CRT-04, CRT-05, CRT-06, CRT-07
 
@@ -1146,7 +1216,7 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 | PKG-08 | T5, T8, T17, T30, T38-T39, T42 | CLI policy identity |
 | PKG-09 | T3, T12-T16, T42 | factual graph + CLI |
 | PKG-10 | T1, T40, T45 | topology surface |
-| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42 | hand-recalculated dependencies |
+| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42, T46-T47 | hand-recalculated dependencies |
 | MET-01..MET-04 | T4, T19, T42 | hand-recalculated direct measures |
 | MET-05 | T4, T20, T42 | hand-recalculated SCCs |
 | MET-06..MET-08 | T4, T17, T21-T22, T42 | hand-recalculated impact/gaps |
@@ -1167,8 +1237,8 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 | PUB-05 | T32-T33, T36, T43 | byte preservation |
 | PUB-06..PUB-07 | T31, T41, T43 | safety fixture/rejection |
 | PUB-08 | T2, T15, T36, T38-T39, T43 | structured diagnostics |
-| CRT-01..CRT-03 | T15, T30, T34-T37, T42 | journey certification |
-| CRT-04..CRT-07 | T9, T44 | optional corpora |
+| CRT-01..CRT-03 | T15, T30, T34-T37, T42, T48 | journey certification |
+| CRT-04..CRT-07 | T9, T46-T47, T44 | optional corpora |
 | CRT-08 | T8, T12-T14, T31, T41 | fixture integrity |
 | CRT-09 | T42 | CLI E2E |
 | EDG-01 | T13, T16-T17, T33, T43 | evidence rejection |
@@ -1194,9 +1264,12 @@ All 71 requirements have at least one focused owning task and a final acceptance
 | T39-T40 | One CLI command surface per task | ✅ Granular |
 | T41 | One coherent fixture scenario | ✅ Cohesive fixture deliverable |
 | T42-T44 | One acceptance concern per task | ✅ Granular |
+| T48 | One journey-applicability correction | ✅ Granular |
+| T46 | One scope-pairing correction | ✅ Granular |
+| T47 | One artifact-duplication correction | ✅ Cohesive write/read contract |
 | T45 | One final repository topology cutover | ✅ Cohesive clean-cut deliverable |
 
-T1, T37, T41 and T45 necessarily touch multiple physical files, but each is one indivisible deliverable. Splitting any of them would create an invalid scaffold, a partially qualified package contract, a fixture with no stable oracle, or a repository with mixed contracts.
+T1, T37, T41, T45, T47 and T48 necessarily touch multiple physical files, but each is one indivisible deliverable. Splitting any of them would create an invalid scaffold, a partially qualified package contract, a fixture with no stable oracle, a repository with mixed contracts, or a clarified rule without matching fixtures.
 
 ## Diagram-Definition Cross-Check
 
@@ -1245,7 +1318,10 @@ T1, T37, T41 and T45 necessarily touch multiple physical files, but each is one 
 | T41 | T40 | T40 -> T41 | ✅ Match |
 | T42 | T41 | T41 -> T42 | ✅ Match |
 | T43 | T42 | T42 -> T43 | ✅ Match |
-| T44 | T43 | T43 -> T44 | ✅ Match |
+| T48 | T43 | T43 -> T48 | ✅ Match |
+| T46 | T48 | T48 -> T46 | ✅ Match |
+| T47 | T46 | T46 -> T47 | ✅ Match |
+| T44 | T47 | T47 -> T44 | ✅ Match |
 | T45 | T44 | T44 -> T45 | ✅ Match |
 
 Cross-phase dependencies are represented by the ordered phase chain; all intra-phase edges match exactly.
@@ -1297,6 +1373,9 @@ Cross-phase dependencies are represented by the ordered phase chain; all intra-p
 | T41 | Versioned fixture | e2e | e2e | ✅ OK |
 | T42 | Journey acceptance | e2e | e2e | ✅ OK |
 | T43 | Failure acceptance | e2e | e2e | ✅ OK |
+| T48 | Journey applicability | unit | unit | ✅ OK |
+| T46 | Scope pairing | unit | unit | ✅ OK |
+| T47 | Artifact indexing | unit | unit | ✅ OK |
 | T44 | Optional corpora | e2e | e2e | ✅ OK |
 | T45 | Topology + CLI current contract | unit + e2e + build | unit + e2e + build | ✅ OK |
 

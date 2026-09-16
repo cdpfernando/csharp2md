@@ -208,7 +208,7 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 **Acceptance Criteria**:
 
 1. **CRT-01:** WHEN uma jornada for aplicável ao corpus THEN a certificação SHALL exercitá-la separadamente em cada solução e falhar se qualquer solução não alcançar a resposta esperada.
-2. **CRT-02:** WHEN uma jornada não for aplicável ao corpus THEN a certificação SHALL registrá-la como não aplicável com motivo, sem marcá-la como aprovada.
+2. **CRT-02:** WHEN uma jornada não for aplicável ao corpus THEN a certificação SHALL registrá-la como não aplicável com motivo, sem marcá-la como aprovada. FollowFlow e ReverseImpact só são aplicáveis quando a solução contém ao menos uma dependência HTTP, gRPC, Messaging, Contract ou Persistence; sem essas categorias, cada uma SHALL ser registrada como não aplicável.
 3. **CRT-03:** The pacote SHALL registrar métricas separadas de extração e publicação, itens filtrados por motivo e medidas por família, solução, jornada e corpus; cada budget de jornada SHALL iniciar com medição zerada.
 4. **CRT-04:** WHEN eShopOnContainers estiver presente THEN o pacote comprometido SHALL conter no máximo 1.500 arquivos e 64 MiB.
 5. **CRT-05:** WHEN Pitstop estiver presente THEN o pacote comprometido SHALL conter no máximo 750 arquivos e 25 MiB.
