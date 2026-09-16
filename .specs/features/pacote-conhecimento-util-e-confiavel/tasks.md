@@ -1075,14 +1075,19 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Variant, retention, safety, size, materialization, rehydration, validation, equivalence and journey-budget failures are injected.
-- [ ] Each failure returns the required structured coordinates and leaves root manifest plus prior generation byte-identical.
-- [ ] No staging debris is reachable after failure; cancellation also preserves the prior package.
-- [ ] At least 16 rejection/preservation cases pass; full gate passes.
+- [x] Variant, retention, safety, size, materialization, rehydration, validation, equivalence and journey-budget failures are injected.
+- [x] Each failure returns the required structured coordinates and leaves root manifest plus prior generation byte-identical.
+- [x] No staging debris is reachable after failure; cancellation also preserves the prior package.
+- [x] At least 16 rejection/preservation cases pass; full gate passes under the approved pre-T45 legacy-suite exception.
 
 **Tests**: e2e — ≥16 focused cases  
 **Gate**: full  
 **Commit**: `test(cli): prove atomic rejection behavior`
+
+**Status**: Complete
+**Gate note**: `KnowledgePackageFailureTests` passed 16 cases in Release. The declared full solution gate was run; retained legacy projects fail only on superseded taxonomy, compose/options and legacy certification contracts, under the approved interim exception until T45. The Release build phase completed before those legacy test failures.
+
+**Adequacy**: The nine specified rejection classes and every applicable diagnostic coordinate are asserted by `KnowledgePackageFailureTests.cs:13-51`. Root-manifest, index, safety and Markdown/equivalence rejection with byte-identical package snapshots are asserted by `:54-110` and `:155-183`; the Markdown family coordinate is classified at `PackageValidator.cs:68-76`. Real lock-contention rejection, staging cleanup and cancellation preservation are asserted by `KnowledgePackageFailureTests.cs:113-152`. The isolated fixture copy at `:191-206` keeps generated build outputs out of the versioned fixture. Each focused assertion maps to T43's failure, coordinate, atomicity or cleanup criterion; no shallow or speculative assertion was added.
 
 ### T44: Certify optional local corpora
 

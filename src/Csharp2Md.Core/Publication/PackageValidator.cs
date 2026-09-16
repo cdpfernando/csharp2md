@@ -69,7 +69,8 @@ internal static class PackageValidator
     {
         "manifest.json" => "manifest",
         _ when artifact.Contains("/indexes/", StringComparison.Ordinal) => "index",
-        _ when artifact.Contains("/markdown/", StringComparison.Ordinal) => "markdown",
+        _ when artifact.StartsWith("markdown/", StringComparison.Ordinal)
+            || artifact.Contains("/markdown/", StringComparison.Ordinal) => "markdown",
         _ when artifact.Contains("/graph/", StringComparison.Ordinal) => "graph",
         _ when artifact.Contains("/tables/", StringComparison.Ordinal) => "table",
         _ => null,
