@@ -1,6 +1,7 @@
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.PackageBuilding;
 using Csharp2Md.Core.PackageBuilding.Rendering;
+using Csharp2Md.Core.PackageBuilding.Identity;
 using System.Text.Json;
 
 namespace Csharp2Md.Core.Publication;
@@ -39,7 +40,11 @@ internal static class RetrievalModelReader
                 throw new PackageCorruptionException(indexes[NavigationIndexKind.Measures]);
             }
 
-            var dependencies = Read<ImmutableArray<AggregatedDependency>>(artifacts, outgoing.ArtifactPath);
+            var payload = Read<DependencyPayload>(artifacts, outgoing.ArtifactPath);
+            var evidenceRows = Read<ImmutableArray<EvidenceRecord>>(artifacts, indexes[NavigationIndexKind.Evidence]);
+            if (!payload.Evidence.SequenceEqual(evidenceRows.Select(item => item.CanonicalKey), StringComparer.Ordinal))
+                throw new PackageCorruptionException(indexes[NavigationIndexKind.Evidence]);
+            var dependencies = ExpandDependencies(payload, identities[0].CanonicalKey, outgoing.ArtifactPath);
             var measures = Read<ImmutableArray<ScopeMeasures>>(artifacts, measuresIndex.ArtifactPath);
             VerifyIndex(NavigationIndexKind.Outgoing, MachineArtifactWriter.BuildDependencyIndex(outgoing.ArtifactPath, dependencies, static dependency => dependency.Source.Value));
             VerifyIndex(NavigationIndexKind.Incoming, MachineArtifactWriter.BuildDependencyIndex(outgoing.ArtifactPath, dependencies, static dependency => dependency.Target.Value));
@@ -99,6 +104,49 @@ internal static class RetrievalModelReader
         }
 
         return indexes;
+    }
+
+    private static ImmutableArray<AggregatedDependency> ExpandDependencies(DependencyPayload payload, string solutionKey, string path)
+    {
+        try
+        {
+            var relationKeys = payload.Relations.Select(relation => relation.CanonicalKey).ToArray();
+            var evidenceKeys = payload.Evidence.ToArray();
+            if (!relationKeys.SequenceEqual(relationKeys.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal), StringComparer.Ordinal)
+                || !evidenceKeys.SequenceEqual(evidenceKeys.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal), StringComparer.Ordinal))
+            {
+                throw new PackageCorruptionException(path);
+            }
+
+            var relations = LocalTableBuilder.Build(solutionKey, relationKeys).Handles
+                .ToDictionary(pair => pair.Value.Value, pair => pair.Key, StringComparer.Ordinal);
+            var evidence = LocalTableBuilder.Build(solutionKey, evidenceKeys).Handles
+                .ToDictionary(pair => pair.Value.Value, pair => pair.Key, StringComparer.Ordinal);
+            foreach (var relation in payload.Relations)
+            {
+                if (string.IsNullOrWhiteSpace(relation.SourceCanonicalKey)
+                    || string.IsNullOrWhiteSpace(relation.TargetCanonicalKey)
+                    || string.IsNullOrWhiteSpace(relation.Category)
+                    || relation.Evidence.Any(handle => !evidence.ContainsKey(handle.Value)))
+                    throw new PackageCorruptionException(path);
+            }
+
+            return payload.Dependencies.Select(dependency => new AggregatedDependency(
+                dependency.Scope,
+                dependency.Source,
+                dependency.Target,
+                dependency.Category,
+                dependency.Nature,
+                dependency.OccurrenceCount,
+                dependency.Variants,
+                dependency.Relations.Select(handle => new RelationHandle(relations[handle.Value])).ToImmutableArray(),
+                dependency.Evidence.Select(handle => new EvidenceHandle(evidence[handle.Value])).ToImmutableArray()))
+                .ToImmutableArray();
+        }
+        catch (Exception exception) when (exception is KeyNotFoundException or ArgumentException)
+        {
+            throw new PackageCorruptionException(path);
+        }
     }
 
     private static T Read<T>(IReadOnlyDictionary<string, ImmutableArray<byte>> artifacts, string path)

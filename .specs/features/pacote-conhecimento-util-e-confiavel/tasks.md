@@ -1170,7 +1170,7 @@ T46-T50 were added after T43 was complete, so they carry higher numbers than the
 ### T49: Compact repeated relation and evidence references
 
 **What**: Replace repeated canonical relation and evidence IDs inside aggregated dependencies with solution-local handles and one directly resolvable table for each kind.  
-**Where**: `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`, `src/Csharp2Md.Core/Publication/RetrievalModelReader.cs`  
+**Where**: `src/Csharp2Md.Core/PackageBuilding/CanonicalJson.cs`, `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`, `src/Csharp2Md.Core/Publication/RetrievalModelReader.cs`  
 **Depends on**: T47  
 **Reuses**: `LocalTableBuilder`, retained factual relations and evidence, and the existing dependency payload path  
 **Requirement**: DEP-03, DEP-05, DEP-07, STO-03, STO-04, STO-05, CRT-05
@@ -1179,14 +1179,18 @@ T46-T50 were added after T43 was complete, so they carry higher numbers than the
 
 **Done when**:
 
-- [ ] Relation and evidence references in each dependency use deterministic solution-local handles, with each canonical identity stored once in its declared table.
-- [ ] A consumer resolves each handle to the supporting confirmed relation or evidence without guessing a composite key or scanning unrelated artifacts.
-- [ ] Rehydration restores the same relation/evidence reference values and rejects missing, duplicate or invalid table mappings.
-- [ ] Pitstop's plan is at most 25 MiB when the optional clone is present; the quick gate passes.
+- [x] Relation and evidence references in each dependency use deterministic solution-local handles, with each canonical identity stored once in its declared table.
+- [x] A consumer resolves each handle to the supporting confirmed relation or evidence without guessing a composite key or scanning unrelated artifacts.
+- [x] Rehydration restores the same relation/evidence reference values and rejects missing, duplicate or invalid table mappings.
+- [x] Pitstop's plan is at most 25 MiB when the optional clone is present; the quick gate passes.
 
 **Tests**: unit — ≥8 handle/table/rehydration cases  
 **Gate**: quick + Pitstop plan when present  
 **Commit**: `fix(package-building): compact dependency references`
+
+**Status**: Complete
+**Gate note**: Core Release quick gate passed: 521 passed, 0 failed, 0 skipped. Synthetic CLI journeys passed 16 of 16 cases. Pitstop produced a 99-artifact, 20,721,851-byte (19.76 MiB) plan, below the 25 MiB ceiling; publication still rejects flow applicability and the evidence journey budget, owned by T50 and the pending applicability decision.
+**Adequacy**: `CompactDependencyReferenceTests.cs:14-23` asserts sorted base36 local handles; `:30-32` asserts one table entry per repeated identity; `:41-58` resolves a handle to the factual relation and evidence record; `:66-68` asserts canonical rehydration; `:83-118` rejects invalid, duplicate and missing mappings; `:126` asserts stable bytes. The Pitstop plan size was read before the package byte-budget check, with the temporary diagnostic removed afterward.
 
 ### T50: Bound evidence journey reads
 

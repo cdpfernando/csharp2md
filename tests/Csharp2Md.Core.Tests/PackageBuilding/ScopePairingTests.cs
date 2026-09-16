@@ -1,6 +1,7 @@
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.PackageBuilding;
 using Csharp2Md.Core.PackageBuilding.Measures;
+using Csharp2Md.Core.Publication;
 
 namespace Csharp2Md.Core.Tests.PackageBuilding;
 
@@ -69,8 +70,8 @@ public sealed class ScopePairingTests
     private static ImmutableArray<AggregatedDependency> Dependencies(FactualGraph graph)
     {
         var plan = PackageBuilder.Build([graph]);
-        var artifact = plan.Artifacts.Single(item => item.Path.Value.EndsWith("measures/dependencies.000000.json", StringComparison.Ordinal));
-        return CanonicalJson.Read<ImmutableArray<AggregatedDependency>>(artifact.Payload.AsSpan());
+        var artifacts = plan.Artifacts.ToDictionary(artifact => artifact.Path.Value, artifact => artifact.Payload, StringComparer.Ordinal);
+        return Assert.Single(RetrievalModelReader.Read(artifacts).Solutions).Dependencies;
     }
 
     private static FactualGraph Graph(bool includeEvidenceDocumentOccurrence = true)

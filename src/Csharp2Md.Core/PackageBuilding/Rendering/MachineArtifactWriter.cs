@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.PackageBuilding.Identity;
 using Csharp2Md.Core.Publication;
 
@@ -7,6 +8,8 @@ namespace Csharp2Md.Core.PackageBuilding.Rendering;
 internal sealed record MachineArtifactSet(PackageManifest Manifest, ImmutableArray<PlannedArtifact> Artifacts);
 internal sealed record NavigationIndexData(string ArtifactPath, ImmutableArray<NavigationIndexEntry> Entries);
 internal sealed record NavigationIndexEntry(string Key, ImmutableArray<int> Ordinals, ImmutableArray<DependencyCategory> Categories, bool HasReachableSet);
+internal sealed record DependencyPayload(ImmutableArray<StoredRelation> Relations, ImmutableArray<string> Evidence, ImmutableArray<AggregatedDependency> Dependencies);
+internal sealed record StoredRelation(string CanonicalKey, string SourceCanonicalKey, string TargetCanonicalKey, string Category, ImmutableArray<EvidenceHandle> Evidence);
 
 internal static class MachineArtifactWriter
 {
@@ -28,7 +31,7 @@ internal static class MachineArtifactWriter
             var measuresPath = $"{prefix}/measures/summary.json";
             Add(artifacts, $"{prefix}/tables/identities.000000.json", ArtifactFamily.Table, ImmutableArray.Create(solution.Solution), 1);
             Add(artifacts, entitiesPath, ArtifactFamily.Graph, solution.Roots, solution.Roots.Length);
-            Add(artifacts, dependenciesPath, ArtifactFamily.Measure, solution.Dependencies, solution.Dependencies.Length);
+            AddCompact(artifacts, dependenciesPath, ArtifactFamily.Measure, BuildDependencyPayload(solution), solution.Dependencies.Length);
             Add(artifacts, measuresPath, ArtifactFamily.Measure, solution.Measures, solution.Measures.Length);
 
             var indexes = IndexPaths(prefix).ToImmutableArray();
@@ -92,7 +95,7 @@ internal static class MachineArtifactWriter
                 AddDependencyIndex(artifacts, index.EntryPath, dependenciesPath, solution.Dependencies, static dependency => dependency.Source.Value, DependencyCategory.Persistence);
                 break;
             case NavigationIndexKind.Evidence:
-                var evidence = solution.RetainedGraph?.Evidence ?? [];
+                var evidence = solution.RetainedGraph?.Evidence.OrderBy(item => item.CanonicalKey, StringComparer.Ordinal).ToImmutableArray() ?? [];
                 Add(artifacts, index.EntryPath, ArtifactFamily.Index, evidence, evidence.Length);
                 break;
             case NavigationIndexKind.Measures:
@@ -149,6 +152,47 @@ internal static class MachineArtifactWriter
         return new NavigationIndexData(measuresPath, entries);
     }
 
+    private static DependencyPayload BuildDependencyPayload(SolutionRetrievalModel solution)
+    {
+        var relationKeys = solution.Dependencies.SelectMany(dependency => dependency.Relations.Select(handle => handle.Value))
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray();
+        var facts = solution.RetainedGraph?.Relations.ToDictionary(relation => relation.CanonicalKey, StringComparer.Ordinal)
+            ?? new Dictionary<string, FactualRelation>(StringComparer.Ordinal);
+        var evidenceKeys = solution.Dependencies.SelectMany(dependency => dependency.Evidence.Select(handle => handle.Value))
+            .Concat(facts.Values.SelectMany(relation => relation.EvidenceCanonicalKeys))
+            .Concat(solution.RetainedGraph?.Evidence.Select(item => item.CanonicalKey) ?? [])
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToImmutableArray();
+        var retainedEvidence = solution.RetainedGraph?.Evidence.Select(item => item.CanonicalKey).ToHashSet(StringComparer.Ordinal)
+            ?? new HashSet<string>(StringComparer.Ordinal);
+        if (evidenceKeys.Any(key => !retainedEvidence.Contains(key)))
+            throw new InvalidOperationException("A dependency references missing confirmed evidence.");
+        var relationTable = LocalTableBuilder.Build(solution.Solution.CanonicalKey, relationKeys);
+        var evidenceTable = LocalTableBuilder.Build(solution.Solution.CanonicalKey, evidenceKeys);
+        var relations = relationKeys.Select(key =>
+        {
+            if (!facts.TryGetValue(key, out var fact))
+                throw new InvalidOperationException($"A dependency references missing confirmed relation '{key}'.");
+            return new StoredRelation(
+                key,
+                fact.SourceCanonicalKey,
+                fact.TargetCanonicalKey,
+                fact.Category,
+                fact.EvidenceCanonicalKeys.Select(evidence => new EvidenceHandle(evidenceTable.Resolve(evidence).Value)).ToImmutableArray());
+        }).ToImmutableArray();
+        var dependencies = solution.Dependencies.Select(dependency => new AggregatedDependency(
+            dependency.Scope,
+            dependency.Source,
+            dependency.Target,
+            dependency.Category,
+            dependency.Nature,
+            dependency.OccurrenceCount,
+            dependency.Variants,
+            dependency.Relations.Select(relation => new RelationHandle(relationTable.Resolve(relation.Value).Value)).ToImmutableArray(),
+            dependency.Evidence.Select(evidence => new EvidenceHandle(evidenceTable.Resolve(evidence.Value).Value)).ToImmutableArray()))
+            .ToImmutableArray();
+        return new DependencyPayload(relations, evidenceKeys, dependencies);
+    }
+
     private static ImmutableArray<JourneyManifestEntry> Journeys() =>
     [
         new JourneyManifestEntry(JourneyKind.Locate, NavigationIndexKind.Roots),
@@ -173,6 +217,12 @@ internal static class MachineArtifactWriter
     private static void Add<T>(ImmutableArray<PlannedArtifact>.Builder artifacts, string path, ArtifactFamily family, T value, int records)
     {
         var bytes = CanonicalJson.Write(value);
+        artifacts.Add(new PlannedArtifact(new RelativeArtifactPath(path), family, bytes, records, Convert.ToHexStringLower(SHA256.HashData(bytes.AsSpan()))));
+    }
+
+    private static void AddCompact<T>(ImmutableArray<PlannedArtifact>.Builder artifacts, string path, ArtifactFamily family, T value, int records)
+    {
+        var bytes = CanonicalJson.WriteCompact(value);
         artifacts.Add(new PlannedArtifact(new RelativeArtifactPath(path), family, bytes, records, Convert.ToHexStringLower(SHA256.HashData(bytes.AsSpan()))));
     }
 }

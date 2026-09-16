@@ -60,8 +60,8 @@ public sealed class SolutionScopedRetrievalTests
         var shippingMeasureIndex = Read<NavigationIndexData>(machine, Entry(shipping, NavigationIndexKind.Measures));
         Assert.StartsWith($"solutions/{orders.Id.Value}/measures/", ordersDependencyIndex.ArtifactPath, StringComparison.Ordinal);
         Assert.StartsWith($"solutions/{shipping.Id.Value}/measures/", shippingDependencyIndex.ArtifactPath, StringComparison.Ordinal);
-        var ordersDependencies = Read<ImmutableArray<AggregatedDependency>>(machine, ordersDependencyIndex.ArtifactPath);
-        var shippingDependencies = Read<ImmutableArray<AggregatedDependency>>(machine, shippingDependencyIndex.ArtifactPath);
+        var ordersDependencies = Read<DependencyPayload>(machine, ordersDependencyIndex.ArtifactPath).Dependencies;
+        var shippingDependencies = Read<DependencyPayload>(machine, shippingDependencyIndex.ArtifactPath).Dependencies;
         var ordersMeasures = Read<ImmutableArray<ScopeMeasures>>(machine, ordersMeasureIndex.ArtifactPath);
         var shippingMeasures = Read<ImmutableArray<ScopeMeasures>>(machine, shippingMeasureIndex.ArtifactPath);
 

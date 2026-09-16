@@ -21,12 +21,17 @@ internal static class CanonicalJson
         IndentSize = 2,
         NewLine = "\n",
     };
+    private static readonly JsonWriterOptions CompactWriterOptions = new() { Indented = false };
 
-    public static ImmutableArray<byte> Write<T>(T dto)
+    public static ImmutableArray<byte> Write<T>(T dto) => Write(dto, WriterOptions);
+
+    public static ImmutableArray<byte> WriteCompact<T>(T dto) => Write(dto, CompactWriterOptions);
+
+    private static ImmutableArray<byte> Write<T>(T dto, JsonWriterOptions options)
     {
         var typeInfo = TypeInfo<T>();
         var buffer = new ArrayBufferWriter<byte>();
-        using (var writer = new Utf8JsonWriter(buffer, WriterOptions))
+        using (var writer = new Utf8JsonWriter(buffer, options))
         {
             JsonSerializer.Serialize(writer, dto, typeInfo);
         }
@@ -81,6 +86,8 @@ internal static class CanonicalJson
 [JsonSerializable(typeof(SolutionRetrievalModel))]
 [JsonSerializable(typeof(NavigationIndexData))]
 [JsonSerializable(typeof(NavigationIndexEntry))]
+[JsonSerializable(typeof(DependencyPayload))]
+[JsonSerializable(typeof(StoredRelation))]
 [JsonSerializable(typeof(AggregatedDependency))]
 [JsonSerializable(typeof(ScopeMeasures))]
 [JsonSerializable(typeof(GapCounts))]

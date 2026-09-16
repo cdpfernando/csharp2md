@@ -156,7 +156,7 @@ public sealed class NavigationPayloadIndexTests
     }
 
     private static ImmutableArray<AggregatedDependency> Dependencies(MachineArtifactSet package) =>
-        CanonicalJson.Read<ImmutableArray<AggregatedDependency>>(Artifact(package, DependenciesPath(package)).Payload.AsSpan());
+        CanonicalJson.Read<DependencyPayload>(Artifact(package, DependenciesPath(package)).Payload.AsSpan()).Dependencies;
 
     private static string DependenciesPath(MachineArtifactSet package) =>
         Assert.Single(package.Artifacts, artifact => artifact.Path.Value.EndsWith("/measures/dependencies.000000.json", StringComparison.Ordinal)).Path.Value;
@@ -172,14 +172,33 @@ public sealed class NavigationPayloadIndexTests
         var a = new EntityHandle("component:a");
         var b = new EntityHandle("component:b");
         var c = new EntityHandle("component:c");
+        var solution = CanonicalIdentity.CreateSolution("app", "src/App.sln");
+        var variant = CanonicalIdentity.CreateVariant("net10.0", "Release", [], "ci");
+        var span = new SourceSpan(1, 1, 1, 1);
+        var facts = new RetainedGraph(
+            [],
+            [
+                new FactualRelation("relation:Contract", "component:a", "component:b", "contract", ["evidence:Contract"]),
+                new FactualRelation("relation:Persistence", "component:a", "component:c", "persistence", ["evidence:Persistence"]),
+                new FactualRelation("relation:Http", "component:c", "component:b", "http", ["evidence:Http"]),
+            ],
+            [],
+            [
+                new EvidenceRecord("evidence:Contract", CanonicalIdentity.CreateDocumentKey(solution, "A.cs"), variant, span, "contract-digest"),
+                new EvidenceRecord("evidence:Persistence", CanonicalIdentity.CreateDocumentKey(solution, "B.cs"), variant, span, "persistence-digest"),
+                new EvidenceRecord("evidence:Http", CanonicalIdentity.CreateDocumentKey(solution, "C.cs"), variant, span, "http-digest"),
+            ],
+            [],
+            new RetentionMeasurements(3, 0));
         return new RetrievalModel([new SolutionRetrievalModel(
-            CanonicalIdentity.CreateSolution("app", "src/App.sln"),
+            solution,
             [a],
             [Dependency(a, b, DependencyCategory.Contract), Dependency(a, c, DependencyCategory.Persistence), Dependency(c, b, DependencyCategory.Http)],
             [
                 new ScopeMeasures(AggregationScope.Component, a, 0, 2, 0, [], [new ImpactTarget(b, 1)], new GapCounts(0, 0, 0)),
                 new ScopeMeasures(AggregationScope.Component, b, 2, 0, 0, [], [], new GapCounts(0, 0, 0)),
-            ])]);
+            ],
+            facts)]);
     }
 
     private static AggregatedDependency Dependency(EntityHandle source, EntityHandle target, DependencyCategory category) =>

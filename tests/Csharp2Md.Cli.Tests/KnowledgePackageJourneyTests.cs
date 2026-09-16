@@ -139,7 +139,7 @@ public sealed class KnowledgePackageJourneyTests : IClassFixture<KnowledgePackag
         internal JsonElement Manifest => _generationManifest!.RootElement;
         internal JsonElement Solution => Manifest.GetProperty("solutions")[0];
         internal JsonElement Roots => _roots!.RootElement;
-        internal JsonElement Dependencies => _dependencies!.RootElement;
+        internal JsonElement Dependencies => _dependencies!.RootElement.GetProperty("dependencies");
         internal JsonElement Measures => _measures!.RootElement;
         internal JsonElement Certification => _certification!.RootElement;
 
