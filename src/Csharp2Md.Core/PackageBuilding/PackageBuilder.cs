@@ -73,8 +73,9 @@ internal static class PackageBuilder
         var retained = RetentionPolicy.Apply(graph, RetainedGraphBuilder.Build(graph), includeTests);
         var evidence = retained.Evidence.ToDictionary(static item => item.CanonicalKey, StringComparer.Ordinal);
         var memberships = BuildMemberships(graph, retained);
+        var projectsByDocument = BuildProjectsByDocument(graph);
         var contributions = retained.Relations.SelectMany(relation =>
-            Contributions(relation, evidence, memberships));
+            Contributions(relation, evidence, memberships, projectsByDocument));
         var dependencies = DependencyAggregator.Aggregate(contributions);
         var cycles = CycleCalculator.Calculate(dependencies);
         var directMeasures = DirectMeasureCalculator.Calculate(dependencies)
@@ -103,7 +104,8 @@ internal static class PackageBuilder
     private static IEnumerable<DependencyContribution> Contributions(
         FactualRelation relation,
         IReadOnlyDictionary<string, EvidenceRecord> evidence,
-        IReadOnlyDictionary<string, EntityMembership> memberships)
+        IReadOnlyDictionary<string, EntityMembership> memberships,
+        IReadOnlyDictionary<string, ImmutableArray<EntityHandle>> projectsByDocument)
     {
         if (!TryCategoryOf(relation.Category, out var category)
             || !memberships.TryGetValue(relation.SourceCanonicalKey, out var source)
@@ -114,8 +116,10 @@ internal static class PackageBuilder
 
         foreach (var evidenceKey in relation.EvidenceCanonicalKeys.Where(evidence.ContainsKey))
         {
-            var variant = new VariantHandle(CanonicalIdentity.VariantKey(evidence[evidenceKey].Variant));
-            foreach (var (scope, from, to) in Pairs(source, target))
+            var record = evidence[evidenceKey];
+            var variant = new VariantHandle(CanonicalIdentity.VariantKey(record.Variant));
+            var origin = Origin(record, projectsByDocument, source);
+            foreach (var (scope, from, to) in Pairs(origin, source, target))
             {
                 yield return new DependencyContribution(
                     scope,
@@ -130,13 +134,18 @@ internal static class PackageBuilder
         }
     }
 
+    /// <summary>
+    /// Document scope starts at the evidence document. Project scope uses its proven owner.
+    /// Component and deployment-unit scope keep the entity membership derivation.
+    /// </summary>
     private static IEnumerable<(AggregationScope Scope, EntityHandle Source, EntityHandle Target)> Pairs(
+        EntityMembership origin,
         EntityMembership source,
         EntityMembership target)
     {
-        foreach (var pair in Cross(source.Documents, target.Documents))
+        foreach (var pair in Cross(origin.Documents, target.Documents))
             yield return (AggregationScope.Document, pair.Source, pair.Target);
-        foreach (var pair in Cross(source.Projects, target.Projects))
+        foreach (var pair in Cross(origin.Projects, target.Projects))
             yield return (AggregationScope.Project, pair.Source, pair.Target);
         foreach (var pair in Cross(source.Components, target.Components))
             yield return (AggregationScope.Component, pair.Source, pair.Target);
@@ -150,6 +159,29 @@ internal static class PackageBuilder
         from source in sources
         from target in targets
         select (source, target);
+
+    private static EntityMembership Origin(
+        EvidenceRecord record,
+        IReadOnlyDictionary<string, ImmutableArray<EntityHandle>> projectsByDocument,
+        EntityMembership source)
+    {
+        var document = ImmutableArray.Create(new EntityHandle(record.DocumentCanonicalKey));
+        var projects = projectsByDocument.TryGetValue(record.DocumentCanonicalKey, out var owning)
+            ? owning
+            : ImmutableArray<EntityHandle>.Empty;
+        return source with { Documents = document, Projects = projects };
+    }
+
+    private static IReadOnlyDictionary<string, ImmutableArray<EntityHandle>> BuildProjectsByDocument(
+        FactualGraph graph) =>
+        graph.Occurrences
+            .GroupBy(
+                occurrence => CanonicalIdentity.CreateDocumentKey(graph.Solution, occurrence.Locator.RelativePath),
+                StringComparer.Ordinal)
+            .ToDictionary(
+                static group => group.Key,
+                static group => Handles(group.Select(static occurrence => occurrence.Project.CanonicalKey)),
+                StringComparer.Ordinal);
 
     private static IReadOnlyDictionary<string, EntityMembership> BuildMemberships(
         FactualGraph graph,

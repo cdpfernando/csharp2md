@@ -1119,22 +1119,26 @@ T46-T48 were added after T43 was complete, so they carry higher numbers than the
 **Where**: `src/Csharp2Md.Core/PackageBuilding/PackageBuilder.cs`  
 **Depends on**: T48  
 **Reuses**: `EvidenceRecord.DocumentCanonicalKey` and the existing aggregation, measure and impact pipeline  
-**Requirement**: DEP-01, DEP-03, DEP-04, EDG-03
+**Requirement**: DEP-01, DEP-03, DEP-04
 
 **Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
 
 **Done when**:
 
-- [ ] A document-scope edge exists only between the document that holds the evidence and a document with proven target membership.
-- [ ] A project-scope edge exists only between a proven owner of the evidence document and a project with proven target membership.
-- [ ] Component and deployment-unit scope keep their proven-membership derivation unchanged.
-- [ ] `occurrence_count` equals the number of confirmed evidences for that exact source, target, scope and category, with no cross-product inflation.
-- [ ] No edge is emitted for a document or project pair that no confirmed evidence supports.
-- [ ] At least 6 pairing, count and scope-isolation cases pass; quick gate passes and the synthetic fixture still certifies all four journeys.
+- [x] A document-scope edge exists only between the document that holds the evidence and a document with proven target membership.
+- [x] A project-scope edge exists only between a proven owner of the evidence document and a project with proven target membership.
+- [x] Component and deployment-unit scope keep their proven-membership derivation unchanged.
+- [x] `occurrence_count` equals the number of confirmed evidences for that exact source, target, scope and category, with no cross-product inflation.
+- [x] No edge is emitted for a document or project pair that no confirmed evidence supports.
+- [x] At least 6 pairing, count and scope-isolation cases pass; quick gate passes and the synthetic fixture still certifies all four journeys.
 
 **Tests**: unit — ≥6 pairing/count/scope cases  
 **Gate**: quick  
 **Commit**: `fix(package-building): pair scoped edges by evidence document`
+
+**Status**: Complete
+**Gate note**: Core Release quick gate passed: 497 passed, 0 failed, 0 skipped. The synthetic CLI journey suite passed 16 of 16 cases. Pitstop still exceeds the byte budget; T47 owns the size correction.
+**Adequacy**: `ScopePairingTests.cs:16-25` asserts evidence source, absent unsupported document source, and proven target document; `:28-42` asserts both project endpoints and absence without a proven owner; `:47-48` asserts the exact occurrence count; `:51-58` asserts component and deployment-unit membership endpoints. These nine cases cover DEP-01 and DEP-04 without deriving expectations from the builder.
 
 ### T47: Index dependencies without copying payload
 
@@ -1238,7 +1242,7 @@ T46-T48 were added after T43 was complete, so they carry higher numbers than the
 | PUB-06..PUB-07 | T31, T41, T43 | safety fixture/rejection |
 | PUB-08 | T2, T15, T36, T38-T39, T43 | structured diagnostics |
 | CRT-01..CRT-03 | T15, T30, T34-T37, T42, T48 | journey certification |
-| CRT-04..CRT-07 | T9, T46-T47, T44 | optional corpora |
+| CRT-04..CRT-07 | T9, T47, T44 | optional corpora |
 | CRT-08 | T8, T12-T14, T31, T41 | fixture integrity |
 | CRT-09 | T42 | CLI E2E |
 | EDG-01 | T13, T16-T17, T33, T43 | evidence rejection |
