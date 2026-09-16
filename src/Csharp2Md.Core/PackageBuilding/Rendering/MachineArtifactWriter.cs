@@ -40,7 +40,7 @@ internal static class MachineArtifactWriter
             Add(artifacts, $"{prefix}/tables/identities.000000.json", ArtifactFamily.Table, ImmutableArray.Create(solution.Solution), 1);
             Add(artifacts, entitiesPath, ArtifactFamily.Graph, solution.Roots, solution.Roots.Length);
             AddCompact(artifacts, dependenciesPath, ArtifactFamily.Measure, BuildDependencyPayload(solution), solution.Dependencies.Length);
-            Add(artifacts, measuresPath, ArtifactFamily.Measure, solution.Measures, solution.Measures.Length);
+            AddCompact(artifacts, measuresPath, ArtifactFamily.Measure, solution.Measures, solution.Measures.Length);
 
             var evidenceIndex = AddEvidenceTable(artifacts, $"{prefix}/tables/evidence", solution.RetainedGraph?.Evidence ?? []);
             var indexes = IndexPaths(prefix).ToImmutableArray();

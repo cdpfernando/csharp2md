@@ -1,4 +1,5 @@
 using Csharp2Md.Core.Analysis;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Csharp2Md.Core.PackageBuilding;
@@ -29,6 +30,7 @@ internal enum DependencyNature
     Transitive,
 }
 
+[JsonConverter(typeof(EntityHandleConverter))]
 internal readonly record struct EntityHandle
 {
     public string Value { get; }
@@ -36,6 +38,7 @@ internal readonly record struct EntityHandle
     [JsonConstructor] public EntityHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
 }
 
+[JsonConverter(typeof(VariantHandleConverter))]
 internal readonly record struct VariantHandle
 {
     public string Value { get; }
@@ -43,6 +46,7 @@ internal readonly record struct VariantHandle
     [JsonConstructor] public VariantHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
 }
 
+[JsonConverter(typeof(RelationHandleConverter))]
 internal readonly record struct RelationHandle
 {
     public string Value { get; }
@@ -50,6 +54,7 @@ internal readonly record struct RelationHandle
     [JsonConstructor] public RelationHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
 }
 
+[JsonConverter(typeof(EvidenceHandleConverter))]
 internal readonly record struct EvidenceHandle
 {
     public string Value { get; }
@@ -57,11 +62,65 @@ internal readonly record struct EvidenceHandle
     [JsonConstructor] public EvidenceHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
 }
 
+[JsonConverter(typeof(CycleHandleConverter))]
 internal readonly record struct CycleHandle
 {
     public string Value { get; }
 
     [JsonConstructor] public CycleHandle(string value) => Value = CanonicalText.Require(value, nameof(value));
+}
+
+internal static class LocalHandleText
+{
+    public static string Require(ref Utf8JsonReader reader) =>
+        reader.TokenType == JsonTokenType.String
+            ? reader.GetString()!
+            : throw new JsonException("A handle must be written as a JSON string.");
+}
+
+internal sealed class EntityHandleConverter : JsonConverter<EntityHandle>
+{
+    public override EntityHandle Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        new(LocalHandleText.Require(ref reader));
+
+    public override void Write(Utf8JsonWriter writer, EntityHandle value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value.Value);
+}
+
+internal sealed class VariantHandleConverter : JsonConverter<VariantHandle>
+{
+    public override VariantHandle Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        new(LocalHandleText.Require(ref reader));
+
+    public override void Write(Utf8JsonWriter writer, VariantHandle value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value.Value);
+}
+
+internal sealed class RelationHandleConverter : JsonConverter<RelationHandle>
+{
+    public override RelationHandle Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        new(LocalHandleText.Require(ref reader));
+
+    public override void Write(Utf8JsonWriter writer, RelationHandle value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value.Value);
+}
+
+internal sealed class EvidenceHandleConverter : JsonConverter<EvidenceHandle>
+{
+    public override EvidenceHandle Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        new(LocalHandleText.Require(ref reader));
+
+    public override void Write(Utf8JsonWriter writer, EvidenceHandle value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value.Value);
+}
+
+internal sealed class CycleHandleConverter : JsonConverter<CycleHandle>
+{
+    public override CycleHandle Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        new(LocalHandleText.Require(ref reader));
+
+    public override void Write(Utf8JsonWriter writer, CycleHandle value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value.Value);
 }
 
 internal sealed record RetainedGraph

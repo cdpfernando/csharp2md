@@ -25,12 +25,12 @@ public sealed class KnowledgePackageJourneyTests : IClassFixture<KnowledgePackag
 
     [Fact]
     public void Roots_ContainArchitecturalEntryPoints() =>
-        Assert.Contains(_run.Roots.EnumerateArray(), static root => root.GetProperty("value").GetString()!.Contains(":entrypoint:", StringComparison.Ordinal));
+        Assert.Contains(_run.Roots.EnumerateArray(), static root => root.GetString()!.Contains(":entrypoint:", StringComparison.Ordinal));
 
     [Fact]
     public void Roots_ContainComponentAndDeploymentUnit()
     {
-        var roots = _run.Roots.EnumerateArray().Select(static root => root.GetProperty("value").GetString()!).ToArray();
+        var roots = _run.Roots.EnumerateArray().Select(static root => root.GetString()!).ToArray();
 
         Assert.Contains(roots, static root => root.Contains(":component:", StringComparison.Ordinal));
         Assert.Contains(roots, static root => root.Contains(":deploymentunit:", StringComparison.Ordinal));

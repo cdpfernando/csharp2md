@@ -80,10 +80,10 @@ T31 -> T32 -> T33 -> T34 -> T35 -> T36 -> T37 -> T38
 ### Phase 6: CLI acceptance and clean cut
 
 ```text
-T39 -> T40 -> T41 -> T42 -> T43 -> T48 -> T46 -> T47 -> T49 -> T50 -> T51 -> T44 -> T45
+T39 -> T40 -> T41 -> T42 -> T43 -> T48 -> T46 -> T47 -> T49 -> T50 -> T51 -> T52 -> T53 -> T44 -> T45
 ```
 
-T46-T51 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+T46-T53 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -1242,11 +1242,58 @@ T46-T51 were added after T43 was complete, so they carry higher numbers than the
 **Decision**: Measured on 2026-09-16, Pitstop's extracted dependencies are `InternalInvocation=983, Persistence=85, ProjectReference=12, StructuralTypeUse=2352` — no contract, HTTP, gRPC or messaging edge at all. `design.md:524` lists the flow journey's start as an operation or entry point and persistence as one of its terminals, so persistence alone is not a root and the journey is not applicable. The corpus-level cause is an extraction limitation recorded in `context.md`, not a certification defect; the rule keeps failing any solution that does have a flow root but cannot reach a terminal.
 **Adequacy**: `GraphJourneyCertifierTests.cs:28-34` asserts the persistence-only flow records exactly `not_applicable:no-causal-root`. `:35-39` asserts reverse impact still passes for a persistence-only solution with a reachable set, so NAV-09's data root is not narrowed with it. `:40-46` asserts a messaging root with no contract still fails with `missing-terminal:contracts`, so the narrowing cannot convert a real incompleteness into a silent pass. The five pre-existing terminal assertions at `:47-52` are unchanged.
 
+### T52: Shrink the bulk artifact wire form
+
+**What**: Serialize solution-local handles as bare JSON strings instead of single-property objects, and write `measures/summary.json` with the compact writer already used for the dependency artifact.
+**Where**: `src/Csharp2Md.Core/PackageBuilding/CanonicalJson.cs`, `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`
+**Depends on**: T51
+**Reuses**: the five handle types in `RetrievalModel.cs`, `CanonicalJson.WriteCompact` and the existing `AddCompact` artifact path
+**Requirement**: STO-03, STO-04, CRT-04, CRT-05, CRT-07
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] Every entity, variant, relation, evidence and cycle handle is written as a JSON string and read back to the same value, with an invalid handle still rejected by name.
+- [x] `measures/summary.json` is written by the compact writer and rehydrates to the same measures as before.
+- [x] Repeating the same evaluated input and policy still produces byte-identical artifacts.
+- [x] Pitstop's committed package is at most 25 MiB and at most 750 files when the optional clone is present; the quick gate passes.
+
+**Tests**: unit - >=6 handle-encoding/compaction/rehydration cases
+**Gate**: quick + Pitstop package when present
+**Commit**: `fix(package-building): shrink bulk artifact wire form`
+
+**Status**: Complete
+**Gate note**: `dotnet build csharp2md.slnx --configuration Release` passed with 0 warnings/errors. `Csharp2Md.Core.Tests` passed 543 of 543 (0 failed, 0 skipped), up from 534 by this task's 9 cases. `KnowledgePackageJourneyTests` and `KnowledgePackageFailureTests` passed 32 of 32. Pitstop's committed package fell from 20,445,642 bytes (19.50 MiB) to 15,547,566 bytes (14.83 MiB) at 137 files, against the 25 MiB / 750-file ceiling.
+**Deviation**: `KnowledgePackageJourneyTests.cs:28` and `:33` read each root of `graph/entities.000000.json` as `{"value": ...}`. Both were repointed at the JSON string this task defines; no assertion was weakened - they still require an `:entrypoint:`, a `:component:` and a `:deploymentunit:` root.
+**Adequacy**: `ArtifactWireFormTests.cs:16-21` asserts the dependency artifact writes entity, variant, relation and evidence handles as JSON strings and carries no `{"value"` envelope; `:30-31` asserts the same for root entities and `:39-42` for measure entity, cycle and reverse-impact handles. `:48-59` reads every handle kind back through `RetrievalModelReader` to its canonical value. `:68` rejects a handle written as a number and `:78` a blank handle string, each naming the offending artifact. `:87-88` asserts `measures/summary.json` carries no newline or indent run, `:95-104` asserts that compact artifact rehydrates to the same scope, entity, fan, cycle, reverse-impact and gap values, and `:112` asserts byte-identical repeat output.
+
+### T53: Resolve entity and cycle keys through the local table
+
+**What**: Replace repeated entity, variant and cycle canonical keys inside stored relations, aggregated dependencies and scope measures with solution-local handles resolvable through the declared table.
+**Where**: `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`, `src/Csharp2Md.Core/PackageBuilding/RetrievalModel.cs`, `src/Csharp2Md.Core/Publication/RetrievalModelReader.cs`
+**Depends on**: T52
+**Reuses**: `LocalTableBuilder` and the relation/evidence handle table contract T49 established
+**Requirement**: DEP-03, DEP-05, STO-03, STO-04, STO-05, CRT-04, CRT-06
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] `StoredRelation` source/target keys, `AggregatedDependency` source/target/variants, `ScopeMeasures` entity and cycle references, and reverse-impact targets carry deterministic solution-local handles, with each canonical identity stored once in its declared table.
+- [ ] A consumer resolves each handle to the canonical entity, variant or cycle identity through one declared table artifact without scanning unrelated artifacts.
+- [ ] Rehydration restores the same canonical values and rejects missing, duplicate or invalid table mappings by artifact name.
+- [ ] eShopOnContainers is at most 64 MiB and eShop completes analysis when the optional clones are present; Pitstop stays at most 25 MiB; the quick gate passes.
+
+**Tests**: unit - >=8 handle/table/rehydration/rejection cases
+**Gate**: quick + local corpora when present
+**Commit**: `fix(package-building): resolve entity keys through local table`
+
 ### T44: Certify optional local corpora
 
 **What**: Update LocalCorpus acceptance to assert eShop variant isolation and the eShopOnContainers/Pitstop committed-package ceilings.  
 **Where**: `tests/Csharp2Md.Cli.Tests/LocalCorpusAnalyzeTests.cs`  
-**Depends on**: T50  
+**Depends on**: T53  
 **Reuses**: dynamic skip convention and gitignored local clone paths  
 **Requirement**: CRT-04, CRT-05, CRT-06, CRT-07
 
@@ -1299,7 +1346,7 @@ T46-T51 were added after T43 was complete, so they carry higher numbers than the
 | PKG-08 | T5, T8, T17, T30, T38-T39, T42 | CLI policy identity |
 | PKG-09 | T3, T12-T16, T42 | factual graph + CLI |
 | PKG-10 | T1, T40, T45 | topology surface |
-| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42, T46-T47, T49 | hand-recalculated dependencies |
+| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42, T46-T47, T49, T53 | hand-recalculated dependencies |
 | MET-01..MET-04 | T4, T19, T42 | hand-recalculated direct measures |
 | MET-05 | T4, T20, T42 | hand-recalculated SCCs |
 | MET-06..MET-08 | T4, T17, T21-T22, T42 | hand-recalculated impact/gaps |
@@ -1312,7 +1359,7 @@ T46-T51 were added after T43 was complete, so they carry higher numbers than the
 | VAR-03..VAR-05 | T3, T7, T11, T41 | occurrence/collision tests |
 | VAR-06 | T7, T11, T15, T24, T37-T39 | multi-solution CLI |
 | STO-01..STO-02 | T23, T33, T43 | vectors/collision/rejection |
-| STO-03..STO-05 | T5, T24, T27, T33, T37, T49 | tables and resolver |
+| STO-03..STO-05 | T5, T24, T27, T33, T37, T49, T52-T53 | tables and resolver |
 | STO-06..STO-07 | T6, T25, T30, T33, T37 | byte/shard determinism |
 | PUB-01 | T5-T6, T36 | single materialization path |
 | PUB-02 | T5, T32-T33, T36 | staged rehydration |
@@ -1321,7 +1368,7 @@ T46-T51 were added after T43 was complete, so they carry higher numbers than the
 | PUB-06..PUB-07 | T31, T41, T43 | safety fixture/rejection |
 | PUB-08 | T2, T15, T36, T38-T39, T43 | structured diagnostics |
 | CRT-01..CRT-03 | T15, T30, T34-T37, T42, T48 | journey certification |
-| CRT-04..CRT-07 | T9, T47, T49-T50, T44 | optional corpora |
+| CRT-04..CRT-07 | T9, T47, T49-T50, T52-T53, T44 | optional corpora |
 | CRT-08 | T8, T12-T14, T31, T41 | fixture integrity |
 | CRT-09 | T42 | CLI E2E |
 | EDG-01 | T13, T16-T17, T33, T43 | evidence rejection |
@@ -1352,9 +1399,12 @@ All 71 requirements have at least one focused owning task and a final acceptance
 | T47 | One artifact-duplication correction | ✅ Cohesive write/read contract |
 | T49 | One local-reference compaction contract | ✅ Cohesive write/read contract |
 | T50 | One bounded evidence-entry contract | ✅ Cohesive write/read contract |
+| T51 | One causal flow-root correction | ✅ Granular |
+| T52 | One artifact wire-form encoding contract | ✅ Cohesive write/read contract |
+| T53 | One canonical-key resolution contract | ✅ Cohesive write/read contract |
 | T45 | One final repository topology cutover | ✅ Cohesive clean-cut deliverable |
 
-T1, T37, T41, T45, T47 and T48 necessarily touch multiple physical files, but each is one indivisible deliverable. Splitting any of them would create an invalid scaffold, a partially qualified package contract, a fixture with no stable oracle, a repository with mixed contracts, or a clarified rule without matching fixtures.
+T1, T37, T41, T45, T47, T48, T52 and T53 necessarily touch multiple physical files, but each is one indivisible deliverable. Splitting any of them would create an invalid scaffold, a partially qualified package contract, a fixture with no stable oracle, a repository with mixed contracts, or a clarified rule without matching fixtures.
 
 ## Diagram-Definition Cross-Check
 
@@ -1408,7 +1458,9 @@ T1, T37, T41, T45, T47 and T48 necessarily touch multiple physical files, but ea
 | T47 | T46 | T46 -> T47 | ✅ Match |
 | T49 | T47 | T47 -> T49 | ✅ Match |
 | T50 | T49 | T49 -> T50 | ✅ Match |
-| T44 | T50 | T50 -> T44 | ✅ Match |
+| T52 | T51 | T51 -> T52 | ✅ Match |
+| T53 | T52 | T52 -> T53 | ✅ Match |
+| T44 | T53 | T53 -> T44 | ✅ Match |
 | T45 | T44 | T44 -> T45 | ✅ Match |
 
 Cross-phase dependencies are represented by the ordered phase chain; all intra-phase edges match exactly.
@@ -1465,6 +1517,9 @@ Cross-phase dependencies are represented by the ordered phase chain; all intra-p
 | T47 | Artifact indexing | unit | unit | ✅ OK |
 | T49 | Local reference compaction | unit | unit | ✅ OK |
 | T50 | Bounded evidence journey | unit + integration | unit + integration | ✅ OK |
+| T51 | Causal flow root | unit | unit | ✅ OK |
+| T52 | Artifact wire form | unit | unit | ✅ OK |
+| T53 | Canonical key resolution | unit | unit | ✅ OK |
 | T44 | Optional corpora | e2e | e2e | ✅ OK |
 | T45 | Topology + CLI current contract | unit + e2e + build | unit + e2e + build | ✅ OK |
 
