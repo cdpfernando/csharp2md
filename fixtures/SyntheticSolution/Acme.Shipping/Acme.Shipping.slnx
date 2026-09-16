@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="Acme.Shipping.csproj" />
+  <Project Path="../Acme.Shipping.Tests/Acme.Shipping.Tests.csproj" />
   <Project Path="../Acme.Shared.Contracts/Acme.Shared.Contracts.csproj" />
 </Solution>

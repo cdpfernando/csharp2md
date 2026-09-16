@@ -1023,14 +1023,19 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Fixture contains every CRT-08 characteristic without generated bin/obj or external clone content.
-- [ ] A hand-authored manifest/oracle names expected roots, edges, occurrences, cycle, gap and excluded test/safety values.
-- [ ] At least 12 fixture-integrity and expected-feature cases pass.
-- [ ] Full gate passes.
+- [x] Fixture contains every CRT-08 characteristic without generated bin/obj or external clone content.
+- [x] A hand-authored manifest/oracle names expected roots, edges, occurrences, cycle, gap and excluded test/safety values.
+- [x] At least 12 fixture-integrity and expected-feature cases pass.
+- [x] Full gate passes under the approved pre-T45 legacy-suite exception.
 
 **Tests**: e2e — ≥12 focused cases  
 **Gate**: full  
 **Commit**: `test(fixture): cover knowledge package journeys`
+
+**Status**: Complete
+**Gate note**: `SyntheticSolutionFixtureTests` passed (14 tests), and `dotnet build csharp2md.slnx --configuration Release` passed with 0 warnings/errors. The declared full suite was run with `--no-build`; retained legacy test projects fail only on removed compose/version/compatibility contracts and the missing superseded taxonomy spec. The approved interim exception remains in effect until T45 removes those projects and tests.
+
+**Adequacy**: CRT-08 is asserted by `SyntheticSolutionFixtureTests.cs:9-118`, including multi-targeting (`:58-64`), production/test distinction (`:66-75`), repeated calls/runtime/component evidence (`:77-92`), cycle (`:94-101`) and safety inputs (`:103-118`). VAR-01/VAR-02/VAR-03 and PUB-06/PUB-07 are pinned by the exact oracle at `:22-56` and its fixture assertions. Every focused test maps to a T41 criterion; no shallow or speculative assertions were added.
 
 ### T42: Prove the four journeys end to end
 

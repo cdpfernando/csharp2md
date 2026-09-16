@@ -1,0 +1,27 @@
+{
+  "expectedRoots": [
+    "Acme.Orders",
+    "Acme.Payments",
+    "Acme.Shipping"
+  ],
+  "expectedEdges": [
+    "Acme.Orders->PaymentService:http",
+    "Acme.Orders->ShippingService:http",
+    "Acme.Orders->Payments:grpc",
+    "Acme.Orders->OrderPlaced:publish",
+    "Acme.Shipping->OrderPlaced:subscribe"
+  ],
+  "expectedOccurrences": [
+    "Acme.Shared.Contracts:net8.0",
+    "Acme.Shared.Contracts:net10.0",
+    "Acme.Shipping:net10.0"
+  ],
+  "expectedCycle": "CycleProbe.Start->CycleProbe.Continue->CycleProbe.Start",
+  "expectedGap": "ShippingService is unresolved",
+  "excludedValues": [
+    "appsettings-fixture-secret",
+    "inline-fixture-secret",
+    "C:\\fixture\\synthetic-output",
+    "Acme.Shipping.Tests"
+  ]
+}
