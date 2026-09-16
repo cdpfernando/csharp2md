@@ -11,6 +11,10 @@ internal static class GraphJourneyCertifier
         var dependencies = ReadDependencies(reader, solution);
         if (dependencies.IsDefaultOrEmpty) return NotApplicable(JourneyKind.FollowFlow, "no-causal-root");
         var categories = dependencies.Select(dependency => dependency.Category).ToHashSet();
+        if (!categories.Overlaps([DependencyCategory.Http, DependencyCategory.Grpc, DependencyCategory.Messaging, DependencyCategory.Contract, DependencyCategory.Persistence]))
+        {
+            return NotApplicable(JourneyKind.FollowFlow, "no-causal-root");
+        }
         var missing = new[]
         {
             (DependencyCategory.Contract, "contracts"),
@@ -25,6 +29,13 @@ internal static class GraphJourneyCertifier
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(solution);
+        var dependencies = ReadDependencies(reader, solution);
+        if (dependencies.IsDefaultOrEmpty
+            || !dependencies.Any(dependency => dependency.Category is DependencyCategory.Http or DependencyCategory.Grpc or DependencyCategory.Messaging or DependencyCategory.Contract or DependencyCategory.Persistence))
+        {
+            return NotApplicable(JourneyKind.ReverseImpact, "no-impact-root");
+        }
+        reader.BeginJourney();
         reader.OpenArtifact("manifest.json");
         reader.OpenArtifact(JourneyCertifier.Entry(solution, JourneyKind.ReverseImpact));
         var measuresPath = solution.Indexes.Single(index => index.Kind == NavigationIndexKind.Measures).EntryPath;

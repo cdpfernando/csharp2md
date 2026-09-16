@@ -69,8 +69,8 @@ internal static class CausalRelationExtractor
         string AddSymbol(ISymbol symbol, LogicalLocator locator, EvidenceRecord proof)
         {
             var kind = symbol is IMethodSymbol ? EntityKind.Callable : EntityKind.Symbol;
-            var display = symbol.Name;
             var qualified = symbol.ToDisplayString();
+            var display = string.IsNullOrWhiteSpace(symbol.Name) ? qualified : symbol.Name;
             var key = CanonicalIdentity.CreateEntityKey(input.Solution, kind, qualified);
             AddEntity(new LogicalEntity(kind, key, display, qualified), locator, "semantic:" + kind.ToString().ToLowerInvariant(), proof.CanonicalKey);
             return key;
@@ -127,6 +127,17 @@ internal static class CausalRelationExtractor
                 var source = AddSymbol(sourceMethod, locator, proof);
                 if (model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol targetMethod)
                 {
+                    if (IsHttpInvocation(invocation))
+                    {
+                        var destination = ExtractStringArgument(invocation);
+                        if (destination is not null)
+                        {
+                            var external = AddNamed(EntityKind.ExternalSystem, "http:" + destination, locator, proof);
+                            AddRelation(Http, source, external, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                            continue;
+                        }
+                    }
+
                     AddGap(GapKind.Unknown, "unresolved-invocation", source, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
                     continue;
                 }
@@ -207,6 +218,10 @@ internal static class CausalRelationExtractor
     private static bool IsMessaging(IMethodSymbol method) => method.Name is "Publish" or "PublishAsync" or "Subscribe" or "SubscribeAsync";
 
     private static bool IsHttp(IMethodSymbol method) => method.Name is "GetAsync" or "PostAsync" or "PostAsJsonAsync" or "PutAsync" or "DeleteAsync";
+
+    private static bool IsHttpInvocation(InvocationExpressionSyntax invocation) =>
+        invocation.Expression is MemberAccessExpressionSyntax member
+        && member.Name.Identifier.ValueText is "GetAsync" or "PostAsync" or "PostAsJsonAsync" or "PutAsync" or "DeleteAsync";
 
     private static bool IsGrpc(IMethodSymbol method) =>
         method.ContainingType.BaseType?.ToDisplayString().Contains("Grpc.Core.ClientBase", StringComparison.Ordinal) == true;

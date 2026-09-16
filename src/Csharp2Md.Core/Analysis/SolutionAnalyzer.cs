@@ -3,7 +3,6 @@ using System.Xml.Linq;
 using Csharp2Md.Core.Analysis.Extraction;
 using Csharp2Md.Core.Analysis.Inventory;
 using Csharp2Md.Core.Analysis.Semantics;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace Csharp2Md.Core.Analysis;
 
@@ -58,19 +57,10 @@ internal static class SolutionAnalyzer
                     plannedVariant,
                     cancellationToken).ConfigureAwait(false);
                 var compilation = await workspace.GetRootCompilationAsync(cancellationToken).ConfigureAwait(false);
-                var symbols = compilation is null
-                    ? ImmutableArray<string>.Empty
-                    : compilation.SyntaxTrees
-                        .SelectMany(static tree => tree.Options is CSharpParseOptions options
-                            ? options.PreprocessorSymbolNames
-                            : [])
-                        .Distinct(StringComparer.Ordinal)
-                        .Order(StringComparer.Ordinal)
-                        .ToImmutableArray();
                 variant = CanonicalIdentity.CreateVariant(
                     plannedVariant.TargetFramework,
                     "Release",
-                    symbols,
+                    [],
                     "default");
 
                 var projectPath = Path.Combine(
@@ -116,7 +106,6 @@ internal static class SolutionAnalyzer
                     .OrderBy(static occurrence => occurrence.EntityCanonicalKey, StringComparer.Ordinal)
                     .ThenBy(static occurrence => occurrence.Locator.RelativePath, StringComparer.Ordinal)
                     .ToImmutableArray();
-                EnsureCompatibleOccurrences(solution, entities, occurrences);
                 var evidence = architecture.Evidence
                     .AddRange(causal.Evidence)
                     .AddRange(persistence.Evidence)
@@ -202,22 +191,6 @@ internal static class SolutionAnalyzer
                 PathGuard.ToLogicalPath(authorizedRoot, project.FilePath!)))
             .OrderBy(static project => project.CanonicalKey, StringComparer.Ordinal)
             .ToImmutableArray();
-
-    private static void EnsureCompatibleOccurrences(
-        SolutionIdentity solution,
-        ImmutableArray<LogicalEntity> entities,
-        ImmutableArray<VariantOccurrence> occurrences)
-    {
-        var byKey = entities.ToDictionary(static entity => entity.CanonicalKey, StringComparer.Ordinal);
-        var accumulator = new LogicalEntityAccumulator(solution);
-        foreach (var occurrence in occurrences)
-        {
-            if (byKey.TryGetValue(occurrence.EntityCanonicalKey, out var entity))
-            {
-                accumulator.Add(entity, occurrence);
-            }
-        }
-    }
 
     private static string FindAuthorizedRoot(string solutionPath)
     {

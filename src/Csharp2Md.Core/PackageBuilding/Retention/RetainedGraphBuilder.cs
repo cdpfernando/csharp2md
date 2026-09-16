@@ -38,6 +38,13 @@ internal static class RetainedGraphBuilder
         var retainedKeys = new HashSet<string>(
             graph.Entities.Where(entity => RootKinds.Contains(entity.Kind)).Select(entity => entity.CanonicalKey),
             StringComparer.Ordinal);
+        var rootProjects = graph.Occurrences
+            .Where(occurrence => retainedKeys.Contains(occurrence.EntityCanonicalKey))
+            .Select(static occurrence => occurrence.Project.CanonicalKey)
+            .ToHashSet(StringComparer.Ordinal);
+        retainedKeys.UnionWith(graph.Occurrences
+            .Where(occurrence => rootProjects.Contains(occurrence.Project.CanonicalKey))
+            .Select(static occurrence => occurrence.EntityCanonicalKey));
         var retainedRelations = new List<FactualRelation>();
         var queue = new Queue<string>(retainedKeys.Order(StringComparer.Ordinal));
         var outgoing = graph.Relations.GroupBy(relation => relation.SourceCanonicalKey, StringComparer.Ordinal)

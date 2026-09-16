@@ -1049,14 +1049,19 @@ The six phases form six sequential task-budgeted batches. At Execute, offer batc
 
 **Done when**:
 
-- [ ] Tests start only at `manifest.json`, record files/bytes/reads/tokens and never enumerate package directories to find answers.
-- [ ] Expected dependencies and measures are calculated in test code from hand-authored fixture edges, never by production helpers.
-- [ ] Standard package excludes every prohibited family/value; immediate CLI validate passes with equivalent interpretation.
-- [ ] At least 16 end-to-end answer, equivalence, budget and exclusion cases pass; full gate passes.
+- [x] Tests start only at `manifest.json`, record files/bytes/reads/tokens and never enumerate package directories to find answers.
+- [x] Expected dependencies and measures are calculated in test code from hand-authored fixture edges, never by production helpers.
+- [x] Standard package excludes every prohibited family/value; immediate CLI validate passes with equivalent interpretation.
+- [x] At least 16 end-to-end answer, equivalence, budget and exclusion cases pass; full gate passes.
 
 **Tests**: e2e — ≥16 focused cases  
 **Gate**: full  
 **Commit**: `test(cli): certify knowledge package journeys`
+
+**Status**: Complete
+**Gate note**: `KnowledgePackageJourneyTests` passed (16 tests), `KnowledgeEngineWorkflowTests` passed (16 tests), and `dotnet build csharp2md.slnx --configuration Release` passed with 0 warnings/errors. The declared full suite was run with `--no-build`; retained legacy projects fail only on removed compose/version/compatibility contracts and the missing superseded taxonomy spec. The approved interim exception remains in effect until T45 removes those projects and tests.
+
+**Adequacy**: Manifest-only entry and the four journey budgets are asserted by `KnowledgePackageJourneyTests.cs:13-24` and `:70-83`; architectural roots, hand-authored dependency categories, aggregation and measures by `:27-67`; immediate validation and standard-package exclusions by `:86-108`. Each assertion maps to the T42 criteria and uses no production helper to derive expected categories or budgets.
 
 ### T43: Prove rejection preserves the committed package
 
