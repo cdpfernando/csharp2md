@@ -129,7 +129,7 @@ internal sealed record SolutionManifestEntry
 
     public string LogicalRelativePath { get; }
 
-    public ImmutableArray<RootManifestEntry> Roots { get; }
+    public RootsManifestEntry Roots { get; }
 
     public ImmutableArray<IndexManifestEntry> Indexes { get; }
 
@@ -138,7 +138,7 @@ internal sealed record SolutionManifestEntry
     public SolutionManifestEntry(
         SolutionId id,
         string logicalRelativePath,
-        ImmutableArray<RootManifestEntry> roots,
+        RootsManifestEntry roots,
         ImmutableArray<IndexManifestEntry> indexes,
         ImmutableArray<JourneyManifestEntry> journeys)
     {
@@ -163,28 +163,23 @@ internal sealed record SolutionManifestEntry
 
         Id = id;
         LogicalRelativePath = LogicalPath.RequireRelative(logicalRelativePath, nameof(logicalRelativePath));
-        Roots = roots.IsDefault ? ImmutableArray<RootManifestEntry>.Empty : ImmutableArray.CreateRange(roots);
+        Roots = roots ?? throw new ArgumentNullException(nameof(roots));
         Indexes = ownedIndexes;
         Journeys = ownedJourneys;
     }
 }
 
-internal sealed record RootManifestEntry
+internal sealed record RootsManifestEntry
 {
-    public string DisplayName { get; }
+    public string EntryPath { get; }
 
-    public string Handle { get; }
+    public int Count { get; }
 
-    public string MachineCitation { get; }
-
-    public string MarkdownPath { get; }
-
-    public RootManifestEntry(string displayName, string handle, string machineCitation, string markdownPath)
+    public RootsManifestEntry(string entryPath, int count)
     {
-        DisplayName = CanonicalText.Require(displayName, nameof(displayName));
-        Handle = CanonicalText.Require(handle, nameof(handle));
-        MachineCitation = CanonicalText.Require(machineCitation, nameof(machineCitation));
-        MarkdownPath = LogicalPath.RequireRelative(markdownPath, nameof(markdownPath));
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
+        EntryPath = LogicalPath.RequireRelative(entryPath, nameof(entryPath));
+        Count = count;
     }
 }
 

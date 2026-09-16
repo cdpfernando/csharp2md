@@ -50,11 +50,8 @@ public sealed class PackageContractTests
         Assert.True(manifest.IncludeTests);
         var solution = Assert.Single(manifest.Solutions);
         Assert.Equal("src/Acme.sln", solution.LogicalRelativePath);
-        var root = Assert.Single(solution.Roots);
-        Assert.Equal("Orders", root.DisplayName);
-        Assert.Equal("0", root.Handle);
-        Assert.Equal("indexes/roots.json#0", root.MachineCitation);
-        Assert.Equal("markdown/components/0.md", root.MarkdownPath);
+        Assert.Equal("indexes/roots.json", solution.Roots.EntryPath);
+        Assert.Equal(1, solution.Roots.Count);
         Assert.Equal(8, solution.Indexes.Length);
         Assert.Contains(solution.Indexes, index => index.Kind == NavigationIndexKind.Identity);
         Assert.Equal(4, solution.Journeys.Length);
@@ -158,12 +155,11 @@ public sealed class PackageContractTests
         new(
             new SolutionId("sol_0123456789abcdef"),
             "src/Acme.sln",
-            ImmutableArray.Create(Root()),
+            Root(),
             Indexes(),
             Journeys());
 
-    private static RootManifestEntry Root() =>
-        new("Orders", "0", "indexes/roots.json#0", "markdown/components/0.md");
+    private static RootsManifestEntry Root() => new("indexes/roots.json", 1);
 
     private static ImmutableArray<IndexManifestEntry> Indexes() =>
         Enum.GetValues<NavigationIndexKind>()

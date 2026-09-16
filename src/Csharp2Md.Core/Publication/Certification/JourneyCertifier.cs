@@ -80,17 +80,22 @@ internal static class JourneyCertifier
 
     private static JourneyCertification CertifyLocate(MeasuredPackageReader reader, SolutionManifestEntry solution)
     {
-        if (solution.Roots.IsDefaultOrEmpty)
+        if (solution.Roots.Count == 0)
         {
             return NotApplicable(JourneyKind.Locate, "no-root");
         }
 
-        var root = solution.Roots[0];
         try
         {
             reader.OpenArtifact("manifest.json");
-            reader.OpenArtifact(Entry(solution, JourneyKind.Locate));
-            reader.OpenArtifact(root.MarkdownPath);
+            var index = CanonicalJson.Read<RootsIndexData>(reader.OpenArtifact(Entry(solution, JourneyKind.Locate)).AsSpan());
+            if (index.Roots.IsDefaultOrEmpty)
+            {
+                return Failed(JourneyKind.Locate, "missing-terminal:root");
+            }
+
+            var root = index.Roots[0];
+            reader.OpenArtifact(index.MarkdownPath(root.Handle));
             return Budget(JourneyKind.Locate, reader.Measurement, root.DisplayName.StartsWith("component:", StringComparison.Ordinal) ? 5 : 8, 12_000);
         }
         catch (FileNotFoundException)

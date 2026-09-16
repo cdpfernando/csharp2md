@@ -25,12 +25,12 @@ public sealed class KnowledgePackageJourneyTests : IClassFixture<KnowledgePackag
 
     [Fact]
     public void Roots_ContainArchitecturalEntryPoints() =>
-        Assert.Contains(_run.Roots.EnumerateArray(), static root => root.GetString()!.Contains(":entrypoint:", StringComparison.Ordinal));
+        Assert.Contains(_run.RootNames, static root => root.Contains(":entrypoint:", StringComparison.Ordinal));
 
     [Fact]
     public void Roots_ContainComponentAndDeploymentUnit()
     {
-        var roots = _run.Roots.EnumerateArray().Select(static root => root.GetString()!).ToArray();
+        var roots = _run.RootNames;
 
         Assert.Contains(roots, static root => root.Contains(":component:", StringComparison.Ordinal));
         Assert.Contains(roots, static root => root.Contains(":deploymentunit:", StringComparison.Ordinal));
@@ -139,6 +139,8 @@ public sealed class KnowledgePackageJourneyTests : IClassFixture<KnowledgePackag
         internal JsonElement Manifest => _generationManifest!.RootElement;
         internal JsonElement Solution => Manifest.GetProperty("solutions")[0];
         internal JsonElement Roots => _roots!.RootElement;
+        internal string[] RootNames => Roots.GetProperty("roots").EnumerateArray()
+            .Select(static root => root.GetProperty("display_name").GetString()!).ToArray();
         internal JsonElement Dependencies => _dependencies!.RootElement.GetProperty("dependencies");
         internal JsonElement Measures => _measures!.RootElement;
         internal JsonElement Certification => _certification!.RootElement;

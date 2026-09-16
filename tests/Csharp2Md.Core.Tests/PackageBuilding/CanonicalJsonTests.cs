@@ -116,7 +116,7 @@ public sealed class CanonicalJsonTests
             ImmutableArray.Create(new SolutionManifestEntry(
                 new SolutionId("sol_0123456789abcdef"),
                 "src/Acme.sln",
-                ImmutableArray.Create(new RootManifestEntry("Orders", "0", "indexes/roots.json#0", "markdown/components/0.md")),
+                new RootsManifestEntry("indexes/roots.json", 1),
                 Enum.GetValues<NavigationIndexKind>()
                     .Select(kind => new IndexManifestEntry(kind, $"indexes/{kind.ToString().ToLowerInvariant()}.json"))
                     .ToImmutableArray(),

@@ -61,7 +61,7 @@ internal static class RetrievalModelReader
             VerifyIndex(NavigationIndexKind.Measures, MachineArtifactWriter.BuildMeasuresIndex(measuresIndex.ArtifactPath, measures));
             solutions.Add(new SolutionRetrievalModel(
                 identities[0],
-                Read<ImmutableArray<EntityHandle>>(artifacts, indexes[NavigationIndexKind.Roots]),
+                ReadRoots(artifacts, indexes[NavigationIndexKind.Roots], entry.Roots),
                 dependencies,
                 measures));
 
@@ -90,6 +90,33 @@ internal static class RetrievalModelReader
                 throw new PackageCorruptionException(artifact.Path.Value);
             }
         }
+    }
+
+    private static ImmutableArray<EntityHandle> ReadRoots(IReadOnlyDictionary<string, ImmutableArray<byte>> artifacts, string indexPath, RootsManifestEntry declared)
+    {
+        if (!string.Equals(declared.EntryPath, indexPath, StringComparison.Ordinal))
+        {
+            throw new PackageCorruptionException(indexPath);
+        }
+
+        var index = Read<RootsIndexData>(artifacts, indexPath);
+        var roots = index.Roots.IsDefault ? ImmutableArray<RootIndexEntry>.Empty : index.Roots;
+        if (roots.Length != declared.Count)
+        {
+            throw new PackageCorruptionException(indexPath);
+        }
+
+        for (var ordinal = 0; ordinal < roots.Length; ordinal++)
+        {
+            var previous = ordinal == 0 ? null : roots[ordinal - 1].DisplayName;
+            if (!string.Equals(roots[ordinal].Handle, LocalTableBuilder.HandleForOrdinal(ordinal), StringComparison.Ordinal)
+                || (previous is not null && string.CompareOrdinal(previous, roots[ordinal].DisplayName) >= 0))
+            {
+                throw new PackageCorruptionException(indexPath);
+            }
+        }
+
+        return roots.Select(root => new EntityHandle(root.DisplayName)).ToImmutableArray();
     }
 
     private static ImmutableArray<EvidenceRecord> ReadEvidenceTable(IReadOnlyDictionary<string, ImmutableArray<byte>> artifacts, string indexPath)

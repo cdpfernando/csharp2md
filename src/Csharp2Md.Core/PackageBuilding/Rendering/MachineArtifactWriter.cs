@@ -12,6 +12,12 @@ internal sealed record NavigationIndexEntry(string Key, ImmutableArray<int> Ordi
 internal sealed record DependencyPayload(ImmutableArray<StoredRelation> Relations, ImmutableArray<string> Evidence, ImmutableArray<AggregatedDependency> Dependencies);
 internal sealed record StoredRelation(string CanonicalKey, string SourceCanonicalKey, string TargetCanonicalKey, string Category, ImmutableArray<EvidenceHandle> Evidence);
 internal sealed record EvidenceIndexData(ImmutableArray<EvidenceShardEntry> Shards);
+internal sealed record RootsIndexData(string CitationArtifact, string MarkdownPrefix, ImmutableArray<RootIndexEntry> Roots)
+{
+    internal string MachineCitation(string handle) => $"{CitationArtifact}#{handle}";
+    internal string MarkdownPath(string handle) => $"{MarkdownPrefix}{handle}.md";
+}
+internal sealed record RootIndexEntry(string DisplayName, string Handle);
 internal sealed record EvidenceShardEntry(string ArtifactPath, int FirstOrdinal, int Count);
 
 internal static class MachineArtifactWriter
@@ -33,7 +39,7 @@ internal static class MachineArtifactWriter
         {
             var solutionId = registry.RegisterSolution(solution.Solution);
             var prefix = $"solutions/{solutionId.Value}";
-            var rootHandles = LocalTableBuilder.Build(solution.Solution.CanonicalKey, solution.Roots.Select(root => root.Value));
+            var rootsIndex = BuildRoots(solution, solutionId);
             var entitiesPath = $"{prefix}/graph/entities.000000.json";
             var dependenciesPath = $"{prefix}/measures/dependencies.000000.json";
             var measuresPath = $"{prefix}/measures/summary.json";
@@ -55,20 +61,13 @@ internal static class MachineArtifactWriter
             var indexes = IndexPaths(prefix).ToImmutableArray();
             foreach (var index in indexes)
             {
-                AddIndex(artifacts, index, solution, dependenciesPath, measuresPath, evidenceIndex);
-            }
-
-            var roots = ImmutableArray.CreateBuilder<RootManifestEntry>();
-            foreach (var root in solution.Roots)
-            {
-                var handle = rootHandles.Resolve(root.Value).Value;
-                roots.Add(new RootManifestEntry(root.Value, handle, $"{entitiesPath}#{handle}", $"{prefix}/markdown/components/{handle}.md"));
+                AddIndex(artifacts, index, solution, dependenciesPath, measuresPath, evidenceIndex, rootsIndex);
             }
 
             manifestSolutions.Add(new SolutionManifestEntry(
                 solutionId,
                 solution.Solution.LogicalRelativePath,
-                roots.OrderBy(root => root.Handle, StringComparer.Ordinal).ToImmutableArray(),
+                new RootsManifestEntry(indexes.Single(index => index.Kind == NavigationIndexKind.Roots).EntryPath, rootsIndex.Roots.Length),
                 indexes,
                 Journeys()));
         }
@@ -90,7 +89,7 @@ internal static class MachineArtifactWriter
         }
     }
 
-    private static void AddIndex(ImmutableArray<PlannedArtifact>.Builder artifacts, IndexManifestEntry index, SolutionRetrievalModel solution, string dependenciesPath, string measuresPath, EvidenceIndexData evidenceIndex)
+    private static void AddIndex(ImmutableArray<PlannedArtifact>.Builder artifacts, IndexManifestEntry index, SolutionRetrievalModel solution, string dependenciesPath, string measuresPath, EvidenceIndexData evidenceIndex, RootsIndexData rootsIndex)
     {
         switch (index.Kind)
         {
@@ -98,7 +97,7 @@ internal static class MachineArtifactWriter
                 AddCompact(artifacts, index.EntryPath, ArtifactFamily.Index, ImmutableArray.Create(solution.Solution), 1);
                 break;
             case NavigationIndexKind.Roots:
-                AddCompact(artifacts, index.EntryPath, ArtifactFamily.Index, solution.Roots, solution.Roots.Length);
+                AddCompact(artifacts, index.EntryPath, ArtifactFamily.Index, rootsIndex, rootsIndex.Roots.Length);
                 break;
             case NavigationIndexKind.Outgoing:
                 AddDependencyIndex(artifacts, index.EntryPath, dependenciesPath, solution.Dependencies, static dependency => dependency.Source.Value);
@@ -186,6 +185,15 @@ internal static class MachineArtifactWriter
         }
 
         return new EvidenceIndexData(entries.ToImmutable());
+    }
+
+    internal static RootsIndexData BuildRoots(SolutionRetrievalModel solution, SolutionId solutionId)
+    {
+        ArgumentNullException.ThrowIfNull(solution);
+        var prefix = $"solutions/{solutionId.Value}";
+        var keys = Keys(solution.Roots.Select(root => root.Value));
+        var roots = keys.Select((key, ordinal) => new RootIndexEntry(key, LocalTableBuilder.HandleForOrdinal(ordinal))).ToImmutableArray();
+        return new RootsIndexData($"{prefix}/graph/entities.000000.json", $"{prefix}/markdown/components/", roots);
     }
 
     internal static ImmutableArray<string> EntityKeys(SolutionRetrievalModel solution) =>

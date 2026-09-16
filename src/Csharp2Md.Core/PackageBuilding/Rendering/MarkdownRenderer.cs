@@ -12,24 +12,28 @@ internal static class MarkdownRenderer
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(manifest);
         var artifacts = ImmutableArray.CreateBuilder<PlannedArtifact>();
-        Add(artifacts, "markdown/index.md", Summary(model, manifest), 1);
         var solutions = SolutionsById(model);
+        var roots = manifest.Solutions.ToDictionary(
+            entry => entry.Id,
+            entry => MachineArtifactWriter.BuildRoots(solutions[entry.Id], entry.Id));
+        Add(artifacts, "markdown/index.md", Summary(model, manifest, roots), 1);
         foreach (var manifestSolution in manifest.Solutions)
         {
             var solution = solutions[manifestSolution.Id];
-            foreach (var root in manifestSolution.Roots.OrderBy(root => root.MarkdownPath, StringComparer.Ordinal))
+            var index = roots[manifestSolution.Id];
+            foreach (var root in index.Roots.OrderBy(root => index.MarkdownPath(root.Handle), StringComparer.Ordinal))
             {
-                Add(artifacts, root.MarkdownPath, EntityPage(solution, root), 1);
+                Add(artifacts, index.MarkdownPath(root.Handle), EntityPage(solution, root.DisplayName), 1);
             }
         }
 
         return artifacts.ToImmutable();
     }
 
-    private static string Summary(RetrievalModel model, PackageManifest manifest)
+    private static string Summary(RetrievalModel model, PackageManifest manifest, IReadOnlyDictionary<SolutionId, RootsIndexData> roots)
     {
         var lines = new List<string> { "# Knowledge package", "", "## Components and Deployment Units" };
-        lines.AddRange(manifest.Solutions.SelectMany(solution => solution.Roots.Select(root => (solution.Id, Root: root))).OrderBy(item => item.Id.Value, StringComparer.Ordinal).ThenBy(item => item.Root.DisplayName, StringComparer.Ordinal).Select(item => $"- [{Escape(item.Root.DisplayName)}]({item.Root.MarkdownPath})"));
+        lines.AddRange(manifest.Solutions.SelectMany(solution => roots[solution.Id].Roots.Select(root => (solution.Id, Root: root, Index: roots[solution.Id]))).OrderBy(item => item.Id.Value, StringComparer.Ordinal).ThenBy(item => item.Root.DisplayName, StringComparer.Ordinal).Select(item => $"- [{Escape(item.Root.DisplayName)}]({item.Index.MarkdownPath(item.Root.Handle)})"));
         lines.AddRange(["", "## Top fan-in and fan-out"]);
         lines.AddRange(model.Solutions.SelectMany(solution => solution.Measures).OrderByDescending(measure => measure.FanIn).ThenBy(measure => measure.Entity.Value, StringComparer.Ordinal).Take(5).Select(measure => $"- {Escape(measure.Entity.Value)}: fan-in {measure.FanIn}, fan-out {measure.FanOut}"));
         lines.AddRange(["", "## Cycles"]);
@@ -39,9 +43,8 @@ internal static class MarkdownRenderer
         return string.Join('\n', lines) + "\n";
     }
 
-    private static string EntityPage(SolutionRetrievalModel model, RootManifestEntry root)
+    private static string EntityPage(SolutionRetrievalModel model, string entity)
     {
-        var entity = root.DisplayName;
         var outgoing = model.Dependencies.Where(dependency => dependency.Source.Value == entity).OrderBy(dependency => dependency.Target.Value, StringComparer.Ordinal).ToArray();
         var incoming = model.Dependencies.Where(dependency => dependency.Target.Value == entity).OrderBy(dependency => dependency.Source.Value, StringComparer.Ordinal).ToArray();
         var measure = model.Measures.SingleOrDefault(value => value.Entity.Value == entity);

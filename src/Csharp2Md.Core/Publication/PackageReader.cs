@@ -71,7 +71,6 @@ internal sealed class PackageReader : IDisposable
         ThrowIfDisposed();
         var paths = Manifest.Solutions
             .SelectMany(solution => solution.Indexes.Select(index => index.EntryPath)
-                .Concat(solution.Roots.Select(root => root.MarkdownPath))
                 .Concat(solution.Journeys.Select(journey => solution.Indexes.Single(index => index.Kind == journey.EntryIndex).EntryPath)))
             .Append("manifest.json")
             .Append("markdown/index.md")
@@ -86,6 +85,15 @@ internal sealed class PackageReader : IDisposable
         foreach (var tablePath in tablePaths)
         {
             artifacts.TryAdd(tablePath, ReadArtifact(tablePath));
+        }
+
+        var markdownPaths = Manifest.Solutions
+            .Select(solution => CanonicalJson.Read<RootsIndexData>(artifacts[solution.Roots.EntryPath].AsSpan()))
+            .SelectMany(index => index.Roots.Select(root => index.MarkdownPath(root.Handle)))
+            .Distinct(StringComparer.Ordinal);
+        foreach (var markdownPath in markdownPaths)
+        {
+            artifacts.TryAdd(markdownPath, ReadArtifact(markdownPath));
         }
 
         var pointerPaths = Manifest.Solutions

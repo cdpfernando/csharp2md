@@ -1,5 +1,6 @@
 using Csharp2Md.Core;
 using Csharp2Md.Core.PackageBuilding;
+using Csharp2Md.Core.PackageBuilding.Rendering;
 using Csharp2Md.Core.Publication;
 
 namespace Csharp2Md.Core.Tests.Surface;
@@ -65,9 +66,8 @@ public sealed class KnowledgeEngineWorkflowTests : IClassFixture<KnowledgeEngine
     {
         using var reader = PackageReader.Open(_fixture.MultiOutput);
         var solutions = reader.Manifest.Solutions;
-        Assert.All(solutions, solution => Assert.NotEmpty(solution.Roots));
-        Assert.Empty(solutions[0].Roots.Select(root => root.DisplayName)
-            .Intersect(solutions[1].Roots.Select(root => root.DisplayName), StringComparer.Ordinal));
+        Assert.All(solutions, solution => Assert.NotEqual(0, solution.Roots.Count));
+        Assert.Empty(RootNames(reader, solutions[0]).Intersect(RootNames(reader, solutions[1]), StringComparer.Ordinal));
     }
 
     [Fact]
@@ -202,6 +202,9 @@ public sealed class KnowledgeEngineWorkflowTests : IClassFixture<KnowledgeEngine
         Assert.Equal("invalid-package", diagnostic.Cause);
         Assert.Equal("manifest.json", diagnostic.Artifact);
     }
+
+    private static IEnumerable<string> RootNames(PackageReader reader, SolutionManifestEntry solution) =>
+        CanonicalJson.Read<RootsIndexData>(reader.ReadArtifact(solution.Roots.EntryPath).AsSpan()).Roots.Select(root => root.DisplayName);
 
     private static string Diagnostics(AnalyzeResult result) =>
         string.Join(Environment.NewLine, result.Diagnostics.Select(Format));

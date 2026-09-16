@@ -41,7 +41,7 @@ public sealed class SolutionScopedRetrievalTests
         Assert.Matches("^sol_[0-9a-v]{16}$", orders.Id.Value);
         Assert.Matches("^sol_[0-9a-v]{16}$", shipping.Id.Value);
         Assert.NotEqual(orders.Id, shipping.Id);
-        Assert.Equal(Assert.Single(orders.Roots).Handle, Assert.Single(shipping.Roots).Handle);
+        Assert.Equal(Assert.Single(RootsIndex(machine, orders).Roots).Handle, Assert.Single(RootsIndex(machine, shipping).Roots).Handle);
         Assert.Equal(
             orders.Indexes.Select(index => index.Kind),
             shipping.Indexes.Select(index => index.Kind));
@@ -138,6 +138,9 @@ public sealed class SolutionScopedRetrievalTests
         Assert.Equal(corruptedPath, exception.Artifact);
         Assert.Contains(second.Id.Value, exception.Artifact, StringComparison.Ordinal);
     }
+
+    private static RootsIndexData RootsIndex(MachineArtifactSet machine, SolutionManifestEntry solution) =>
+        CanonicalJson.Read<RootsIndexData>(machine.Artifacts.Single(artifact => artifact.Path.Value == solution.Roots.EntryPath).Payload.AsSpan());
 
     private static RetrievalModel Model(params SolutionRetrievalModel[] solutions) => new(solutions.ToImmutableArray());
 

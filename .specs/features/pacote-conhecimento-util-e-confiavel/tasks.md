@@ -80,10 +80,10 @@ T31 -> T32 -> T33 -> T34 -> T35 -> T36 -> T37 -> T38
 ### Phase 6: CLI acceptance and clean cut
 
 ```text
-T39 -> T40 -> T41 -> T42 -> T43 -> T48 -> T46 -> T47 -> T49 -> T50 -> T51 -> T52 -> T53 -> T44 -> T45
+T39 -> T40 -> T41 -> T42 -> T43 -> T48 -> T46 -> T47 -> T49 -> T50 -> T51 -> T52 -> T53 -> T54 -> T44 -> T45
 ```
 
-T46-T53 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -1304,11 +1304,48 @@ Pitstop and eShop commit and certify; eShop had never committed before. eShopOnC
 **Blocker**: eShopOnContainers still fails `Locate:tokens-exceeded:19405>12000`. The journey reads manifest.json (50,661 bytes), `indexes/roots.json` (26,689) and one markdown page (270) = 77,620 against the 48,000-byte ceiling. The manifest alone exceeds the ceiling, so no encoding change can close this: `PackageManifest` carries every root inline, and per root `machine_citation` and `markdown_path` are a repeated per-solution prefix (48% of the roots array on Pitstop). Closing it means the manifest stops carrying every root inline - a manifest contract change, in the shard-router shape T50 used for evidence. No task owns it; T44 cannot certify eShopOnContainers until it is settled.
 **Adequacy**: `CanonicalKeyTableTests.cs:14` and `:21-22` assert one sorted, deduplicated row per entity, variant and cycle canonical key in its declared table. `:29-30`, `:37-39` and `:46-48` assert relation endpoints, dependency endpoints/variants, and measure entity/cycle/reverse-impact references are local handles. `:56-62` reads every kind back to its canonical value through `RetrievalModelReader`. `:79` rejects a dependency entity handle with no table row and `:92` a measure cycle handle with no row, each naming the consuming artifact; `:102` rejects duplicate keys in the entity table and `:112` a missing cycle table, each naming the table. `:122-123` asserts byte-identical repeat output for all three tables. `NavigationPayloadIndexTests.cs:43`, `:55` and `:82` were repointed to resolve the indexed record through the entity table rather than compare a raw field, which keeps the index-to-record claim and adds the table hop; `SolutionScopedRetrievalTests.cs:68-73` now resolves each solution's target through that solution's own entity table, so the isolation claim is proved per solution rather than by string comparison.
 
+### T54: Route the manifest to a declared roots index
+
+**What**: Stop carrying a row per root inside the manifest; declare each solution's roots by entry path and count, and move the root rows into the roots navigation index, which declares its citation artifact and Markdown prefix once.
+**Where**: `src/Csharp2Md.Core/Publication/PackageContracts.cs`, `src/Csharp2Md.Core/PackageBuilding/Rendering/MachineArtifactWriter.cs`, `src/Csharp2Md.Core/PackageBuilding/Rendering/MarkdownRenderer.cs`, `src/Csharp2Md.Core/Publication/Certification/JourneyCertifier.cs`, `src/Csharp2Md.Core/Publication/RetrievalModelReader.cs`, `src/Csharp2Md.Core/Publication/PackageReader.cs`
+**Depends on**: T53
+**Reuses**: the router shape T50 established for evidence shards and the root handle table T47 introduced
+**Requirement**: PKG-01, NAV-01, NAV-04, NAV-06, NAV-07, CRT-04
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:code-testing-agent`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] The manifest declares each solution's roots by entry path and count instead of a row per root, and the roots index carries one row per root with its canonical display name and handle.
+- [x] The roots index declares its citation artifact and Markdown prefix once, so a consumer derives a root's machine citation and Markdown page from the declared parts without enumerating a directory or decoding an identifier.
+- [x] Locate still reaches a root's Markdown page in three reads - manifest, roots index, page - and rehydration rejects a missing, miscounted or malformed roots index by artifact name.
+- [x] Repeating the same evaluated input and policy still produces byte-identical artifacts.
+- [x] eShopOnContainers certifies Locate within 12,000 tokens and commits when the optional clone is present; eShop stays at most 64 MiB and Pitstop at most 25 MiB; the quick gate passes.
+
+**Tests**: unit - >=6 router/derivation/journey/rejection cases
+**Gate**: quick + local corpora when present
+**Commit**: `fix(publication): route the manifest to a declared roots index`
+
+**Status**: Complete
+**Gate note**: `dotnet build csharp2md.slnx --configuration Release` passed with 0 warnings/errors. `Csharp2Md.Core.Tests` passed 567 of 567 (0 failed, 0 skipped), up from 554 by this task's 13 cases. The synthetic CLI suites (`KnowledgePackageJourneyTests`, `KnowledgePackageFailureTests`, `KnowledgeAnalyzeCommandTests`, `KnowledgeValidateCommandTests`, `SyntheticSolutionFixtureTests`) passed 73 of 73. On eShopOnContainers the Locate read set fell from 77,620 to 32,089 bytes - the manifest alone from 50,661 to 1,222 - which is 8,023 of the 12,000 tokens NAV-07 allows. All three optional corpora now commit and certify, eShopOnContainers for the first time:
+
+| Corpus | Committed bytes | Ceiling | Files | Locate tokens |
+| --- | --- | --- | --- | --- |
+| Pitstop | 7,928,785 (7.56 MiB) | 25 MiB | 140 / 750 | 3,824 |
+| eShop | 51,603,565 (49.21 MiB) | 64 MiB | 220 / 1,500 | 2,848 |
+| eShopOnContainers | 31,040,219 (29.60 MiB) | 64 MiB | 253 / 1,500 | 8,023 |
+
+Every journey of every corpus is Passed except Pitstop's `follow_flow`, which stays `not_applicable:no-causal-root` - the behaviour T51 defined, unchanged here.
+**Deviation**: `MarkdownRenderer.Render` no longer takes its roots from the manifest; it derives the same rows through `MachineArtifactWriter.BuildRoots`, so its signature and `RetrievalModelReader.VerifyMarkdown` are untouched and the renderer and the writer cannot drift apart. Ten test files were repointed from the inline manifest rows to the declared index - `PackageContractTests`, `SolutionManifestContractTests`, `CanonicalJsonTests`, `MachineArtifactWriterTests`, `MarkdownRendererTests`, `SolutionScopedRetrievalTests`, `PackageValidatorTests`, `RetrievalModelReaderTests`, `KnowledgeEngineWorkflowTests` and `KnowledgePackageJourneyTests`. No assertion was weakened: each still proves the same claim with the table hop added, and `SolutionScopedRetrievalTests.cs:44` and `KnowledgeEngineWorkflowTests.cs:68-69` still prove per-solution isolation by resolving each solution's own index.
+**Blocker**: none. The `Locate` budget that blocked T44 is closed.
+**Adequacy**: `RootsIndexRoutingTests.cs:21-25` asserts the manifest declares roots by entry path and count and carries no root name or Markdown path; `:34-39` asserts one ordinal-sorted row per root with its ordinal handle; `:51-56` asserts the citation artifact and Markdown prefix are declared once and derive the citation and page; `:68` asserts every derived page is a written artifact; `:77-79` reads every root back through `RetrievalModelReader`. `:89`, `:105`, `:122` and `:136` reject a row count that disagrees with the manifest, an unsorted index, a handle that is not its ordinal and a missing index, each naming the index artifact. `:152-157` certifies Locate at 3 reads within 12,000 tokens for 3 and for 400 roots, `:167-172` fails it when the derived page is missing, and `:182-185` asserts byte-identical repeat output for the index and the manifest.
+**Pre-existing**: 43 of the 138 non-LocalCorpus CLI tests fail on legacy suites (`ExitCodeTests` and neighbours, on `missing-tfm:Acme.Broken`). A worktree at `8735d94` fails the same 43 of 138, so this task changed none of them; they are T45's cutover. `SyntheticSolutionFixtureTests.Fixture_HasOnlySourceInputs_NoBuildOutputs` stays order-dependent: it passes from a clean fixture tree but the suite regenerates `bin`/`obj` under `fixtures/SyntheticSolution` while running.
+
 ### T44: Certify optional local corpora
 
 **What**: Update LocalCorpus acceptance to assert eShop variant isolation and the eShopOnContainers/Pitstop committed-package ceilings.  
 **Where**: `tests/Csharp2Md.Cli.Tests/LocalCorpusAnalyzeTests.cs`  
-**Depends on**: T53  
+**Depends on**: T54  
 **Reuses**: dynamic skip convention and gitignored local clone paths  
 **Requirement**: CRT-04, CRT-05, CRT-06, CRT-07
 
@@ -1365,9 +1402,9 @@ Pitstop and eShop commit and certify; eShop had never committed before. eShopOnC
 | MET-01..MET-04 | T4, T19, T42 | hand-recalculated direct measures |
 | MET-05 | T4, T20, T42 | hand-recalculated SCCs |
 | MET-06..MET-08 | T4, T17, T21-T22, T42 | hand-recalculated impact/gaps |
-| NAV-01 | T26-T27, T32, T37, T42 | manifest/index traversal |
+| NAV-01 | T26-T27, T32, T37, T42, T54 | manifest/index traversal |
 | NAV-02..NAV-05 | T22, T27-T29, T37, T42 | machine/Markdown equivalence |
-| NAV-06..NAV-07 | T26, T34, T42 | locate budgets |
+| NAV-06..NAV-07 | T26, T34, T42, T54 | locate budgets |
 | NAV-08..NAV-09 | T26, T35, T42 | graph journey budgets |
 | NAV-10 | T26, T34, T42, T50 | evidence budget |
 | VAR-01..VAR-02 | T9-T10, T41 | real workspace fixture |
@@ -1383,7 +1420,7 @@ Pitstop and eShop commit and certify; eShop had never committed before. eShopOnC
 | PUB-06..PUB-07 | T31, T41, T43 | safety fixture/rejection |
 | PUB-08 | T2, T15, T36, T38-T39, T43 | structured diagnostics |
 | CRT-01..CRT-03 | T15, T30, T34-T37, T42, T48 | journey certification |
-| CRT-04..CRT-07 | T9, T47, T49-T50, T52-T53, T44 | optional corpora |
+| CRT-04..CRT-07 | T9, T47, T49-T50, T52-T54, T44 | optional corpora |
 | CRT-08 | T8, T12-T14, T31, T41 | fixture integrity |
 | CRT-09 | T42 | CLI E2E |
 | EDG-01 | T13, T16-T17, T33, T43 | evidence rejection |
@@ -1417,9 +1454,10 @@ All 71 requirements have at least one focused owning task and a final acceptance
 | T51 | One causal flow-root correction | ✅ Granular |
 | T52 | One artifact wire-form encoding contract | ✅ Cohesive write/read contract |
 | T53 | One canonical-key resolution contract | ✅ Cohesive write/read contract |
+| T54 | One root declaration contract | ✅ Cohesive write/read contract |
 | T45 | One final repository topology cutover | ✅ Cohesive clean-cut deliverable |
 
-T1, T37, T41, T45, T47, T48, T52 and T53 necessarily touch multiple physical files, but each is one indivisible deliverable. Splitting any of them would create an invalid scaffold, a partially qualified package contract, a fixture with no stable oracle, a repository with mixed contracts, or a clarified rule without matching fixtures.
+T1, T37, T41, T45, T47, T48, T52, T53 and T54 necessarily touch multiple physical files, but each is one indivisible deliverable. Splitting any of them would create an invalid scaffold, a partially qualified package contract, a fixture with no stable oracle, a repository with mixed contracts, or a clarified rule without matching fixtures.
 
 ## Diagram-Definition Cross-Check
 
@@ -1475,7 +1513,8 @@ T1, T37, T41, T45, T47, T48, T52 and T53 necessarily touch multiple physical fil
 | T50 | T49 | T49 -> T50 | ✅ Match |
 | T52 | T51 | T51 -> T52 | ✅ Match |
 | T53 | T52 | T52 -> T53 | ✅ Match |
-| T44 | T53 | T53 -> T44 | ✅ Match |
+| T54 | T53 | T53 -> T54 | ✅ Match |
+| T44 | T54 | T54 -> T44 | ✅ Match |
 | T45 | T44 | T44 -> T45 | ✅ Match |
 
 Cross-phase dependencies are represented by the ordered phase chain; all intra-phase edges match exactly.
@@ -1535,6 +1574,7 @@ Cross-phase dependencies are represented by the ordered phase chain; all intra-p
 | T51 | Causal flow root | unit | unit | ✅ OK |
 | T52 | Artifact wire form | unit | unit | ✅ OK |
 | T53 | Canonical key resolution | unit | unit | ✅ OK |
+| T54 | Root declaration routing | unit | unit | ✅ OK |
 | T44 | Optional corpora | e2e | e2e | ✅ OK |
 | T45 | Topology + CLI current contract | unit + e2e + build | unit + e2e + build | ✅ OK |
 

@@ -17,10 +17,16 @@ public sealed class MarkdownRendererTests
     [Fact][Trait("Requirement", "NAV-03")] public void Render_EntityPageListsMeasures() => Assert.Contains("fan-out: 1", Text(Page()));
     [Fact][Trait("Requirement", "NAV-03")] public void Render_EntityPageListsImpactAndGaps() { var text=Text(Page()); Assert.Contains("impact: component:billing at depth 1", text); Assert.Contains("unknown gaps: 1", text); }
     [Fact][Trait("Requirement", "NAV-04")] public void Render_SummaryUsesExistingRootLink() => Assert.Contains($"]({Page()})", Text("markdown/index.md"));
-    [Fact][Trait("Requirement", "NAV-05")] public void Render_UsesMachineManifestRoots() => Assert.Equal(Assert.Single(Write().Manifest.Solutions).Roots.Length, Write().Markdown.Length - 1);
+    [Fact][Trait("Requirement", "NAV-05")] public void Render_UsesMachineManifestRoots() => Assert.Equal(Assert.Single(Write().Manifest.Solutions).Roots.Count, Write().Markdown.Length - 1);
     [Fact][Trait("Requirement", "NAV-05")] public void Render_EscapesMarkdownNames() => Assert.Contains("\\[orders\\]", Text("markdown/index.md", special: true));
     [Fact][Trait("Requirement", "NAV-05")] public void Render_IsByteStable() { var first=Write(); var second=Write(); Assert.Equal(first.Markdown.Select(artifact => artifact.Payload), second.Markdown.Select(artifact => artifact.Payload)); }
-    private static string Page(string entity="component:orders") => Assert.Single(Write().Manifest.Solutions).Roots.Single(root => root.DisplayName == entity).MarkdownPath;
+    private static string Page(string entity="component:orders")
+    {
+        var model = Model("component:orders");
+        var machine = MachineArtifactWriter.Write(model, false);
+        var index = MachineArtifactWriter.BuildRoots(Assert.Single(model.Solutions), Assert.Single(machine.Manifest.Solutions).Id);
+        return index.MarkdownPath(index.Roots.Single(root => root.DisplayName == entity).Handle);
+    }
     private static string Text(string path, bool special=false) => Encoding.UTF8.GetString((special ? Special() : Write()).Markdown.Single(artifact => artifact.Path.Value == path).Payload.AsSpan());
     private static (PackageManifest Manifest, ImmutableArray<PlannedArtifact> Markdown) Write() { var model=Model("component:orders"); var machine=MachineArtifactWriter.Write(model, false); return (machine.Manifest, MarkdownRenderer.Render(model, machine.Manifest)); }
     private static (PackageManifest Manifest, ImmutableArray<PlannedArtifact> Markdown) Special() { var model=Model("component:[orders]"); var machine=MachineArtifactWriter.Write(model, false); return (machine.Manifest, MarkdownRenderer.Render(model, machine.Manifest)); }

@@ -19,7 +19,8 @@ public sealed class SolutionManifestContractTests
         Assert.IsType<SolutionId>(solution.Id);
         Assert.Equal("sol_0123456789abcdef", solution.Id.Value);
         Assert.Equal("src/App.sln", solution.LogicalRelativePath);
-        Assert.Equal("component:orders", Assert.Single(solution.Roots).DisplayName);
+        Assert.Equal("solutions/sol_0123456789abcdef/indexes/roots.json", solution.Roots.EntryPath);
+        Assert.Equal(1, solution.Roots.Count);
         Assert.Equal(8, solution.Indexes.Length);
         Assert.Equal(4, solution.Journeys.Length);
         Assert.DoesNotContain(typeof(PackageManifest).GetProperties(), property => property.Name is "Roots" or "Indexes" or "Journeys");
@@ -112,11 +113,7 @@ public sealed class SolutionManifestContractTests
         new(
             new SolutionId("sol_0123456789abcdef"),
             "src/App.sln",
-            [new RootManifestEntry(
-                "component:orders",
-                "0",
-                "solutions/sol_0123456789abcdef/graph/entities.000000.json#0",
-                "solutions/sol_0123456789abcdef/markdown/components/0.md")],
+            new RootsManifestEntry("solutions/sol_0123456789abcdef/indexes/roots.json", 1),
             indexes,
             Journeys());
 
