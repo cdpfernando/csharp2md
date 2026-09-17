@@ -1455,13 +1455,16 @@ Every journey of every corpus is Passed except Pitstop's `follow_flow`, which st
 
 **Done when**:
 
-- [ ] The scan covers every public property of every type under `Csharp2Md.Core.PackageBuilding` and `Csharp2Md.Core.Publication`, not only `RetrievalModel`'s single property.
-- [ ] The forbidden substrings include `coupling`, which MET-08 names and the current list omits, alongside the existing score/risk/quality terms.
-- [ ] Adding a property named for a composite score, an automatic quality or risk label, or coupling makes the test fail; proven by hand before the commit.
+- [x] The scan covers every public property of every type under `Csharp2Md.Core.PackageBuilding` and `Csharp2Md.Core.Publication`, not only `RetrievalModel`'s single property.
+- [x] The forbidden substrings include `coupling`, which MET-08 names and the current list omits, alongside the existing score/risk/quality terms.
+- [x] Adding a property named for a composite score, an automatic quality or risk label, or coupling makes the test fail; proven by hand before the commit.
 
 **Tests**: unit — 1 strengthened case  
 **Gate**: quick  
 **Commit**: `test(core): scan the published surface for composite scores`
+
+**Status**: Complete
+**Gate note**: quick gate green - `Csharp2Md.Core.Tests` 574 of 574 (0 failed, 0 skipped); the case was strengthened, not added, so the count is unchanged. The scan now reflects over every public property of every type in `Csharp2Md.Core.PackageBuilding`, `Csharp2Md.Core.Publication` and their sub-namespaces, and forbids `Score`, `Quality`, `Risk` and `Coupling`. No current property trips it. Discrimination proven by hand: four carrier types were added, one per forbidden term, spread over `PackageBuilding`, `PackageBuilding.Measures`, `Publication` and `Publication.Certification`; the test failed and named all four (`MutantCompositeScoreCarrier.CompositeScore`, `MutantCouplingCarrier.CouplingIndex`, `MutantQualityCarrier.QualityLabel`, `MutantRiskCarrier.RiskLabel`). The carriers were reverted before the commit.
 
 ### T57: Publish the per-family measurement breakdown
 
