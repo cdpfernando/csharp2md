@@ -99,6 +99,7 @@ T60 -> T61 -> T62 -> T63 -> T64 -> T65 -> T66
 
 ```text
 T67 -> T68
+T67 -> T69
 ```
 
 T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. Phase 9 was opened after the third Verifier run returned PASS with five ranked non-blocking gaps, of which the user chose to close the two carrying functional consequence; it depends on Phase 8 in full. The nine phases form nine sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
@@ -1888,6 +1889,33 @@ The second feature Verifier returned **PASS** on `ff42c35..6d0a3b3` (71/71 ACs) 
 **Gate**: full
 **Commit**: `fix(core): qualify the package budget rejection`
 
+### T69: Separate an absent flow terminal from an unreachable one
+
+**What**: Stop the flow journey from failing a package because the corpus holds no contract or persistence fact, so an absent terminal records `not_applicable` with its name and only an index that cannot reach a terminal the graph does record still fails.  
+**Where**: `src/Csharp2Md.Core/Publication/Certification/GraphJourneyCertifier.cs`  
+**Depends on**: T67  
+**Reuses**: the Contracts and Persistence indexes `CertifyFlow` already opens, and the causal-root applicability T51 settled  
+**Requirement**: CRT-01, CRT-02, NAV-08
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] A solution carrying a flow root whose retained graph records no contract, no persistence or no external effect records `not_applicable:absent-terminal:<names>` for the flow journey and publishes.
+- [x] A solution whose retained graph does record a terminal but whose matching index cannot reach it still fails with `missing-terminal:<name>`, and that failure outranks any terminal the corpus merely lacks.
+- [x] The journey opens the same artifacts as before, so the budget detail of a passing solution is byte-identical.
+- [x] At least 3 cases pin the split: an absent terminal, an unreachable terminal, and a package that is both at once.
+
+**Tests**: unit — ≥3 applicability/navigation cases  
+**Gate**: full + the six-solution synthetic corpus  
+**Commit**: `fix(publication): separate absent flow terminals from unreachable ones`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **621 of 621** (up from 617 by this task's net 4 cases), `Csharp2Md.Cli.Tests` 81 passed / 2 skipped, the two skips being the absent eShopOnContainers and Pitstop clones CRT-07 allows. The synthetic corpus at `D:\workspace\projetosintetico` now commits all five analysable solutions: SistemaC and SistemaD publish for the first time with `follow_flow` `not_applicable:absent-terminal:contracts`, and SistemaA, SistemaB and SistemaE keep every journey detail byte-identical to the pre-fix run (`no-causal-root`, `no-causal-root` and `reads:4;bytes:8546;tokens:2137` respectively).
+**Decision**: `CertifyFlow` demanded Contract **and** Persistence categories and treated their absence as `missing-terminal`, which conflated two different things: a corpus that does not contain the fact, and a package that cannot navigate to a fact it does contain. CRT-02 already governs the first — it makes a journey not applicable "quando" its categories are absent, a necessary condition the criterion states twice — so no amendment was needed; the fix reads the Contracts and Persistence index contents `CertifyFlow` was already paying to open and discarding. An index that is empty because the retained graph holds no such dependency is the corpus case (`not_applicable:absent-terminal:…`); an index that cannot reach a category the outgoing index does record is the navigation case (`missing-terminal:…`). The navigation check runs **first** so a real defect is never masked by a terminal the corpus merely lacks. No read was added, so a passing journey's budget detail is unchanged.
+**Adequacy**: `GraphJourneyCertifierTests.cs:76-89` asserts `Failed` with the exact `missing-terminal:contracts` and `missing-terminal:persistence` details for a package whose graph does hold the terminal but whose index was emptied — the certifier cannot become vacuous without killing them. `:90-96` asserts the ordering: a package missing contracts *and* carrying a broken persistence index fails rather than reporting not-applicable. `:41-75` asserts the five absent-terminal details exactly, including the combined `persistence,external-effects`. `PackagePublicationTests.cs:114-121` moved its uncertifiable model to a reverse-impact scope with no reachable set, so PUB-08's rejection-before-swap case still drives a real `journey-certification` failure instead of the flow rule this task changed.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): three faults injected into `GraphJourneyCertifier.cs`, each built Release-clean and run against `GraphJourneyCertifierTests`. Making `Reaches` return `true` unconditionally — the vacuous certifier — killed `Certify_FlowWithAnUnreachableContractsIndexFails`, `Certify_FlowWithAnUnreachablePersistenceIndexFails` and `Certify_FlowFailureOutranksAnAbsentTerminal` (3 of 24). Swapping the absent and unreachable branches killed only `Certify_FlowFailureOutranksAnAbsentTerminal` (1 of 24). Deleting the `absent-terminal` return, so an absent terminal reaches `Budget` and passes, killed all five absent-terminal cases (5 of 24). All three were reverted and the full gate re-run before the commit.
+
 ## Requirement-to-Task Traceability
 
 | Requirements | Owning task(s) | Acceptance seam |
@@ -1913,7 +1941,7 @@ The second feature Verifier returned **PASS** on `ff42c35..6d0a3b3` (71/71 ACs) 
 | NAV-03 | T28, T42, T58 | machine/Markdown equivalence |
 | NAV-04 | T26, T28, T32, T42, T54, T58 | machine/Markdown equivalence |
 | NAV-06..NAV-07 | T26, T34, T42, T54 | locate budgets |
-| NAV-08..NAV-09 | T26, T35, T42 | graph journey budgets |
+| NAV-08..NAV-09 | T26, T35, T42, T69 | graph journey budgets |
 | NAV-10 | T26, T34, T42, T50 | evidence budget |
 | VAR-01..VAR-02 | T9-T10, T41 | real workspace fixture |
 | VAR-03..VAR-05 | T3, T7, T11, T41 | occurrence/collision tests |
@@ -1927,7 +1955,7 @@ The second feature Verifier returned **PASS** on `ff42c35..6d0a3b3` (71/71 ACs) 
 | PUB-05 | T32-T33, T36, T43 | byte preservation |
 | PUB-06..PUB-07 | T31, T41, T43 | safety fixture/rejection |
 | PUB-08 | T2, T15, T36, T38-T39, T43, T55 | structured diagnostics |
-| CRT-01..CRT-02 | T34-T35, T37, T42, T48, T51 | journey certification |
+| CRT-01..CRT-02 | T34-T35, T37, T42, T48, T51, T69 | journey certification |
 | CRT-03 | T5, T15, T30, T37, T42, T57 | journey certification |
 | CRT-04..CRT-07 | T9, T47, T49-T50, T52-T54, T44 | optional corpora |
 | CRT-08 | T8, T12-T14, T31, T41 | fixture integrity |

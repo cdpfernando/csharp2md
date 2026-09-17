@@ -112,14 +112,15 @@ public sealed class PackagePublicationTests
     [Fact][Trait("Requirement", "PUB-04")] public void Publish_ValidationHasNoInterpretationDifference() { using var output = new TempOutput(); PackagePublication.Publish(Plan(), output.Path); Assert.True(PackagePublication.Validate(output.Path).Succeeded); }
     [Fact][Trait("Requirement", "PUB-05")] public void Publish_UsesExclusiveLockFile() { using var output = new TempOutput(); PackagePublication.Publish(Plan(), output.Path); Assert.True(File.Exists(Path.Combine(output.Path, "package.lock"))); }
     private static PackagePlan Plan(string solution = "app") => PackageBuilder.Build(Model(solution));
-    // A solution whose only causal fact is an outgoing HTTP call has a flow root but neither a contract
-    // nor a persistence terminal, so JourneyCertifier fails follow_flow and Publish must stop before the swap.
+    // A solution with an incoming contract edge makes reverse_impact applicable, but its only measured scope
+    // carries no reachable set, so the journey has a question it cannot answer: JourneyCertifier fails
+    // reverse_impact and Publish must stop before the swap.
     private static RetrievalModel Uncertifiable() =>
         new([new SolutionRetrievalModel(
             CanonicalIdentity.CreateSolution("app", "src/app.sln"),
             [new EntityHandle("component:orders")],
-            [new AggregatedDependency(AggregationScope.Component, new EntityHandle("component:orders"), new EntityHandle("component:payments"), DependencyCategory.Http, DependencyNature.Direct, 1, [], [], [])],
-            [])]);
+            [new AggregatedDependency(AggregationScope.Component, new EntityHandle("component:orders"), new EntityHandle("component:payments"), DependencyCategory.Contract, DependencyNature.Direct, 1, [], [], [])],
+            [new ScopeMeasures(AggregationScope.Component, new EntityHandle("component:orders"), 0, 1, 0, [], [], new GapCounts(0, 0, 0))])]);
     private static RetrievalModel Model(string solution = "app") =>
         new([new SolutionRetrievalModel(
             CanonicalIdentity.CreateSolution(solution, $"src/{solution}.sln"),
