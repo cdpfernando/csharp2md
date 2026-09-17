@@ -1478,14 +1478,23 @@ Every journey of every corpus is Passed except Pitstop's `follow_flow`, which st
 
 **Done when**:
 
-- [ ] `PublicationMeasurements` carries an artifact-count and byte-count breakdown keyed by `ArtifactFamily`, ordered canonically so repeat runs stay byte-identical.
-- [ ] `PackageBuilder` populates it from the planned artifacts, and `measurements.json` round-trips through `CanonicalJson` and `PackageValidator` unchanged.
-- [ ] The `EDG-03` budget-exceeded diagnostic quotes the breakdown, which `design.md:596` names as the file-budget mitigation.
-- [ ] At least 4 cases assert the breakdown against a hand-computed expectation, never one derived from the builder under test.
+- [x] `PublicationMeasurements` carries an artifact-count and byte-count breakdown keyed by `ArtifactFamily`, ordered canonically so repeat runs stay byte-identical.
+- [x] `PackageBuilder` populates it from the planned artifacts, and `measurements.json` round-trips through `CanonicalJson` and `PackageValidator` unchanged.
+- [x] The `EDG-03` budget-exceeded diagnostic quotes the breakdown, which `design.md:596` names as the file-budget mitigation.
+- [x] At least 4 cases assert the breakdown against a hand-computed expectation, never one derived from the builder under test.
 
 **Tests**: unit — ≥4 cases with hand-computed expectations  
 **Gate**: quick  
 **Commit**: `feat(core): measure published artifacts by family`
+
+**Status**: Complete
+**Gate note**: full gate green - `dotnet test csharp2md.slnx --configuration Release` passed `Csharp2Md.Core.Tests` 580 of 580 (up from 574 by this task's 6 cases) and `Csharp2Md.Cli.Tests` 81 of 83. The two CLI skips are `LocalCorpusAnalyzeTests` for Pitstop and eShopOnContainers, whose clones are absent from this machine; only `fixtures/eShop` is present. Release build: 0 warnings, 0 errors.
+
+`PublicationMeasurements` now carries `ByFamily`, an `ArtifactFamily`-keyed count and byte breakdown ordered by the enum, and `ArtifactFamily` serializes as a string so `measurements.json` stays readable. The breakdown covers the artifacts built from the model and leaves out the three publication trailers: `measurements.json` carries the breakdown and cannot report its own size, so `manifest.json` and `certification.json` are excluded with it and counts and bytes describe the same set. The invariant `sum(ByFamily.ArtifactCount) + 3 == PublishedArtifactCount` is asserted.
+
+**Deviation from the task's `Where`**: the criteria also required `PackageBuilder` to populate the breakdown and the EDG-03 diagnostic to quote it, so `PackageBuilder.cs` and `CanonicalJson.cs` (serializer registration) changed alongside `PackageContracts.cs`.
+
+**Two pre-existing assertions adjusted**: `Build_FailsBeforePublicationWhenArtifactCeilingIsExceeded` and `...WhenByteCeilingIsExceeded` asserted the exact old message, which the breakdown necessarily extends. They now assert `StartsWith("package-budget: '<limit>'. by-family: ")`, and the new `Build_BudgetDiagnosticQuotesTheFamilyBreakdown` asserts every family count in the message exactly (`Table=4/`, `Graph=1/`, `Index=8/`, `Measure=2/`, `Markdown=2/`) plus the absence of a `Manifest=` row. The pair is stricter than the single equality it replaced; byte totals are left open on purpose so an unrelated writer change does not break the budget tests.
 
 ### T58: Render document pages and link entity pages
 

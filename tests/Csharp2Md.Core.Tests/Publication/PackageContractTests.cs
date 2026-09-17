@@ -67,7 +67,8 @@ public sealed class PackageContractTests
         var measurements = new PublicationMeasurements(
             new ExtractionMeasurements(10, 4),
             publishedArtifactCount: 2,
-            filteredByReason: ImmutableArray.Create(new FilteredCount("tests", 3)));
+            filteredByReason: ImmutableArray.Create(new FilteredCount("tests", 3)),
+            byFamily: ImmutableArray.Create(new FamilyMeasurement(ArtifactFamily.Markdown, 1, 40), new FamilyMeasurement(ArtifactFamily.Table, 1, 60)));
 
         Assert.Equal(10, measurements.Extraction.ExtractedCount);
         Assert.Equal(4, measurements.Extraction.FilteredCount);
@@ -75,6 +76,9 @@ public sealed class PackageContractTests
         Assert.Equal("tests", Assert.Single(measurements.FilteredByReason).Reason);
         Assert.Equal(3, Assert.Single(measurements.FilteredByReason).Count);
         Assert.NotEqual(measurements.Extraction.ExtractedCount, measurements.PublishedArtifactCount);
+        Assert.Equal([ArtifactFamily.Markdown, ArtifactFamily.Table], measurements.ByFamily.Select(family => family.Family));
+        Assert.Equal(40, measurements.ByFamily.Single(family => family.Family == ArtifactFamily.Markdown).Bytes);
+        Assert.Equal(100, measurements.ByFamily.Sum(family => family.Bytes));
     }
 
     [Fact]
@@ -205,5 +209,5 @@ public sealed class PackageContractTests
         artifacts.ToImmutableArray();
 
     private static PublicationMeasurements Measurements() =>
-        new(new ExtractionMeasurements(1, 0), publishedArtifactCount: 1, ImmutableArray<FilteredCount>.Empty);
+        new(new ExtractionMeasurements(1, 0), publishedArtifactCount: 1, ImmutableArray<FilteredCount>.Empty, ImmutableArray<FamilyMeasurement>.Empty);
 }

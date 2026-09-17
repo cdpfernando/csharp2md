@@ -40,7 +40,7 @@ public sealed class PackageValidatorTests
         foreach (var artifact in machine.Artifacts
             .AddRange(MarkdownRenderer.Render(model, machine.Manifest))
             .Add(new PlannedArtifact(new RelativeArtifactPath("certification.json"), ArtifactFamily.Certification, CanonicalJson.Write(new PackageCertification([])), 0, "digest"))
-            .Add(new PlannedArtifact(new RelativeArtifactPath("measurements.json"), ArtifactFamily.Measurement, CanonicalJson.Write(new PublicationMeasurements(new ExtractionMeasurements(0, 0), 0, [])), 1, "digest")))
+            .Add(new PlannedArtifact(new RelativeArtifactPath("measurements.json"), ArtifactFamily.Measurement, CanonicalJson.Write(new PublicationMeasurements(new ExtractionMeasurements(0, 0), 0, [], [])), 1, "digest")))
         {
             package.Write(artifact.Path.Value, artifact.Payload);
         }

@@ -15,7 +15,13 @@ internal sealed record PackageBudget(int MaximumArtifacts, long MaximumBytes)
 
 internal sealed class PackageBudgetExceededException : InvalidOperationException
 {
-    internal PackageBudgetExceededException(string limit) : base($"package-budget: '{limit}'.") { }
+    internal PackageBudgetExceededException(string limit, ImmutableArray<FamilyMeasurement> byFamily)
+        : base($"package-budget: '{limit}'. by-family: {Describe(byFamily)}.") { }
+
+    private static string Describe(ImmutableArray<FamilyMeasurement> byFamily) =>
+        byFamily.IsDefaultOrEmpty
+            ? "none"
+            : string.Join(", ", byFamily.Select(family => $"{family.Family}={family.ArtifactCount}/{family.Bytes}"));
 }
 
 internal static class PackageBuilder
@@ -49,7 +55,7 @@ internal static class PackageBuilder
         var extraction = retained.Length == 0
             ? new ExtractionMeasurements(0, 0)
             : new ExtractionMeasurements(retained.Sum(graph => graph.Measurements.RetainedCount), retained.Sum(graph => graph.Measurements.FilteredCount));
-        var measurement = new PublicationMeasurements(extraction, payloads.Length + 3, [new FilteredCount("retention", extraction.FilteredCount)]);
+        var measurement = new PublicationMeasurements(extraction, payloads.Length + 3, [new FilteredCount("retention", extraction.FilteredCount)], ByFamily(payloads));
         payloads = payloads.Add(Artifact("measurements.json", ArtifactFamily.Measurement, measurement, 1));
         payloads = payloads.Add(Artifact("certification.json", ArtifactFamily.Certification, new PackageCertification([]), 0));
         payloads = payloads.Add(CompactArtifact("manifest.json", ArtifactFamily.Manifest, machine.Manifest, 1));
@@ -57,16 +63,25 @@ internal static class PackageBuilder
         var bytes = ordered.Sum(artifact => (long)artifact.Payload.Length);
         if (ordered.Length > budget.MaximumArtifacts)
         {
-            throw new PackageBudgetExceededException("artifacts");
+            throw new PackageBudgetExceededException("artifacts", measurement.ByFamily);
         }
 
         if (bytes > budget.MaximumBytes)
         {
-            throw new PackageBudgetExceededException("bytes");
+            throw new PackageBudgetExceededException("bytes", measurement.ByFamily);
         }
 
         return new PackagePlan(machine.Manifest, ordered, Digest(ordered), measurement);
     }
+
+    // The breakdown covers the artifacts built from the model, not the three publication trailers.
+    // measurements.json carries the breakdown and cannot report its own size, so manifest.json and
+    // certification.json are left out with it and counts and bytes keep describing the same set.
+    private static ImmutableArray<FamilyMeasurement> ByFamily(ImmutableArray<PlannedArtifact> artifacts) =>
+        artifacts.GroupBy(static artifact => artifact.Family)
+            .OrderBy(static group => group.Key)
+            .Select(static group => new FamilyMeasurement(group.Key, group.Count(), group.Sum(static artifact => (long)artifact.Payload.Length)))
+            .ToImmutableArray();
 
     private static SolutionRetrievalModel BuildSolution(FactualGraph graph, bool includeTests)
     {

@@ -232,10 +232,13 @@ internal sealed record PublicationMeasurements
 
     public ImmutableArray<FilteredCount> FilteredByReason { get; }
 
+    public ImmutableArray<FamilyMeasurement> ByFamily { get; }
+
     public PublicationMeasurements(
         ExtractionMeasurements extraction,
         int publishedArtifactCount,
-        ImmutableArray<FilteredCount> filteredByReason)
+        ImmutableArray<FilteredCount> filteredByReason,
+        ImmutableArray<FamilyMeasurement> byFamily)
     {
         ArgumentNullException.ThrowIfNull(extraction);
         ArgumentOutOfRangeException.ThrowIfNegative(publishedArtifactCount);
@@ -244,6 +247,32 @@ internal sealed record PublicationMeasurements
         FilteredByReason = filteredByReason.IsDefault
             ? ImmutableArray<FilteredCount>.Empty
             : ImmutableArray.CreateRange(filteredByReason);
+        ByFamily = byFamily.IsDefault
+            ? ImmutableArray<FamilyMeasurement>.Empty
+            : ImmutableArray.CreateRange(byFamily);
+    }
+}
+
+internal sealed record FamilyMeasurement
+{
+    public ArtifactFamily Family { get; }
+
+    public int ArtifactCount { get; }
+
+    public long Bytes { get; }
+
+    public FamilyMeasurement(ArtifactFamily family, int artifactCount, long bytes)
+    {
+        if (!Enum.IsDefined(family))
+        {
+            throw new ArgumentOutOfRangeException(nameof(family));
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(artifactCount);
+        ArgumentOutOfRangeException.ThrowIfNegative(bytes);
+        Family = family;
+        ArtifactCount = artifactCount;
+        Bytes = bytes;
     }
 }
 
@@ -339,6 +368,7 @@ internal readonly record struct RelativeArtifactPath
         Value = LogicalPath.RequireRelative(value, nameof(value));
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<ArtifactFamily>))]
 internal enum ArtifactFamily
 {
     Manifest,
