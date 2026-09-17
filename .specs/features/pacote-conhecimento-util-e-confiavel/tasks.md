@@ -1671,13 +1671,22 @@ CRT-03 names four measure dimensions — family, solution, journey and corpus. F
 
 **Done when**:
 
-- [ ] One case computes the expected ID in the test from a known canonical key — digest, bit slice and alphabet applied independently — and asserts `Register` returns exactly that value.
-- [ ] A wrong digest, a wrong bit slice or a wrong alphabet makes the case fail; proven by hand before the commit.
-- [ ] The existing grammar and determinism cases are kept, not replaced.
+- [x] One case computes the expected ID in the test from a known canonical key — digest, bit slice and alphabet applied independently — and asserts `Register` returns exactly that value.
+- [x] A wrong digest, a wrong bit slice or a wrong alphabet makes the case fail; proven by hand before the commit.
+- [x] The existing grammar and determinism cases are kept, not replaced.
 
 **Tests**: unit — 1 added case, no deletion
 **Gate**: quick
 **Commit**: `test(core): derive the public identity independently`
+
+**Status**: Complete
+**Gate note**: quick gate green — `Csharp2Md.Core.Tests` **602 of 602** (up from 599 by this task's 3 cases; the two grammar and determinism cases were kept, not replaced).
+
+Three cases were added rather than one. Two are theory rows asserting a literal ID per canonical key, computed outside this codebase and written into the test as a constant, so the assertion re-uses none of the production code under test. The third recomputes the same value inside the test from `SHA256.HashData` and a locally written base32hex loop, which catches a change to the production encoder even if the literals were ever regenerated from it by mistake.
+
+**What the previous cases could not see**: `Register_ProducesTheSpecifiedPublicIdGrammar` matches `^[a-z]{3}_[0-9a-v]{16}$` and `Register_IsDeterministicAndUsesItsKindPrefix` compares two calls to each other. Both hold for *any* digest, *any* 80-bit slice and *any* 32-character alphabet drawn from that range, which is exactly why the Verifier scored STO-01 as unverified.
+
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): three faults injected, one per element of the derivation — the slice moved from `AsSpan(0, 10)` to `AsSpan(1, 10)`, the alphabet rotated to `"abcdefghijklmnopqrstuv0123456789"`, and `SHA256.HashData` swapped for `SHA512.HashData`. Each killed 3 of 20 cases: the two literal rows and the independent computation. Each also left the old grammar and determinism cases green — the rotated alphabet still satisfies `[0-9a-v]` — which is the direct demonstration that these faults used to survive. All three were reverted and the suite re-run at 20 of 20 before the commit.
 
 ### T63: Pin the non-component locate budget
 
