@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- SCENARIO:STR-003 -->
+    <RootNamespace>SistemaE.Copia.Aplicacao</RootNamespace>
+    <AssemblyName>SistemaE.Copia.Aplicacao</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaE.Copia.Formalizacao\SistemaE.Copia.Formalizacao.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Identificacao\SistemaE.Copia.Identificacao.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Infraestrutura\SistemaE.Copia.Infraestrutura.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Oferta\SistemaE.Copia.Oferta.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.PosProcessamento\SistemaE.Copia.PosProcessamento.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Validacao\SistemaE.Copia.Validacao.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PacotePrivado.Parametros" />
+    <PackageReference Include="PacotePrivado.Broker" />
+  </ItemGroup>
+</Project>

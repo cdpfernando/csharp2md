@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaE.Infraestrutura</RootNamespace>
+    <AssemblyName>SistemaE.Infraestrutura</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaE.Nucleo\SistemaE.Nucleo.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="PacotePrivado.Parametros" />
+    <PackageReference Include="PacotePrivado.Broker" />
+  </ItemGroup>
+</Project>

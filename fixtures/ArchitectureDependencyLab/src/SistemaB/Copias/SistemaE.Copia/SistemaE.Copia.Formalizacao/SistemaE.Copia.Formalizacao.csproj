@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- SCENARIO:STR-003 -->
+    <RootNamespace>SistemaE.Copia.Formalizacao</RootNamespace>
+    <AssemblyName>SistemaE.Copia.Formalizacao</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaE.Copia.Nucleo\SistemaE.Copia.Nucleo.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Infraestrutura\SistemaE.Copia.Infraestrutura.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Oferta\SistemaE.Copia.Oferta.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.PosProcessamento\SistemaE.Copia.PosProcessamento.csproj" />
+  </ItemGroup>
+</Project>

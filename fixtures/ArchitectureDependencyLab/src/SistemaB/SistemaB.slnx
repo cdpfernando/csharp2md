@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="SistemaB.Api/SistemaB.Api.csproj" />
+  <Project Path="SistemaB.Aplicacao/SistemaB.Aplicacao.csproj" />
+  <Project Path="SistemaB.Composicao/SistemaB.Composicao.csproj" />
+  <Project Path="SistemaB.Dominio/SistemaB.Dominio.csproj" />
+  <Project Path="SistemaB.Infraestrutura/SistemaB.Infraestrutura.csproj" />
+  <Project Path="SistemaB.Testes/SistemaB.Testes.csproj" />
+  <Project Path="SistemaB.Transversal/SistemaB.Transversal.csproj" />
+</Solution>

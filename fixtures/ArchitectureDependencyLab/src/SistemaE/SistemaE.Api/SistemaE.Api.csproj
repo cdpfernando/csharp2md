@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>SistemaE.Api</RootNamespace>
+    <AssemblyName>SistemaE.Api</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaE.Aplicacao\SistemaE.Aplicacao.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PacotePrivado.Parametros" />
+    <PackageReference Include="PacotePrivado.Broker" />
+  </ItemGroup>
+</Project>

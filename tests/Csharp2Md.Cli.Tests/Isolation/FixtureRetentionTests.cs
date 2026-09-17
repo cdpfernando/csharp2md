@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Csharp2Md.Cli.Tests.Isolation;
 
 public sealed class FixtureRetentionTests
@@ -19,6 +21,50 @@ public sealed class FixtureRetentionTests
         Assert.True(
             projectOrSolutionFiles.Length > 0,
             $"fixtures/SyntheticSolution at '{path}' contains no .slnx or .csproj file.");
+    }
+
+    [Fact]
+    [Trait("Requirement", "CRT-08")]
+    public void ArchitectureDependencyLab_ShipsItsSixSolutionsOracleAndLocalFeed()
+    {
+        var path = Path.Combine(CliTestPaths.RepoRoot, "fixtures", "ArchitectureDependencyLab");
+
+        Assert.Equal(6, Directory.EnumerateFiles(path, "*.slnx", SearchOption.AllDirectories).Count());
+        Assert.Equal(41, Directory.EnumerateFiles(path, "*.csproj", SearchOption.AllDirectories).Count());
+
+        // The oracle is what dependency claims are scored against, so its size is pinned here: a corpus
+        // that silently loses references would otherwise make the generator look better than it is.
+        using var oracle = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(path, "oracle", "project-references.json")));
+        Assert.Equal(87, oracle.RootElement.GetArrayLength());
+
+        // Vendoring the two private packages keeps the fixture self-contained: analysing it needs no
+        // `dotnet pack` of the corpus's own package-source, and no restore at all.
+        Assert.Equal(2, Directory.EnumerateFiles(Path.Combine(path, "local-feed"), "*.nupkg").Count());
+    }
+
+    [Fact]
+    [Trait("Requirement", "CRT-08")]
+    public void Gitignore_KeepsTheLabsBuildOutputOutAndItsPrivateFeedIn()
+    {
+        var gitignore = File.ReadAllLines(Path.Combine(CliTestPaths.RepoRoot, ".gitignore"))
+            .Select(static line => line.Trim())
+            .ToArray();
+
+        // The Roslyn BuildHost writes bin/obj inside the lab whenever it is analysed; that output must
+        // never become committable, and the vendored nupkgs must survive the blanket *.nupkg rule.
+        Assert.Contains("[Bb]in/", gitignore);
+        Assert.Contains("[Oo]bj/", gitignore);
+        Assert.Contains("!fixtures/ArchitectureDependencyLab/local-feed/*.nupkg", gitignore);
+    }
+
+    [Fact]
+    [Trait("Requirement", "CRT-08")]
+    public void Solution_LeavesTheAnalysisFixturesOutOfTheBuild()
+    {
+        var solution = File.ReadAllText(Path.Combine(CliTestPaths.RepoRoot, "csharp2md.slnx"));
+
+        Assert.DoesNotContain("fixtures", solution, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

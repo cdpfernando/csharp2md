@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- SCENARIO:STR-003 -->
+    <RootNamespace>SistemaE.Copia.Testes</RootNamespace>
+    <AssemblyName>SistemaE.Copia.Testes</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaE.Copia.Api\SistemaE.Copia.Api.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Aplicacao\SistemaE.Copia.Aplicacao.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Nucleo\SistemaE.Copia.Nucleo.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Formalizacao\SistemaE.Copia.Formalizacao.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Identificacao\SistemaE.Copia.Identificacao.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Oferta\SistemaE.Copia.Oferta.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.PosProcessamento\SistemaE.Copia.PosProcessamento.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Validacao\SistemaE.Copia.Validacao.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+</Project>

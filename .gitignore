@@ -71,7 +71,7 @@ artifacts/*
 !artifacts/verifications/
 
 # Local-only analysis corpora. Never version these apps; the in-repo fixtures are
-# SyntheticSolution, CertificationCorpus and PublicationResilience.
+# SyntheticSolution, CertificationCorpus, PublicationResilience and ArchitectureDependencyLab.
 fixtures/eShop/
 fixtures/eShopOnContainers/
 fixtures/Pitstop/
@@ -214,6 +214,9 @@ PublishScripts/
 
 # NuGet Packages
 *.nupkg
+# except the two private packages the ArchitectureDependencyLab fixture restores from its own
+# local feed -- vendoring them keeps that fixture self-contained (no `dotnet pack` prerequisite).
+!fixtures/ArchitectureDependencyLab/local-feed/*.nupkg
 # NuGet Symbol Packages
 *.snupkg
 # The packages folder can be ignored because of Package Restore

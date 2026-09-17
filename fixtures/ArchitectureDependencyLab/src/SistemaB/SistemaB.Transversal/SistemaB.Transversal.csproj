@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaB.Transversal</RootNamespace>
+    <AssemblyName>SistemaB.Transversal</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PacotePrivado.Parametros" />
+    <PackageReference Include="PacotePrivado.Broker" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaE.Oferta</RootNamespace>
+    <AssemblyName>SistemaE.Oferta</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaE.Nucleo\SistemaE.Nucleo.csproj" />
+    <ProjectReference Include="..\SistemaE.Infraestrutura\SistemaE.Infraestrutura.csproj" />
+  </ItemGroup>
+</Project>

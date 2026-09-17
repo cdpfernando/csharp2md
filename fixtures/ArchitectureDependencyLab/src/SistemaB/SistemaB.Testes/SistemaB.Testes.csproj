@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaB.Testes</RootNamespace>
+    <AssemblyName>SistemaB.Testes</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaB.Api\SistemaB.Api.csproj" />
+    <ProjectReference Include="..\SistemaB.Aplicacao\SistemaB.Aplicacao.csproj" />
+    <ProjectReference Include="..\SistemaB.Dominio\SistemaB.Dominio.csproj" />
+    <ProjectReference Include="..\SistemaB.Infraestrutura\SistemaB.Infraestrutura.csproj" />
+    <ProjectReference Include="..\SistemaB.Composicao\SistemaB.Composicao.csproj" />
+    <ProjectReference Include="..\SistemaB.Transversal\SistemaB.Transversal.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+</Project>

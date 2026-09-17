@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- SCENARIO:STR-003 -->
+    <RootNamespace>SistemaE.Copia.Nucleo</RootNamespace>
+    <AssemblyName>SistemaE.Copia.Nucleo</AssemblyName>
+  </PropertyGroup>
+</Project>

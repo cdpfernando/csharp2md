@@ -1,0 +1,23 @@
+# SCENARIO:HOST-001
+name: Pipeline-SistemaE
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - src/SistemaE/**
+    - deploy/SistemaE/**
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: UseDotNet@2
+  inputs:
+    version: '10.x'
+- script: |
+    dotnet restore src/SistemaE/SistemaE.slnx
+    dotnet build src/SistemaE/SistemaE.slnx -c Release
+    dotnet test src/SistemaE/SistemaE.slnx -c Release
+  displayName: 'Build and Test SistemaE'

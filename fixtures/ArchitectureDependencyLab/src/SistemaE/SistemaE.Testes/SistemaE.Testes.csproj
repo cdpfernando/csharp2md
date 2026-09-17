@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaE.Testes</RootNamespace>
+    <AssemblyName>SistemaE.Testes</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaE.Api\SistemaE.Api.csproj" />
+    <ProjectReference Include="..\SistemaE.Aplicacao\SistemaE.Aplicacao.csproj" />
+    <ProjectReference Include="..\SistemaE.Nucleo\SistemaE.Nucleo.csproj" />
+    <ProjectReference Include="..\SistemaE.Formalizacao\SistemaE.Formalizacao.csproj" />
+    <ProjectReference Include="..\SistemaE.Identificacao\SistemaE.Identificacao.csproj" />
+    <ProjectReference Include="..\SistemaE.Oferta\SistemaE.Oferta.csproj" />
+    <ProjectReference Include="..\SistemaE.PosProcessamento\SistemaE.PosProcessamento.csproj" />
+    <ProjectReference Include="..\SistemaE.Validacao\SistemaE.Validacao.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+</Project>

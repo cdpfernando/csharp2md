@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <!-- SCENARIO:STR-003 -->
+    <RootNamespace>SistemaE.Copia.Api</RootNamespace>
+    <AssemblyName>SistemaE.Copia.Api</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaE.Copia.Aplicacao\SistemaE.Copia.Aplicacao.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PacotePrivado.Parametros" />
+    <PackageReference Include="PacotePrivado.Broker" />
+  </ItemGroup>
+</Project>

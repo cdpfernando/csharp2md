@@ -1,0 +1,23 @@
+# SCENARIO:HOST-001
+name: Pipeline-SistemaB
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - src/SistemaB/**
+    - deploy/SistemaB/**
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: UseDotNet@2
+  inputs:
+    version: '10.x'
+- script: |
+    dotnet restore src/SistemaB/SistemaB.slnx
+    dotnet build src/SistemaB/SistemaB.slnx -c Release
+    dotnet test src/SistemaB/SistemaB.slnx -c Release
+  displayName: 'Build and Test SistemaB'

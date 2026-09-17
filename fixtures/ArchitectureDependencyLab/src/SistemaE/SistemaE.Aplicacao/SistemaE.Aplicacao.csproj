@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaE.Aplicacao</RootNamespace>
+    <AssemblyName>SistemaE.Aplicacao</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaE.Formalizacao\SistemaE.Formalizacao.csproj" />
+    <ProjectReference Include="..\SistemaE.Identificacao\SistemaE.Identificacao.csproj" />
+    <ProjectReference Include="..\SistemaE.Infraestrutura\SistemaE.Infraestrutura.csproj" />
+    <ProjectReference Include="..\SistemaE.Oferta\SistemaE.Oferta.csproj" />
+    <ProjectReference Include="..\SistemaE.PosProcessamento\SistemaE.PosProcessamento.csproj" />
+    <ProjectReference Include="..\SistemaE.Validacao\SistemaE.Validacao.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PacotePrivado.Parametros" />
+    <PackageReference Include="PacotePrivado.Broker" />
+  </ItemGroup>
+</Project>

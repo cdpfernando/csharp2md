@@ -1,0 +1,12 @@
+<Solution>
+  <Project Path="SistemaE.Api/SistemaE.Api.csproj" />
+  <Project Path="SistemaE.Aplicacao/SistemaE.Aplicacao.csproj" />
+  <Project Path="SistemaE.Formalizacao/SistemaE.Formalizacao.csproj" />
+  <Project Path="SistemaE.Identificacao/SistemaE.Identificacao.csproj" />
+  <Project Path="SistemaE.Infraestrutura/SistemaE.Infraestrutura.csproj" />
+  <Project Path="SistemaE.Nucleo/SistemaE.Nucleo.csproj" />
+  <Project Path="SistemaE.Oferta/SistemaE.Oferta.csproj" />
+  <Project Path="SistemaE.PosProcessamento/SistemaE.PosProcessamento.csproj" />
+  <Project Path="SistemaE.Testes/SistemaE.Testes.csproj" />
+  <Project Path="SistemaE.Validacao/SistemaE.Validacao.csproj" />
+</Solution>

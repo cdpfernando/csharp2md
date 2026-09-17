@@ -102,7 +102,13 @@ T67 -> T68
 T67 -> T69
 ```
 
-T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. Phase 9 was opened after the third Verifier run returned PASS with five ranked non-blocking gaps, of which the user chose to close the two carrying functional consequence; it depends on Phase 8 in full. The nine phases form nine sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+### Phase 10: Oracle-anchored dependency accuracy
+
+```text
+T70 -> T71
+```
+
+T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. Phase 9 was opened after the third Verifier run returned PASS with five ranked non-blocking gaps, of which the user chose to close the two carrying functional consequence; it depends on Phase 8 in full. Phase 10 was opened after the corpus benchmark showed the generator scoring 11 of 87 `ProjectReference` edges on a real corpus while the whole suite stayed green; it depends on Phase 9 in full. The ten phases form ten sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -1916,6 +1922,38 @@ The second feature Verifier returned **PASS** on `ff42c35..6d0a3b3` (71/71 ACs) 
 **Adequacy**: `GraphJourneyCertifierTests.cs:76-89` asserts `Failed` with the exact `missing-terminal:contracts` and `missing-terminal:persistence` details for a package whose graph does hold the terminal but whose index was emptied — the certifier cannot become vacuous without killing them. `:90-96` asserts the ordering: a package missing contracts *and* carrying a broken persistence index fails rather than reporting not-applicable. `:41-75` asserts the five absent-terminal details exactly, including the combined `persistence,external-effects`. `PackagePublicationTests.cs:114-121` moved its uncertifiable model to a reverse-impact scope with no reachable set, so PUB-08's rejection-before-swap case still drives a real `journey-certification` failure instead of the flow rule this task changed.
 **Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): three faults injected into `GraphJourneyCertifier.cs`, each built Release-clean and run against `GraphJourneyCertifierTests`. Making `Reaches` return `true` unconditionally — the vacuous certifier — killed `Certify_FlowWithAnUnreachableContractsIndexFails`, `Certify_FlowWithAnUnreachablePersistenceIndexFails` and `Certify_FlowFailureOutranksAnAbsentTerminal` (3 of 24). Swapping the absent and unreachable branches killed only `Certify_FlowFailureOutranksAnAbsentTerminal` (1 of 24). Deleting the `absent-terminal` return, so an absent terminal reaches `Budget` and passes, killed all five absent-terminal cases (5 of 24). All three were reverted and the full gate re-run before the commit.
 
+## Phase 10: Oracle-anchored dependency accuracy
+
+The corpus benchmark recorded in `.specs/STATE.md` measured the generator against a real answer key for the first time and found it stating a near-complete graph rather than the declared one. Nothing in the suite could see it: every dependency case runs on `fixtures/SyntheticSolution`, whose two entities make a complete graph and a correct graph the same graph, and one case there asserts a self-edge as correct behaviour. This phase installs the instrument, not the fix. The discrimination sensor remains a standing **skip** per `AGENTS.md`, so each task records a hand-run fault injection in its gate note.
+
+### T70: Vendor the architecture dependency lab corpus
+
+**What**: Version the six-solution synthetic corpus and its normative oracle as a repository fixture, so dependency claims can be scored against a declared answer key instead of a two-entity sample.  
+**Where**: `fixtures/ArchitectureDependencyLab`  
+**Depends on**: T69  
+**Reuses**: the `fixtures/SyntheticSolution` retention pattern and the repository `.gitignore` build-output rules  
+**Requirement**: CRT-08, DEP-01
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] The committed tree carries the six `.slnx` solutions, their 41 projects, the whole `oracle/` directory and the two private `.nupkg` of `local-feed/`, and carries no `.git`, `bin` or `obj` content.
+- [x] The `bin`/`obj` the Roslyn BuildHost writes inside the fixture whenever it is analysed are gitignored, and the vendored packages survive the blanket `*.nupkg` rule.
+- [x] The fixture stays outside `csharp2md.slnx`, which keeps listing only the two product and two test projects.
+- [x] `analyze` on a lab solution commits and certifies a package cold, with no restore and no `dotnet pack` prerequisite.
+- [x] At least 3 retention cases pin the fixture's shape, its ignore rules and its absence from the build.
+
+**Tests**: e2e — ≥3 retention cases  
+**Gate**: full  
+**Commit**: `test(fixture): vendor the architecture dependency lab corpus`
+
+**Status**: Complete
+**Gate note**: full gate green on the fixture-only state — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **621 of 621** unchanged, `Csharp2Md.Cli.Tests` **84 passed / 2 skipped** (up from 81 by this task's 3 retention cases), the two skips being the absent eShopOnContainers and Pitstop clones CRT-07 allows; the present eShop clone ran and passed. A cold `analyze` of `src/SistemaA/SistemaA.slnx` committed and certified a package in 11 s with no restore and no build of the corpus.
+**Decision**: the vendored tree is 164 files / 566 KB — the corpus minus `.git`, `bin`, `obj`, its own `.gitignore` and the `.idea` directories of SistemaC and SistemaD. The corpus `.gitignore` was dropped deliberately: its `local-feed/*.nupkg` rule is the one thing this fixture must not inherit, because vendoring those two packages is what removes the `dotnet pack` prerequisite and makes the fixture analysable cold. The repository `.gitignore` already ignores `bin/` and `obj/` everywhere, which covers the build output the Roslyn BuildHost writes inside the fixture on every analysis, so only one negation was added for the two packages. The `.idea` directories are IDE state that the repository `.gitignore` excludes anyway and that no oracle scenario names; keeping them would have left files on disk that can never be committed.
+**Adequacy**: `FixtureRetentionTests.cs:24-42` pins the vendored shape — six `.slnx`, 41 `.csproj`, 87 oracle references and the two `.nupkg` — so a corpus that silently loses references cannot make the generator look better than it is. `:44-58` pins the ignore rules in both directions, and `:60-68` pins the fixture's absence from `csharp2md.slnx`, which keeps the four product and test projects the only thing the gate builds.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): deleting the `!fixtures/ArchitectureDependencyLab/local-feed/*.nupkg` negation from `.gitignore` killed `Gitignore_KeepsTheLabsBuildOutputOutAndItsPrivateFeedIn` (1 of 5 retention cases) and left the other four green. The fault was reverted before the commit.
+
 ## Requirement-to-Task Traceability
 
 | Requirements | Owning task(s) | Acceptance seam |
@@ -1958,7 +1996,7 @@ The second feature Verifier returned **PASS** on `ff42c35..6d0a3b3` (71/71 ACs) 
 | CRT-01..CRT-02 | T34-T35, T37, T42, T48, T51, T69 | journey certification |
 | CRT-03 | T5, T15, T30, T37, T42, T57 | journey certification |
 | CRT-04..CRT-07 | T9, T47, T49-T50, T52-T54, T44 | optional corpora |
-| CRT-08 | T8, T12-T14, T31, T41 | fixture integrity |
+| CRT-08 | T8, T12-T14, T31, T41, T70 | fixture integrity |
 | CRT-09 | T42 | CLI E2E |
 | EDG-01 | T13, T16-T17, T33, T43 | evidence rejection |
 | EDG-02 | T34-T36, T43 | journey budget rejection |

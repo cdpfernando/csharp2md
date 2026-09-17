@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>SistemaB.Api</RootNamespace>
+    <AssemblyName>SistemaB.Api</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SCENARIO:NEG-002 -->
+    <ProjectReference Include="..\SistemaB.Aplicacao\SistemaB.Aplicacao.csproj" />
+    <ProjectReference Include="..\SistemaB.Transversal\SistemaB.Transversal.csproj" />
+    <ProjectReference Include="..\SistemaB.Composicao\SistemaB.Composicao.csproj" />
+  </ItemGroup>
+</Project>

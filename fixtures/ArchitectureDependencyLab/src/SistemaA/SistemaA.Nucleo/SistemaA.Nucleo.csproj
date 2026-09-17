@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaA.Nucleo</RootNamespace>
+    <AssemblyName>SistemaA.Nucleo</AssemblyName>
+  </PropertyGroup>
+</Project>
