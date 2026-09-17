@@ -10,7 +10,43 @@ public sealed class PackagePublicationTests
     [Fact][Trait("Requirement", "PUB-01")] public void Publish_MaterializesEveryPlannedArtifactInItsImmutableGeneration() { using var output = new TempOutput(); var plan = Plan(); PackagePublication.Publish(plan, output.Path); var generation = Path.Combine(output.Path, "generations", plan.PackageDigest); Assert.All(plan.Artifacts, artifact => Assert.True(File.Exists(Path.Combine(generation, artifact.Path.Value.Replace('/', Path.DirectorySeparatorChar))))); }
     [Fact][Trait("Requirement", "PUB-02")] public void Publish_RehydratesAndValidatesBeforeCommit() { using var output = new TempOutput(); PackagePublication.Publish(Plan(), output.Path); Assert.True(PackagePublication.Validate(output.Path).Succeeded); }
     [Fact][Trait("Requirement", "PUB-04")] public void Publish_ReturnsCommittedPackageOnlyAfterValidation() { using var output = new TempOutput(); var committed = PackagePublication.Publish(Plan(), output.Path); Assert.Equal(output.Path, committed.PackageDirectory); }
-    [Fact][Trait("Requirement", "PUB-08")] public void Publish_InvalidPlanReportsStructuredPublicationCause() { using var output = new TempOutput(); var invalid = new PackagePlan(Plan().Manifest, [new PlannedArtifact(new RelativeArtifactPath("manifest.json"), ArtifactFamily.Manifest, CanonicalJson.Write(Plan().Manifest), 1, "digest")], "invalid", Plan().Measurements); Assert.StartsWith("publication:", Assert.Throws<PackagePublicationException>(() => PackagePublication.Publish(invalid, output.Path)).Message); }
+    // PUB-08 asks a rejection for "projeto, variante, familia e causa aplicaveis". Asserting only the message
+    // prefix leaves the coordinates untested, and the validator already derives family and artifact - they were
+    // simply being dropped when EnsureValid collapsed the failure into its cause.
+    [Fact][Trait("Requirement", "PUB-08")] public void Publish_InvalidPlanReportsStructuredPublicationCause()
+    {
+        using var output = new TempOutput();
+        var invalid = new PackagePlan(Plan().Manifest, [new PlannedArtifact(new RelativeArtifactPath("manifest.json"), ArtifactFamily.Manifest, CanonicalJson.Write(Plan().Manifest), 1, "digest")], "invalid", Plan().Measurements);
+
+        var rejection = Assert.Throws<PackagePublicationException>(() => PackagePublication.Publish(invalid, output.Path));
+
+        Assert.StartsWith("publication:", rejection.Message, StringComparison.Ordinal);
+        Assert.Equal("certification", rejection.Family);
+        Assert.Equal("certification.json", rejection.Artifact);
+    }
+
+    // A second real rejection, with a different cause and a different family, so the coordinates are shown to
+    // follow the failure rather than being a constant. An absolute path planted in the summary makes the
+    // validator reject the staged package on the safety rule before the atomic swap.
+    [Fact][Trait("Requirement", "PUB-08")] public void Publish_SafetyRejectionNamesTheOffendingArtifactAndFamily()
+    {
+        using var output = new TempOutput();
+        var plan = Plan();
+        var unsafePayload = "# Knowledge package\n\nC:\\Users\\someone\\secrets\\App.sln\n"u8.ToArray().ToImmutableArray();
+        var planted = new PackagePlan(
+            plan.Manifest,
+            plan.Artifacts.Select(artifact => artifact.Path.Value == "markdown/index.md"
+                ? new PlannedArtifact(artifact.Path, artifact.Family, unsafePayload, artifact.RecordCount, artifact.ContentDigest)
+                : artifact).ToImmutableArray(),
+            plan.PackageDigest,
+            plan.Measurements);
+
+        var rejection = Assert.Throws<PackagePublicationException>(() => PackagePublication.Publish(planted, output.Path));
+
+        Assert.Equal("markdown/index.md", rejection.Artifact);
+        Assert.Equal("markdown", rejection.Family);
+        Assert.False(File.Exists(Path.Combine(output.Path, "manifest.json")));
+    }
     [Fact][Trait("Requirement", "PUB-05")] public void Publish_FailureBeforeCommitLeavesNoManifest() { using var output = new TempOutput(); Assert.Throws<PackagePublicationException>(() => PackagePublication.Publish(new PackagePlan(Plan().Manifest, [new PlannedArtifact(new RelativeArtifactPath("manifest.json"), ArtifactFamily.Manifest, CanonicalJson.Write(Plan().Manifest), 1, "digest")], "bad", Plan().Measurements), output.Path)); Assert.False(File.Exists(Path.Combine(output.Path, "manifest.json"))); }
     [Fact][Trait("Requirement", "PUB-01")] public void Publish_CreatesImmutableGeneration() { using var output = new TempOutput(); var plan = Plan(); PackagePublication.Publish(plan, output.Path); Assert.True(Directory.Exists(Path.Combine(output.Path, "generations", plan.PackageDigest))); }
     [Fact][Trait("Requirement", "PUB-04")] public void Publish_RootManifestExistsAfterCommit() { using var output = new TempOutput(); PackagePublication.Publish(Plan(), output.Path); Assert.True(File.Exists(Path.Combine(output.Path, "manifest.json"))); }

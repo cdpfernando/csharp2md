@@ -87,7 +87,9 @@ public sealed class KnowledgeEngine
             return Failure(new EngineDiagnostic(
                 "publication-rejected",
                 "publication",
-                PublicationCause(exception)));
+                PublicationCause(exception),
+                family: exception.Family,
+                artifact: exception.Artifact));
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
         {

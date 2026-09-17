@@ -65,10 +65,15 @@ internal static class PackageValidator
     private static PackageValidationReport Failure(string code, string stage, string cause, string artifact) =>
         new([new PackageValidationFailure(code, stage, cause, FamilyFor(artifact), artifact)]);
 
+    // Every family PUB-08 could have to name. The three publication trailers were missing, so a rejection on
+    // certification.json or measurements.json reported a null family even though one plainly applies.
     private static string? FamilyFor(string artifact) => artifact switch
     {
         "manifest.json" => "manifest",
+        "certification.json" => "certification",
+        "measurements.json" => "measurement",
         _ when artifact.Contains("/indexes/", StringComparison.Ordinal) => "index",
+        _ when artifact.Contains("/measures/", StringComparison.Ordinal) => "measure",
         _ when artifact.StartsWith("markdown/", StringComparison.Ordinal)
             || artifact.Contains("/markdown/", StringComparison.Ordinal) => "markdown",
         _ when artifact.Contains("/graph/", StringComparison.Ordinal) => "graph",

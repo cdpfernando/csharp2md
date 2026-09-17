@@ -6,6 +6,19 @@ namespace Csharp2Md.Core.Publication;
 internal sealed class PackagePublicationException : InvalidOperationException
 {
     internal PackagePublicationException(string cause, Exception? innerException = null) : base($"publication: '{cause}'.", innerException) { }
+
+    // PUB-08 requires a rejection to report the applicable family alongside the cause. The validator already
+    // derives both, so a rejection raised from it carries them through instead of collapsing to the cause.
+    internal PackagePublicationException(string cause, string? family, string? artifact, Exception? innerException = null)
+        : base($"publication: '{cause}'.", innerException)
+    {
+        Family = family;
+        Artifact = artifact;
+    }
+
+    internal string? Family { get; }
+
+    internal string? Artifact { get; }
 }
 
 internal static class PackagePublication
@@ -45,7 +58,11 @@ internal static class PackagePublication
     private static void EnsureValid(string directory)
     {
         var report = PackageValidator.Validate(directory);
-        if (!report.Succeeded) throw new PackagePublicationException(report.Failures[0].Cause);
+        if (!report.Succeeded)
+        {
+            var failure = report.Failures[0];
+            throw new PackagePublicationException(failure.Cause, failure.Family, failure.Artifact);
+        }
     }
     private static void WriteAll(string directory, IEnumerable<PlannedArtifact> artifacts)
     {
