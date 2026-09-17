@@ -38,7 +38,7 @@ public sealed class RetrievalModelBuilderTests
         var s = CanonicalIdentity.CreateSolution("app", "App.sln");
         var root = new LogicalEntity(EntityKind.Component, "entity:root", "root", null);
         var g = new FactualGraph(s, [root], [], [], [], [], [], new ExtractionMeasurements(0, 0));
-        var r = RetainedGraphBuilder.Build(g);
+        var r = RetainedGraphBuilder.Build(g, includeTests: false);
         var d = new AggregatedDependency(AggregationScope.Component, new EntityHandle("z"), new EntityHandle("a"), DependencyCategory.Http, DependencyNature.Direct, 1, [], [], []);
         return RetrievalModelBuilder.Build(
             g,

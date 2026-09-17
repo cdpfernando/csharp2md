@@ -179,7 +179,7 @@ internal static class PackageBuilder
 
     private static SolutionRetrievalModel BuildSolution(FactualGraph graph, bool includeTests)
     {
-        var retained = RetentionPolicy.Apply(graph, RetainedGraphBuilder.Build(graph), includeTests);
+        var retained = RetentionPolicy.Apply(graph, RetainedGraphBuilder.Build(graph, includeTests), includeTests);
         var evidence = retained.Evidence.ToDictionary(static item => item.CanonicalKey, StringComparer.Ordinal);
         var memberships = BuildMemberships(graph, retained);
         var projectsByDocument = BuildProjectsByDocument(graph);

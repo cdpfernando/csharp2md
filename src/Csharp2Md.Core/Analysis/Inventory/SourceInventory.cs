@@ -146,6 +146,15 @@ internal static class SourceInventory
         return false;
     }
 
+    /// <summary>
+    /// Whether a project's own logical path looks like a test project - the same segment convention
+    /// <see cref="LooksLikeTestDocument"/> applies to a document's path, since a project path is a
+    /// relative path with the same shape (e.g. <c>SistemaB.Testes/SistemaB.Testes.csproj</c>). Used to keep
+    /// a test project's Component/DeploymentUnit roots and its outbound relations out of retention when
+    /// tests are excluded, independent of whether any of its documents survived per-file inventory.
+    /// </summary>
+    internal static bool IsTestProject(Analysis.ProjectIdentity project) => LooksLikeTestDocument(project.LogicalRelativePath);
+
     private static IEnumerable<string> EnumerateFiles(string projectDirectory)
     {
         var pending = new Stack<string>();

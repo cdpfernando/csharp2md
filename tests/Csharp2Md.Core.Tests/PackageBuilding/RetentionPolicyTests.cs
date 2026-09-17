@@ -30,13 +30,22 @@ public sealed class RetentionPolicyTests
     public void Apply_UsesOnlyObservedRelationPayloads() => Assert.Equal("relation:caller-root", Apply().Relations.First().CanonicalKey);
     [Fact] [Trait("Requirement", "MET-07")]
     public void Apply_PreservesGapKindsSeparately() => Assert.Equal(GapKind.Unknown, Assert.Single(Apply().Gaps).Kind);
+    [Fact] [Trait("Requirement", "PKG-05")]
+    public void Apply_ExcludesIncomingRelationFromATestProjectSourceByDefault() =>
+        Assert.DoesNotContain(Apply(callerIsTestProject: true).Relations, x => x.CanonicalKey == "relation:caller-root");
+    [Fact] [Trait("Requirement", "PKG-08")]
+    public void Apply_IncludesIncomingRelationFromATestProjectSourceWhenPolicyEnabled() =>
+        Assert.Contains(Apply(includeTests: true, callerIsTestProject: true).Relations, x => x.CanonicalKey == "relation:caller-root");
 
-    private static RetainedGraph Apply(bool includeTests = false, bool testEvidence = false)
+    private static RetainedGraph Apply(bool includeTests = false, bool testEvidence = false, bool callerIsTestProject = false)
     {
         var s = CanonicalIdentity.CreateSolution("app", "App.sln"); var p = CanonicalIdentity.CreateProject(s, "App.csproj"); var v = CanonicalIdentity.CreateVariant("net10.0", "Release", [], "ci"); var span = new SourceSpan(1, 1, 1, 1);
         var document = testEvidence ? "document:test" : "document:prod"; var proof = new EvidenceRecord("evidence:one", document, v, span, "digest");
         var entities = new[] { new LogicalEntity(EntityKind.Component, "entity:root", "root", null), new LogicalEntity(EntityKind.Symbol, "entity:terminal", "terminal", null), new LogicalEntity(EntityKind.Symbol, "entity:caller", "caller", null), new LogicalEntity(EntityKind.Symbol, "entity:orphan", "orphan", null) };
-        var graph = new FactualGraph(s, [..entities], [], [proof], [new FactualRelation("relation:root-terminal", "entity:root", "entity:terminal", "internal", ["evidence:one"]), new FactualRelation("relation:caller-root", "entity:caller", "entity:root", "internal", ["evidence:one"])], [new KnowledgeGap("gap:relevant", GapKind.Unknown, "unresolved", ["entity:root"], ["evidence:one"]), new KnowledgeGap("gap:orphan", GapKind.Candidate, "unresolved", ["entity:orphan"], ["evidence:one"])], [new SourceDocumentSnapshot("document:prod", new LogicalLocator("Prod.cs", span, p), false, "a"), new SourceDocumentSnapshot("document:test", new LogicalLocator("Test.cs", span, p), true, "b"), new SourceDocumentSnapshot("document:uncited", new LogicalLocator("Other.cs", span, p), false, "c")], new ExtractionMeasurements(0, 0));
-        return RetentionPolicy.Apply(graph, RetainedGraphBuilder.Build(graph), includeTests);
+        var occurrences = callerIsTestProject
+            ? new[] { new VariantOccurrence("entity:caller", CanonicalIdentity.CreateProject(s, "App.Tests/App.Tests.csproj"), v, new LogicalLocator("CallerTest.cs", span, p), "shape", ["evidence:one"]) }
+            : Array.Empty<VariantOccurrence>();
+        var graph = new FactualGraph(s, [..entities], [..occurrences], [proof], [new FactualRelation("relation:root-terminal", "entity:root", "entity:terminal", "internal", ["evidence:one"]), new FactualRelation("relation:caller-root", "entity:caller", "entity:root", "internal", ["evidence:one"])], [new KnowledgeGap("gap:relevant", GapKind.Unknown, "unresolved", ["entity:root"], ["evidence:one"]), new KnowledgeGap("gap:orphan", GapKind.Candidate, "unresolved", ["entity:orphan"], ["evidence:one"])], [new SourceDocumentSnapshot("document:prod", new LogicalLocator("Prod.cs", span, p), false, "a"), new SourceDocumentSnapshot("document:test", new LogicalLocator("Test.cs", span, p), true, "b"), new SourceDocumentSnapshot("document:uncited", new LogicalLocator("Other.cs", span, p), false, "c")], new ExtractionMeasurements(0, 0));
+        return RetentionPolicy.Apply(graph, RetainedGraphBuilder.Build(graph, includeTests), includeTests);
     }
 }

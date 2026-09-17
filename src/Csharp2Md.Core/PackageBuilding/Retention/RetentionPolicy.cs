@@ -1,4 +1,5 @@
 using Csharp2Md.Core.Analysis;
+using Csharp2Md.Core.Analysis.Inventory;
 
 namespace Csharp2Md.Core.PackageBuilding.Retention;
 
@@ -8,7 +9,19 @@ internal static class RetentionPolicy
     {
         ArgumentNullException.ThrowIfNull(graph); ArgumentNullException.ThrowIfNull(closure);
         var retainedKeys = closure.Entities.Select(x => x.CanonicalKey).ToHashSet(StringComparer.Ordinal);
-        var incoming = graph.Relations.Where(x => retainedKeys.Contains(x.TargetCanonicalKey)).ToArray();
+        // An incoming edge sustains dependents/reverse impact (design.md's step 5), but PKG-05 excludes
+        // tests by default: a relation whose source belongs only to a test project must not be admitted
+        // just because it happens to point at an already-retained, non-test entity.
+        var ownerByEntity = graph.Occurrences.ToLookup(occurrence => occurrence.EntityCanonicalKey, occurrence => occurrence.Project);
+        bool IsTestOnlySource(string entityKey)
+        {
+            var owners = ownerByEntity[entityKey].ToArray();
+            return owners.Length > 0 && owners.All(SourceInventory.IsTestProject);
+        }
+
+        var incoming = graph.Relations
+            .Where(x => retainedKeys.Contains(x.TargetCanonicalKey) && (includeTests || !IsTestOnlySource(x.SourceCanonicalKey)))
+            .ToArray();
         retainedKeys.UnionWith(incoming.Select(x => x.SourceCanonicalKey));
         var relations = closure.Relations.Concat(incoming).DistinctBy(x => x.CanonicalKey).OrderBy(x => x.CanonicalKey, StringComparer.Ordinal).ToImmutableArray();
         var evidenceKeys = relations.SelectMany(x => x.EvidenceCanonicalKeys).ToHashSet(StringComparer.Ordinal);

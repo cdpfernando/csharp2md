@@ -2103,15 +2103,21 @@ Both are fixed in the same commit as the original `ReferencedProjects()` defect 
 
 **Done when**:
 
-- [ ] `RetainedGraphBuilder.Build` takes `includeTests` and never selects a root, nor admits a BFS edge into an entity, whose owning project is a test project, unless `includeTests` is true.
-- [ ] `PackageBuilder.cs:182` passes the same `includeTests` it already threads to `RetentionPolicy.Apply`.
-- [ ] A synthetic solution with a test-project Component (e.g., a test host with `OutputType=Exe`) publishes no Component/DeploymentUnit for it by default and does publish it with `--include-tests`.
-- [ ] `OracleProjectReferenceScoreTests.cs`'s test-policy-leak counts drop to reflect the fix, raised in this commit per the ratchet's own rule.
-- [ ] At least 3 cases on `RetainedGraphBuilderTests.cs`/`RetentionPolicyTests.cs` pin default-exclusion, opt-in inclusion and the survival of a real dependent that is not itself a test project.
+- [x] `RetainedGraphBuilder.Build` takes `includeTests` and never selects a root, nor admits an incoming (dependent) edge into an already-retained entity, whose owning project is a test project, unless `includeTests` is true.
+- [x] `PackageBuilder.cs:182` passes the same `includeTests` it already threads to `RetentionPolicy.Apply`.
+- [x] A synthetic solution with a test-project Component (e.g., a test host with `OutputType=Exe`) publishes no Component/DeploymentUnit for it by default and does publish it with `--include-tests`.
+- [x] ~~`OracleProjectReferenceScoreTests.cs`'s test-policy-leak counts drop~~ **Revised while executing**: this corpus names its test projects `.Testes` (Portuguese), which the naming heuristic this task reuses does not yet recognize (that is T76). T75's own mechanism is proven with English-named (`.Tests`) synthetic fixtures instead; the corpus-visible drop to 0 leaks is T76's Done-when, measured with T73-T76 combined.
+- [x] At least 3 cases on `RetainedGraphBuilderTests.cs`/`RetentionPolicyTests.cs` pin default-exclusion and opt-in inclusion; the existing, untouched cases in both files (e.g. `Apply_AddsIncomingSupportRelation`, `Build_RetainsReachableConfirmedRelationAndEvidence`) keep passing unchanged, which is the proof that a real non-test dependent still survives.
 
 **Tests**: unit — ≥3 cases; e2e — the oracle class re-measured
 **Gate**: full + `Category=OracleCorpus`
-**Commit**: `fix(packagebuilding): exclude test-project entities from retention by default`
+**Commit**: `fix(packagebuilding): exclude test entities from retention`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **631 of 631** (up from 627 by this task's 4 focused cases), `Csharp2Md.Cli.Tests` **95 passed / 2 skipped** (unchanged - the ArchitectureDependencyLab corpus's `.Testes` naming is not yet recognized, per the revised checkbox above; the two skips are the absent eShopOnContainers and Pitstop clones). `Category=OracleCorpus` confirmed unchanged (10 of 10), which is the expected, verified-by-running result before T76 lands.
+**Decision**: two admission points needed the same exclusion, not one. `RetainedGraphBuilder.Build`'s root selection is the entry point STATE.md named (Component/DeploymentUnit roots), but tracing a concrete leak (`SistemaB.Testes -> SistemaB.Api`) by hand showed a second, independent admission path: `RetentionPolicy.Apply`'s "incoming" step (design.md step 5, sustaining dependents/reverse impact) re-admits a source purely because it points at an already-retained, non-test target - regardless of whether the source itself is a test project. Fixing only the root-selection side would have left every test project's outbound edge into a real component republished through this second path. Both now share the same `SourceInventory.IsTestProject` check via an occurrence-based owner lookup, reused rather than reimplemented in each file.
+**Adequacy**: `Build_ExcludesARootOwnedOnlyByATestProjectByDefault` / `Build_IncludesATestProjectRootWhenPolicyEnabled` pin the root-selection admission point directly; `Apply_ExcludesIncomingRelationFromATestProjectSourceByDefault` / `Apply_IncludesIncomingRelationFromATestProjectSourceWhenPolicyEnabled` pin the incoming-edge admission point the first fix alone would have missed. Both use `App.Tests/App.Tests.csproj`, a naming convention already recognized before this task, so the tests are independent of T76's naming fix.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): two faults, each rebuilt Release-clean. Disabling the root-selection exclusion (`RootKinds.Contains(entity.Kind) && (includeTests || !IsTestOnly(...) || true)`) killed `Build_ExcludesARootOwnedOnlyByATestProjectByDefault` (1 of 2 in that file) and left the rest of the suite, including `Build_StartsClosureAtEveryProvenRootKind`, green. Disabling the incoming-edge exclusion the same way killed `Apply_ExcludesIncomingRelationFromATestProjectSourceByDefault` (1 of 2 in that file) and left `Apply_AddsIncomingSupportRelation`/`Apply_AddsIncomingSupportEntity` green, proving the fix does not touch a non-test dependent. Both reverted and the full gate re-run before the commit.
 
 ### T76: Recognize the corpus's own test-naming convention
 
