@@ -29,6 +29,22 @@ public sealed class ProjectVariantWorkspaceTests
     }
 
     [Fact]
+    [Trait("Requirement", "DEP-01")]
+    public async Task ReferencedProjects_NamesOnlyTheDirectReference_NotATransitiveOne()
+    {
+        // Acme.Shipping.Tests directly references only Acme.Shipping; Acme.Shipping in turn references
+        // Acme.Shared.Contracts. Roslyn must load Contracts to compile the chain, so before the fix
+        // ReferencedProjects() (Solution.Projects minus the root) named it too, as if Shipping.Tests
+        // referenced it directly.
+        var variant = new PlannedProjectVariant("Acme.Shipping.Tests/Acme.Shipping.Tests.csproj", "net10.0");
+
+        await using var workspace = await ProjectVariantWorkspace.OpenAsync(SyntheticRoot, variant);
+
+        var referenced = workspace.ReferencedProjects().Select(project => project.Name).ToArray();
+        Assert.Equal(["Acme.Shipping"], referenced);
+    }
+
+    [Fact]
     [Trait("Requirement", "VAR-04")]
     public async Task OpenAsync_ReferencedProjectsSupportCompilationButAreNotRoots()
     {

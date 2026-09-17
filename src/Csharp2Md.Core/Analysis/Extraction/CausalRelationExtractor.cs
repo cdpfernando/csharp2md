@@ -43,14 +43,14 @@ internal static class CausalRelationExtractor
         var relations = new List<FactualRelation>();
         var gaps = new List<KnowledgeGap>();
 
-        void AddEntity(LogicalEntity entity, LogicalLocator locator, string shape, string evidenceKey)
+        void AddEntity(LogicalEntity entity, LogicalLocator locator, string shape, string evidenceKey, ProjectIdentity? owner = null)
         {
             if (!entities.TryAdd(entity.CanonicalKey, entity))
             {
                 return;
             }
 
-            occurrences.Add(new VariantOccurrence(entity.CanonicalKey, input.Project, input.Variant, locator, shape, [evidenceKey]));
+            occurrences.Add(new VariantOccurrence(entity.CanonicalKey, owner ?? input.Project, input.Variant, locator, shape, [evidenceKey]));
         }
 
         EvidenceRecord AddEvidence(string kind, LogicalLocator locator, string payload)
@@ -76,10 +76,10 @@ internal static class CausalRelationExtractor
             return key;
         }
 
-        string AddNamed(EntityKind kind, string name, LogicalLocator locator, EvidenceRecord proof)
+        string AddNamed(EntityKind kind, string name, LogicalLocator locator, EvidenceRecord proof, ProjectIdentity? owner = null)
         {
             var key = CanonicalIdentity.CreateEntityKey(input.Solution, kind, name);
-            AddEntity(new LogicalEntity(kind, key, name, name), locator, "causal:" + kind.ToString().ToLowerInvariant(), proof.CanonicalKey);
+            AddEntity(new LogicalEntity(kind, key, name, name), locator, "causal:" + kind.ToString().ToLowerInvariant(), proof.CanonicalKey, owner);
             return key;
         }
 
@@ -98,9 +98,17 @@ internal static class CausalRelationExtractor
         foreach (var referencedProject in input.ReferencedProjects.OrderBy(project => project.CanonicalKey, StringComparer.Ordinal))
         {
             var locator = new LogicalLocator(input.Project.LogicalRelativePath, new SourceSpan(1, 1, 1, 1), input.Project);
-            var proof = AddEvidence(ProjectReference, locator, referencedProject.LogicalRelativePath);
+            // The payload must name both ends: two different roots referencing the same target would
+            // otherwise hash to the same evidence key and DistinctBy would silently keep only one root's
+            // document, reattributing every other root's edge to it at Project/Component scope.
+            var proof = AddEvidence(ProjectReference, locator, input.Project.LogicalRelativePath + "->" + referencedProject.LogicalRelativePath);
             var source = AddNamed(EntityKind.Project, input.Project.LogicalRelativePath, locator, proof);
-            var target = AddNamed(EntityKind.Project, referencedProject.LogicalRelativePath, locator, proof);
+            // The referenced project entity occurs in itself, not in the root citing it - otherwise every
+            // project that references X would be folded into X's own membership, and scope-lifting would
+            // cross X's occurrence set (every referencer) against the citing root instead of just X. Its
+            // locator names X's own path too, so it cannot be mistaken for evidence living in the citing root.
+            var targetLocator = new LogicalLocator(referencedProject.LogicalRelativePath, new SourceSpan(1, 1, 1, 1), referencedProject);
+            var target = AddNamed(EntityKind.Project, referencedProject.LogicalRelativePath, targetLocator, proof, owner: referencedProject);
             AddRelation(ProjectReference, source, target, proof, referencedProject.CanonicalKey);
         }
 

@@ -85,7 +85,12 @@ internal sealed class ProjectVariantWorkspace : IAsyncDisposable
     public IEnumerable<Project> ReferencedProjects()
     {
         ThrowIfDisposed();
-        return Solution.Projects.Where(project => project.Id != RootProject.Id);
+        var solution = Solution;
+        var root = solution.GetProject(RootProject.Id)
+            ?? throw new InvalidOperationException("The root project left the workspace.");
+        return root.ProjectReferences
+            .Select(reference => solution.GetProject(reference.ProjectId))
+            .Where(static project => project is not null)!;
     }
 
     public ValueTask DisposeAsync()

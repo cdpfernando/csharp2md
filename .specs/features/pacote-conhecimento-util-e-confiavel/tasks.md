@@ -109,7 +109,13 @@ T67 -> T69
 T70 -> T71 -> T72
 ```
 
-T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. Phase 9 was opened after the third Verifier run returned PASS with five ranked non-blocking gaps, of which the user chose to close the two carrying functional consequence; it depends on Phase 8 in full. Phase 10 was opened after the corpus benchmark showed the generator scoring 11 of 87 `ProjectReference` edges on a real corpus while the whole suite stayed green; it depends on Phase 9 in full. The ten phases form ten sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+### Phase 11: Correct the retained dependency projection
+
+```text
+T73 -> T74 -> T75 -> T76 -> T77
+```
+
+T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. Phase 9 was opened after the third Verifier run returned PASS with five ranked non-blocking gaps, of which the user chose to close the two carrying functional consequence; it depends on Phase 8 in full. Phase 10 was opened after the corpus benchmark showed the generator scoring 11 of 87 `ProjectReference` edges on a real corpus while the whole suite stayed green; it depends on Phase 9 in full. Phase 11 was opened by the user's explicit decision to confirm and fix the projection rather than only re-measure it; it depends on Phase 10 in full. The eleven phases form eleven sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -2022,6 +2028,125 @@ The corpus benchmark recorded in `.specs/STATE.md` measured the generator agains
 
 **Carried out by a sub-agent that hit the session limit mid-task.** Its code was complete and green; the task record, the discrimination run and the commit were finished in the main session.
 
+## Phase 11: Correct the retained dependency projection
+
+T71/T72 installed the instrument and recorded the defect; this phase is the fix the user asked for by name ("Confirmar e consertar a projeção"). Four independent root causes were confirmed by reading, not inferred from symptoms alone — each is cited to the exact line it lives on, and the Roslyn APIs the fixes depend on (`Project.ProjectReferences`, `Location.IsInSource`) were verified against `/dotnet/roslyn` through Context7 before being written into a task, per `AGENTS.md`'s "never guess Roslyn APIs". The discrimination sensor remains a standing **skip** per `AGENTS.md`, so each task records a hand-run fault injection in its gate note. It depends on Phase 10 in full.
+
+### T73: Emit Project Reference edges only for projects Roslyn actually resolved
+
+**What**: Replace the "every other project in the workspace" approximation with the solution's real `ProjectReference` graph, so a root project states only the projects it actually references, in the direction it actually references them.
+**Where**: `src/Csharp2Md.Core/Analysis/Semantics/ProjectVariantWorkspace.cs`
+**Depends on**: T72
+**Reuses**: `SolutionAnalyzer.ReferencedProjects`'s existing mapping from `Project` to `ProjectIdentity`, unchanged; only the set it maps over changes
+**Requirement**: DEP-01, DEP-02, DEP-03
+
+**Tools**: MCP: Context7 (`/dotnet/roslyn`, confirmed `Project.ProjectReferences`/`ProjectReference.ProjectId`/`Solution.GetProject`); Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] `ProjectVariantWorkspace.ReferencedProjects()` returns the projects reachable from `RootProject.ProjectReferences` resolved through `Solution.GetProject`, not `Solution.Projects.Where(p.Id != RootProject.Id)`.
+- [x] A root project that references 2 of 4 sibling projects in its solution states exactly those 2 as `project-reference`, in both directions verified (never the reverse of an actual reference).
+- [x] `OracleProjectReferenceScoreTests.cs`'s baselines are re-measured against the fix and raised in this same commit, per the ratchet's own rule that an improvement must be recorded, not silently absorbed; the false-positive and correct-edge counts move together with the code change.
+- [x] At least 2 unit/integration cases on `fixtures/SyntheticSolution` (or an equivalent minimal multi-project fixture) pin the exact-reference behavior independently of the oracle corpus.
+
+**Tests**: unit/integration — ≥2 cases; e2e — the oracle class re-measured
+**Gate**: full + `Category=OracleCorpus`
+**Commit**: `fix(analysis): emit project references from the resolved reference graph`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **624 of 624** (up from 621 by this task's 3 focused cases), `Csharp2Md.Cli.Tests` **94 passed / 2 skipped** (the two skips being the absent eShopOnContainers and Pitstop clones); the present eShop clone ran and passed. `Category=OracleCorpus` (9 cases) green.
+**Decision**: reading `ReferencedProjects()` alone was not enough. Confirming it by hand against `fixtures/ArchitectureDependencyLab/src/SistemaB` (dumping raw `FactualGraph.Occurrences` and relation evidence from a throwaway diagnostic, deleted before commit) found two further, compounding aggregation bugs neither STATE.md nor this task's own "Done when" had named:
+1. The project-reference evidence payload was `referencedProject.LogicalRelativePath` alone - it never named the citing root - so two different roots referencing the *same* target hashed to the identical evidence key. `Assemble`'s `Evidence.DistinctBy(CanonicalKey)` then kept only one root's document and silently reattributed every other root's relation to it at Project/Component scope. This is why the pre-fix false positives read as "one API project fanning out to everything": whichever root's evidence won the collision for a common target donated its document to every other relation citing that target.
+2. `AddEntity` always recorded a named entity's occurrence against `input.Project` - correct for the *citing* root's own Project entity, wrong for the *referenced* project's entity, which was thereby recorded as "occurring in" every root that happened to reference it rather than in itself. `PackageBuilder.BuildMemberships` derives Project/Component membership from exactly these occurrences, so a heavily-referenced project's membership ballooned to include every one of its referrers.
+
+Both are fixed in the same commit as the original `ReferencedProjects()` defect because they are the same DEP-01 violation ("somente pertencimento comprovado") surfacing at the aggregation seam rather than the extraction seam, and fixing only one of the three left the others fully able to reproduce the complete-graph symptom on their own (confirmed: with only `ReferencedProjects()` fixed, the oracle's false-positive count rose from 29 to 37, driven entirely by these two remaining bugs).
+**Adequacy**: `ReferencedProjects_NamesOnlyTheDirectReference_NotATransitiveOne` uses `Acme.Shipping.Tests -> Acme.Shipping -> Acme.Shared.Contracts`, a genuine two-hop chain already present in `fixtures/SyntheticSolution`, so a fix that merely shrinks the *old* "every other loaded project" answer without computing real direct references still fails it. `Extract_ProjectReference_EvidenceKeyNamesBothTheCitingRootAndTheTarget` and `Extract_ProjectReference_TargetEntityOccursInItselfNotInTheCitingRoot` isolate the two aggregation bugs directly against `CausalRelationExtractor.Extract`, independent of Roslyn workspace loading or the oracle corpus. `OracleProjectReferenceScoreTests` moved from 7/60 correct, 29 false positives, 4 leaks to **60/60 correct, 0 false positives, 27 leaks** - every reachable edge in the entire corpus is now exactly right; the remaining 27 are real edges sourced from `.Testes` projects that retention does not yet exclude (T75/T76).
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): three faults injected one at a time into `ProjectVariantWorkspace.cs`/`CausalRelationExtractor.cs`, each rebuilt Release-clean. Reverting `ReferencedProjects()` to `Solution.Projects.Where(p.Id != RootProject.Id)` killed `ReferencedProjects_NamesOnlyTheDirectReference_NotATransitiveOne`. Reverting the evidence payload to `referencedProject.LogicalRelativePath` alone killed `Extract_ProjectReference_EvidenceKeyNamesBothTheCitingRootAndTheTarget`. Reverting the target's `owner: referencedProject` argument killed `Extract_ProjectReference_TargetEntityOccursInItselfNotInTheCitingRoot`. All three were reverted and the full gate re-run green before the commit.
+
+### T74: Stop retaining causal edges to symbols outside the analyzed source
+
+**What**: Exclude `internal-invocation` and `structural-type-use` relations whose target symbol is not declared in the solution's source (BCL, NuGet, any referenced-assembly symbol), so a type used everywhere (`string`, `int`, `Task`) stops being retained as a shared entity whose Component/Deployment-Unit membership is the union of every project that happens to use it.
+**Where**: `src/Csharp2Md.Core/Analysis/Extraction/CausalRelationExtractor.cs`
+**Depends on**: T73
+**Reuses**: the existing `AddSymbol`/`AddRelation` pipeline; only the admission check changes, and `ConfigurationPersistenceExtractor`'s dedicated persistence/HTTP/messaging entities are untouched since they never route through `AddSymbol`
+**Requirement**: PKG-05, DEP-01
+
+**Tools**: MCP: Context7 (`/dotnet/roslyn`, confirmed `ISymbol.Locations`/`Location.IsInSource` as the documented source-vs-metadata distinction); Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] A `structural-type-use` or `internal-invocation` relation is only added when the target symbol has at least one `Location` with `IsInSource == true`; a purely-metadata target (BCL, NuGet, any other referenced assembly) is skipped before `AddSymbol`/`AddRelation` runs for it.
+- [ ] A method call or type reference into a different project of the **same solution** (a genuine cross-component edge, resolved as source because the workspace opens the whole solution) is still retained — this is not a same-project-only filter.
+- [ ] At least 3 unit cases on `CausalRelationExtractorTests.cs` prove: a call to a BCL method produces no relation/entity for it, a use of a BCL type produces no relation/entity for it, and a call into a sibling in-solution project still produces its relation.
+- [ ] One e2e/integration case on `fixtures/ArchitectureDependencyLab` (or the eShop LocalCorpus case when present) asserts the Component-scope dependency set for a known multi-project solution is **not** the complete graph — concretely, that no retained entity's canonical key names a bare BCL/primitive type (`symbol:string`, `symbol:int`, `symbol:System.Threading.Tasks.Task`, …).
+
+**Tests**: unit — ≥3 extractor cases; integration/e2e — ≥1 non-complete-graph case
+**Gate**: full + LocalCorpus when present
+**Commit**: `fix(analysis): exclude causal edges to symbols outside the analyzed source`
+
+### T75: Exclude test-project entities from retention when tests are excluded
+
+**What**: Make `includeTests` govern which entities the retention closure treats as roots and walks into, not only which source documents survive — so a Component, Deployment Unit, Entry Point or Boundary Operation owned by a test project stops publishing when `--include-tests` is absent, and a test-project's Project entity stops surviving as a dependency target through it.
+**Where**: `src/Csharp2Md.Core/PackageBuilding/Retention/RetainedGraphBuilder.cs`, `src/Csharp2Md.Core/PackageBuilding/PackageBuilder.cs`
+**Depends on**: T74
+**Reuses**: `SourceInventory`'s existing test-project naming heuristic (extended in T76), threaded in rather than reimplemented
+**Requirement**: PKG-05
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] `RetainedGraphBuilder.Build` takes `includeTests` and never selects a root, nor admits a BFS edge into an entity, whose owning project is a test project, unless `includeTests` is true.
+- [ ] `PackageBuilder.cs:182` passes the same `includeTests` it already threads to `RetentionPolicy.Apply`.
+- [ ] A synthetic solution with a test-project Component (e.g., a test host with `OutputType=Exe`) publishes no Component/DeploymentUnit for it by default and does publish it with `--include-tests`.
+- [ ] `OracleProjectReferenceScoreTests.cs`'s test-policy-leak counts drop to reflect the fix, raised in this commit per the ratchet's own rule.
+- [ ] At least 3 cases on `RetainedGraphBuilderTests.cs`/`RetentionPolicyTests.cs` pin default-exclusion, opt-in inclusion and the survival of a real dependent that is not itself a test project.
+
+**Tests**: unit — ≥3 cases; e2e — the oracle class re-measured
+**Gate**: full + `Category=OracleCorpus`
+**Commit**: `fix(packagebuilding): exclude test-project entities from retention by default`
+
+### T76: Recognize the corpus's own test-naming convention
+
+**What**: Extend the test-document heuristic to recognize `.Testes` (and a bare `testes` segment), so `--include-tests`'s absence actually excludes `fixtures/ArchitectureDependencyLab`'s test projects — today it silently does not, because the heuristic only knows the English `.Tests`/`.UnitTests`/`.IntegrationTests` spellings and the project's own primary accuracy fixture is named in Portuguese.
+**Where**: `src/Csharp2Md.Core/Analysis/Inventory/SourceInventory.cs`
+**Depends on**: T75
+**Reuses**: the existing segment-based `LooksLikeTestDocument` shape; only the recognized suffix set grows
+**Requirement**: PKG-05
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] `LooksLikeTestDocument` recognizes a path segment equal to `testes` or ending in `.Testes`, case-insensitively, alongside the existing English patterns.
+- [ ] `SourceInventoryTests.cs` gains a case for `SistemaA.Testes/Foo.cs` alongside the existing English cases, and a case proving an unrelated segment such as `Testemunho` or `Manifesto` is not mistaken for a test path.
+- [ ] `OracleProjectReferenceScoreTests.cs` is re-measured with T73-T76 combined and every baseline raised to the true measured value in this commit, with the false-positive and test-policy-leak counts named explicitly in the commit's task record.
+- [ ] The `analyze` of `fixtures/ArchitectureDependencyLab` with default flags publishes no source document, Component, or DeploymentUnit whose logical path contains a `.Testes` project segment.
+
+**Tests**: unit — ≥2 cases; e2e — the oracle class re-measured
+**Gate**: full + `Category=OracleCorpus`
+**Commit**: `fix(analysis): recognize .Testes as a test-project path segment`
+
+### T77: Correct the traceability table and close the open finding
+
+**What**: Update `spec.md`'s Requirement Traceability for DEP-01, DEP-02, DEP-03 and PKG-05 to cite T73-T76 and reflect a measured, not assumed, "Complete"; replace `.specs/STATE.md`'s "OPEN FINDING: the component dependency graph is complete" and the unmeasured project-reference finding with the corrected, re-measured numbers.
+**Where**: `.specs/features/pacote-conhecimento-util-e-confiavel/spec.md`, `.specs/STATE.md`
+**Depends on**: T76
+**Reuses**: nothing — documentation only
+**Requirement**: none (documentation)
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`.
+
+**Done when**:
+
+- [ ] `spec.md`'s traceability rows for DEP-01, DEP-02, DEP-03 and PKG-05 name T73-T76 and state the measured outcome (oracle score, complete-graph check, test-leak check), not a restated assumption.
+- [ ] `.specs/STATE.md`'s two open-finding sections are replaced by the corrected state: the re-measured oracle score, the confirmed absence of BCL/primitive entities in a real corpus's retained graph, and the confirmed absence of `.Testes`-owned entities in the default package.
+- [ ] Any claim this phase could not fully close (for example, a residual fan-out from a legitimate, genuinely shared in-solution type used by many components) is written down as a named residual, not silently dropped.
+
+**Tests**: none (documentation)
+**Gate**: `validate_state.py` on this feature
+**Commit**: `docs(state): correct the projection traceability after phase 11`
+
 ## Requirement-to-Task Traceability
 
 | Requirements | Owning task(s) | Acceptance seam |
@@ -2169,6 +2294,24 @@ T1, T37, T41, T45, T47, T48, T52, T53 and T54 necessarily touch multiple physica
 | T57 | T56 | T56 -> T57 | ✅ Match |
 | T58 | T57 | T57 -> T58 | ✅ Match |
 | T59 | T58 | T58 -> T59 | ✅ Match |
+| T60 | T59 | phase 8 after phase 7 | ✅ Match |
+| T61 | T60 | T60 -> T61 | ✅ Match |
+| T62 | T61 | T61 -> T62 | ✅ Match |
+| T63 | T62 | T62 -> T63 | ✅ Match |
+| T64 | T63 | T63 -> T64 | ✅ Match |
+| T65 | T64 | T64 -> T65 | ✅ Match |
+| T66 | T65 | T65 -> T66 | ✅ Match |
+| T67 | T66 | phase 9 after phase 8 | ✅ Match |
+| T68 | T67 | T67 -> T68 | ✅ Match |
+| T69 | T67 | T67 -> T69 | ✅ Match |
+| T70 | T69 | phase 10 after phase 9 | ✅ Match |
+| T71 | T70 | T70 -> T71 | ✅ Match |
+| T72 | T71 | T71 -> T72 | ✅ Match |
+| T73 | T72 | phase 11 after phase 10 | ✅ Match |
+| T74 | T73 | T73 -> T74 | ✅ Match |
+| T75 | T74 | T74 -> T75 | ✅ Match |
+| T76 | T75 | T75 -> T76 | ✅ Match |
+| T77 | T76 | T76 -> T77 | ✅ Match |
 
 Cross-phase dependencies are represented by the ordered phase chain; all intra-phase edges match exactly.
 
