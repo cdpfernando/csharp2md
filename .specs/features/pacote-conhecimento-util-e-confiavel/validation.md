@@ -1,395 +1,263 @@
-# Pacote de conhecimento útil e confiável Validation
+# Pacote de conhecimento útil e confiável — Phase 11 Validation
 
 **Date**: 2026-09-17
 **Spec**: `.specs/features/pacote-conhecimento-util-e-confiavel/spec.md`
-**Diff range**: `ff42c35..6d0a3b3` (full feature); `71e7094..6d0a3b3` (Phase 8 remediation: `10ceb90`, `db16a8a` T60, `a55f831` T61, `03a0814` T62, `bf0bb86` T63, `98f53fc` T64, `e8f3ac1` T65, `df84bac` T66, `6d0a3b3`)
-**Verifier**: independent sub-agent, iteration 2 of the bounded fix→re-verify loop (author ≠ verifier)
-**Verdict**: **PASS ✅**
+**Diff range**: `997fb7a..d826c96` (Phase 11: `997fb7a` T73, `7545454` T74, `c5d69c3` T75, `926f5bb` T76, `e76894d` T77, `d826c96` T78)
+**Verifier**: independent sub-agent (author ≠ verifier), read-only over the implementation
+
+## Validation Verdict — PASS ✅
+
+**Scope of this report**: the Phase 11 remediation of the retained dependency projection, anchored to
+DEP-01, DEP-02, DEP-03 and PKG-05. It is not a re-verification of all 71 requirements.
+
+---
+
+## This report supersedes the prior validation.md, and why
+
+The previous `validation.md` recorded a **PASS 71/71 measured before Phase 11**, and its DEP-01/DEP-02/
+DEP-03/PKG-05 evidence was drawn almost entirely from `fixtures/SyntheticSolution`. That fixture cannot
+discriminate the defect Phase 11 fixed: with two entities in a scope, a *complete* dependency graph and a
+*correct* dependency graph are the same graph, so every assertion in the old report held while the real
+projection published 289 of 289 possible component pairs on `fixtures/eShop` and 7 of 60 reachable
+`ProjectReference` edges on the vendored corpus. The old PASS was therefore true of its fixture and false of
+the product.
+
+This verification is anchored instead to `fixtures/ArchitectureDependencyLab` and its normative oracle
+(`oracle/project-references.json`, 87 declared `ProjectReference` edges across six solutions), which *can*
+distinguish a complete graph from a correct one. The old report's other requirement rows are not restated
+here; they were not re-measured and this report does not renew them.
 
 ---
 
 ## Task Completion
 
-T1–T66 all read `Status: Complete` in `tasks.md`. T65 carries a self-recorded shortfall
-(`- [ ] Not met as written` on its second Done-when criterion); the shortfall is accurate and is
-scored below under PUB-08. No other task carries an unchecked box.
+| Task | Status | Notes |
+| ---- | ------ | ----- |
+| T73 emit project references from the resolved reference graph | ✅ Done | All 4 Done-when boxes checked; scope legitimately widened to two compounding aggregation bugs, recorded in the task's Decision |
+| T74 exclude causal edges to symbols outside source | ✅ Done | All 4 boxes checked; a named residual (BCL-generic-wrapped user types) is written down, not dropped |
+| T75 exclude test entities from retention | ✅ Done | One Done-when box was **revised while executing** (corpus leak drop deferred to T76) and the revision is stated in the task, not silently edited away |
+| T76 recognize `.Testes` as a test-project path segment | ✅ Done | Fourth box revised while executing; the stricter wire-level check it surfaced became T77 |
+| T77 exclude test occurrences from membership | ✅ Done | Added mid-phase; all 4 boxes checked |
+| T78 correct the traceability and close the open finding | ✅ Done | Documentation only; `validate_state.py` cited as its gate |
 
-| Task group | Status | Notes |
-| ---------- | ------ | ----- |
-| T1–T59 (Phases 1–7) | ✅ Done | Re-verified through the AC table below |
-| T60 corpus budget | ✅ Done | `PackageBudget.ForCorpus` real and wired into `Build` |
-| T61 solution/corpus measures | ✅ Done | Both dimensions round-trip through `measurements.json` |
-| T62 independent ID derivation | ✅ Done | Literals independently recomputed by this Verifier — they match |
-| T63 non-component locate bound | ✅ Done | The `: 8` arm of the budget selector is now executed |
-| T64 multi-scope reuse + deployment nav | ✅ Done | Both halves of DEP-05 asserted |
-| T65 publication-rejection coordinates | ⚠️ Done with recorded shortfall | Engine populates; nine-class CLI theory still stubbed |
-| T66 spec amendment + traceability | ✅ Done | Amendment judged honest — see CRT-02 below |
+No unchecked `- [ ]` box remains in T73–T78.
 
 ---
 
 ## Spec-Anchored Acceptance Criteria
 
-Evidence-or-zero. Every row cites `file:line` in the real test tree plus the assertion expression.
-Paths are relative to `D:/workspace/csharp2md`.
+Evidence-or-zero. Every row cites `file:line` in the real test tree plus the assertion expression, and the
+asserted value is compared against the spec's own EARS outcome. Paths are relative to `D:/workspace/csharp2md`.
 
-### P1: Publicar somente conhecimento útil
+### DEP-01 — "The Retrieval Projection SHALL agregar Confirmed Relations nos escopos Document, Project, Component e Deployment Unit usando somente **pertencimento comprovado**"
 
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| PKG-01 | exactly one entry manifest, grouped by solution, each group declaring SolutionId, logical path, roots, indexes and the four journeys | `tests/Csharp2Md.Core.Tests/PackageBuilding/MachineArtifactWriterTests.cs:10` — `Assert.Single(Write().Artifacts.Where(a => a.Path.Value == "manifest.json"))`; `:11` — `Assert.Equal("src/App.sln", Assert.Single(Write().Manifest.Solutions).LogicalRelativePath)`; `tests/Csharp2Md.Cli.Tests/KnowledgePackageJourneyTests.cs:17` — `Assert.Equal(8, _run.Solution.GetProperty("indexes").GetArrayLength())` | ✅ PASS |
-| PKG-02 | retained graph rooted at Component, Deployment Unit, Entry Point and Boundary Operation | `tests/Csharp2Md.Core.Tests/Analysis/ArchitectureFactExtractorTests.cs:63,94,139,167` — `Extract_OutputTypeExe_CreatesDeploymentUnitWithProjectFileEvidence`, `…EmitsEntryPointAndBoundaryOperation`; `tests/Csharp2Md.Cli.Tests/KnowledgePackageJourneyTests.cs:35-36` — `Assert.Contains(roots, r => r.Contains(":component:"))` / `":deploymentunit:"` | ✅ PASS |
-| PKG-03 | retain only what sustains a retained journey or explains its gap | `tests/Csharp2Md.Core.Tests/PackageBuilding/RetainedGraphBuilderTests.cs:19` — `Build_ExcludesDisconnectedInventory`; `PackageBuilderTests.cs:10` — `Build_ContainsAllMachineAndMarkdownBytes` | ✅ PASS |
-| PKG-04 | Candidate/Unknown/Open Frontier published only when they can alter or interrupt a retained journey | `tests/Csharp2Md.Core.Tests/PackageBuilding/RetentionPolicyTests.cs:9` — `Apply_RetainsGapAffectingJourney`; `:11` — `Apply_ExcludesGapOutsideJourney` | ✅ PASS |
-| PKG-05 | exclude tests, unpromoted observations, unretained type uses, uncited sources, raw config values, per-record files | `tests/Csharp2Md.Core.Tests/Analysis/SourceInventoryTests.cs:53,80,100`; `tests/Csharp2Md.Cli.Tests/KnowledgePackageJourneyTests.cs:103` — `Assert.DoesNotContain("Acme.Shipping.Tests", text)` | ✅ PASS |
-| PKG-06 | source content only for documents cited by retained evidence | `tests/Csharp2Md.Core.Tests/PackageBuilding/MarkdownRendererTests.cs:59` — `Render_UncitedDocumentGetsNoPage`; `SourceInventoryTests.cs:196` | ✅ PASS |
-| PKG-07 | config as keys/sections/links/category/safe location, never values, credentials, secrets or absolute paths | `tests/Csharp2Md.Core.Tests/Analysis/ConfigurationPersistenceExtractorTests.cs:14` — `Extract_ConfigValueNeverEntersGraph`; `tests/Csharp2Md.Core.Tests/Publication/PublicationSafetyScannerTests.cs:12` — `Assert.Equal(Retained, ScanStructuredValue(value).Disposition)` for safe values only | ✅ PASS |
-| PKG-08 | explicit test inclusion recorded in manifest and run identity | `tests/Csharp2Md.Core.Tests/Analysis/SourceInventoryTests.cs:119` — `Collect_ExplicitIncludeTests_AdmitsTestDocumentsAndChangesPolicyIdentity`; `:139` — `AnalysisPolicy_IncludeTestsFlip_ChangesIdentityOnly`; `tests/Csharp2Md.Cli.Tests/KnowledgePackageJourneyTests.cs:111` — `Assert.False(_run.Manifest.GetProperty("include_tests").GetBoolean())` | ✅ PASS |
-| PKG-09 | observable facts and relations only, no business-rule interpretation | `tests/Csharp2Md.Core.Tests/Analysis/ArchitectureFactExtractorTests.cs:233` — `Extract_DoesNotEmitBusinessRuleOrQualityLabels`; `CausalRelationExtractorTests.cs:70,114` — unresolved call ⇒ gap, not a confirmed relation | ✅ PASS |
-| PKG-10 | repository contains only the current contract: no version dispatch, legacy reader, converter or compatibility route | `tests/Csharp2Md.Core.Tests/Surface/CoreTopologyTests.cs:63` — `Assert.Equal(CurrentProjects, ProjectFiles())`; `:95` — `ProductSources_CarryNoVersionDispatchOrCompatibilityPath`; `:110` — `ProductSources_NeverCallMSBuildLocatorRegisterDefaults`; `:124` — `NoProject_ReferencesMicrosoftBuildPackages`; `:144` — `Assert.Equal("net10.0", …)` and `Assert.Equal("5.6.0", PackageVersion(packages, "Microsoft.CodeAnalysis.Workspaces.MSBuild"))` | ✅ PASS |
+| Sub-outcome the spec defines | `file:line` + assertion | Result |
+| --- | --- | --- |
+| Project-scope aggregation states exactly the *proven* references — no more (no unproven membership) and no fewer | `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs:86-90` — `Assert.True(score.Correct == baseline.CorrectToday && score.FalsePositives == baseline.FalsePositivesToday && score.TestPolicyLeaks == baseline.TestPolicyLeaksToday, …)` over the six-solution theory, with baselines at `:59-66` | ✅ PASS |
+| Corpus-wide the same, in one place | `:133-137` — `Assert.True(correct == BaselineCorrect && falsePositives == BaselineFalsePositives && leaks == BaselineTestPolicyLeaks, …)` where `BaselineCorrect = 60`, `BaselineFalsePositives = 0`, `BaselineTestPolicyLeaks = 0` (`:145-147`); corpus shape pinned at `:130-132` — `Assert.Equal(87, oracleEdges)`, `Assert.Equal(27, excluded)`, `Assert.Equal(60, reachable)` | ✅ PASS |
+| Membership is not inflated by the workspace's transitive load | `tests/Csharp2Md.Core.Tests/Analysis/ProjectVariantWorkspaceTests.cs:44` — `Assert.Equal(["Acme.Shipping"], referenced)` for root `Acme.Shipping.Tests`, whose real chain is `Tests → Shipping → Shared.Contracts` | ✅ PASS |
+| Evidence is not reattributed across roots citing the same target | `tests/Csharp2Md.Core.Tests/Analysis/CausalRelationExtractorTests.cs:241-247` — `Assert.NotEqual(firstEvidence[0], secondEvidence[0])` plus `Assert.Equal(CreateDocumentKey(solution, "src/Api/Api.csproj"), Assert.Single(first.Evidence).DocumentCanonicalKey)` and the `Worker` counterpart | ✅ PASS |
+| A referenced project's occurrence belongs to itself, not to the citing root | `:258-260` — `Assert.Equal(target.CanonicalKey, occurrence.Project.CanonicalKey)` on the single occurrence of `src/Shared/Shared.csproj` | ✅ PASS |
+| Component-scope membership is not the union of every project using a shared BCL symbol | `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs:164-168` — `Assert.True(leaked.Length == 0, …)` where `leaked` = entity keys starting `symbol:`/`callable:`, over all six solutions | ✅ PASS |
 
-### P1: Navegar e medir dependências
+**Non-vacuity check (performed, not assumed).** I re-derived the oracle independently of the code under test:
+`fixtures/ArchitectureDependencyLab/oracle/project-references.json` holds 87 edges; grouping them and
+excluding any edge whose source or target ends in `.Testes` gives per-solution reachable counts of
+SistemaA 3, SistemaB 12, SistemaC 0, SistemaD 5, SistemaE 20, SistemaE.Copia 20 — **exactly** the
+`CorrectToday` values in `RecordedBaselines:59-66`, totalling 60 with 27 excluded. So `CorrectToday` is not
+an arbitrary defect level: it equals the *entire* reachable oracle. Combined with `FalsePositives == 0` and
+`TestPolicyLeaks == 0`, the conjunction at `:86-90` asserts set equality (`produced == reachable`), not a
+threshold. A tautological or always-true assertion cannot pass here: an empty projection scores 0 correct and
+fails, and any extra edge scores a false positive or a leak and fails. The three `>=` / `<=` ratchet lines at
+`:83-85` are individually weaker, but they are followed by the exact-equality conjunction, so the case as a
+whole is exact.
 
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| DEP-01 | aggregate confirmed relations at Document, Project, Component and Deployment Unit using proven membership only | `tests/Csharp2Md.Core.Tests/PackageBuilding/DependencyAggregatorTests.cs:7` — `Assert.Equal((AggregationScope)scope, …Scope)` over all four; `ScopePairingTests.cs:17` — `Assert.Equal(EvidenceDocument, Assert.Single(EdgesInto(TargetDocument)).Source.Value)`; `:41` — project edge absent when the evidence document has no proven owner | ✅ PASS |
-| DEP-02 | keep the eight categories separate | `tests/Csharp2Md.Core.Tests/PackageBuilding/DependencyAggregatorTests.cs:9` — `Assert.Equal((DependencyCategory)category, …Category)` over all 8 rows; `Analysis/CausalRelationExtractorTests.cs:11,23,46,59` | ✅ PASS |
-| DEP-03 | aggregated edge declares source, target, scope, categories, occurrence count, variants, direct/transitive nature and references | `tests/Csharp2Md.Core.Tests/PackageBuilding/RetrievalContractTests.cs:56` — asserts each of Scope/Source/Target/Category/OccurrenceCount(3)/Variants/Relations/Evidence on value; `:42` — `Direct` vs `Transitive` distinct natures | ✅ PASS |
-| DEP-04 | same source+target+scope+category ⇒ one aggregated edge with the total count and deduplicated evidence | `DependencyAggregatorTests.cs:10` — `Assert.Equal(2, …OccurrenceCount)`; `:11` — `Assert.Single(edge.Evidence); Assert.Single(edge.Relations)` | ✅ PASS |
-| DEP-05 | a low-level relation contributing to more than one scope is reused by reference without duplicating its factual payload | **T64.** `tests/Csharp2Md.Core.Tests/PackageBuilding/ScopePairingTests.cs:67` — `Assert.Equal([Document, Project, Component, DeploymentUnit], carrying.Select(e => e.Scope).Distinct().Order())` + `Assert.All(carrying, e => Assert.Single(e.Relations, r => r.Value == "relation:source-target"))`; `:82` — `Assert.Equal(1, occurrences)` counting `"relation:source-target"` across **every** artifact payload in the plan | ✅ PASS |
-| DEP-06 | confirmed count excludes Candidate, Unknown and Open Frontier | `DependencyAggregatorTests.cs:12` — `Assert.Empty(DependencyAggregator.Aggregate([Item(confirmed:false)]))` | ⚠️ Spec-precision gap (see note 3) |
-| DEP-07 | opening an aggregated dependency yields resolvable references to its relations and evidence | `tests/Csharp2Md.Core.Tests/PackageBuilding/CompactDependencyReferenceTests.cs:35,49` — handle resolves to the confirmed fact / same ordinal in the evidence index; `:70` — unknown handle rejected | ✅ PASS |
-| DEP-08 | name-only service hints keep scope at Project; no Service or Deployment Unit | `tests/Csharp2Md.Core.Tests/Analysis/ArchitectureFactExtractorTests.cs:16` — `Extract_ProjectNameSuggestingService_WithoutExeOrHost_DoesNotCreateDeploymentUnit`; `:43`; `:320` | ✅ PASS |
+### DEP-02 — "SHALL preservar separadamente Project Reference, invocação interna, uso estrutural de tipo, HTTP, gRPC, mensageria, contrato e persistência"
 
-### P1: Publicar medidas explicáveis
+| Sub-outcome the spec defines | `file:line` + assertion | Result |
+| --- | --- | --- |
+| The eight categories are a closed, separate set | `tests/Csharp2Md.Core.Tests/PackageBuilding/RetrievalContractTests.cs:24-40` — `Assert.Equal([ProjectReference, InternalInvocation, StructuralTypeUse, Http, Grpc, Messaging, Contract, Persistence], Enum.GetValues<DependencyCategory>())` | ✅ PASS |
+| `project-reference` survives Phase 11 as its own category on the wire, separable from the other seven | `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs:426-427` — the decoder selects only `scope == 1 && category == 0` and still recovers 60 of 60 edges, i.e. the category is preserved discretely in the committed package, decoded outside `Csharp2Md.Core` | ✅ PASS |
+| `internal-invocation` and `structural-type-use` stay distinct and are *not* collapsed by T74's exclusion | `tests/Csharp2Md.Core.Tests/Analysis/CausalRelationExtractorTests.cs:28-30` (invocation, Callable→Callable) and `:52-55` (structural type use) still assert their own categories; `:108-109` — `Assert.Contains(result.Relations, r => r.Category == "internal-invocation")` proves a genuine cross-project call survives | ✅ PASS |
+| Http / Grpc / Messaging / Contract remain separately emitted after the change | `:118-120` `Assert.Equal("http:payments/authorize", target.DisplayName)`; `:141-143` `Assert.StartsWith("grpc:", …)`; `:152` messaging; `:162-164` `Assert.Equal(EntityKind.Contract, target.Kind)` | ✅ PASS |
+| Project-scope edges never name a project from another system (oracle rules 2 and 3) | `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs:220-223` — `Assert.True(foreign.Length == 0, …)` per solution | ✅ PASS |
 
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| MET-01 | fan-out = distinct targets reached by retained edges in the requested scope | `DirectMeasureCalculatorTests.cs:7` — `Assert.Equal(2, For("a",[Edge("a","b"),Edge("a","c")]).FanOut)`; `:8` — `Assert.Equal(1, …)` on a repeated target; `:21` — scopes kept separate over all four | ✅ PASS |
-| MET-02 | fan-in = distinct origins reaching the entity | `DirectMeasureCalculatorTests.cs:9` — `Assert.Equal(2, For("b",[Edge("a","b"),Edge("c","b")]).FanIn)`; `:10` — `Assert.Equal(1, …)` | ✅ PASS |
-| MET-03 | occurrence count counts confirmed contributions *before* edge deduplication | `DirectMeasureCalculatorTests.cs:11` — three distinct contributions collapse to one edge, `Assert.Equal(3, …OccurrenceCount)` while `Assert.Equal(1, For("a",aggregated).FanOut)` | ✅ PASS |
-| MET-04 | cross-component count = edges whose aggregated entities belong to distinct proven components | `DirectMeasureCalculatorTests.cs:18` — `Assert.Equal(1, …CrossComponentEdges)`; `:19` — self-edge `Assert.Equal(0, …)` | ✅ PASS |
-| MET-05 | cycle participation computed over the retained directed graph in scope | `CycleCalculatorTests.cs:7` — `Assert.Equal(["a","b"], Assert.Single(Calculate([E("a","b"),E("b","a")])).Members…)`; `:6,8,9` | ✅ PASS |
-| MET-06 | reverse impact lists the reachable set and declares the traversed depth | `ImpactCalculatorTests.cs:5` — `Assert.Equal(1, For("c",…).ReverseImpact.Single(x => x.Entity.Value=="a").Depth)`; `:6,7,8` — once-only, diamond, cycle | ✅ PASS |
-| MET-07 | Candidate/Unknown/Open Frontier counts shown separately from confirmed measures | `ImpactCalculatorTests.cs:9,10,11` — `Assert.Equal(1, …Gaps.Candidate / .Unknown / .Frontier)`; `:12` — unrelated gap omitted | ✅ PASS |
-| MET-08 | no composite score or automatic quality/risk/coupling label | `RetrievalModelBuilderTests.cs:19` — reflection over every `PackageBuilding*`/`Publication*` type asserting no property name contains Score/Quality/Risk/Coupling; `:13` — reverse impact merged without a score | ✅ PASS |
+### DEP-03 — "The dependência agregada SHALL declarar origem, destino, escopo, categorias participantes, quantidade de ocorrências, variantes observadas, natureza direta ou transitiva e **referências às relações e evidências de origem**"
 
-### P1: Recuperar respostas diretamente
+| Sub-outcome the spec defines | `file:line` + assertion | Result |
+| --- | --- | --- |
+| All eight declared members carry real values | `tests/Csharp2Md.Core.Tests/PackageBuilding/RetrievalContractTests.cs:57-69` — `Assert.Equal(AggregationScope.Component, d.Scope)`, `Assert.Equal("src-1", d.Source.Value)`, `Assert.Equal("dst-1", d.Target.Value)`, `Assert.Equal(DependencyCategory.Http, d.Category)`, `Assert.Equal(3, d.OccurrenceCount)`, `Assert.Equal("var-1", Assert.Single(d.Variants).Value)`, `Assert.Equal("rel-1", Assert.Single(d.Relations).Value)`, `Assert.Equal("ev-1", Assert.Single(d.Evidence).Value)` | ✅ PASS |
+| Direct and transitive natures are distinct | `:41-49` — `Assert.Equal(DependencyNature.Direct, direct.Nature)` / `Assert.Equal(DependencyNature.Transitive, transitive.Nature)` | ✅ PASS |
+| The *origin* the aggregated edge declares is the real citing root — the Phase 11 defect | `tests/Csharp2Md.Core.Tests/Analysis/CausalRelationExtractorTests.cs:242-247` — each root's project-reference evidence resolves to that root's own `.csproj` document key, so two roots citing one target no longer collapse to one origin | ✅ PASS |
+| Project-scope source/target are the proven owner and the proven container | `tests/Csharp2Md.Core.Tests/PackageBuilding/ScopePairingTests.cs:32-41` — `Assert.Equal(<project owning the evidence document>, Assert.Single(Edges(Project)).Source.Value)` and the target counterpart | ✅ PASS |
+| Occurrence count equals the confirmed evidence count | `:51-52` — `Assert.Equal(1, Assert.Single(EdgesInto(TargetDocument)).OccurrenceCount)` | ✅ PASS |
 
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| NAV-01 | exactly one index of each of the eight kinds per solution; each journey names its entry index; each index points at its logical entry with no shard choice | `tests/Csharp2Md.Core.Tests/Publication/SolutionManifestContractTests.cs:31` — `Assert.Equal([Identity,Roots,Outgoing,Incoming,Contracts,Persistence,Evidence,Measures], Enum.GetValues<NavigationIndexKind>())`; `tests/Csharp2Md.Cli.Tests/KnowledgePackageJourneyTests.cs:18` — `Assert.Equal(8, …indexes…GetArrayLength())`; `PackageBuilding/NavigationIndexBuilderTests.cs:5` — `Assert.Equal("indexes/"+key+".json", index.Resolve(key).ArtifactPath)` for all seven start keys | ✅ PASS |
-| NAV-02 | summary presents components, **Deployment Units**, cycles, top fan-in/fan-out and the four journeys | **T64.** `tests/Csharp2Md.Core.Tests/PackageBuilding/MarkdownRendererTests.cs:14` — `Assert.Contains("## Components and Deployment Units", text)`, `Assert.Contains("deployment:orders-api", text)`, regex-matched Markdown link, and `Assert.Contains(Resolve("markdown/index.md", link…), written)` proving the link reaches a written artifact; `:11,39,40,41` cover components, fan-in/out, cycles and the four journeys | ✅ PASS |
-| NAV-03 | component/service/document pages present outgoing, incoming, measures, effects and gaps with existing Markdown links | `MarkdownRendererTests.cs:42,43,44,45` — `Render_EntityPageListsOutgoing/Incoming/Measures/ImpactAndGaps` | ✅ PASS |
-| NAV-04 | a normal Markdown journey needs no directory enumeration, shard choice or ID decoding | `tests/Csharp2Md.Cli.Tests/KnowledgePackageJourneyTests.cs:14` — `Assert.Equal(["manifest.json"], _run.InitialReads)`; `NavigationIndexBuilderTests.cs:6` — `Resolve_MissingKeyRejectsWithoutShardChoice`; `:11` — `Resolve_DoesNotDecodeStartKey`; `RootsIndexRoutingTests.cs:60` — every derived root page is a written artifact | ✅ PASS |
-| NAV-05 | Markdown and machine indexes derive from the same retained set and present equivalent dependencies and measures | `MarkdownRendererTests.cs:47` — `Render_UsesMachineManifestRoots`; `Publication/RetrievalModelReaderTests.cs:19,20` — divergence/absence rejected with the path; `MachineArtifactWriterTests.cs:21` — `Assert.Equal(4, …Journeys.Length)` | ✅ PASS |
-| NAV-06 | locating a component completes in ≤ 5 reads | `tests/Csharp2Md.Core.Tests/PackageBuilding/RootsIndexRoutingTests.cs:146` — `Assert.Equal(3, measurement.Reads)` at 3 and 400 roots; `Publication/JourneyCertifierTests.cs:10` — `Certify_LocateComponentPassesWithinFiveReads`; `SolutionCertificationTests.cs:52` — `Assert.Equal(3, Reads(solution, JourneyKind.Locate))` | ✅ PASS |
-| NAV-07 | locating **another supported root** completes in ≤ 8 reads and ≤ 12,000 tokens | **T63.** `tests/Csharp2Md.Core.Tests/PackageBuilding/RootsIndexRoutingTests.cs:170` — theory over `deployment`/`entrypoint`/`boundary` at 3 and 400 roots: `Assert.Equal(Passed, journey.Status)`, `Assert.InRange(measurement.Reads, 1, 8)`, `Assert.InRange(measurement.Tokens, 1, 12_000)`. This is the first case to execute the `: 8` arm of `src/Csharp2Md.Core/Publication/Certification/JourneyCertifier.cs:99` | ✅ PASS |
-| NAV-08 | causal flow to contracts, external effects and persistence in ≤ 32 reads and ≤ 125,000 tokens | `tests/Csharp2Md.Cli.Tests/KnowledgePackageJourneyTests.cs:77` — `AssertBudget("follow_flow", maximumReads: 32, maximumTokens: 125_000)` with `Assert.InRange` on both measured values; `Publication/GraphJourneyCertifierTests.cs:10,51,52` | ✅ PASS |
-| NAV-09 | reverse impact from file/project/component/deployment/contract/data in ≤ 32 reads and ≤ 125,000 tokens | `KnowledgePackageJourneyTests.cs:81` — `AssertBudget("reverse_impact", 32, 125_000)`; `GraphJourneyCertifierTests.cs:11,35,53` | ✅ PASS |
-| NAV-10 | evidence/disposition inspection in ≤ 12 reads and ≤ 25,000 tokens | `tests/Csharp2Md.Core.Tests/PackageBuilding/EvidenceEntryIndexTests.cs:114` — `Certify_EvidenceJourney_ResolvesASelectedRecordWithinTwelveReadsAndTwentyFiveThousandTokens`; `KnowledgePackageJourneyTests.cs:85` — `AssertBudget("evidence_disposition", 12, 25_000)` | ✅ PASS |
+### PKG-05 — "The pacote padrão SHALL excluir **testes**, observações sem promoção, **usos de tipo não retidos**, fontes sem citação, valores brutos de configuração e registros comuns em arquivos individuais"
 
-### P1: Isolar projetos, variantes e soluções
+| Sub-outcome the spec defines | `file:line` + assertion | Result |
+| --- | --- | --- |
+| Non-retained type uses (BCL/NuGet/metadata symbols) produce no relation and no entity | `tests/Csharp2Md.Core.Tests/Analysis/CausalRelationExtractorTests.cs:64-65` — `Assert.DoesNotContain(result.Relations, r => r.Category == "internal-invocation")` + `Assert.DoesNotContain(result.Entities, e => e.DisplayName == "Trim")`; `:74-75` the `string` type-use counterpart | ✅ PASS |
+| …and the same holds on a real, multi-project corpus | `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs:164-168` — zero `symbol:`/`callable:` entity keys in all six solutions | ✅ PASS |
+| A root whose every occurrence is test-owned is excluded by default | `tests/Csharp2Md.Core.Tests/PackageBuilding/RetainedGraphBuilderTests.cs:46` — `Assert.DoesNotContain(result.Entities, e => e.CanonicalKey == "entity:root")` for `rootProjectPath: "App.Tests/App.Tests.csproj"` | ✅ PASS |
+| An incoming (dependent) edge from a test-only source is excluded by default | `tests/Csharp2Md.Core.Tests/PackageBuilding/RetentionPolicyTests.cs:35` — `Assert.DoesNotContain(Apply(callerIsTestProject: true).Relations, x => x.CanonicalKey == "relation:caller-root")`, while `:16-18` keep the non-test dependent retained unchanged | ✅ PASS |
+| A retained production entity's membership is not widened by a test-side occurrence | `tests/Csharp2Md.Core.Tests/PackageBuilding/ScopePairingTests.cs:72-73` — `Assert.DoesNotContain(edges, e => e.Scope == Document && e.Target.Value == TestDocument)` and the Project-scope counterpart | ✅ PASS |
+| The heuristic recognizes the corpus's own naming, and does not over-match | `tests/Csharp2Md.Core.Tests/Analysis/SourceInventoryTests.cs:196` (theory rows `:191-193`: `src/SistemaA.Testes/Foo.cs → true`, `src/Testemunho/Foo.cs → false`, `src/Manifesto/Foo.cs → false`); `:207-208` — `Assert.True(IsTestProject(testProject))` / `Assert.False(IsTestProject(productionProject))` | ✅ PASS |
+| End to end, the committed default package names no `.Testes` project anywhere | `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs:189-193` — `Assert.True(leaked.Length == 0, …)` where `leaked` = entity keys containing `.Testes`, over all six solutions | ✅ PASS |
+| Opt-in arm (`--include-tests`) genuinely re-admits what default mode excludes | `RetainedGraphBuilderTests.cs:53`, `RetentionPolicyTests.cs:38`, `ScopePairingTests.cs:80` — each `Assert.Contains` the exact item its default-mode sibling asserts absent | ✅ PASS |
 
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| VAR-01 | only the Analysis Variants resolved by the project's own evaluation | `tests/Csharp2Md.Core.Tests/Analysis/ProjectVariantPlannerTests.cs:8` — TFM pairs emitted without a global `TargetFramework`; `:54` — multi-target dedup keeping both TFMs; `ProjectVariantWorkspaceTests.cs:14` — `OpenAsync_AppliesOnlyTheRequestedTargetFrameworkProperty` | ✅ PASS |
-| VAR-02 | target frameworks collected from one project never applied to another | `ProjectVariantPlannerTests.cs:9,71,87` — missing/unmatched TFM fails as a variant plan rather than borrowing one | ✅ PASS |
-| VAR-03 | compatible occurrences across variants yield one logical identity | `Analysis/LogicalEntityAccumulatorTests.cs:9` — `Add_CompatibleOccurrencesAcrossTfms_ShareOneLogicalEntity`; `IdentityPrimitivesTests.cs:50` — `EntityKey_IsLogicalAndSharedAcrossVariants` | ✅ PASS |
-| VAR-04 | locator and evidence declare the producing Analysis Variant | `Analysis/FactualGraphContractTests.cs:24` — `OccurrenceAndEvidence_DeclareTheAnalysisVariantThatProducedThem`; `ArchitectureFactExtractorTests.cs:345` — `Extract_OccurrencesAreVariantQualified` | ✅ PASS |
-| VAR-05 | incompatible occurrences inside one variant reject the structural collision | `LogicalEntityAccumulatorTests.cs:44` — `Add_IncompatibleShapesWithinSameVariant_Collides`; `:62` — identical shape is idempotent (the discriminating negative) | ✅ PASS |
-| VAR-06 | identities, variants, dedup, handles, roots, dependencies and measures stay structurally isolated per solution, even when handles and index kinds coincide | `PackageBuilding/SolutionScopedRetrievalTests.cs:100` — `Read_TwoSolutionsWithDifferentCausalData_DoesNotLeakAcrossSolutions`; `:123` — corruption in the second solution reports that solution's artifact; `IdentityPrimitivesTests.cs:34` — project key scoped to the solution | ✅ PASS |
+**Non-vacuity check on the two corpus-wide `leaked.Length == 0` cases.** These would pass silently if the
+decoder found no entities at all for a solution. For SistemaA/B/D/E/E.Copia the oracle score independently
+proves the entity tables are populated and correctly indexed (the edges are decoded *through* them). SistemaC
+scores 0 by design, so I measured it directly: I ran `analyze` on `SistemaC.slnx` alone into a scratch
+directory and read its committed shards — **37 entities, 0 naming `.Testes`, 0 `symbol:`/`callable:`**. The
+assertions are therefore substantive for all six solutions. (Scratch output deleted; no repository file was
+touched.)
 
-### P1: Persistir identidades compactas e shards estáveis
-
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| STO-01 | `^[a-z]{3}_[0-9a-v]{16}$`, exactly 20 chars, first 80 bits of SHA-256 of the canonical identity in lowercase base32hex after a unique type prefix | **T62.** `tests/Csharp2Md.Core.Tests/PackageBuilding/PublicIdRegistryTests.cs:42` — `Assert.Equal("ent_" + expected, Register("ent", category))` with literals `i0k15e1lv4fo5h8n` / `57qlrjjre54j61bv`; `:50` — recomputes the same value inside the test from `SHA256.HashData`, `AsSpan(0,10)` and a locally written base32hex alphabet; `:19` — `Assert.Matches("^[a-z]{3}_[0-9a-v]{16}$", id)` over 12 categories; `:27` — determinism + prefix. **This Verifier recomputed both literals independently (Python `hashlib.sha256`, first 10 bytes, base32hex) and they match exactly.** | ✅ PASS |
-| STO-02 | two different canonical entries with the same digest ⇒ explicit diagnostic failure before publication | `PublicIdRegistryTests.cs:73` — `Assert.Throws<PublicIdCollisionException>(…)` then `Assert.Equal(first, exception.Id)`, `Assert.Equal("entity:other", exception.FirstCategory)`, `Assert.Equal("entity:first", exception.SecondCategory)` | ✅ PASS |
-| STO-03 | `^[0-9a-z]{1,6}$` base36 ordinal from `0` after canonical-key ordering, resolvable through a manifest-declared index | `PackageBuilding/CanonicalKeyTableTests.cs:25,51`; `ArtifactWireFormTests.cs:11,24,34` — handles serialised as JSON strings and resolved back | ✅ PASS |
-| STO-04 | one stored entry per repeated identity, document, string and evidence inside the solution package | `ArtifactWireFormTests.cs:45,62`; `IdentityPrimitivesTests.cs:127` — `RepeatedIdentitiesWithinASolution_CompareEqualForDeduplication`; `PackageBuilderTests.cs:52` — one artifact path per payload | ✅ PASS |
-| STO-05 | projection records use handles and do not repeat public ID, path or signature already in the local table | `CanonicalKeyTableTests.cs:65,82,95,105` — handles with no table row, duplicate keys and missing tables all rejected | ✅ PASS |
-| STO-06 | deterministic sharding by family and real byte range, never one file per common record | `ShardPackerTests.cs:15` — `Assert.Single(Pack("entities",[Record("a",100),Record("b",100)]))`; `:13` — `Assert.InRange(shard.ByteCount, 0, HardCeilingBytes)`; `:17` — `Assert.Equal(["entities.000000.json","entities.000001.json"], …)` | ✅ PASS |
-| STO-07 | same evaluated input + policy ⇒ byte-identical solution package | `PackageBuilderTests.cs:16` — `Assert.Equal(first.PackageDigest, second.PackageDigest)` and payload-sequence equality; `CanonicalJsonTests.cs:14,24,46`; `ShardPackerTests.cs:16` | ✅ PASS |
-
-### P1: Comprometer somente pacotes válidos
-
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| PUB-01 | immediate and deferred fragments pass the same materialization, normalization and validator collection | `tests/Csharp2Md.Core.Tests/Publication/PackagePublicationTests.cs:10` — every planned artifact exists in its immutable generation; `PackageContractTests.cs:31` — `PackagePlan_HasNoDeferredFragmentContract` | ✅ PASS |
-| PUB-02 | staged plan is rehydrated and validated before the atomic swap | `PackagePublicationTests.cs:11` — `Assert.True(PackagePublication.Validate(output.Path).Succeeded)` after publish; `src/Csharp2Md.Core/Publication/PackagePublication.cs:38,42` calls `EnsureValid` twice before `Directory.Move` at `:46` | ✅ PASS |
-| PUB-03 | the validate command reuses the same reader and rules applied before commit | `Publication/PackageValidatorTests.cs:11` — `Validate_UsesManifestReader`; `PackagePublicationTests.cs:56` — `Validate_UsesPublishedPackageReader`; `:64` — `Publish_ValidationHasNoInterpretationDifference` | ✅ PASS |
-| PUB-04 | a package announced as committed passes immediate validation with no interpretation difference | `tests/Csharp2Md.Cli.Tests/KnowledgePackageJourneyTests.cs:89` — real CLI `validate` on the just-committed package: `Assert.Equal(0, exitCode)`, `Assert.Contains("valid", stdout)`, `Assert.Equal(string.Empty, stderr)`; `PackagePublicationTests.cs:12,52,58` | ✅ PASS |
-| PUB-05 | any failure preserves the last valid package byte for byte | `tests/Csharp2Md.Cli.Tests/KnowledgePackageFailureTests.cs:172` — `AssertSnapshotEqual(before, PackageSnapshot.Read(candidate.Directory))` comparing every file's bytes, plus `Assert.Empty(Directory.GetDirectories(…, ".staging-*"))`, used by five injected failure classes at `:60,69,79,97,110`; `PackagePublicationTests.cs:50` | ✅ PASS |
-| PUB-06 | a C# `//` comment must not be lexically classified as a UNC path | `tests/Csharp2Md.Core.Tests/Publication/PublicationSafetyScannerTests.cs:44` — `var source = "// C:/not/a/path…"; Assert.Equal(PublicationSafetyDisposition.Retained, result.Disposition); Assert.Equal(source, result.Value)`; `:57` — the same text inside a string literal *is* redacted, which is the discriminating counterpart | ✅ PASS (trait mislabelled `CRT-08` — see note 4) |
-| PUB-07 | a real absolute path reaching the materialized plan is removed, redacted or rejects the plan, so it never appears in the committed package | `PublicationSafetyScannerTests.cs:21` — `Assert.NotEqual(Retained, …); Assert.DoesNotContain(value, result.Value)` for `C:/…`, UNC, `../`; `Publication/PackagePublicationTests.cs:31` — planted `C:\Users\…` in the summary rejects before the swap, `Assert.False(File.Exists(Path.Combine(output.Path, "manifest.json")))`; `KnowledgePackageJourneyTests.cs:106` — `Assert.DoesNotContain("C:\\fixture\\synthetic-output", text)` over the committed package; `src/Csharp2Md.Core/Publication/PackageValidator.cs:39-42` | ✅ PASS |
-| PUB-08 | a rejection reports the **applicable** project, variant, family and cause | **T65.** `tests/Csharp2Md.Core.Tests/Publication/PackagePublicationTests.cs:16` — real rejection, `Assert.Equal("certification", rejection.Family); Assert.Equal("certification.json", rejection.Artifact)`; `:31` — a *different* real cause, `Assert.Equal("markdown/index.md", rejection.Artifact); Assert.Equal("markdown", rejection.Family)`; five real end-to-end CLI rejections at `tests/Csharp2Md.Cli.Tests/KnowledgePackageFailureTests.cs:60,69,79,97,110` assert `family=` and `artifact=` on a genuinely corrupted package. **Project and variant are exercised only through the fabricated `EngineDiagnostic` at `KnowledgePackageFailureTests.cs:28-36`.** | ⚠️ PASS with a residual gap (see note 1) — `Partial` in the table is the honest call |
-
-### P1: Certificar utilidade no seam da CLI
-
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| CRT-01 | an applicable journey is exercised per solution and fails if any solution misses the expected answer | `tests/Csharp2Md.Core.Tests/Publication/SolutionCertificationTests.cs:12` — four journeys for each of two solutions; `:66` — `Certify_CorruptionOnlyInSecondSolution_FailsThatSolutionWithoutMaskingIt`; `JourneyCertifierTests.cs:21` — `Certify_ApplicableJourneyNeverReportsNotApplicable`; `GraphJourneyCertifierTests.cs:40,47,48,49,50,66` | ✅ PASS |
-| CRT-02 | a non-applicable journey is recorded not-applicable **with a reason**, never as passed; FollowFlow/ReverseImpact need HTTP/gRPC/Messaging/Contract/Persistence; FollowFlow additionally needs a causal root, so a Persistence-only solution records `no-causal-root` while ReverseImpact stays applicable | **T66 amendment.** `tests/Csharp2Md.Core.Tests/Publication/GraphJourneyCertifierTests.cs:33` — `Assert.Equal("not_applicable:no-causal-root", result.Detail)`; `:38` — `Assert.Equal(JourneyCertificationStatus.Passed, Impact(package).Status)` for the same Persistence-only package; `:12,13,14,21` — empty and internal-invocation-only cases with `Assert.StartsWith("not_applicable:", …)`. Amendment judged **honest** — see note 5 | ✅ PASS |
-| CRT-03 | separate extraction and publication metrics, items filtered by reason, and measures by **family, solution, journey and corpus**; each journey budget starts from zero | **T61.** family — `PackageBuilderTests.cs:35,38`; solution — `:103` `Assert.Equal(plan.Measurements.ByFamily.Sum(f => f.ArtifactCount) - 1, solution.ArtifactCount)` + owned-byte equality, `:117` two solutions separated and canonically ordered; corpus — `:132` `Assert.Equal("pitstop.sln", corpus.Corpus); Assert.Equal(750, corpus.MaximumArtifacts); Assert.Equal(26_214_400L, corpus.MaximumBytes)`, `:146` unpinned, `:150` round-trip through `CanonicalJson`; journey — `Publication/SolutionCertificationTests.cs:52-55` `Assert.Equal(3/4/3/3, Reads(solution, …))` per journey plus exact byte and ceiling-divided token equality at `:56-58`; extraction vs publication — `PackageBuilderTests.cs:17`; filtered-by-reason — `:18` | ✅ PASS — all four dimensions present and asserted on values |
-| CRT-04 | with eShopOnContainers present, the committed package holds ≤ 1,500 files and ≤ 64 MiB | **T60.** `PackageBuilderTests.cs:59` — `Assert.Equal(1_500, budget.MaximumArtifacts); Assert.Equal(67_108_864L, budget.MaximumBytes)` (the spec's own numbers, hand-converted); `src/Csharp2Md.Core/PackageBuilding/PackageBuilder.cs:97` — `budget ??= PackageBudget.ForCorpus(model)` on the path `KnowledgeEngine.cs:37` actually takes; `:127,132` refuse beyond it before the plan is returned. End-to-end measurement at `tests/Csharp2Md.Cli.Tests/LocalCorpusAnalyzeTests.cs:40` — **skipped, clone absent** (CRT-07 requires exactly that) | ⚠️ Conditional PASS — enforcement verified, corpus measurement deferred. `Unverified` in the table is correct |
-| CRT-05 | with Pitstop present, ≤ 750 files and ≤ 25 MiB | **T60.** `PackageBuilderTests.cs:66` — `Assert.Equal(750, …MaximumArtifacts); Assert.Equal(26_214_400L, …MaximumBytes)`; `:93` — `Build_RefusesAPinnedCorpusAtItsOwnCeilingRatherThanTheDefault`: the same 800-root model throws `package-budget: 'artifacts'. corpus: 'pitstop.sln'.` under Pitstop and is accepted (`Assert.InRange(accepted.Artifacts.Length, 751, 1_500)`) under an unpinned name. `LocalCorpusAnalyzeTests.cs:57` — skipped, clone absent | ⚠️ Conditional PASS — same as CRT-04. `Unverified` is correct |
-| CRT-06 | eShop completes with no collision caused by applying one project's variant to another | `tests/Csharp2Md.Cli.Tests/LocalCorpusAnalyzeTests.cs:23` — `Assert.DoesNotContain("variant-collision", stderr)` — **this case ran and passed in this Verifier's gate** (only the two other clones skipped); `Analysis/ProjectVariantPlannerTests.cs:10,140` | ✅ PASS |
-| CRT-07 | present clones run their acceptance; absent clones do not fail CI | `tests/Csharp2Md.Cli.Tests/LocalCorpusAnalyzeTests.cs:67` — `Assert.Equal($"local eShop clone is not present at '…'.", absent.Skip)`; `:78` — `Assert.Null(new LocalCorpusFactAttribute("..","csharp2md.slnx").Skip)`; `:89-91` — the three clone paths are gitignored. Observed in this Verifier's gate: exit 0 with exactly 2 named skips | ✅ PASS (no `Requirement` trait — see note 4) |
-| CRT-08 | the versioned fixture carries multi-target, production + test code, a `//` comment, an absolute config path, a Project Reference, a cross-document call, repeated calls, a cross-component dependency, a runtime integration, a cycle and an unconfirmed gap | `tests/Csharp2Md.Cli.Tests/SyntheticSolutionFixtureTests.cs`; `Analysis/ArchitectureFactExtractorTests.cs:285` — `Extract_AcmeOrders_EmitsDeploymentComponentEntryAndBoundary`; `tests/Csharp2Md.Cli.Tests/KnowledgePackageJourneyTests.cs:44` — `Assert.True(categories.IsSupersetOf(ExpectedCategories))` over the hand-authored edges; `:49` — `occurrence_count > 1` | ✅ PASS |
-| CRT-09 | the CLI analyses the fixture, publishes, rehydrates, validates and completes the four journeys in the same acceptance seam | `tests/Csharp2Md.Cli.Tests/KnowledgePackageJourneyTests.cs:148-160` — the fixture drives the real `analyze` CLI (`Assert.Equal(0, exitCode)`), then `:22` four journeys declared, `:73,77,81,85` all four certified inside their budgets, `:89` immediate `validate` succeeds | ✅ PASS (no `Requirement` trait — see note 4) |
-
-### Edge Cases
-
-| Criterion | Spec-defined outcome | `file:line` + assertion | Result |
-| --- | --- | --- | --- |
-| EDG-01 | a relation with no resolvable evidence is omitted as Confirmed or rejects the plan before commit | `PackageBuilding/CompactDependencyReferenceTests.cs:108,114` — `Write_RejectsAReferenceWithNoRetainedConfirmedRelation` / `…NoRetainedEvidence`; `Analysis/CausalRelationExtractorTests.cs:126` — `Extract_EveryConfirmedRelation_ResolvesEvidenceChain` | ✅ PASS |
-| EDG-02 | an applicable journey over budget fails with the journey and the exceeded measure in the diagnostic | `Publication/GraphJourneyCertifierTests.cs:54` — `Assert.StartsWith("reads-exceeded:", result.Detail)` and `Assert.EndsWith($":{package.Paths.Count}>32", result.Detail)`; `JourneyCertifierTests.cs:17` — `Certify_LargeComponentPageFailsTokenBudget` | ✅ PASS |
-| EDG-03 | a package exceeding the limit **applicable to the corpus** fails before the atomic swap | **T60/T61.** `PackageBuilderTests.cs:19,20` — `Assert.StartsWith("package-budget: 'artifacts'. corpus: 'unpinned'. by-family: ", …)` / `'bytes'`; `:74` — unpinned corpus stays on `Assert.Equal(100_663_296L, budget.MaximumBytes)`; `:83` — componentwise minimum, `Assert.Equal(750, …); Assert.True(budget.MaximumBytes < PackageBudget.Default.MaximumBytes)`; `:93` — the selection reaches `Build`; `:156` — `Assert.Contains("corpus: 'pitstop.sln'.", …Message)`; `PackageBuilder.cs:127,132` throw before `PackagePublication.Publish` is ever called | ✅ PASS (boundary caveat in note 2) |
-| EDG-04 | a dependency in only one Analysis Variant keeps that qualification without duplicating source/target identities | `Analysis/CausalRelationExtractorTests.cs:139` — `Extract_UsesTheInputVariantForEveryOccurrenceAndEvidence`; `DependencyAggregatorTests.cs:13` — `Assert.Equal("v", Assert.Single(…Variants).Value)` | ✅ PASS |
-| EDG-05 | Markdown/machine divergence classifies the package corrupted and blocks the commit | `Publication/RetrievalModelReaderTests.cs:19,20` — divergence and absence rejected with the path; `PackagePublicationTests.cs:60` — `Publish_InvalidMarkdownPlanIsRejectedBeforeManifestSwap`; `tests/Csharp2Md.Cli.Tests/KnowledgePackageFailureTests.cs:110` — real divergence ⇒ `code=package-corruption`, `cause=invalid-artifact`, `family=markdown`, `artifact=markdown/index.md`, package byte-identical afterwards | ✅ PASS |
-
-**Status**: ✅ 71/71 ACs traced to a `file:line` assertion targeting the spec-defined outcome.
-1 spec-precision gap flagged (DEP-06). 2 conditional passes (CRT-04, CRT-05 — corpus measurement
-deferred by CRT-07's own rule). 1 residual coverage gap (PUB-08 project/variant).
-
----
-
-## Findings
-
-### Note 1 — PUB-08: `Partial` is the right status (residual, non-blocking)
-
-The criterion says "projeto, variante, família e causa **aplicáveis**". Family, cause and artifact
-are now proven on seven genuinely-failing pipelines (`PackagePublicationTests.cs:16,31` and five
-end-to-end CLI rejections in `KnowledgePackageFailureTests.cs`). The production defect T65 names was
-real: `PackagePublication.cs:58-66` used to collapse the validator's failure into its cause alone.
-
-What is still unproven by a real failure is *project* and *variant*. Those coordinates are populated
-for analysis-stage rejections (`src/Csharp2Md.Core/KnowledgeEngine.cs:61-67,71-76`), but the only test
-asserting them feeds a hand-built `EngineDiagnostic` through a CLI stub
-(`KnowledgePackageFailureTests.cs:28-36`). **Judgment: `Partial` is correct** — neither `Complete`
-(project/variant never observed on a real rejection) nor `Failed` (family and cause are proven
-end-to-end). Closing it needs the per-class fixture workstream T65 describes, not a diagnostic fix.
-
-A smaller related gap T65 did not cover: `KnowledgeEngine.cs:83` folds the whole
-`PackageBudgetExceededException` message into `Cause` and leaves `Family` and `Artifact` null. The
-EDG-03 rejection class that T60 just made reachable therefore still reports no family field, even
-though the message text carries the family breakdown and the corpus.
-
-### Note 2 — CRT-04/CRT-05: the enforced measure is one file short of the stated measure
-
-`PackageBuilder.cs:127` compares `ordered.Length` (the planned artifacts) against the ceiling, but the
-*committed package* also contains the root `manifest.json` generation pointer written at
-`PackagePublication.cs:77-82` — which `LocalCorpusAnalyzeTests.cs:118` correctly counts
-(`.Append(rootManifest)`). At exactly 1,500 planned artifacts the builder accepts and the committed
-package holds 1,501 files, violating CRT-04's stated ceiling. Boundary-only and far from current
-sizes, but it is a real mismatch between what is enforced and what the criterion states.
-
-### Note 3 — DEP-06 spec-precision gap
-
-The criterion names Candidate, Unknown and Open Frontier; the only test
-(`DependencyAggregatorTests.cs:12`) asserts the aggregator drops a contribution whose
-`IsConfirmed` flag is false. The mapping from the three gap kinds to "not confirmed" is implicit in
-the production code and asserted nowhere. MET-07 covers the three kinds separately
-(`ImpactCalculatorTests.cs:9,10,11`), so the behaviour is almost certainly right — but DEP-06's own
-wording is not pinned. Flagged rather than silently passed.
-
-### Note 4 — Requirement-trait hygiene
-
-The traceability table cannot be reproduced from the test tree by tooling:
-
-- **CRT-07** and **CRT-09** carry no `[Trait("Requirement", …)]` anywhere. Their evidence exists
-  (`LocalCorpusAnalyzeTests.cs:67,78`; `KnowledgePackageJourneyTests.cs:73-89`) but only by inspection.
-- **PUB-06**'s own discriminating case is traited `CRT-08` (`PublicationSafetyScannerTests.cs:43`),
-  while the two cases traited `PUB-06` cover path redaction instead.
-- **PUB-07**'s pre-commit rejection evidence lives under `PUB-08` and `PKG-07` traits.
-- Three whole CLI classes — `KnowledgePackageJourneyTests`, `KnowledgePackageFailureTests`,
-  `LocalCorpusAnalyzeTests` — carry no requirement traits at all, yet they hold the strongest
-  end-to-end evidence in the feature.
-
-No AC is uncovered because of this; it is traceability debt, not a correctness gap.
-
-### Note 5 — CRT-02 amendment (T66): honest, not a weakening
-
-The amendment adds FollowFlow's causal-root precondition to the criterion. Judged against the code
-and its history:
-
-- `src/Csharp2Md.Core/Publication/Certification/GraphJourneyCertifier.cs:17-22` already excluded
-  Persistence from the causal-root set, with the domain reasoning in the comment, since T51 — the
-  spec was behind the code, not the other way round.
-- The amendment **adds** two testable outcomes rather than removing one: the exact reason token
-  `no-causal-root` (asserted at `GraphJourneyCertifierTests.cs:33` with `Assert.Equal`, not
-  `StartsWith`) and ReverseImpact staying applicable on the same package (`:38`).
-- It narrows *applicability*, and CRT-02's own rule is that a non-applicable journey is never marked
-  passed. Nothing that previously had to pass now escapes; the Persistence-only package still cannot
-  report `Passed` for FollowFlow.
-
-**Process note, not a defect**: the spec is marked `Aprovada` and was amended by the implementer
-mid-flight. The user should confirm the amended CRT-02 text.
-
-### Note 6 — Design review of T60's corpus table (answering the brief's question directly)
-
-`PackageBuilder.cs:20-25` keys the pinned ceilings on the solution **file name**:
-
-```
-"eShopOnContainers-ServicesAndWebApps.sln" -> (1_500, 64 MiB)
-"pitstop.sln"                              -> (750, 25 MiB)
-```
-
-Verified correct on the real path: `SolutionAnalyzer.cs:35-38` builds the identity from
-`PathGuard.ToLogicalPath(...)`, whose last segment is the real solution file name, so
-`Path.GetFileName(...)` at `PackageBuilder.cs:37` does match a genuine eShopOnContainers or Pitstop
-run, and `KnowledgeEngine.cs:37` passes no budget so `ForCorpus` really is consulted.
-
-**But it is a fragile string match, not a sound design.** Three specific reasons:
-
-1. The two literals are hand-copied into `PackageBuilder.cs:23-24` and again into
-   `LocalCorpusAnalyzeTests.cs:132,134`, in different assemblies, with **no test asserting the two
-   agree**. Change one and CRT-04/CRT-05 silently stop being enforced while the acceptance test keeps
-   asserting them.
-2. Failure is silent. A clone checked out under a differently-named solution, a `.slnx` variant, or a
-   fork whose `.sln` was renamed falls back to the 96 MiB / 1,500 default and `DescribeCorpus` just
-   reports `unpinned` — there is no diagnostic distinguishing "this corpus has no ceiling" from
-   "this corpus has a ceiling we failed to recognise".
-3. The corpus is a *deployment-time* fact about which repository is being analysed, but it is being
-   inferred from a filename inside the production builder. A better seam would carry it as an
-   explicit policy input (or at minimum share one constant with the acceptance test), leaving
-   `PackageBuilder` to apply a ceiling it is given rather than to guess which corpus it is looking at.
-
-The componentwise-minimum choice (`PackageBuilder.cs:40-42`) is sound and worth keeping: it makes a
-pinned corpus strictly tighter than the default rather than merely different, which is exactly the
-property iteration 1 was missing.
+**Status**: ✅ All four in-scope ACs matched their spec-defined outcome. 0 spec-precision gaps.
 
 ---
 
 ## Discrimination Sensor
 
-**Sensor: skipped per AGENTS.md standing rule (user runs Stryker manually).**
+**Skipped**, per the standing project rule in `AGENTS.md`: the automated mutation/fault-injection sensor is a
+permanent skip for this project and the user runs Stryker manually. This is not a per-feature decision and was
+not re-litigated.
 
-No faults were injected, no scratch worktree was created, and nothing in the working tree was
-mutated by this Verifier. `git status --porcelain` before and after this run is identical:
-`M AGENTS.md` and `M docs/specs/pacote-conhecimento-util-e-confiavel.md`, both pre-existing and not
-this Verifier's. The only file written by this Verifier is this report.
+In its place, each of T73–T77 records a *hand-run* fault injection. I spot-checked three of those claims by
+reconstructing the pre-fix code from git and re-deriving the outcome by inspection against the real fixtures.
+No mutation was applied to the working tree; `git status --porcelain` before and after this verification is
+identical (`M AGENTS.md`, `M docs/specs/pacote-conhecimento-util-e-confiavel.md` — both pre-existing and
+untouched by me).
 
-T60–T65 each record a hand-run fault-injection pass in their gate notes. Those are the implementer's
-own claims and are **not** counted as Verifier evidence; the AC table above stands on located
-assertions only.
+| # | Claim spot-checked | Reconstruction | Verdict |
+| - | ------------------ | -------------- | ------- |
+| 1 | T73: reverting `ReferencedProjects()` to `Solution.Projects.Where(p => p.Id != RootProject.Id)` kills `ReferencedProjects_NamesOnlyTheDirectReference_NotATransitiveOne` | `ProjectVariantWorkspace.OpenAsync` calls `MSBuildWorkspace.OpenProjectAsync`, which loads the root's **transitive** project closure into `CurrentSolution`. `fixtures/SyntheticSolution` really does hold `Acme.Shipping.Tests → Acme.Shipping → Acme.Shared.Contracts` (verified in the two `.csproj` files). The reverted expression therefore returns `{Acme.Shipping, Acme.Shared.Contracts}` against an assertion of exactly `["Acme.Shipping"]` | ✅ Claim holds |
+| 2 | T74: removing the `IsDeclaredInAnalyzedSource` guard kills `Extract_InternalInvocation_ToABclMethod_IsNotRetained` and `Extract_StructuralTypeUse_OfABclType_IsNotRetained` | Without the guard both call sites run `AddSymbol` unconditionally on the resolved target. The `Extract` helper (`CausalRelationExtractorTests.cs:281-298`) references `typeof(object).Assembly`, so `"x".Trim()` and the `string` parameter type resolve to real metadata symbols and would emit an `internal-invocation` / `structural-type-use` relation and entity — exactly what the two `Assert.DoesNotContain` calls forbid | ✅ Claim holds |
+| 3 | T77: reverting `NonTestOccurrences` to return `graph.Occurrences` unconditionally kills `Build_TargetMembershipExcludesATestProjectOccurrenceByDefault` | `PackageBuilder.Pairs` crosses `origin.Documents × target.Documents` and `origin.Projects × target.Projects`. Unfiltered, `entity:target`'s test-side occurrence (locator `App.Tests/TargetCalledFromTest.cs`, project `App.Tests/App.Tests.csproj`) enters its membership, producing precisely the Document- and Project-scope edges the test asserts absent | ✅ Claim holds |
+
+I also confirmed the fourth claim's mechanism incidentally: `RetainedGraphBuilderTests.Graph(rootProjectPath:)`
+gives `entity:root` a single, test-owned occurrence, so without the `(includeTests || !IsTestOnly(...))` guard
+it is retained as a root and T75's case fails.
+
+**Sensor depth**: skipped by project rule; 3 of 5 hand-run claims independently corroborated by inspection.
+**Result**: PASS ✅ — no claim was found overstated.
+
+---
+
+## Payload / Conjunction Rule
+
+Checked against the new and changed assertions in the diff. No new test asserts only "a call happened" or "a
+collection is non-empty":
+
+- Every counting assertion in `OracleProjectReferenceScoreTests` compares against an exact integer that I
+  re-derived from the oracle file independently of the product code (60 / 0 / 0; 87 / 27 / 60).
+- Every default-exclusion case has a matching opt-in case asserting the *same* named item is present — the
+  pair rules out an implementation that simply drops everything.
+- `Extract_ProjectReference_EvidenceKeyNamesBothTheCitingRootAndTheTarget` asserts the two evidence keys
+  differ **and** each resolves to a specific, named document key; asserting only inequality would have been
+  the shallow version.
+- `Extract_ProjectReference_TargetEntityOccursInItselfNotInTheCitingRoot` asserts the occurrence's owning
+  project equals the exact referenced-project canonical key, not merely that an occurrence exists.
+- `ReferencedProjects_NamesOnlyTheDirectReference_NotATransitiveOne` uses `Assert.Equal` on the whole
+  sequence, not `Assert.Contains`.
+- `SourceInventoryTests`' new theory rows include two negatives (`Testemunho`, `Manifesto`) that pin the
+  literal `.` separator, so a sloppy `Contains("Testes")` implementation fails.
 
 ---
 
 ## Code Quality
 
-| Principle | Status |
-| --------- | ------ |
-| Minimum code | ✅ Phase 8 added 5 production methods/records and ~20 test cases for 9 named gaps |
-| Surgical changes | ✅ `PackageBuilder`, `PackageContracts`, `PackagePublication`, `PackageValidator`, `KnowledgeEngine` — each edit traceable to a task |
-| No scope creep | ✅ `FamilyFor`'s three added rows are the minimum PUB-08 needs and are declared in T65's note |
-| No abstractions for single-use code | ⚠️ `PackageBudget.Pinned` is a two-row table behind a static lookup — see note 6 |
-| Only touched files required for task | ✅ T61's `PackageBuilder.cs` / `CanonicalJson.cs` deviation is declared in the task, matching T57's precedent |
-| Didn't "improve" unrelated code | ✅ |
-| Matches existing patterns/style | ✅ `SolutionMeasurement`/`CorpusMeasurement` follow `FamilyMeasurement`'s validating-constructor shape; new optional ctor params keep the record backward-compatible |
-| Would a senior engineer approve? | ✅ with note 6 raised in review |
-| Tests map to ACs and are non-shallow | ✅ spot-checked STO-01 (literals recomputed independently — exact match) and CRT-03 (hand-computed `26_214_400`, `67_108_864`, `100_663_296`) |
-| Spec-anchored outcome check | ✅ 71/71; 1 spec-precision gap flagged (DEP-06) |
-| Per-layer coverage expectation | ✅ domain 1:1; CLI seam covers happy path (`KnowledgePackageJourneyTests`), edge (`LocalCorpusAnalyzeTests`) and 9 error classes (`KnowledgePackageFailureTests`) |
-| Every test maps to a spec requirement | ⚠️ See note 4 — three CLI classes carry no requirement trait |
-| Documented guidelines followed | ✅ `AGENTS.md`: `net10.0` asserted at `CoreTopologyTests.cs:144`; no `Microsoft.Build.*` at `:124`; no `MSBuildLocator.RegisterDefaults()` at `:110`; Roslyn pinned to `5.6.0` at `:149` |
+| Principle | Status | Note |
+| --------- | ------ | ---- |
+| Minimum code | ✅ | Six production files, 123 changed lines total; each change is the admission check or the payload the defect required |
+| Surgical changes | ✅ | `ReferencedProjects()` swaps one expression; `AddEntity`/`AddNamed` gain one optional `owner` parameter; three call sites gain a boolean |
+| No scope creep | ✅ | No new abstraction, no configuration, no flag beyond the `includeTests` already threaded through `PackageBuilder` |
+| Matches patterns | ✅ | `SourceInventory.IsTestProject` reuses `LooksLikeTestDocument` rather than reimplementing it; the filter is threaded, not duplicated as a policy object |
+| Spec-anchored outcome check | ✅ | See the AC tables; every asserted value matches the spec's own wording |
+| Every test maps to a requirement | ✅ | All 16 new cases carry a `Requirement` trait (PKG-05, PKG-08, DEP-01, DEP-02) |
+| Comments explain *why* | ✅ | Each production change carries a comment naming the requirement and the failure mode it prevents |
+| Documented guidelines followed | ✅ | `AGENTS.md` (sensor skip honoured and noted in the tasks; `net10.0`; no `Microsoft.Build.*`; no `MSBuildLocator.RegisterDefaults()`); Context7 consulted for the two Roslyn APIs used (`Project.ProjectReferences`, `ISymbol.Locations.IsInSource`), as the tasks record |
+
+Two small, deliberate duplications exist and are acceptable: `RetainedGraphBuilder.IsTestOnly` and
+`RetentionPolicy.IsTestOnlySource` are the same four-line local function in two files. Extracting a shared
+helper would be the larger change; both delegate to the one real predicate (`SourceInventory.IsTestProject`),
+so the rule itself is single-sourced.
 
 ---
 
 ## Edge Cases
 
-- [x] EDG-01 — unresolvable evidence omitted or plan rejected
-- [x] EDG-02 — over-budget journey fails naming journey and measure
-- [x] EDG-03 — corpus-applicable limit now real and enforced before the swap (boundary caveat, note 2)
-- [x] EDG-04 — single-variant dependency keeps its qualification without duplicating identities
-- [x] EDG-05 — Markdown/machine divergence blocks the commit
+- [x] **EDG-04** (a dependency existing in only one Analysis Variant keeps its qualification without
+  duplicating source/target identities) — unaffected: the variant handle still comes from the evidence record
+  (`PackageBuilder.Contributions`), and T73 changed only the evidence *payload*, not its variant.
+- [x] **EDG-01** (a relation without resolvable evidence is omitted or the plan is rejected) — still enforced;
+  `RetainedGraphBuilderTests.cs:57-63` (four `invalid-confirmed-relation` cases) pass unchanged with the new
+  `includeTests` parameter.
+- [x] An entity with **zero** occurrences is not treated as test-owned: `owners.Length > 0 && owners.All(...)`
+  in both retention sites, so an unprovable owner never causes silent exclusion — consistent with DEP-01's
+  "somente pertencimento comprovado".
+- [x] A same-solution `ProjectReference` target is **not** swept up by T74's metadata exclusion
+  (`CausalRelationExtractorTests.cs:80-109`, a genuine two-`Compilation` case).
 
 ---
 
 ## Gate Check
 
-- **Build gate**: `dotnet build csharp2md.slnx --configuration Release` → exit 0, **0 Aviso(s), 0 Erro(s)**
-- **Full gate**: `dotnet test csharp2md.slnx --configuration Release` → exit 0
-  - `Csharp2Md.Core.Tests`: **612 passed, 0 failed, 0 skipped, 612 total** (15 s)
-  - `Csharp2Md.Cli.Tests`: **81 passed, 0 failed, 2 skipped, 83 total** (2 m 10 s)
-  - **Total: 693 passed, 0 failed, 2 skipped**
-- **Skipped tests** (each justified):
-  1. `LocalCorpusAnalyzeTests.Analyze_Pitstop_CommitsWithinFileAndByteCeilings` — Pitstop clone absent.
-     CRT-07 requires the skip; it does not fail CI.
-  2. `LocalCorpusAnalyzeTests.Analyze_eShopOnContainers_CommitsWithinFileAndByteCeilings` —
-     eShopOnContainers clone absent. Same rule.
-- **LocalCorpus gate**: `fixtures/eShop` is present and
-  `Analyze_eShop_CompletesWithoutCrossProjectVariantCollision` **ran and passed** inside the full gate,
-  satisfying CRT-06 and the present-clone half of CRT-07.
-- **Test-count integrity**: 612 in Core matches T65's recorded count exactly; the Phase 8 progression
-  588 → 593 → 599 → 602 → 608 → 611 → 612 is monotonic. No test was deleted; two pre-existing
-  assertions (`Build_FailsBeforePublication…Artifact/ByteCeilingIsExceeded`) were made *stricter*, not
-  weaker, by pinning the longer `corpus: '…'` message prefix.
+Run independently by this Verifier, on `d826c96`, in the real working tree.
+
+- **Build**: `dotnet build csharp2md.slnx --configuration Release` → exit 0, 0 warnings, 0 errors.
+- **Tests**: `dotnet test csharp2md.slnx --configuration Release --no-build` → exit 0.
+  - `Csharp2Md.Core.Tests`: **637 passed, 0 failed, 0 skipped** (637 total).
+  - `Csharp2Md.Cli.Tests`: **96 passed, 0 failed, 2 skipped** (98 total).
+- **Oracle filter**: `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release --no-build --filter "Category=OracleCorpus"` → **11 passed, 0 failed** (6 test methods; `ProjectReferences_HoldTheRecordedDefectBaseline` is a 6-case theory). Score held at 60 correct / 0 false positives / 0 test-policy leaks.
+- **Total**: 733 passed, 0 failed, 2 skipped.
+- **Skipped tests, justified**: `LocalCorpusAnalyzeTests.Analyze_eShopOnContainers_CommitsWithinFileAndByteCeilings` and `…Analyze_Pitstop_…` — the two local clones are absent. CRT-07 requires exactly this behaviour ("a ausência dos clones SHALL não falhar CI"), so these are expected skips, not failures. `fixtures/eShop` **is** present; its case ran and passed.
+- **Test count before Phase 11**: 621 (Core) / 94 (Cli). **After**: 637 / 96. **Delta**: +16 Core, +2 Cli. No test was deleted or weakened; the only edits to existing cases are the mechanical `includeTests:` argument additions and one theory that gained three rows.
 - **Failures**: none.
 
 ---
 
-## Requirement Traceability Audit
+## Requirement Traceability Update
 
-The table in `spec.md` reads **68 Complete / 1 Partial / 2 Unverified**. Audited row by row against
-the evidence above:
+No change proposed. T78 already moved DEP-01, DEP-02, DEP-03 and PKG-05 from an unsupported `Complete` to a
+`Complete` that cites the measuring test, and this verification confirms those citations are real and
+non-vacuous.
 
-| Row | Table status | Verifier's evidence supports | Verdict on the row |
-| --- | --- | --- | --- |
-| CRT-03 | Complete | All four dimensions asserted on values (family, solution, journey, corpus) | ✅ Supported |
-| EDG-03 | Complete | Corpus-applicable limit real, wired into `Build`, and refused | ✅ Supported (boundary caveat, note 2) |
-| STO-01 | Complete | Literals independently recomputed by this Verifier — exact match | ✅ Supported |
-| DEP-05 | Complete | Both halves (reference reuse + single payload) asserted | ✅ Supported |
-| NAV-02 | Complete | Deployment Unit row present, a link, and resolving to a written artifact | ✅ Supported |
-| NAV-07 | Complete | The `: 8` arm executed for all three non-component root kinds | ✅ Supported |
-| PUB-08 | Partial | Family/cause real; project/variant only via stub | ✅ Correct — `Complete` would overstate, `Failed` would understate |
-| CRT-04 | Unverified | Ceiling enforced and unit-asserted; corpus run skipped per CRT-07 | ✅ Correct |
-| CRT-05 | Unverified | Same | ✅ Correct |
-| All other 62 rows | Complete | Located `file:line` assertion targeting the spec outcome | ✅ Supported |
+| Requirement | Previous status | Status after this verification |
+| ----------- | --------------- | ------------------------------ |
+| DEP-01 | Complete (measured, T78) | ✅ Verified — 60/60 reachable oracle edges, 0 false positives |
+| DEP-02 | Complete (T78) | ✅ Verified — eight categories closed and separately decodable off the wire |
+| DEP-03 | Complete (T78) | ✅ Verified — all declared members asserted with exact values; origin defect closed |
+| PKG-05 | Complete (measured, T78) | ✅ Verified — 0 `.Testes` entities and 0 out-of-source `symbol:`/`callable:` entities across six real solutions |
 
-**No row's status is contradicted by this Verifier's evidence.** Two documentation-level quibbles,
-neither a status error: T66 lists itself as an owning task for `PKG-10` although it changed only
-`spec.md`; and the `Coverage` legend contains a typo (`Incluíos` for `Incluídos`).
+Requirements outside this phase's scope (PUB-08 `Partial`, CRT-04/CRT-05 `Unverified`) were **not**
+re-measured here and keep their recorded status.
 
 ---
 
-## Fix Plans (non-blocking — recommended follow-ups, not gate failures)
+## Non-blocking observations
 
-### Fix 1: Bind the corpus ceiling to the committed file count
+Ranked; none of these changes the PASS verdict and none is a coverage gap.
 
-- **Root cause**: `PackageBuilder.cs:127` measures the plan; CRT-04/CRT-05 measure the committed
-  package, which carries one extra root `manifest.json`.
-- **Fix task**: compare `ordered.Length + 1` (or state the measured set in the criterion) and add a
-  boundary case at exactly the ceiling.
-- **Priority**: Minor.
-
-### Fix 2: Make the corpus key un-driftable
-
-- **Root cause**: the same two solution-file literals live in `PackageBuilder.cs:23-24` and
-  `LocalCorpusAnalyzeTests.cs:132,134` with nothing asserting they agree, and a miss is silent.
-- **Fix task**: share one constant (or take the corpus as an explicit policy input) and add a case
-  asserting the pinned key equals the one the acceptance test analyses through.
-- **Priority**: Minor (Major if either clone is ever renamed).
-
-### Fix 3: Carry family/corpus onto the budget rejection diagnostic
-
-- **Root cause**: `KnowledgeEngine.cs:83` drops `Family`/`Artifact` for
-  `PackageBudgetExceededException`.
-- **Fix task**: give the exception structured `Family`/`Corpus` members and pass them through.
-- **Priority**: Minor.
-
-### Fix 4: Traceability traits
-
-- **Root cause**: note 4 — two ACs untraited, two mis-traited, three CLI classes untraited.
-- **Fix task**: add `[Trait("Requirement", …)]` to the CLI acceptance classes and correct PUB-06/PUB-07.
-- **Priority**: Minor.
-
-### Fix 5: Pin DEP-06 to the three named gap kinds
-
-- **Root cause**: note 3 — the criterion names Candidate/Unknown/Open Frontier; the test asserts a
-  boolean flag.
-- **Fix task**: one case per gap kind proving it never reaches the confirmed count.
-- **Priority**: Minor.
+1. **`STATE.md`'s Handoff is stale by one commit.** It still reads "T78 … in progress" and lists
+   `.specs/STATE.md` / `spec.md` as uncommitted, which was true as T78 was being written but is not true at
+   `d826c96`. Cosmetic; the substantive RESOLVED sections are accurate.
+2. **Two new cases carry a `PKG-08` trait that does not match PKG-08's spec outcome.**
+   `RetainedGraphBuilderTests.cs:50` and `RetentionPolicyTests.cs:37` (plus `ScopePairingTests.cs:77`) prove
+   the `--include-tests` *behaviour*, whereas PKG-08's EARS text is about recording that choice "no manifesto
+   e na identidade da execução" — which is covered instead by
+   `SourceInventoryTests.cs:122-136`. These are really the opt-in arm of PKG-05. This echoes the first
+   Verifier's deferred "misplaced traits" finding; it costs nothing today but makes trait-based coverage
+   reports slightly misleading.
+3. **`OracleProjectReferenceScoreTests.ProjectReferences_HoldTheRecordedDefectBaseline` keeps a name that no
+   longer describes it.** It holds a *correct* state, not a defect baseline; the class already renamed
+   `RecordedDefects` → `RecordedBaselines` and its local variables still read `defect`. Naming only.
+4. **The three ratchet lines at `:83-85` are redundant** now that `:86-90` asserts exact equality at the
+   ceiling. Harmless (they give a distinct first failure message), but a reader could mistake the case for a
+   one-sided threshold. The class's own doc comment already says this.
+5. **T76's gate note says "up from 631 by this task's 2 focused cases" while the count moved 631 → 635.** The
+   task added one `[Fact]` plus three `[InlineData]` rows — four cases. The total (635) and the final 637 are
+   both correct and independently confirmed; only the parenthetical is imprecise.
 
 ---
 
@@ -397,32 +265,21 @@ neither a status error: T66 lists itself as an owning task for `PKG-10` although
 
 **Overall**: ✅ Ready
 
-**Spec-anchored check**: 71/71 ACs matched the spec-defined outcome; 1 spec-precision gap flagged
-(DEP-06); 2 conditional passes (CRT-04, CRT-05 — corpus measurement deferred by CRT-07's own rule).
-**Sensor**: skipped per AGENTS.md standing rule (user runs Stryker manually).
-**Gate**: 693 passed, 0 failed, 2 justified skips; Release build 0 warnings / 0 errors.
+**Spec-anchored check**: 4/4 in-scope ACs matched their spec-defined outcome; 0 spec-precision gaps.
+**Sensor**: skipped per `AGENTS.md`; 3 hand-run discrimination claims spot-checked and all corroborated.
+**Gate**: 733 passed, 0 failed, 2 justified skips; Release build 0 warnings / 0 errors.
 
-**What works**: All nine gaps iteration 1 raised are genuinely closed, and I re-derived each rather
-than trusting the claim. `PackageBudget.ForCorpus` is a real corpus-applicable limit that `Build`
-actually consults on the production path, with the componentwise minimum making a pinned corpus
-strictly tighter than the 96 MiB default. `PublicationMeasurements` now carries all four CRT-03
-dimensions, asserted on values and round-tripped through `CanonicalJson`. STO-01's public-ID
-derivation is pinned by literals I recomputed independently outside the codebase — they match
-exactly. NAV-07's non-component arm, DEP-05's two halves, NAV-02's Deployment Unit row and PUB-08's
-family/artifact coordinates are all now backed by assertions that would fail on a wrong value rather
-than merely on a missing one. iteration 1's claim that eShop's 78.61 MiB violated CRT-04 does not
-survive reading the spec: CRT-04 pins eShopOnContainers, and no criterion sets a size ceiling on
-eShop — T60's reading is the correct one.
+**What works**: the Project-scope `ProjectReference` projection now reproduces the vendored corpus's oracle
+exactly — 60 of 60 reachable edges, nothing invented, nothing leaked from a test project — and the retained
+graph carries no BCL/framework symbol and no `.Testes`-owned entity in any of the six solutions. The three
+independent test-admission points (root selection, incoming-edge admission, target-side membership lifting)
+are each pinned by a default-exclusion case paired with an opt-in case.
 
-**Issues found**: six non-blocking items — PUB-08's project/variant coordinates still ride on a
-fabricated diagnostic (note 1, correctly recorded as `Partial`); a one-file boundary mismatch between
-the enforced ceiling and CRT-04/CRT-05's stated measure (note 2); DEP-06's spec-precision gap
-(note 3); requirement-trait debt across the CLI acceptance classes (note 4); and the corpus table's
-fragile duplicated string key (note 6). None of these invalidates a committed package or an asserted
-outcome.
+**Issues found**: none blocking. Five naming/annotation/staleness observations are listed above.
 
-**Next steps**: route Fixes 1–5 as ordinary follow-up tasks rather than a fourth fix→re-verify
-iteration; ask the user to confirm the T66 amendment to CRT-02; and re-run
-`dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release --filter "Category=LocalCorpus"`
-when the eShopOnContainers and Pitstop clones return, to move CRT-04 and CRT-05 from `Unverified` to
-`Complete`.
+**Next steps**: Phase 11 is verified. The open questions this report does not touch remain open: PUB-08 is
+still `Partial`, CRT-04/CRT-05 are still `Unverified` pending the absent clones, and the named residuals in
+`STATE.md` (BCL-generic-wrapped user types; legitimately shared in-solution types fanning out at Component
+scope) are recorded, not closed. A full 71-requirement re-verification against
+`fixtures/ArchitectureDependencyLab` — rather than `fixtures/SyntheticSolution` — is the natural successor to
+this report.
