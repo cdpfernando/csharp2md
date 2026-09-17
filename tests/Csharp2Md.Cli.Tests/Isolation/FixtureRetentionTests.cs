@@ -67,6 +67,31 @@ public sealed class FixtureRetentionTests
         Assert.DoesNotContain("fixtures", solution, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// PKG-10 keeps only the current contract in the repository. Two committed <c>analyze</c> outputs used
+    /// to sit under <c>fixtures/</c> carrying the superseded percent-encoded <c>id1:</c> identity scheme;
+    /// they are gone, and the ignore rule keeps the next stray run from replacing them.
+    /// </summary>
+    [Fact]
+    [Trait("Requirement", "PKG-10")]
+    public void Fixtures_CarryNoStrayAnalyzeOutput()
+    {
+        var fixtures = Path.Combine(CliTestPaths.RepoRoot, "fixtures");
+        var strays = Directory.EnumerateDirectories(fixtures, "csharp2md-analyze-out-*")
+            .Select(directory => Path.GetRelativePath(CliTestPaths.RepoRoot, directory).Replace('\\', '/'))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.True(
+            strays.Length == 0,
+            $"fixtures/ holds leftover analyze output: {string.Join(", ", strays)}. PKG-10 keeps only the "
+            + "current contract in the repository; delete the directory rather than committing it.");
+        Assert.Contains(
+            "fixtures/csharp2md-analyze-out-*/",
+            File.ReadAllText(Path.Combine(CliTestPaths.RepoRoot, ".gitignore")),
+            StringComparison.Ordinal);
+    }
+
     [Fact]
     [Trait("Requirement", "CRT-08")]
     public void Gitignore_ExcludesLocalEShopCorpora()

@@ -29,7 +29,7 @@ The migration is intentionally incomplete between phases. Every task must still 
 | CLI seam | e2e | `analyze` and `validate` happy, edge and error paths; four journeys and budgets from the committed manifest | `tests/Csharp2Md.Cli.Tests/**/*.cs` | `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release` |
 | Repository topology/configuration | unit | Static surface/isolation assertions plus Release build; only Core and CLI remain after cutover | `tests/Csharp2Md.Core.Tests/Surface/**/*.cs` | `dotnet test csharp2md.slnx --configuration Release` |
 | Optional local corpora | e2e | eShop variant isolation, eShopOnContainers file/byte ceilings and Pitstop file/byte ceilings; dynamic skip only when clone is absent | `tests/Csharp2Md.Cli.Tests/LocalCorpus*.cs` | `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release --filter "Category=LocalCorpus"` |
-| Versioned dependency corpus | e2e | Project-scope `ProjectReference` edges of all six ArchitectureDependencyLab solutions scored against `oracle/project-references.json`; recorded defect baselines, never a skip | `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs` | `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release --filter "Category=OracleCorpus"` |
+| Versioned dependency corpus | e2e | Project-scope `ProjectReference` edges of all six ArchitectureDependencyLab solutions scored against the PKG-05-reachable part of `oracle/project-references.json` (60 of 87); correct, false-positive and test-policy-leak baselines counted apart, never a skip | `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs` | `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release --filter "Category=OracleCorpus"` |
 
 ## Gate Check Commands
 
@@ -106,7 +106,7 @@ T67 -> T69
 ### Phase 10: Oracle-anchored dependency accuracy
 
 ```text
-T70 -> T71
+T70 -> T71 -> T72
 ```
 
 T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. Phase 9 was opened after the third Verifier run returned PASS with five ranked non-blocking gaps, of which the user chose to close the two carrying functional consequence; it depends on Phase 8 in full. Phase 10 was opened after the corpus benchmark showed the generator scoring 11 of 87 `ProjectReference` edges on a real corpus while the whole suite stayed green; it depends on Phase 9 in full. The ten phases form ten sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
@@ -1982,6 +1982,45 @@ The corpus benchmark recorded in `.specs/STATE.md` measured the generator agains
 **Decision**: the recorded baselines are what the generator scores today, per solution: SistemaA 1 correct / 3 false of 4 oracle edges, SistemaB 3 / 5 of 18, SistemaC 0 / 0 of 1, SistemaD 3 / 3 of 8, SistemaE 2 / 9 of 28, SistemaE.Copia 2 / 9 of 28 — **11 correct and 29 false positives against 87**. Asserting 87 would have left the suite red and asserting a range would always pass, so each case is a two-sided ratchet: fewer correct edges or more false positives fails as a regression, and an improvement fails too, saying the baseline is stale and must be raised in the commit that improved it. Every failure message carries the 87-edge target, the current false positives and the current missing edges, so the distance to a correct generator is printed rather than inferred. The false positives are one family: a self-edge per API project plus a fan-out from the API project to projects it does not reference, which is `PackageBuilder.Pairs` attributing Project scope to the evidence document's owning project. **The fix is not in this task**; the instrument is.
 **Adequacy**: `OracleProjectReferenceScoreTests.cs:52-63` scores each of the six solutions and `:68-82` the corpus total, both against the oracle read from the fixture, so a corpus that loses references cannot loosen the score. `:92-114` asserts rules 2 and 3 of `oracle/README.md` — that no solution's edges name a project its oracle does not know — which is a true invariant today, not a baseline, and is what would catch a merge of `SistemaE.Copia` into SistemaB or SistemaE. The handles and enum ordinals are decoded in the test rather than read through `Csharp2Md.Core`, whose types are internal, so the expectation is not derived from the code being measured. SistemaC is the one weak case: it states nothing at Project scope, so its baseline of 0/0 can only fail upward; that limitation is written next to the baseline.
 **Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): two faults injected into `PackageBuilder.Pairs`, each built Release-clean and run against the `OracleCorpus` filter. Deleting the Project-scope pairing killed 6 of 8 — the five solutions with a non-zero baseline and the corpus total — leaving SistemaC (already 0/0) and the cross-system invariant (vacuous with no edges) green. Filtering self-edges out of the Project-scope pairing, a partial *fix* that drops 9 of the 29 false positives, killed the same 6, each with the message that the baseline must be raised: the ratchet cannot silently absorb progress. Both faults were reverted and the full gate re-run before the commit.
+
+### T72: Score only the edges the default package may contain
+
+**What**: Stop charging the generator for oracle edges that PKG-05 excludes from the default package, name the four fixtures the repository actually versions, and drop the committed legacy artifacts that contradict PKG-10.
+**Where**: `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs`
+**Depends on**: T71
+**Reuses**: the ratchet and `Category=OracleCorpus` trait T71 established
+**Requirement**: PKG-05, PKG-10, DEP-01
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] The scoring target is the PKG-05-reachable part of the oracle - 60 of 87 edges - and every stated edge lands in one of three buckets: correct, false positive, or test-policy leak.
+- [x] `SistemaC` states plainly that it has no scoreable edge in default mode instead of reporting 0 of 1 as if it were a failure.
+- [x] The ratchet semantics are unchanged: an improvement still fails with the stale-baseline message.
+- [x] `AGENTS.md` names all four versioned fixtures and what each is for, and stays uncommitted because the user holds unrelated edits in it.
+- [x] The two committed `fixtures/csharp2md-analyze-out-*` directories are removed and a `.gitignore` rule keeps future stray analyze output out of the index.
+
+**Tests**: unit - 9 cases in the oracle class, no skips
+**Gate**: full
+**Commit**: `test(dependencies): score only the edges the default package may contain`
+
+**Status**: Complete
+**Gate note**: full gate green - Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **621 of 621**, `Csharp2Md.Cli.Tests` **94 passed / 2 skipped** (up from 92; the two skips are the absent eShopOnContainers and Pitstop clones).
+
+**The denominator was wrong, and it flattered nobody.** T71 scored against all 87 oracle edges, but 27 of them name a `.Testes` project and the analysis runs without `--include-tests`, so PKG-05 requires the generator to leave them out. Charging it for edges it is instructed to exclude is not a measurement. The target is now the 60 reachable edges, with 87 and the 27 exclusions still printed so the full picture stays visible.
+
+**Three buckets, not two.** An edge matching a reachable oracle row is correct; an edge matching no oracle row at all is a false positive; an edge matching one of the 27 excluded rows is a **test-policy leak** - a real dependency that should not be in the default package. Folding leaks into either other bucket would have hidden the PKG-05 defect behind a dependency number.
+
+**The corrected score is worse than the headline it replaces**: 7 correct of 60, not 11 of 87. Four edges previously counted as correct were test-policy leaks.
+
+**`SistemaC` has nothing to score.** Its single oracle edge is `SistemaC.Testes -> SistemaC.ApiMonolitica`, excluded by PKG-05, so in default mode it is empty rather than failing. It has its own case asserting that exclusion by name; its baseline row cannot regress and can only be raised if the policy changes.
+
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): lowering `SistemaE`'s recorded `CorrectToday` from 1 to 0 - the shape of the generator improving past its baseline - killed exactly that solution's case, with the message naming the 60-edge target, all nine false positives, the leak and all nineteen missing edges. Reverted and the class re-run at 9 of 9 before the commit.
+
+**`AGENTS.md` left uncommitted on purpose**: the rule now names `SyntheticSolution`, `ArchitectureDependencyLab`, `CertificationCorpus` and `PublicationResilience`, but the user holds a large unrelated rewrite in that file and sweeping it into this commit would take work they did not offer.
+
+**Carried out by a sub-agent that hit the session limit mid-task.** Its code was complete and green; the task record, the discrimination run and the commit were finished in the main session.
 
 ## Requirement-to-Task Traceability
 

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace Csharp2Md.Cli.Tests;
 
@@ -7,18 +7,33 @@ namespace Csharp2Md.Cli.Tests;
 /// in one package and scores the Project-scope <c>ProjectReference</c> edges the generator publishes
 /// against that corpus's oracle, per solution.
 /// <para>
-/// <b>Every baseline in <see cref="RecordedDefects"/> is a measured defect, not an expected outcome.</b>
-/// The oracle names 87 <c>ProjectReference</c> edges across the six solutions. The generator states 40,
-/// of which 11 are right and 29 are false positives -- self-edges and a fan-out from each API project to
-/// projects it does not reference. <c>fixtures/SyntheticSolution</c> cannot see any of this: with two
-/// entities a complete graph and a correct graph are the same graph.
+/// The analysis runs without <c>--include-tests</c> and PKG-05 keeps test projects out of the default
+/// package, so part of the oracle is unreachable by construction and scoring against all of it would
+/// charge the generator for edges it is told to exclude. Of the 87 <c>ProjectReference</c> edges the
+/// oracle names, 27 involve a <c>.Testes</c> project; <b>the 60 that remain are the target</b>. Both 87
+/// and the 27 excluded stay in every failure message so the full picture is visible.
 /// </para>
 /// <para>
-/// Each case is a two-sided ratchet. Fewer correct edges or more false positives fail as a regression.
-/// <b>An improvement fails too</b>, and says so: the baseline must be raised in the same commit that
-/// fixes the generator, because a ratchet that silently absorbs progress stops measuring anything. The
-/// failure message always carries the corpus target (87 correct, 0 false positives) so the distance to
-/// a correct generator is printed, not inferred.
+/// Every stated edge lands in exactly one of three buckets, counted apart and never folded together.
+/// <i>Correct</i> matches a reachable oracle edge. <i>False positive</i> matches no oracle edge at all.
+/// <i>Test-policy leak</i> matches an oracle edge that involves a <c>.Testes</c> project: a real edge, so
+/// not a dependency error, but evidence of the PKG-05 test-leakage defect this project already recorded
+/// in <c>.specs/STATE.md</c>.
+/// </para>
+/// <para>
+/// <b>Every baseline in <see cref="RecordedDefects"/> is a measured defect, not an expected outcome.</b>
+/// The generator states 40 edges: 7 correct of the 60 reachable, 29 false positives -- self-edges and a
+/// fan-out from each API project to projects it does not reference -- and 4 test-policy leaks.
+/// <c>fixtures/SyntheticSolution</c> cannot see any of this: with two entities a complete graph and a
+/// correct graph are the same graph.
+/// </para>
+/// <para>
+/// Each case is a three-sided ratchet. Fewer correct edges, more false positives or more test-policy
+/// leaks fail as a regression. <b>An improvement fails too</b>, and says so: the baseline must be raised
+/// in the same commit that fixes the generator, because a ratchet that silently absorbs progress stops
+/// measuring anything. The failure message always carries the corpus target (60 correct of 87, 27
+/// excluded, no false positive and no leak) so the distance to a correct generator is printed, not
+/// inferred.
 /// </para>
 /// </summary>
 public sealed class OracleProjectReferenceScoreTests : IClassFixture<ArchitectureDependencyLabPackage>
@@ -28,20 +43,21 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
     public OracleProjectReferenceScoreTests(ArchitectureDependencyLabPackage package) => this.package = package;
 
     /// <summary>
-    /// Measured on 2026-09-17 against the vendored corpus. <c>CorrectToday</c> and
-    /// <c>FalsePositivesToday</c> record how wrong the generator is right now; only <c>OracleEdges</c>
-    /// states a truth, and it is read back from the oracle so the corpus cannot drift under the ratchet.
+    /// Measured on 2026-09-17 against the vendored corpus. <c>OracleEdges</c> and <c>TestPolicyEdges</c>
+    /// state a truth and are read back from the oracle so the corpus cannot drift under the ratchet;
+    /// <c>CorrectToday</c>, <c>FalsePositivesToday</c> and <c>TestPolicyLeaksToday</c> record how wrong the
+    /// generator is right now.
     /// </summary>
     internal static readonly ImmutableArray<OracleBaseline> RecordedDefects =
     [
-        new("SistemaA", OracleEdges: 4, CorrectToday: 1, FalsePositivesToday: 3),
-        new("SistemaB", OracleEdges: 18, CorrectToday: 3, FalsePositivesToday: 5),
-        // SistemaC states nothing at all at Project scope, so its case can only fail upward -- on a new
-        // false positive or on the fix. It cannot detect a regression; the other five carry that duty.
-        new("SistemaC", OracleEdges: 1, CorrectToday: 0, FalsePositivesToday: 0),
-        new("SistemaD", OracleEdges: 8, CorrectToday: 3, FalsePositivesToday: 3),
-        new("SistemaE", OracleEdges: 28, CorrectToday: 2, FalsePositivesToday: 9),
-        new("SistemaE.Copia", OracleEdges: 28, CorrectToday: 2, FalsePositivesToday: 9),
+        new("SistemaA", OracleEdges: 4, TestPolicyEdges: 1, CorrectToday: 1, FalsePositivesToday: 3, TestPolicyLeaksToday: 0),
+        new("SistemaB", OracleEdges: 18, TestPolicyEdges: 6, CorrectToday: 2, FalsePositivesToday: 5, TestPolicyLeaksToday: 1),
+        // SistemaC has no reachable edge at all: its one oracle edge is excluded by PKG-05. Its case cannot
+        // score anything, only detect a false positive or a leak; the other five carry the scoring duty.
+        new("SistemaC", OracleEdges: 1, TestPolicyEdges: 1, CorrectToday: 0, FalsePositivesToday: 0, TestPolicyLeaksToday: 0),
+        new("SistemaD", OracleEdges: 8, TestPolicyEdges: 3, CorrectToday: 2, FalsePositivesToday: 3, TestPolicyLeaksToday: 1),
+        new("SistemaE", OracleEdges: 28, TestPolicyEdges: 8, CorrectToday: 1, FalsePositivesToday: 9, TestPolicyLeaksToday: 1),
+        new("SistemaE.Copia", OracleEdges: 28, TestPolicyEdges: 8, CorrectToday: 1, FalsePositivesToday: 9, TestPolicyLeaksToday: 1),
     ];
 
     public static TheoryData<string> Solutions =>
@@ -57,30 +73,67 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
         var score = package.Score(solution);
 
         Assert.Equal(baseline.OracleEdges, score.OracleEdges);
+        Assert.Equal(baseline.TestPolicyEdges, score.TestPolicyEdges);
         Assert.True(score.Correct >= baseline.CorrectToday, Verdict(score, baseline));
         Assert.True(score.FalsePositives <= baseline.FalsePositivesToday, Verdict(score, baseline));
+        Assert.True(score.TestPolicyLeaks <= baseline.TestPolicyLeaksToday, Verdict(score, baseline));
         Assert.True(
-            score.Correct == baseline.CorrectToday && score.FalsePositives == baseline.FalsePositivesToday,
+            score.Correct == baseline.CorrectToday
+            && score.FalsePositives == baseline.FalsePositivesToday
+            && score.TestPolicyLeaks == baseline.TestPolicyLeaksToday,
             Verdict(score, baseline));
+    }
+
+    /// <summary>
+    /// SistemaC's only oracle edge is <c>SistemaC.Testes -&gt; SistemaC.ApiMonolitica</c>, which PKG-05 keeps
+    /// out of the default package, so in default mode SistemaC has nothing to score. Saying that plainly is
+    /// honest where a 0-of-1 score would read as a generator failure rather than a policy exclusion. Its
+    /// false positives and test-policy leaks still ratchet in
+    /// <see cref="ProjectReferences_HoldTheRecordedDefectBaseline"/>.
+    /// </summary>
+    [Fact]
+    [Trait("Requirement", "DEP-01")]
+    [Trait("Category", "OracleCorpus")]
+    public void SistemaC_HasNoScoreableEdgeInDefaultMode()
+    {
+        var score = package.Score("SistemaC");
+
+        Assert.Equal(1, score.OracleEdges);
+        Assert.Equal("SistemaC.Testes->SistemaC.ApiMonolitica", Format(score.ExcludedEdges));
+        Assert.True(
+            score.ReachableEdges == 0 && score.Correct == 0 && score.MissingEdges.Count == 0,
+            $"SistemaC is expected to have nothing scoreable in default mode, yet it reports "
+            + $"{score.ReachableEdges} reachable oracle edges, {score.Correct} correct and "
+            + $"{Format(score.MissingEdges)} missing. Its single oracle edge is excluded by PKG-05; if that "
+            + "changed, the corpus or the exclusion rule moved and this case must be re-derived.");
     }
 
     [Fact]
     [Trait("Requirement", "DEP-01")]
     [Trait("Category", "OracleCorpus")]
-    public void Corpus_ScoresTheRecordedShareOfItsOracle()
+    public void Corpus_ScoresTheRecordedShareOfItsReachableOracle()
     {
         var scores = RecordedDefects.Select(defect => package.Score(defect.Solution)).ToArray();
         var correct = scores.Sum(static score => score.Correct);
         var falsePositives = scores.Sum(static score => score.FalsePositives);
+        var leaks = scores.Sum(static score => score.TestPolicyLeaks);
         var oracleEdges = scores.Sum(static score => score.OracleEdges);
+        var excluded = scores.Sum(static score => score.TestPolicyEdges);
+        var reachable = scores.Sum(static score => score.ReachableEdges);
 
         Assert.Equal(OracleCorpusEdges, oracleEdges);
+        Assert.Equal(TestPolicyExcludedEdges, excluded);
+        Assert.Equal(ReachableCorpusEdges, reachable);
         Assert.True(
-            correct == BaselineCorrect && falsePositives == BaselineFalsePositives,
-            $"The corpus baseline moved: {correct} correct and {falsePositives} false positives against a "
-            + $"recorded {BaselineCorrect} correct and {BaselineFalsePositives} false positives. A correct "
-            + $"generator states {oracleEdges} of {oracleEdges} with no false positive. Raise or lower the "
-            + "baselines in this file in the same commit that moved them.");
+            correct == BaselineCorrect
+            && falsePositives == BaselineFalsePositives
+            && leaks == BaselineTestPolicyLeaks,
+            $"The corpus baseline moved: {correct} correct, {falsePositives} false positives and {leaks} "
+            + $"test-policy leaks against a recorded {BaselineCorrect}, {BaselineFalsePositives} and "
+            + $"{BaselineTestPolicyLeaks}. A correct generator states {reachable} of {reachable} reachable "
+            + $"edges with no false positive and no leak; the oracle names {oracleEdges} in all, of which "
+            + $"{excluded} involve a test project PKG-05 excludes from the default package. Raise or lower "
+            + "the baselines in this file in the same commit that moved them.");
     }
 
     /// <summary>
@@ -116,16 +169,24 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
     }
 
     internal const int OracleCorpusEdges = 87;
-    private const int BaselineCorrect = 11;
+    internal const int TestPolicyExcludedEdges = 27;
+    internal const int ReachableCorpusEdges = OracleCorpusEdges - TestPolicyExcludedEdges;
+    private const int BaselineCorrect = 7;
     private const int BaselineFalsePositives = 29;
+    private const int BaselineTestPolicyLeaks = 4;
 
     private static string Verdict(SolutionScore score, OracleBaseline baseline) =>
-        $"{score.Solution}: {score.Correct} correct (baseline {baseline.CorrectToday}) and "
-        + $"{score.FalsePositives} false positives (baseline {baseline.FalsePositivesToday}) against "
-        + $"{score.OracleEdges} oracle edges; the corpus target is {OracleCorpusEdges} correct and 0 false "
-        + "positives. Fewer correct edges or more false positives is a regression; an improvement means "
-        + "this baseline is stale and must be raised in the commit that improved it. False positives now: "
-        + $"{Format(score.FalsePositiveEdges)}. Missing now: {Format(score.MissingEdges)}.";
+        $"{score.Solution}: {score.Correct} correct (baseline {baseline.CorrectToday}), "
+        + $"{score.FalsePositives} false positives (baseline {baseline.FalsePositivesToday}) and "
+        + $"{score.TestPolicyLeaks} test-policy leaks (baseline {baseline.TestPolicyLeaksToday}) against "
+        + $"{score.ReachableEdges} reachable oracle edges -- {score.OracleEdges} in all, of which "
+        + $"{score.TestPolicyEdges} name a test project PKG-05 excludes from the default package. The corpus "
+        + $"target is {ReachableCorpusEdges} correct of {OracleCorpusEdges} oracle edges "
+        + $"({TestPolicyExcludedEdges} excluded), with no false positive and no leak. Fewer correct edges, "
+        + "more false positives or more leaks is a regression; an improvement means this baseline is stale "
+        + "and must be raised in the commit that improved it. False positives now: "
+        + $"{Format(score.FalsePositiveEdges)}. Test-policy leaks now: {Format(score.TestPolicyLeakEdges)}. "
+        + $"Missing now: {Format(score.MissingEdges)}.";
 
     private static string Format(IReadOnlyCollection<ProjectEdge> edges) =>
         edges.Count == 0
@@ -133,18 +194,40 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
             : string.Join(", ", edges.Select(static edge => $"{edge.Source}->{edge.Target}").Order(StringComparer.Ordinal));
 }
 
-internal sealed record OracleBaseline(string Solution, int OracleEdges, int CorrectToday, int FalsePositivesToday);
+internal sealed record OracleBaseline(
+    string Solution,
+    int OracleEdges,
+    int TestPolicyEdges,
+    int CorrectToday,
+    int FalsePositivesToday,
+    int TestPolicyLeaksToday);
 
 internal readonly record struct ProjectEdge(string Source, string Target);
 
+/// <summary>
+/// Every stated edge lands in exactly one bucket: <see cref="CorrectEdges"/> matches a reachable oracle
+/// edge, <see cref="FalsePositiveEdges"/> matches no oracle edge at all, and <see cref="TestPolicyLeakEdges"/>
+/// matches an oracle edge PKG-05 keeps out of the default package. <see cref="ExcludedEdges"/> is that
+/// unreachable part of the oracle, and <see cref="MissingEdges"/> only ever names reachable edges.
+/// </summary>
 internal sealed record SolutionScore(
     string Solution,
     int OracleEdges,
-    int Correct,
+    IReadOnlyCollection<ProjectEdge> ExcludedEdges,
+    IReadOnlyCollection<ProjectEdge> CorrectEdges,
     IReadOnlyCollection<ProjectEdge> FalsePositiveEdges,
+    IReadOnlyCollection<ProjectEdge> TestPolicyLeakEdges,
     IReadOnlyCollection<ProjectEdge> MissingEdges)
 {
+    public int TestPolicyEdges => ExcludedEdges.Count;
+
+    public int ReachableEdges => OracleEdges - ExcludedEdges.Count;
+
+    public int Correct => CorrectEdges.Count;
+
     public int FalsePositives => FalsePositiveEdges.Count;
+
+    public int TestPolicyLeaks => TestPolicyLeakEdges.Count;
 }
 
 /// <summary>
@@ -208,15 +291,30 @@ public sealed class ArchitectureDependencyLabPackage : IAsyncLifetime
     internal SolutionScore Score(string solution)
     {
         var expected = ReadOracle()[solution];
+        var excluded = expected.Where(IsExcludedByTestPolicy).ToHashSet();
+        var reachable = expected.Where(edge => !excluded.Contains(edge)).ToHashSet();
         var produced = StatedEdges(solution);
 
         return new SolutionScore(
             solution,
             expected.Count,
-            produced.Count(expected.Contains),
+            excluded.ToArray(),
+            produced.Where(reachable.Contains).ToArray(),
             produced.Where(edge => !expected.Contains(edge)).ToArray(),
-            expected.Where(edge => !produced.Contains(edge)).ToArray());
+            produced.Where(excluded.Contains).ToArray(),
+            reachable.Where(edge => !produced.Contains(edge)).ToArray());
     }
+
+    /// <summary>
+    /// PKG-05 keeps test projects out of the default package and the analysis runs without
+    /// <c>--include-tests</c>, so an oracle edge naming one is unreachable by construction rather than
+    /// missed. The corpus names them in Portuguese: <c>&lt;system&gt;.Testes</c>.
+    /// </summary>
+    internal static bool IsExcludedByTestPolicy(ProjectEdge edge) =>
+        IsTestProject(edge.Source) || IsTestProject(edge.Target);
+
+    private static bool IsTestProject(string project) =>
+        project.EndsWith(".Testes", StringComparison.Ordinal);
 
     internal static IReadOnlyDictionary<string, IReadOnlySet<ProjectEdge>> ReadOracle()
     {

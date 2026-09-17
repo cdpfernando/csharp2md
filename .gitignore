@@ -76,6 +76,10 @@ fixtures/eShop/
 fixtures/eShopOnContainers/
 fixtures/Pitstop/
 
+# Stray `analyze` output. The CLI names its output directory csharp2md-analyze-out-<guid>; a run pointed
+# at fixtures/ must never leave a package behind in the index (PKG-10: only the current contract ships).
+fixtures/csharp2md-analyze-out-*/
+
 # Tye
 .tye/
 
