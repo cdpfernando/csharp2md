@@ -45,12 +45,30 @@ internal sealed record PackageBudget(int MaximumArtifacts, long MaximumBytes)
 
         return applied;
     }
+
+    // The corpus whose ceiling was applied, for CRT-03's measurement and the EDG-03 diagnostic `design.md:575`
+    // requires to name it. A package touching no pinned corpus reports "unpinned", which is what the 96 MiB
+    // default means; one touching several reports them in canonical order, since every ceiling bound it.
+    internal const string UnpinnedCorpus = "unpinned";
+
+    internal static string DescribeCorpus(RetrievalModel model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        var matched = model.Solutions
+            .Select(solution => Path.GetFileName(solution.Solution.LogicalRelativePath))
+            .Where(Pinned.ContainsKey)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static file => file, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        return matched.Length == 0 ? UnpinnedCorpus : string.Join(", ", matched);
+    }
 }
 
 internal sealed class PackageBudgetExceededException : InvalidOperationException
 {
-    internal PackageBudgetExceededException(string limit, ImmutableArray<FamilyMeasurement> byFamily)
-        : base($"package-budget: '{limit}'. by-family: {Describe(byFamily)}.") { }
+    // `design.md:575` requires the rejection to name the family AND the corpus alongside the exceeded measure.
+    internal PackageBudgetExceededException(string limit, string corpus, ImmutableArray<FamilyMeasurement> byFamily)
+        : base($"package-budget: '{limit}'. corpus: '{corpus}'. by-family: {Describe(byFamily)}.") { }
 
     private static string Describe(ImmutableArray<FamilyMeasurement> byFamily) =>
         byFamily.IsDefaultOrEmpty
@@ -89,7 +107,18 @@ internal static class PackageBuilder
         var extraction = retained.Length == 0
             ? new ExtractionMeasurements(0, 0)
             : new ExtractionMeasurements(retained.Sum(graph => graph.Measurements.RetainedCount), retained.Sum(graph => graph.Measurements.FilteredCount));
-        var measurement = new PublicationMeasurements(extraction, payloads.Length + 3, [new FilteredCount("retention", extraction.FilteredCount)], ByFamily(payloads));
+        var measurement = new PublicationMeasurements(
+            extraction,
+            payloads.Length + 3,
+            [new FilteredCount("retention", extraction.FilteredCount)],
+            ByFamily(payloads),
+            BySolution(payloads, machine.Manifest),
+            new CorpusMeasurement(
+                PackageBudget.DescribeCorpus(model),
+                payloads.Length,
+                payloads.Sum(static artifact => (long)artifact.Payload.Length),
+                budget.MaximumArtifacts,
+                budget.MaximumBytes));
         payloads = payloads.Add(Artifact("measurements.json", ArtifactFamily.Measurement, measurement, 1));
         payloads = payloads.Add(Artifact("certification.json", ArtifactFamily.Certification, new PackageCertification([]), 0));
         payloads = payloads.Add(CompactArtifact("manifest.json", ArtifactFamily.Manifest, machine.Manifest, 1));
@@ -97,16 +126,35 @@ internal static class PackageBuilder
         var bytes = ordered.Sum(artifact => (long)artifact.Payload.Length);
         if (ordered.Length > budget.MaximumArtifacts)
         {
-            throw new PackageBudgetExceededException("artifacts", measurement.ByFamily);
+            throw new PackageBudgetExceededException("artifacts", measurement.Corpus!.Corpus, measurement.ByFamily);
         }
 
         if (bytes > budget.MaximumBytes)
         {
-            throw new PackageBudgetExceededException("bytes", measurement.ByFamily);
+            throw new PackageBudgetExceededException("bytes", measurement.Corpus!.Corpus, measurement.ByFamily);
         }
 
         return new PackagePlan(machine.Manifest, ordered, Digest(ordered), measurement);
     }
+
+    // Attribution is the "solutions/{id}/" path prefix the writers already lay out. Artifacts belonging to no
+    // single solution - the Markdown summary and the trailers - are deliberately unattributed, so these counts
+    // are a breakdown of the package rather than a partition of it.
+    private static ImmutableArray<SolutionMeasurement> BySolution(
+        ImmutableArray<PlannedArtifact> artifacts,
+        PackageManifest manifest) =>
+        manifest.Solutions
+            .Select(solution =>
+            {
+                var prefix = $"solutions/{solution.Id.Value}/";
+                var owned = artifacts.Where(artifact => artifact.Path.Value.StartsWith(prefix, StringComparison.Ordinal)).ToArray();
+                return new SolutionMeasurement(
+                    solution.Id.Value,
+                    owned.Length,
+                    owned.Sum(static artifact => (long)artifact.Payload.Length));
+            })
+            .OrderBy(static solution => solution.SolutionId, StringComparer.Ordinal)
+            .ToImmutableArray();
 
     // The breakdown covers the artifacts built from the model, not the three publication trailers.
     // measurements.json carries the breakdown and cannot report its own size, so manifest.json and

@@ -1635,14 +1635,29 @@ The second feature Verifier returned FAIL on `ff42c35..71e7094` with 9 ranked ga
 
 **Done when**:
 
-- [ ] `PublicationMeasurements` carries per-solution and per-corpus breakdowns alongside the existing family and filtered-by-reason ones, ordered canonically so repeat runs stay byte-identical.
-- [ ] `measurements.json` round-trips through `CanonicalJson` and `PackageValidator` unchanged, and the artifact/byte invariant T57 asserted still holds.
-- [ ] Each dimension is asserted on its values, not on its presence; expectations are hand-computed.
-- [ ] At least 4 cases cover a multi-solution package and a single-solution one.
+- [x] `PublicationMeasurements` carries per-solution and per-corpus breakdowns alongside the existing family and filtered-by-reason ones, ordered canonically so repeat runs stay byte-identical.
+- [x] `measurements.json` round-trips through `CanonicalJson` and `PackageValidator` unchanged, and the artifact/byte invariant T57 asserted still holds.
+- [x] Each dimension is asserted on its values, not on its presence; expectations are hand-computed.
+- [x] At least 4 cases cover a multi-solution package and a single-solution one.
 
 **Tests**: unit — ≥4 cases with hand-computed expectations
 **Gate**: full
 **Commit**: `feat(core): measure published artifacts by solution and corpus`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **599 of 599** (up from 593 by this task's 6 cases), `Csharp2Md.Cli.Tests` 81 of 83 with the two absent-clone skips.
+
+CRT-03 names four measure dimensions — family, solution, journey and corpus. Family arrived in T57 and journey is carried by the certification; this task adds the two the Verifier found missing. `PublicationMeasurements` gains `BySolution` and `Corpus`.
+
+**Solution attribution is the path prefix, not a new field on the artifact.** The writers already lay every solution-scoped artifact under `solutions/{id}/`, so nothing had to be threaded through them. The consequence is stated in the contract and asserted: the Markdown summary and the three trailers belong to no single solution, so `BySolution` is a breakdown of the package, not a partition of it, and its counts do not sum to `PublishedArtifactCount`.
+
+**The corpus dimension carries the ceiling that was applied**, which is what makes it more than a restatement of the total: `measurements.json` now says which EDG-03 limit the package was measured against, and a corpus the spec pins nothing on reports `unpinned`. `design.md:575` requires the budget rejection to name "família/corpus e medida excedida"; the diagnostic now reads `package-budget: '<limit>'. corpus: '<corpus>'. by-family: …`, so the corpus half of that line is no longer missing.
+
+**Deviation from the task's `Where`**: the criteria require the builder to populate the dimensions and the diagnostic to quote the corpus, so `PackageBuilder.cs` and `CanonicalJson.cs` (serializer registration) changed alongside `PackageContracts.cs`. T57 recorded the same deviation for the same reason.
+
+**Three pre-existing assertions adjusted**: `Build_FailsBeforePublicationWhenArtifactCeilingIsExceeded`, `...WhenByteCeilingIsExceeded` and T60's `Build_RefusesAPinnedCorpusAtItsOwnCeilingRatherThanTheDefault` pinned the exact message prefix, which the corpus clause necessarily extends. Each now asserts the longer prefix including `corpus: '…'`, which is stricter than what it replaced.
+
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): three faults injected. Dropping the prefix filter so every artifact counted toward every solution killed `Build_AttributesArtifactsToTheirSolution`. Reporting `PackageBudget.Default`'s ceiling instead of the applied one killed `Build_RecordsTheCorpusAndTheCeilingItWasMeasuredAgainst`. Making `DescribeCorpus` always return `unpinned` killed three cases — the corpus measurement, the diagnostic and T60's refusal case. All three were reverted and the suite re-run at 31 of 31 before the commit.
 
 ### T62: Derive the public identity independently in test
 

@@ -234,11 +234,17 @@ internal sealed record PublicationMeasurements
 
     public ImmutableArray<FamilyMeasurement> ByFamily { get; }
 
+    public ImmutableArray<SolutionMeasurement> BySolution { get; }
+
+    public CorpusMeasurement? Corpus { get; }
+
     public PublicationMeasurements(
         ExtractionMeasurements extraction,
         int publishedArtifactCount,
         ImmutableArray<FilteredCount> filteredByReason,
-        ImmutableArray<FamilyMeasurement> byFamily)
+        ImmutableArray<FamilyMeasurement> byFamily,
+        ImmutableArray<SolutionMeasurement> bySolution = default,
+        CorpusMeasurement? corpus = null)
     {
         ArgumentNullException.ThrowIfNull(extraction);
         ArgumentOutOfRangeException.ThrowIfNegative(publishedArtifactCount);
@@ -250,6 +256,63 @@ internal sealed record PublicationMeasurements
         ByFamily = byFamily.IsDefault
             ? ImmutableArray<FamilyMeasurement>.Empty
             : ImmutableArray.CreateRange(byFamily);
+        BySolution = bySolution.IsDefault
+            ? ImmutableArray<SolutionMeasurement>.Empty
+            : ImmutableArray.CreateRange(bySolution);
+        Corpus = corpus;
+    }
+}
+
+// CRT-03 names solution as one of the four measure dimensions. Artifacts are laid out under
+// "solutions/{id}/", so the attribution is the path prefix and nothing else has to be threaded through the
+// writers. Package-level artifacts - the Markdown summary and the three publication trailers - belong to no
+// single solution and are therefore absent here, which is why these counts do not sum to PublishedArtifactCount.
+internal sealed record SolutionMeasurement
+{
+    public string SolutionId { get; }
+
+    public int ArtifactCount { get; }
+
+    public long Bytes { get; }
+
+    public SolutionMeasurement(string solutionId, int artifactCount, long bytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(artifactCount);
+        ArgumentOutOfRangeException.ThrowIfNegative(bytes);
+        SolutionId = CanonicalText.Require(solutionId, nameof(solutionId));
+        ArtifactCount = artifactCount;
+        Bytes = bytes;
+    }
+}
+
+// CRT-03's fourth dimension, and the one `design.md:575` requires the budget diagnostic to report alongside
+// family. It carries the ceiling that was actually applied, so measurements.json says which corpus limit the
+// package was measured against rather than leaving EDG-03's decision implicit. The measured figures cover the
+// same set ByFamily covers: measurements.json cannot report its own size, so the three trailers are excluded
+// from the reported totals even though the ceiling is enforced on the full committed package.
+internal sealed record CorpusMeasurement
+{
+    public string Corpus { get; }
+
+    public int ArtifactCount { get; }
+
+    public long Bytes { get; }
+
+    public int MaximumArtifacts { get; }
+
+    public long MaximumBytes { get; }
+
+    public CorpusMeasurement(string corpus, int artifactCount, long bytes, int maximumArtifacts, long maximumBytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(artifactCount);
+        ArgumentOutOfRangeException.ThrowIfNegative(bytes);
+        ArgumentOutOfRangeException.ThrowIfNegative(maximumArtifacts);
+        ArgumentOutOfRangeException.ThrowIfNegative(maximumBytes);
+        Corpus = CanonicalText.Require(corpus, nameof(corpus));
+        ArtifactCount = artifactCount;
+        Bytes = bytes;
+        MaximumArtifacts = maximumArtifacts;
+        MaximumBytes = maximumBytes;
     }
 }
 

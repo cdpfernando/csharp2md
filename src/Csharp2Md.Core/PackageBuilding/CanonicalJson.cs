@@ -79,6 +79,8 @@ internal static class CanonicalJson
 [JsonSerializable(typeof(PublicationMeasurements))]
 [JsonSerializable(typeof(FilteredCount))]
 [JsonSerializable(typeof(FamilyMeasurement))]
+[JsonSerializable(typeof(SolutionMeasurement))]
+[JsonSerializable(typeof(CorpusMeasurement))]
 [JsonSerializable(typeof(ExtractionMeasurements))]
 [JsonSerializable(typeof(PackageCertification))]
 [JsonSerializable(typeof(SolutionCertification))]

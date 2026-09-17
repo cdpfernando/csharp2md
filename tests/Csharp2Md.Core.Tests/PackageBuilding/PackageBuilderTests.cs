@@ -16,8 +16,8 @@ public sealed class PackageBuilderTests
     [Fact][Trait("Requirement", "STO-07")] public void Build_IsPermutationStable() { var first=PackageBuilder.Build(Model()); var second=PackageBuilder.Build(Model()); Assert.Equal(first.PackageDigest, second.PackageDigest); Assert.Equal(first.Artifacts.Select(artifact => artifact.Payload), second.Artifacts.Select(artifact => artifact.Payload)); }
     [Fact][Trait("Requirement", "CRT-03")] public void Build_SeparatesExtractionAndPublicationMeasurements() { var measurements=Plan().Measurements; Assert.Equal(0, measurements.Extraction.ExtractedCount); Assert.Equal(Plan().Artifacts.Length, measurements.PublishedArtifactCount); }
     [Fact][Trait("Requirement", "CRT-03")] public void Build_RecordsFilteredReason() => Assert.Equal("retention", Assert.Single(Plan().Measurements.FilteredByReason).Reason);
-    [Fact][Trait("Requirement", "EDG-03")] public void Build_FailsBeforePublicationWhenArtifactCeilingIsExceeded() => Assert.StartsWith("package-budget: 'artifacts'. by-family: ", Assert.Throws<PackageBudgetExceededException>(() => PackageBuilder.Build(Model(), false, new PackageBudget(1, long.MaxValue))).Message, StringComparison.Ordinal);
-    [Fact][Trait("Requirement", "EDG-03")] public void Build_FailsBeforePublicationWhenByteCeilingIsExceeded() => Assert.StartsWith("package-budget: 'bytes'. by-family: ", Assert.Throws<PackageBudgetExceededException>(() => PackageBuilder.Build(Model(), false, new PackageBudget(int.MaxValue, 1))).Message, StringComparison.Ordinal);
+    [Fact][Trait("Requirement", "EDG-03")] public void Build_FailsBeforePublicationWhenArtifactCeilingIsExceeded() => Assert.StartsWith("package-budget: 'artifacts'. corpus: 'unpinned'. by-family: ", Assert.Throws<PackageBudgetExceededException>(() => PackageBuilder.Build(Model(), false, new PackageBudget(1, long.MaxValue))).Message, StringComparison.Ordinal);
+    [Fact][Trait("Requirement", "EDG-03")] public void Build_FailsBeforePublicationWhenByteCeilingIsExceeded() => Assert.StartsWith("package-budget: 'bytes'. corpus: 'unpinned'. by-family: ", Assert.Throws<PackageBudgetExceededException>(() => PackageBuilder.Build(Model(), false, new PackageBudget(int.MaxValue, 1))).Message, StringComparison.Ordinal);
     [Fact][Trait("Requirement", "EDG-03")] public void Build_BudgetDiagnosticQuotesTheFamilyBreakdown()
     {
         var message = Assert.Throws<PackageBudgetExceededException>(() => PackageBuilder.Build(Model(), false, new PackageBudget(1, long.MaxValue))).Message;
@@ -94,12 +94,70 @@ public sealed class PackageBuilderTests
     [Fact][Trait("Requirement", "EDG-03")] public void Build_RefusesAPinnedCorpusAtItsOwnCeilingRatherThanTheDefault()
     {
         Assert.StartsWith(
-            "package-budget: 'artifacts'. by-family: ",
+            "package-budget: 'artifacts'. corpus: 'pitstop.sln'. by-family: ",
             Assert.Throws<PackageBudgetExceededException>(() => PackageBuilder.Build(Crowded("src/pitstop.sln"))).Message,
             StringComparison.Ordinal);
         var accepted = PackageBuilder.Build(Crowded("src/App.sln"));
         Assert.InRange(accepted.Artifacts.Length, 751, 1_500);
     }
+
+    // CRT-03's remaining two dimensions. The single-solution package puts every solution-scoped artifact under
+    // one prefix, so its count is the family total (18) minus the one package-level Markdown summary.
+    [Fact][Trait("Requirement", "CRT-03")] public void Build_AttributesArtifactsToTheirSolution()
+    {
+        var plan = Plan();
+        var solution = Assert.Single(plan.Measurements.BySolution);
+        var prefix = $"solutions/{solution.SolutionId}/";
+        var owned = plan.Artifacts.Where(artifact => artifact.Path.Value.StartsWith(prefix, StringComparison.Ordinal)).ToArray();
+        Assert.Equal(plan.Measurements.ByFamily.Sum(family => family.ArtifactCount) - 1, solution.ArtifactCount);
+        Assert.Equal(owned.Length, solution.ArtifactCount);
+        Assert.Equal(owned.Sum(artifact => (long)artifact.Payload.Length), solution.Bytes);
+    }
+
+    [Fact][Trait("Requirement", "CRT-03")] public void Build_SeparatesTheTwoSolutionsOfOnePackage()
+    {
+        var extra = new SolutionRetrievalModel(CanonicalIdentity.CreateSolution("other", "src/Other.sln"), [new EntityHandle("component:other")], [], []);
+        var plan = PackageBuilder.Build(new RetrievalModel(Model().Solutions.Add(extra)));
+        Assert.Equal(2, plan.Measurements.BySolution.Length);
+        Assert.All(plan.Measurements.BySolution, solution => Assert.True(solution.ArtifactCount > 0 && solution.Bytes > 0));
+        Assert.Equal(
+            plan.Measurements.BySolution.Select(solution => solution.SolutionId).Order(StringComparer.Ordinal),
+            plan.Measurements.BySolution.Select(solution => solution.SolutionId));
+    }
+
+    // The corpus dimension records the ceiling that was actually applied, so measurements.json says which EDG-03
+    // limit the package was measured against. 26,214,400 is CRT-05's 25 MiB, computed here rather than read back.
+    [Fact][Trait("Requirement", "CRT-03")] public void Build_RecordsTheCorpusAndTheCeilingItWasMeasuredAgainst()
+    {
+        var plan = PackageBuilder.Build(Corpus("pitstop.sln"));
+        var corpus = plan.Measurements.Corpus;
+        Assert.NotNull(corpus);
+        Assert.Equal("pitstop.sln", corpus.Corpus);
+        Assert.Equal(750, corpus.MaximumArtifacts);
+        Assert.Equal(26_214_400L, corpus.MaximumBytes);
+        Assert.Equal(plan.Measurements.ByFamily.Sum(family => family.ArtifactCount), corpus.ArtifactCount);
+        Assert.Equal(plan.Measurements.ByFamily.Sum(family => family.Bytes), corpus.Bytes);
+    }
+
+    [Fact][Trait("Requirement", "CRT-03")] public void Build_NamesACorpusTheSpecDoesNotPinAsUnpinned() =>
+        Assert.Equal("unpinned", Plan().Measurements.Corpus?.Corpus);
+
+    [Fact][Trait("Requirement", "CRT-03")] public void Build_RoundTripsTheSolutionAndCorpusDimensions()
+    {
+        var plan = Plan();
+        var read = CanonicalJson.Read<PublicationMeasurements>(plan.Artifacts.Single(artifact => artifact.Path.Value == "measurements.json").Payload.AsSpan());
+        Assert.Equal(
+            plan.Measurements.BySolution.Select(solution => (solution.SolutionId, solution.ArtifactCount, solution.Bytes)),
+            read.BySolution.Select(solution => (solution.SolutionId, solution.ArtifactCount, solution.Bytes)));
+        var corpus = read.Corpus;
+        Assert.NotNull(corpus);
+        Assert.Equal(plan.Measurements.Corpus!.Corpus, corpus.Corpus);
+        Assert.Equal(plan.Measurements.Corpus!.MaximumBytes, corpus.MaximumBytes);
+    }
+
+    [Fact][Trait("Requirement", "EDG-03")] public void Build_BudgetDiagnosticNamesTheCorpus() =>
+        Assert.Contains("corpus: 'pitstop.sln'.", Assert.Throws<PackageBudgetExceededException>(
+            () => PackageBuilder.Build(Crowded("src/pitstop.sln"))).Message, StringComparison.Ordinal);
 
     private static RetrievalModel Corpus(string fileName) => new([Solution("corpus", "src/" + fileName)]);
 
