@@ -10,10 +10,41 @@ namespace Csharp2Md.Core.PackageBuilding;
 
 internal sealed record PackageBudget(int MaximumArtifacts, long MaximumBytes)
 {
-    // 96 MiB, not the 64 MiB that CRT-04 pins for eShopOnContainers: rendering one Markdown page per cited
-    // document took eShop from 49.21 to 78.60 MiB, and NAV-03 owns those pages. The per-corpus ceilings stay
-    // where the spec puts them; this is the default the builder refuses beyond.
+    // The fallback for a corpus the spec pins no ceiling on. 96 MiB, not 64: rendering one Markdown page per
+    // cited document took eShop from 49.21 to 78.60 MiB, NAV-03 owns those pages, and the spec sets no size
+    // ceiling for eShop. A corpus the spec does pin is never measured against this - see ForCorpus.
     internal static PackageBudget Default { get; } = new(1_500, 96L * 1024 * 1024);
+
+    // The ceilings CRT-04 and CRT-05 pin, keyed by the solution file the corpus is analysed through. These are
+    // the spec's own numbers; nothing here may be relaxed without amending the criterion that states it.
+    private static readonly ImmutableDictionary<string, PackageBudget> Pinned =
+        ImmutableDictionary.CreateRange(StringComparer.OrdinalIgnoreCase,
+        [
+            KeyValuePair.Create("eShopOnContainers-ServicesAndWebApps.sln", new PackageBudget(1_500, 64L * 1024 * 1024)),
+            KeyValuePair.Create("pitstop.sln", new PackageBudget(750, 25L * 1024 * 1024)),
+        ]);
+
+    // EDG-03 refuses the package that exceeds "o limite estrutural aplicavel ao corpus", so the limit is chosen
+    // from the corpus rather than fixed. Every pinned ceiling a package touches applies to the whole committed
+    // package, so the applied limit is the componentwise minimum over the matches - which also makes a pinned
+    // corpus strictly tighter than Default rather than merely different from it.
+    internal static PackageBudget ForCorpus(RetrievalModel model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        var applied = Default;
+        foreach (var solution in model.Solutions)
+        {
+            var file = Path.GetFileName(solution.Solution.LogicalRelativePath);
+            if (Pinned.TryGetValue(file, out var pinned))
+            {
+                applied = new PackageBudget(
+                    Math.Min(applied.MaximumArtifacts, pinned.MaximumArtifacts),
+                    Math.Min(applied.MaximumBytes, pinned.MaximumBytes));
+            }
+        }
+
+        return applied;
+    }
 }
 
 internal sealed class PackageBudgetExceededException : InvalidOperationException
@@ -45,7 +76,7 @@ internal static class PackageBuilder
     internal static PackagePlan Build(RetrievalModel model, bool includeTests = false, PackageBudget? budget = null)
     {
         ArgumentNullException.ThrowIfNull(model);
-        budget ??= PackageBudget.Default;
+        budget ??= PackageBudget.ForCorpus(model);
         if (budget.MaximumArtifacts < 1 || budget.MaximumBytes < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(budget));

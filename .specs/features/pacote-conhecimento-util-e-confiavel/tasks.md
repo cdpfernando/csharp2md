@@ -1598,15 +1598,30 @@ The second feature Verifier returned FAIL on `ff42c35..71e7094` with 9 ranked ga
 
 **Done when**:
 
-- [ ] A corpus-applicable limit exists and is selected per analysed corpus; the builder refuses beyond it before the atomic swap, which is what EDG-03 names.
-- [ ] The limit applied to eShopOnContainers is 1,500 artifacts / 64 MiB and to Pitstop 750 artifacts / 25 MiB, matching CRT-04 and CRT-05 rather than test-invented numbers.
-- [ ] No selected limit is looser than the tightest ceiling the spec pins; the 96 MiB default may remain only as the fallback for a corpus the spec does not pin, and its comment says so.
-- [ ] eShop still commits successfully at its present size, since the spec pins no ceiling for it.
-- [ ] At least 4 cases assert the selection and the refusal using the spec's own numbers, with expectations hand-computed rather than read back from the builder.
+- [x] A corpus-applicable limit exists and is selected per analysed corpus; the builder refuses beyond it before the atomic swap, which is what EDG-03 names.
+- [x] The limit applied to eShopOnContainers is 1,500 artifacts / 64 MiB and to Pitstop 750 artifacts / 25 MiB, matching CRT-04 and CRT-05 rather than test-invented numbers.
+- [x] For a corpus the spec pins, the applied limit is that corpus' ceiling and never the looser default; the 96 MiB default applies only to a corpus the spec does not pin, and its comment says so.
+- [x] eShop still commits successfully at its present size, since the spec pins no ceiling for it.
+- [x] At least 4 cases assert the selection and the refusal using the spec's own numbers, with expectations hand-computed rather than read back from the builder.
 
 **Tests**: unit — ≥4 cases against the spec's ceilings
 **Gate**: full + LocalCorpus when present
 **Commit**: `feat(core): bound the package by the corpus ceiling`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **593 of 593** (up from 588 by this task's 5 cases), `Csharp2Md.Cli.Tests` 81 of 83. The two skips remain Pitstop and eShopOnContainers, whose clones are absent; the eShop LocalCorpus case ran and passed.
+
+`PackageBudget.ForCorpus(RetrievalModel)` selects the limit from the corpus, keyed by the solution file each corpus is analysed through, and `PackageBuilder.Build` now defaults to it instead of to `PackageBudget.Default`. eShopOnContainers resolves to 1,500 / 64 MiB and Pitstop to 750 / 25 MiB — the spec's own numbers, no longer reachable only through a skipped corpus test.
+
+**Componentwise minimum, not first match**: a pinned ceiling binds the whole committed package, so when one package touches more than one pinned corpus every ceiling applies. Taking the minimum per component also makes a pinned corpus *strictly tighter* than the default rather than merely different from it, which is the property the gap was about: before this task a 80 MiB eShopOnContainers package would have passed the 96 MiB global guard.
+
+**The 96 MiB default stays, narrowed in meaning**: it is now the fallback for a corpus the spec pins nothing on, and its comment says so. eShop lands there deliberately — the spec gives eShop no size ceiling, only CRT-06's collision rule — so T58's decision to raise the default rather than bound the document pages is preserved rather than reversed.
+
+**Criterion 3 was reworded before implementation.** As first drafted it read "no selected limit is looser than the tightest ceiling the spec pins", which contradicts itself: the 96 MiB fallback is by definition looser than 64 MiB. It now says what was meant — a pinned corpus gets its own ceiling and never the looser default.
+
+**Discrimination proven by hand** (the sensor is a standing skip per `AGENTS.md`): two faults injected. Disabling the `Pinned` lookup so every corpus fell back to `Default` killed 4 of the 5 new cases — both spec-ceiling cases, the multi-corpus minimum and the `Build` wiring case — while the unpinned-default case correctly survived, since `Default` is exactly what it asserts. Re-pointing `Build` at `PackageBudget.Default` killed only `Build_RefusesAPinnedCorpusAtItsOwnCeilingRatherThanTheDefault`, which is the one case that proves the selection reaches the builder. Both faults were reverted and the suite re-run at 25 of 25 before the commit.
+
+**Still unverified on a corpus**: CRT-04 and CRT-05 now have an enforced ceiling and unit evidence, but neither corpus can be measured end to end on this machine. The `LocalCorpusAnalyzeTests` cases stay skipped until the clones return.
 
 ### T61: Break published measures down by solution and corpus
 

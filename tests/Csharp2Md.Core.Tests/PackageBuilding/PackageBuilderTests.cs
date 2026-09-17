@@ -53,6 +53,66 @@ public sealed class PackageBuilderTests
     }
     [Fact][Trait("Requirement", "PKG-01")] public void Build_AcceptsMultipleSolutions() { var model=Model(); var extra=new SolutionRetrievalModel(CanonicalIdentity.CreateSolution("other","src/Other.sln"),[new EntityHandle("component:other")], [], []); var plan=PackageBuilder.Build(new RetrievalModel(model.Solutions.Add(extra))); Assert.Equal(2, plan.Manifest.Solutions.Length); }
     [Fact][Trait("Requirement", "STO-04")] public void Build_AssignsOneArtifactPathPerPayload() => Assert.Equal(Plan().Artifacts.Length, Plan().Artifacts.Select(artifact => artifact.Path.Value).Distinct(StringComparer.Ordinal).Count());
+    // EDG-03 names a limit "aplicavel ao corpus", and CRT-04 and CRT-05 are where the spec writes those numbers
+    // down: 1,500 artifacts / 64 MiB for eShopOnContainers and 750 / 25 MiB for Pitstop. The expectations below
+    // are the spec's figures converted by hand, never read back from PackageBudget.
+    [Fact][Trait("Requirement", "CRT-04")] public void ForCorpus_AppliesTheCeilingCrt04PinsForEShopOnContainers()
+    {
+        var budget = PackageBudget.ForCorpus(Corpus("eShopOnContainers-ServicesAndWebApps.sln"));
+        Assert.Equal(1_500, budget.MaximumArtifacts);
+        Assert.Equal(67_108_864L, budget.MaximumBytes);
+    }
+
+    [Fact][Trait("Requirement", "CRT-05")] public void ForCorpus_AppliesTheCeilingCrt05PinsForPitstop()
+    {
+        var budget = PackageBudget.ForCorpus(Corpus("pitstop.sln"));
+        Assert.Equal(750, budget.MaximumArtifacts);
+        Assert.Equal(26_214_400L, budget.MaximumBytes);
+    }
+
+    // eShop is deliberately not pinned: the spec gives it no size ceiling, only CRT-06's collision rule.
+    [Fact][Trait("Requirement", "EDG-03")] public void ForCorpus_LeavesACorpusTheSpecDoesNotPinOnTheDefault()
+    {
+        var budget = PackageBudget.ForCorpus(Corpus("eShop.slnx"));
+        Assert.Equal(1_500, budget.MaximumArtifacts);
+        Assert.Equal(100_663_296L, budget.MaximumBytes);
+    }
+
+    // Both ceilings bind the one committed package, so the applied limit is the componentwise minimum - and a
+    // pinned corpus is therefore always strictly tighter than the 96 MiB default rather than merely different.
+    [Fact][Trait("Requirement", "EDG-03")] public void ForCorpus_AppliesEveryPinnedCeilingAPackageTouches()
+    {
+        var budget = PackageBudget.ForCorpus(new RetrievalModel(
+            [Solution("eshoponcontainers", "src/eShopOnContainers-ServicesAndWebApps.sln"), Solution("pitstop", "src/pitstop.sln")]));
+        Assert.Equal(750, budget.MaximumArtifacts);
+        Assert.Equal(26_214_400L, budget.MaximumBytes);
+        Assert.True(budget.MaximumBytes < PackageBudget.Default.MaximumBytes);
+    }
+
+    // The selection has to reach Build, not merely exist. The same 800-root model is refused under Pitstop's
+    // 750-artifact ceiling and accepted under an unpinned name, where the default allows 1,500.
+    [Fact][Trait("Requirement", "EDG-03")] public void Build_RefusesAPinnedCorpusAtItsOwnCeilingRatherThanTheDefault()
+    {
+        Assert.StartsWith(
+            "package-budget: 'artifacts'. by-family: ",
+            Assert.Throws<PackageBudgetExceededException>(() => PackageBuilder.Build(Crowded("src/pitstop.sln"))).Message,
+            StringComparison.Ordinal);
+        var accepted = PackageBuilder.Build(Crowded("src/App.sln"));
+        Assert.InRange(accepted.Artifacts.Length, 751, 1_500);
+    }
+
+    private static RetrievalModel Corpus(string fileName) => new([Solution("corpus", "src/" + fileName)]);
+
+    private static SolutionRetrievalModel Solution(string key, string path) =>
+        new(CanonicalIdentity.CreateSolution(key, path), [new EntityHandle("component:orders")], [], []);
+
+    private static RetrievalModel Crowded(string path) =>
+        new([new SolutionRetrievalModel(
+            CanonicalIdentity.CreateSolution("crowded", path),
+            [.. Enumerable.Range(0, 800).Select(index => new EntityHandle($"component:c{index}"))],
+            [],
+            [])]);
+
     private static PackagePlan Plan() => PackageBuilder.Build(Model());
     private static RetrievalModel Model() =>
         new([new SolutionRetrievalModel(
