@@ -235,15 +235,15 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 | PKG-02 | Conhecimento útil, critério 2 | T3, T12, T16, T42 | Complete |
 | PKG-03 | Conhecimento útil, critério 3 | T3, T15, T16, T30, T42 | Complete |
 | PKG-04 | Conhecimento útil, critério 4 | T3, T17, T30, T42 | Complete |
-| PKG-05 | Conhecimento útil, critério 5 | T8, T17, T30, T42 | Complete |
+| PKG-05 | Conhecimento útil, critério 5 | T8, T17, T30, T42, T75, T76, T77 | Complete — measured: `Entities_NeverNameATestesProjectByDefault` (Cli.Tests) confirms zero `.Testes`-owned entities across all six ArchitectureDependencyLab solutions in default mode |
 | PKG-06 | Conhecimento útil, critério 6 | T8, T17, T30, T42 | Complete |
 | PKG-07 | Conhecimento útil, critério 7 | T3, T7, T8, T14, T31, T42 | Complete |
 | PKG-08 | Conhecimento útil, critério 8 | T8, T17, T30, T38, T39, T42 | Complete |
 | PKG-09 | Conhecimento útil, critério 9 | T3, T12, T13, T14, T15, T16, T42 | Complete |
 | PKG-10 | Conhecimento útil, critério 10 | T1, T40, T45, T59, T66 | Complete |
-| DEP-01 | Dependências, critério 1 | T4, T18, T42, T46 | Complete |
-| DEP-02 | Dependências, critério 2 | T4, T13, T14, T18, T42 | Complete |
-| DEP-03 | Dependências, critério 3 | T4, T18, T42, T46, T49, T53 | Complete |
+| DEP-01 | Dependências, critério 1 | T4, T18, T42, T46, T73, T74, T77 | Complete — measured: `OracleProjectReferenceScoreTests` (Cli.Tests) scores 60 of 60 reachable `ProjectReference` edges correct, 0 false positives, against `fixtures/ArchitectureDependencyLab`'s normative oracle; `Entities_NeverRetainABareSymbolOrCallableFromOutsideTheAnalyzedSource` confirms the Component-scope complete-graph defect (STATE.md, measured on eShop) is closed |
+| DEP-02 | Dependências, critério 2 | T4, T13, T14, T18, T42, T73 | Complete |
+| DEP-03 | Dependências, critério 3 | T4, T18, T42, T46, T49, T53, T73 | Complete |
 | DEP-04 | Dependências, critério 4 | T18, T42, T46 | Complete |
 | DEP-05 | Dependências, critério 5 | T18, T42, T47, T49, T53, T64 | Complete |
 | DEP-06 | Dependências, critério 6 | T18, T42 | Complete |

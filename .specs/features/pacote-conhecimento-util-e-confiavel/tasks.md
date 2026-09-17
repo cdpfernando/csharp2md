@@ -2185,13 +2185,18 @@ Both are fixed in the same commit as the original `ReferencedProjects()` defect 
 
 **Done when**:
 
-- [ ] `spec.md`'s traceability rows for DEP-01, DEP-02, DEP-03 and PKG-05 name T73-T77 and state the measured outcome (oracle score, complete-graph check, test-leak check), not a restated assumption.
-- [ ] `.specs/STATE.md`'s two open-finding sections are replaced by the corrected state: the re-measured oracle score, the confirmed absence of BCL/primitive entities in a real corpus's retained graph, and the confirmed absence of `.Testes`-owned entities in the default package.
-- [ ] Any claim this phase could not fully close (for example, a residual fan-out from a legitimate, genuinely shared in-solution type used by many components) is written down as a named residual, not silently dropped.
+- [x] `spec.md`'s traceability rows for DEP-01, DEP-02, DEP-03 and PKG-05 name T73-T77 and state the measured outcome (oracle score, complete-graph check, test-leak check), not a restated assumption.
+- [x] `.specs/STATE.md`'s two open-finding sections are replaced by the corrected state: the re-measured oracle score, the confirmed absence of BCL/primitive entities in a real corpus's retained graph, and the confirmed absence of `.Testes`-owned entities in the default package.
+- [x] Any claim this phase could not fully close (for example, a residual fan-out from a legitimate, genuinely shared in-solution type used by many components) is written down as a named residual, not silently dropped.
 
 **Tests**: none (documentation)
 **Gate**: `validate_state.py` on this feature
 **Commit**: `docs(state): correct the projection traceability after phase 11`
+
+**Status**: Complete
+**Gate note**: `validate_state.py pacote-conhecimento-util-e-confiavel` → 0 errors. No code changed; the full test gate from T77 stands (`Csharp2Md.Core.Tests` 637/637, `Csharp2Md.Cli.Tests` 96/98 with 2 expected skips).
+**Decision**: `spec.md`'s traceability rows were extended (task list + a one-line measured-outcome note) rather than rewritten, keeping the existing per-requirement task history intact. `STATE.md`'s two OPEN FINDING sections and the "NUMBER THAT MATTERS" section were kept verbatim as historical measurement, headed by a short RESOLVED note pointing to the fixing task and the test that now holds it — the diagnostic narrative remains available as the record of what was found and how, per the project's own convention of appending decisions rather than deleting them. `validation.md` (the prior Verifier's report) was deliberately left untouched: it reflects the pre-Phase-11 state, and rewriting a Verifier report by hand would misrepresent it as a fresh verification. A named residual (legitimately-shared in-solution types still fan out at Component scope; a BCL-generic-wrapped user type produces no structural-type-use edge) is recorded in `STATE.md` rather than silently dropped.
+**Adequacy**: n/a (documentation-only task; the gate is `validate_state.py`, run above with 0 errors).
 
 ## Requirement-to-Task Traceability
 
