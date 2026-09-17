@@ -1,3 +1,4 @@
+using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.Analysis.Inventory;
 
 namespace Csharp2Md.Core.Tests.Analysis;
@@ -187,9 +188,24 @@ public sealed class SourceInventoryTests
     [InlineData("tests/App.Tests/Foo.cs", true)]
     [InlineData("src/App.UnitTests/Foo.cs", true)]
     [InlineData("src/App/Program.cs", false)]
+    [InlineData("src/SistemaA.Testes/Foo.cs", true)]
+    [InlineData("src/Testemunho/Foo.cs", false)]
+    [InlineData("src/Manifesto/Foo.cs", false)]
     public void LooksLikeTestDocument_UsesPathSegments(string relativePath, bool expected)
     {
         Assert.Equal(expected, SourceInventory.LooksLikeTestDocument(relativePath));
+    }
+
+    [Fact]
+    [Trait("Requirement", "PKG-05")]
+    public void IsTestProject_RecognizesThePortugueseTestesConvention()
+    {
+        var solution = CanonicalIdentity.CreateSolution("sistema", "Sistema.slnx");
+        var testProject = CanonicalIdentity.CreateProject(solution, "src/SistemaA.Testes/SistemaA.Testes.csproj");
+        var productionProject = CanonicalIdentity.CreateProject(solution, "src/SistemaA.Api/SistemaA.Api.csproj");
+
+        Assert.True(SourceInventory.IsTestProject(testProject));
+        Assert.False(SourceInventory.IsTestProject(productionProject));
     }
 
     [Fact]

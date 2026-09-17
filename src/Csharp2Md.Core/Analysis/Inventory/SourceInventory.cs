@@ -135,9 +135,11 @@ internal static class SourceInventory
         {
             if (segment.Equals("test", StringComparison.OrdinalIgnoreCase)
                 || segment.Equals("tests", StringComparison.OrdinalIgnoreCase)
+                || segment.Equals("testes", StringComparison.OrdinalIgnoreCase)
                 || segment.EndsWith(".Tests", StringComparison.OrdinalIgnoreCase)
                 || segment.EndsWith(".UnitTests", StringComparison.OrdinalIgnoreCase)
-                || segment.EndsWith(".IntegrationTests", StringComparison.OrdinalIgnoreCase))
+                || segment.EndsWith(".IntegrationTests", StringComparison.OrdinalIgnoreCase)
+                || segment.EndsWith(".Testes", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

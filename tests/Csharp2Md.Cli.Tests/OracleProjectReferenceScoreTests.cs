@@ -21,26 +21,23 @@ namespace Csharp2Md.Cli.Tests;
 /// in <c>.specs/STATE.md</c>.
 /// </para>
 /// <para>
-/// <b>Every baseline in <see cref="RecordedDefects"/> is a measured defect, not an expected outcome.</b>
-/// T73 (2026-09-17) fixed <c>ProjectVariantWorkspace.ReferencedProjects()</c> to read the solution's real
-/// <c>Project.ProjectReferences</c> instead of every other project the workspace happened to load, and fixed
-/// two aggregation bugs in <c>CausalRelationExtractor</c>: a project-reference evidence key that named only
-/// the target (so two different roots referencing the same target collided and silently swapped documents),
-/// and a referenced project's occurrence being attributed to the citing root instead of to itself. Together
-/// these took the generator from 7 correct of 60 reachable / 29 false positives / 4 test-policy leaks to
-/// <b>60 correct, 0 false positives, 27 test-policy leaks</b> -- every reachable edge exactly right, and the
-/// only remaining gap is that retention does not yet exclude edges sourced from a <c>.Testes</c> project
-/// (PKG-05), which is Phase 11's T75/T76.
-/// <c>fixtures/SyntheticSolution</c> cannot see any of this: with two entities a complete graph and a
-/// correct graph are the same graph.
+/// <b>Phase 11 (T73-T76, 2026-09-17) took the generator from 7 correct of 60 reachable edges / 29 false
+/// positives / 4 test-policy leaks to a fully correct projection: 60 correct, 0 false positives, 0
+/// leaks.</b> T73 fixed <c>ProjectVariantWorkspace.ReferencedProjects()</c> to read the solution's real
+/// <c>Project.ProjectReferences</c> and two aggregation bugs in <c>CausalRelationExtractor</c> (an
+/// evidence key that collided across roots referencing the same target, and a referenced project's
+/// occurrence attributed to the citing root instead of to itself). T75/T76 then excluded test-project
+/// entities and their outbound edges from retention by default and taught the test-naming heuristic the
+/// corpus's own <c>.Testes</c> (Portuguese) convention, closing the remaining leaks to zero.
+/// <c>fixtures/SyntheticSolution</c> could not have caught any of this: with two entities a complete graph
+/// and a correct graph are the same graph.
 /// </para>
 /// <para>
-/// Each case is a three-sided ratchet. Fewer correct edges, more false positives or more test-policy
-/// leaks fail as a regression. <b>An improvement fails too</b>, and says so: the baseline must be raised
-/// in the same commit that fixes the generator, because a ratchet that silently absorbs progress stops
-/// measuring anything. The failure message always carries the corpus target (60 correct of 87, 27
-/// excluded, no false positive and no leak) so the distance to a correct generator is printed, not
-/// inferred.
+/// Each case is a three-sided ratchet, kept even at the ceiling: fewer correct edges, more false
+/// positives or more test-policy leaks fail as a regression, and so - now vacuously, since 60/60 with no
+/// false positive or leak is the ceiling - would stating even more than the truth. The failure message
+/// always carries the corpus target (60 correct of 87, 27 excluded, no false positive and no leak) so a
+/// future regression's distance from a correct generator is printed, not inferred.
 /// </para>
 /// </summary>
 public sealed class OracleProjectReferenceScoreTests : IClassFixture<ArchitectureDependencyLabPackage>
@@ -50,27 +47,27 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
     public OracleProjectReferenceScoreTests(ArchitectureDependencyLabPackage package) => this.package = package;
 
     /// <summary>
-    /// Re-measured on 2026-09-17 after T73, against the vendored corpus. <c>OracleEdges</c> and
-    /// <c>TestPolicyEdges</c> state a truth and are read back from the oracle so the corpus cannot drift
-    /// under the ratchet; <c>CorrectToday</c>, <c>FalsePositivesToday</c> and <c>TestPolicyLeaksToday</c>
-    /// record how wrong the generator is right now. Every reachable edge in every solution is now correct
-    /// and no false positive remains anywhere; the only nonzero column left is test-policy leaks, all of
-    /// them a `.Testes` project's real, correctly-extracted reference that retention does not yet exclude.
+    /// Re-measured on 2026-09-17 after Phase 11 (T73-T76), against the vendored corpus. <c>OracleEdges</c>
+    /// and <c>TestPolicyEdges</c> state a truth and are read back from the oracle so the corpus cannot
+    /// drift under the ratchet; <c>CorrectToday</c>, <c>FalsePositivesToday</c> and
+    /// <c>TestPolicyLeaksToday</c> now pin the correct state rather than a defect: every reachable edge in
+    /// every solution matches the oracle exactly, no false positive remains, and no edge sourced from a
+    /// <c>.Testes</c> project leaks into the default package.
     /// </summary>
-    internal static readonly ImmutableArray<OracleBaseline> RecordedDefects =
+    internal static readonly ImmutableArray<OracleBaseline> RecordedBaselines =
     [
-        new("SistemaA", OracleEdges: 4, TestPolicyEdges: 1, CorrectToday: 3, FalsePositivesToday: 0, TestPolicyLeaksToday: 1),
-        new("SistemaB", OracleEdges: 18, TestPolicyEdges: 6, CorrectToday: 12, FalsePositivesToday: 0, TestPolicyLeaksToday: 6),
+        new("SistemaA", OracleEdges: 4, TestPolicyEdges: 1, CorrectToday: 3, FalsePositivesToday: 0, TestPolicyLeaksToday: 0),
+        new("SistemaB", OracleEdges: 18, TestPolicyEdges: 6, CorrectToday: 12, FalsePositivesToday: 0, TestPolicyLeaksToday: 0),
         // SistemaC has no reachable edge at all: its one oracle edge is excluded by PKG-05. Its case cannot
         // score anything, only detect a false positive or a leak; the other five carry the scoring duty.
-        new("SistemaC", OracleEdges: 1, TestPolicyEdges: 1, CorrectToday: 0, FalsePositivesToday: 0, TestPolicyLeaksToday: 1),
-        new("SistemaD", OracleEdges: 8, TestPolicyEdges: 3, CorrectToday: 5, FalsePositivesToday: 0, TestPolicyLeaksToday: 3),
-        new("SistemaE", OracleEdges: 28, TestPolicyEdges: 8, CorrectToday: 20, FalsePositivesToday: 0, TestPolicyLeaksToday: 8),
-        new("SistemaE.Copia", OracleEdges: 28, TestPolicyEdges: 8, CorrectToday: 20, FalsePositivesToday: 0, TestPolicyLeaksToday: 8),
+        new("SistemaC", OracleEdges: 1, TestPolicyEdges: 1, CorrectToday: 0, FalsePositivesToday: 0, TestPolicyLeaksToday: 0),
+        new("SistemaD", OracleEdges: 8, TestPolicyEdges: 3, CorrectToday: 5, FalsePositivesToday: 0, TestPolicyLeaksToday: 0),
+        new("SistemaE", OracleEdges: 28, TestPolicyEdges: 8, CorrectToday: 20, FalsePositivesToday: 0, TestPolicyLeaksToday: 0),
+        new("SistemaE.Copia", OracleEdges: 28, TestPolicyEdges: 8, CorrectToday: 20, FalsePositivesToday: 0, TestPolicyLeaksToday: 0),
     ];
 
     public static TheoryData<string> Solutions =>
-        new(RecordedDefects.Select(static defect => defect.Solution));
+        new(RecordedBaselines.Select(static defect => defect.Solution));
 
     [Theory]
     [MemberData(nameof(Solutions))]
@@ -78,7 +75,7 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
     [Trait("Category", "OracleCorpus")]
     public void ProjectReferences_HoldTheRecordedDefectBaseline(string solution)
     {
-        var baseline = RecordedDefects.Single(defect => defect.Solution == solution);
+        var baseline = RecordedBaselines.Single(defect => defect.Solution == solution);
         var score = package.Score(solution);
 
         Assert.Equal(baseline.OracleEdges, score.OracleEdges);
@@ -122,7 +119,7 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
     [Trait("Category", "OracleCorpus")]
     public void Corpus_ScoresTheRecordedShareOfItsReachableOracle()
     {
-        var scores = RecordedDefects.Select(defect => package.Score(defect.Solution)).ToArray();
+        var scores = RecordedBaselines.Select(defect => package.Score(defect.Solution)).ToArray();
         var correct = scores.Sum(static score => score.Correct);
         var falsePositives = scores.Sum(static score => score.FalsePositives);
         var leaks = scores.Sum(static score => score.TestPolicyLeaks);
@@ -146,7 +143,6 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
     }
 
     /// <summary>
-    /// <summary>
     /// PKG-05 excludes "usos de tipo nao retidos": before T74, a use of or call to a BCL/framework symbol
     /// (<c>string</c>, <c>int</c>, <c>Task</c>, ...) was retained as a shared <c>Symbol</c>/<c>Callable</c>
     /// entity whose occurrence spans every project that happens to use it, producing a near-complete
@@ -159,7 +155,7 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
     [Trait("Category", "OracleCorpus")]
     public void Entities_NeverRetainABareSymbolOrCallableFromOutsideTheAnalyzedSource()
     {
-        foreach (var defect in RecordedDefects)
+        foreach (var defect in RecordedBaselines)
         {
             var leaked = package.EntityKeys(defect.Solution)
                 .Where(static key => key.StartsWith("symbol:", StringComparison.Ordinal) || key.StartsWith("callable:", StringComparison.Ordinal))
@@ -185,7 +181,7 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
     {
         var oracle = ArchitectureDependencyLabPackage.ReadOracle();
 
-        foreach (var defect in RecordedDefects)
+        foreach (var defect in RecordedBaselines)
         {
             var known = oracle[defect.Solution]
                 .SelectMany(static edge => new[] { edge.Source, edge.Target })
@@ -210,7 +206,7 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
     internal const int ReachableCorpusEdges = OracleCorpusEdges - TestPolicyExcludedEdges;
     private const int BaselineCorrect = 60;
     private const int BaselineFalsePositives = 0;
-    private const int BaselineTestPolicyLeaks = 27;
+    private const int BaselineTestPolicyLeaks = 0;
 
     private static string Verdict(SolutionScore score, OracleBaseline baseline) =>
         $"{score.Solution}: {score.Correct} correct (baseline {baseline.CorrectToday}), "
