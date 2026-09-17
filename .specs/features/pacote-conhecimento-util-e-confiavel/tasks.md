@@ -1700,13 +1700,24 @@ Three cases were added rather than one. Two are theory rows asserting a literal 
 
 **Done when**:
 
-- [ ] At least one case locates a root that is not a `component:`, so the branch beyond the 5-read path is exercised.
-- [ ] The case asserts measured reads and tokens against NAV-07's 8 and 12,000, not against `Status == Passed`.
-- [ ] Raising the measured cost past either bound makes the case fail; proven by hand.
+- [x] At least one case locates a root that is not a `component:`, so the branch beyond the 5-read path is exercised.
+- [x] The case asserts measured reads and tokens against NAV-07's 8 and 12,000, not against `Status == Passed`.
+- [x] Raising the measured cost past either bound makes the case fail; proven by hand.
 
 **Tests**: unit — ≥1 added case
 **Gate**: quick
 **Commit**: `test(core): pin the non-component locate budget`
+
+**Status**: Complete
+**Gate note**: quick gate green — `Csharp2Md.Core.Tests` **608 of 608** (up from 602 by this task's 6 theory rows).
+
+`JourneyCertifier.cs:99` picks the locate budget with `root.DisplayName.StartsWith("component:") ? 5 : 8`. Every existing case built its roots as `component:{ordinal}`, so the `: 8` arm - the one NAV-07 is about - was never executed. The new theory covers the other three root kinds PKG-02 names (`deployment`, `entrypoint`, `boundary`) at 3 and 400 roots, and asserts measured reads within 1..8 and tokens within 1..12,000.
+
+**A first injected fault was a no-op, not a survivor.** Opening the roots index ten extra times left all 19 cases green. That is correct behaviour rather than a gap: `MeasuredPackageReader` counts *distinct* artifact paths (`_opened` is a `HashSet<string>`), so re-reading one artifact is genuinely one read. The fault was discarded and replaced with one that changes the measured cost.
+
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): two faults injected. Opening every index named by the solution manifest - distinct paths, so genuinely more reads - killed all 6 new rows, together with the 2 pre-existing component rows, since that inflation hits both arms. Narrowing the non-component budget from 8 to 1 killed exactly the 6 new rows and left the component rows green, which is the precise demonstration that these cases pin the NAV-07 arm and nothing else. Both faults were reverted and the suite re-run at 19 of 19 before the commit.
+
+**The bound is a maximum, asserted as one.** NAV-07 says "no máximo 8 leituras e 12.000 tokens", so the assertion is a range rather than an equality; the pre-existing component case can assert `Equal(3, reads)` because it measures one fixed shape, while the three non-component kinds are asserted against the ceiling the spec actually states.
 
 ### T64: Assert multi-scope reuse and deployment-unit navigation
 

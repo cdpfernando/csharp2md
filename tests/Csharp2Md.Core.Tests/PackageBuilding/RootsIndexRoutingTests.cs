@@ -157,6 +157,29 @@ public sealed class RootsIndexRoutingTests
         Assert.InRange(measurement.Tokens, 1, 12_000);
     }
 
+    // The theory above only ever emits `component:` roots, so it measures NAV-06's component path. NAV-07 is
+    // about "outra raiz suportada" - the other three root kinds PKG-02 names - and pins a separate, looser
+    // pair of bounds. Without a non-component root nothing measured those 8 reads or those 12,000 tokens.
+    [Theory]
+    [InlineData("deployment", 3)]
+    [InlineData("deployment", 400)]
+    [InlineData("entrypoint", 3)]
+    [InlineData("entrypoint", 400)]
+    [InlineData("boundary", 3)]
+    [InlineData("boundary", 400)]
+    [Trait("Requirement", "NAV-07")]
+    public void Certify_LocateJourney_ReachesANonComponentRootWithinEightReadsAndTwelveThousandTokens(string kind, int rootCount)
+    {
+        using var package = Package(rootCount, kind);
+
+        var journey = Locate(JourneyCertifier.Certify(package.Path));
+
+        Assert.Equal(JourneyCertificationStatus.Passed, journey.Status);
+        var measurement = Measurement(journey);
+        Assert.InRange(measurement.Reads, 1, 8);
+        Assert.InRange(measurement.Tokens, 1, 12_000);
+    }
+
     [Fact]
     [Trait("Requirement", "CRT-01")]
     public void Certify_LocateJourney_FailsWhenTheDerivedRootPageIsMissing()
@@ -209,10 +232,12 @@ public sealed class RootsIndexRoutingTests
         return count;
     }
 
-    private static TempPackage Package(int rootCount)
+    private static TempPackage Package(int rootCount) => Package(rootCount, "component");
+
+    private static TempPackage Package(int rootCount, string kind)
     {
         var package = new TempPackage();
-        foreach (var artifact in PackageBuilder.Build(Model(rootCount)).Artifacts)
+        foreach (var artifact in PackageBuilder.Build(Model(rootCount, kind)).Artifacts)
         {
             package.Write(artifact.Path.Value, artifact.Payload);
         }
@@ -235,11 +260,13 @@ public sealed class RootsIndexRoutingTests
     private static MachineArtifactSet Write(int rootCount) =>
         MachineArtifactWriter.Write(Model(rootCount), includeTests: false);
 
-    private static RetrievalModel Model(int rootCount)
+    private static RetrievalModel Model(int rootCount) => Model(rootCount, "component");
+
+    private static RetrievalModel Model(int rootCount, string kind)
     {
         var solution = CanonicalIdentity.CreateSolution("app", "src/App.sln");
         var roots = Enumerable.Range(0, rootCount)
-            .Select(ordinal => new EntityHandle($"component:{ordinal:D4}"))
+            .Select(ordinal => new EntityHandle($"{kind}:{ordinal:D4}"))
             .ToImmutableArray();
         return new RetrievalModel([new SolutionRetrievalModel(solution, roots, [], [])]);
     }
