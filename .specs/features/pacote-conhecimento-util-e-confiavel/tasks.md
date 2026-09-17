@@ -89,7 +89,13 @@ T39 -> T40 -> T41 -> T42 -> T43 -> T48 -> T46 -> T47 -> T49 -> T50 -> T51 -> T52
 T55 -> T56 -> T57 -> T58 -> T59
 ```
 
-T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. The seven phases form seven sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+### Phase 8: Second Verifier remediation
+
+```text
+T60 -> T61 -> T62 -> T63 -> T64 -> T65 -> T66
+```
+
+T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. The eight phases form eight sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -1571,6 +1577,158 @@ Owners were not copied from the grouped table by hand. Each row's owning tasks a
 **69 rows read `Complete`, 2 read `Unverified`.** `Unverified` is a new status value, introduced because `Complete` would have been an assumption for CRT-04 and CRT-05: their owning tasks closed with green gates, but the acceptance seam — `LocalCorpusAnalyzeTests` over eShopOnContainers and Pitstop — skips by name on this machine, and the last real measurement predates T58's ~60% package growth. CRT-07 requires exactly that skip, so it reads `Complete`; CRT-06 reads `Complete` because `fixtures/eShop` is present and its case runs. The Coverage line under the table states the legend and names the re-measurement that clears the two rows.
 
 **No status was inferred from the missing Verifier report**: `.specs/features/pacote-conhecimento-util-e-confiavel/validation.md` does not exist in the working tree or in history, so every `Complete` here rests on the recorded per-task gate notes, not on a report. The Verifier that runs after this task owns the final verdict and may downgrade rows.
+
+## Phase 8: Second Verifier remediation
+
+The second feature Verifier returned FAIL on `ff42c35..71e7094` with 9 ranked gaps. Its report is `validation.md`. The discrimination sensor is a standing **skip** for this project per `AGENTS.md`; each task below records a hand-run fault injection in its gate note instead, exactly as Phase 7 did.
+
+**One gap was re-scoped before this phase opened.** The Verifier ranked CRT-04 as a blocker on the grounds that the committed package "exceeds its own size contract", measuring eShop at 78.61 MiB against 64 MiB. CRT-04 pins that ceiling for **eShopOnContainers**, not eShop; the spec sets no size ceiling on eShop at all, and eShop commits 966 files of the 1,500 allowed. There is no measured violation. The real defect is narrower and is the same defect as EDG-03: `PackageBudget.Default` is a single global pair raised to 96 MiB, which now sits **above** the tightest ceiling the spec pins, so the builder would commit an 80 MiB eShopOnContainers package without error. T60 closes CRT-04, CRT-05 and EDG-03 together.
+
+**Deferred, not dropped:** the Verifier's Fix 8 (80 test cases with no `Requirement` trait, plus four misplaced traits at `PackageBuilderTests.cs:10-13`) is trait hygiene that blocks no acceptance criterion. It is not in this phase.
+
+### T60: Select the package budget applicable to the corpus
+
+**What**: Replace the single global `PackageBudget.Default` guard with a limit chosen for the corpus under analysis, so the ceilings CRT-04 and CRT-05 pin are enforced by the builder rather than only by a skipped test.
+**Where**: `src/Csharp2Md.Core/PackageBuilding/PackageBuilder.cs`
+**Depends on**: T59
+**Reuses**: the `PackageBudgetExceededException` and per-family diagnostic T57 introduced; the ceilings already written into `LocalCorpusAnalyzeTests.cs:32,49`
+**Requirement**: CRT-04, CRT-05, EDG-03
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] A corpus-applicable limit exists and is selected per analysed corpus; the builder refuses beyond it before the atomic swap, which is what EDG-03 names.
+- [ ] The limit applied to eShopOnContainers is 1,500 artifacts / 64 MiB and to Pitstop 750 artifacts / 25 MiB, matching CRT-04 and CRT-05 rather than test-invented numbers.
+- [ ] No selected limit is looser than the tightest ceiling the spec pins; the 96 MiB default may remain only as the fallback for a corpus the spec does not pin, and its comment says so.
+- [ ] eShop still commits successfully at its present size, since the spec pins no ceiling for it.
+- [ ] At least 4 cases assert the selection and the refusal using the spec's own numbers, with expectations hand-computed rather than read back from the builder.
+
+**Tests**: unit — ≥4 cases against the spec's ceilings
+**Gate**: full + LocalCorpus when present
+**Commit**: `feat(core): bound the package by the corpus ceiling`
+
+### T61: Break published measures down by solution and corpus
+
+**What**: Add the two dimensions CRT-03 names that `PublicationMeasurements` does not carry.
+**Where**: `src/Csharp2Md.Core/Publication/PackageContracts.cs`
+**Depends on**: T60
+**Reuses**: the `ByFamily` breakdown shape and canonical ordering T57 established
+**Requirement**: CRT-03
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] `PublicationMeasurements` carries per-solution and per-corpus breakdowns alongside the existing family and filtered-by-reason ones, ordered canonically so repeat runs stay byte-identical.
+- [ ] `measurements.json` round-trips through `CanonicalJson` and `PackageValidator` unchanged, and the artifact/byte invariant T57 asserted still holds.
+- [ ] Each dimension is asserted on its values, not on its presence; expectations are hand-computed.
+- [ ] At least 4 cases cover a multi-solution package and a single-solution one.
+
+**Tests**: unit — ≥4 cases with hand-computed expectations
+**Gate**: full
+**Commit**: `feat(core): measure published artifacts by solution and corpus`
+
+### T62: Derive the public identity independently in test
+
+**What**: Prove `PublicIdRegistry` computes the identity STO-01 specifies, instead of only proving it is stable and well-shaped.
+**Where**: `tests/Csharp2Md.Core.Tests/PackageBuilding/PublicIdRegistryTests.cs`
+**Depends on**: T61
+**Reuses**: the existing registry fixture; no new helper
+**Requirement**: STO-01
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] One case computes the expected ID in the test from a known canonical key — digest, bit slice and alphabet applied independently — and asserts `Register` returns exactly that value.
+- [ ] A wrong digest, a wrong bit slice or a wrong alphabet makes the case fail; proven by hand before the commit.
+- [ ] The existing grammar and determinism cases are kept, not replaced.
+
+**Tests**: unit — 1 added case, no deletion
+**Gate**: quick
+**Commit**: `test(core): derive the public identity independently`
+
+### T63: Pin the non-component locate budget
+
+**What**: Make NAV-07's 8-read / 12,000-token bound assertable by exercising a root that is not a `component:`.
+**Where**: `tests/Csharp2Md.Core.Tests/PackageBuilding/RootsIndexRoutingTests.cs`
+**Depends on**: T62
+**Reuses**: the measured-reads assertions NAV-06 and NAV-10 already use
+**Requirement**: NAV-07
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] At least one case locates a root that is not a `component:`, so the branch beyond the 5-read path is exercised.
+- [ ] The case asserts measured reads and tokens against NAV-07's 8 and 12,000, not against `Status == Passed`.
+- [ ] Raising the measured cost past either bound makes the case fail; proven by hand.
+
+**Tests**: unit — ≥1 added case
+**Gate**: quick
+**Commit**: `test(core): pin the non-component locate budget`
+
+### T64: Assert multi-scope reuse and deployment-unit navigation
+
+**What**: Close two assertions that are weaker than the criteria they carry.
+**Where**: `tests/Csharp2Md.Core.Tests/PackageBuilding/ScopePairingTests.cs`
+**Depends on**: T63
+**Reuses**: the existing scope-pairing and Markdown summary fixtures
+**Requirement**: DEP-05, NAV-02
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] One case proves a single low-level relation contributing to more than one scope is referenced from each scope without its factual payload being duplicated, which is what DEP-05 requires; same-scope repetition is not sufficient.
+- [ ] One case asserts the Markdown summary lists a Deployment Unit, not only a Component.
+- [ ] Duplicating the payload, or dropping the deployment unit from the summary, makes the matching case fail; proven by hand.
+
+**Tests**: unit — ≥2 added cases
+**Gate**: quick
+**Commit**: `test(core): assert scope reuse and deployment navigation`
+
+### T65: Give publication-rejection diagnostics their coordinates
+
+**What**: Populate the coordinates PUB-08 requires on the analyze path, and stop proving the contract through a fabricated diagnostic.
+**Where**: `src/Csharp2Md.Core/KnowledgeEngine.cs`
+**Depends on**: T64
+**Reuses**: the diagnostic shape already populated on the validate path at `KnowledgeEngine.cs:120`
+**Requirement**: PUB-08
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] Publication-rejection diagnostics raised from `AnalyzeAsync` carry the same coordinates the validate path populates, rather than code, stage and cause alone.
+- [ ] At least the variant and family cases in `KnowledgePackageFailureTests` drive a real pipeline failure instead of feeding a hand-built `EngineDiagnostic` through a stub.
+- [ ] Dropping a coordinate makes the matching case fail; proven by hand.
+
+**Tests**: unit — ≥2 cases converted to real failures
+**Gate**: full
+**Commit**: `fix(core): qualify publication rejection diagnostics`
+
+### T66: Make the spec state only what the evidence supports
+
+**What**: Write CRT-02's unstated precondition into the criterion, and refresh the six traceability rows whose `Complete` the Verifier's evidence does not support.
+**Where**: `.specs/features/pacote-conhecimento-util-e-confiavel/spec.md`
+**Depends on**: T65
+**Reuses**: the Verifier's per-AC evidence table in `validation.md` as the source of each status
+**Requirement**: CRT-02, PKG-10
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`.
+
+**Done when**:
+
+- [ ] CRT-02 states the applicability precondition that `GraphJourneyCertifierTests.cs:28` relies on, so the test no longer encodes a rule the spec never made.
+- [ ] CRT-03, EDG-03, STO-01, DEP-05, NAV-02 and NAV-07 carry the status their T60-T65 evidence supports, and cite those tasks as owners.
+- [ ] CRT-04 and CRT-05 cite T60 and state plainly that the builder now enforces their ceilings while the corpus run itself stays pending the absent clones.
+- [ ] No row's status is inferred from a task's gate note where the Verifier recorded contrary evidence.
+
+**Tests**: none — documentation only
+**Gate**: build
+**Commit**: `docs(spec): state the precondition and the verified status`
 
 ## Requirement-to-Task Traceability
 
