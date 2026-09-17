@@ -29,21 +29,34 @@
 ## Handoff
 
 - **Feature**: `pacote-conhecimento-util-e-confiavel` / `.specs/features/pacote-conhecimento-util-e-confiavel`
-- **Phase / Task**: Phase 7 (Verifier remediation), **5 of 5 done**. T55-T59 are committed. All 59 tasks are complete; the only step left is the feature Verifier.
-- **Completed**: T1-T59. Phase 7 landed at `f8dff64` (T55), `901b7c1` (T56), `3bc04f3` (T57), `8295dd0` (T58) and the T59 commit below.
-- **Gate at `8295dd0`**: Release build 0 warnings/0 errors; `Csharp2Md.Core.Tests` 588/588 (0 skipped), up from 574 at `3f1ad1e`; `Csharp2Md.Cli.Tests` 81/83.
-- **Only one clone is present now**: `fixtures/eShop`. The Pitstop and eShopOnContainers clones are gone from this machine, so their `LocalCorpusAnalyzeTests` cases skip by name. CRT-04 and CRT-05 could not be re-measured after T58; re-run the LocalCorpus filter once those clones return.
-- **Next step**: dispatch the feature Verifier. `validate_state.py` still exits 1 because `.specs/features/pacote-conhecimento-util-e-confiavel/validation.md` does not exist — the earlier FAIL verdict was never written to disk (it is absent from the working tree and from history), so the Verifier must create it.
-- **What Phase 7 closed so far**:
-  - T55: the four non-discriminating tests now drive their named behaviour. Proven by injecting four faults and watching exactly those four fail.
-  - T56: the MET-08 scan reflects over every public property in `PackageBuilding`, `Publication` and their sub-namespaces, and forbids `Coupling` alongside score/quality/risk.
-  - T57: `PublicationMeasurements.ByFamily` carries per-`ArtifactFamily` counts and bytes, and the EDG-03 diagnostic quotes it. The breakdown excludes the three publication trailers because `measurements.json` cannot report its own size; `sum(ByFamily.ArtifactCount) + 3 == PublishedArtifactCount`.
-  - T58: every cited document gets a Markdown page, routed by a `documents.json` index the roots index declares by one path so Locate keeps 3 reads; rows are relative Markdown links, or plain text when the target has no page.
-  - T59: `spec.md`'s traceability table no longer has a `Design | Pending` row. Owners are the mechanical union of every task whose `**Requirement**` line names the ID, so all 71 resolve; the `Phase` column is now `Owning task(s)`. 69 read `Complete`, and **CRT-04 and CRT-05 read a new `Unverified`** because their seam skips without the clones. `tasks.md`'s grouped table gained the Phase 7 owners it was missing (T55 on MET-03/PUB-08, T56 on MET-08, T57 on CRT-03, T58 on NAV-03/NAV-04).
-- **Budget amended in T58 (AD candidate)**: `PackageBudget.Default` went from 64 to **96 MiB**. Document pages took eShop from 49.21 MiB / 220 files to **78.61 MiB / 965 files**. The user chose to raise the default rather than bound the pages. CRT-04 (eShopOnContainers, 1,500 files / 64 MiB) and CRT-05 (Pitstop, 750 files / 25 MiB) are unchanged in the spec and remain plausible after a +60% growth, but are unverified until those clones return.
-- **NAV-04 touched by T58**: `markdown/index.md` linked roots by a root-absolute path that does not resolve from `markdown/`. It now uses the same relative computation as the page rows, so document pages are genuinely reachable from the summary.
-- **Discrimination sensor**: skipped, per the standing `AGENTS.md` rule. Each Phase 7 task instead carries a hand-run fault injection recorded in its `tasks.md` gate note.
+- **Phase / Task**: Phase 8 (second Verifier remediation), **7 of 7 done**. T60-T66 are committed. All 66 tasks are complete; the only step left is the re-dispatched Verifier (iteration 2 of the bounded 3).
+- **Completed**: T1-T66. Phase 8 landed at `db16a8a` (T60), `a55f831` (T61), `03a0814` (T62), `bf0bb86` (T63), `98f53fc` (T64), `e8f3ac1` (T65), `df84bac` (T66). The Phase 8 plan and the first Verifier's report are at `10ceb90`.
+- **Gate at `df84bac`**: Release build 0 warnings / 0 errors; `Csharp2Md.Core.Tests` **612/612** (up from 588 at `8295dd0`); `Csharp2Md.Cli.Tests` 81/83.
+- **Only one clone is present**: `fixtures/eShop`. Pitstop and eShopOnContainers are absent, so their `LocalCorpusAnalyzeTests` cases skip by name. The eShop case runs and passes.
+- **Next step**: read the Verifier's verdict for iteration 2. `validation.md` currently holds the iteration-1 FAIL and must be overwritten by the new run.
+
+### What the first Verifier found, and what Phase 8 did about it
+
+The first Verifier returned FAIL on `ff42c35..71e7094` with 9 ranked gaps and 64/71 ACs matching their spec outcome.
+
+- **Its blocker was re-scoped before Phase 8 opened.** It read CRT-04 as "the package exceeds its own size contract", measuring eShop at 78.61 MiB against 64 MiB. CRT-04 pins that ceiling for **eShopOnContainers**, not eShop, and the spec sets no size ceiling on eShop at all. There was no measured violation. The real defect was EDG-03's and is now closed by T60.
+- T60: `PackageBudget.ForCorpus` picks the limit from the corpus by solution file; eShopOnContainers resolves to 1,500 / 64 MiB and Pitstop to 750 / 25 MiB. Multiple pinned corpora take the componentwise minimum. The 96 MiB default is now only the fallback for a corpus the spec pins nothing on, so T58's decision to raise it rather than bound the document pages is preserved.
+- T61: `PublicationMeasurements` gained `BySolution` (attributed by the `solutions/{id}/` prefix) and `Corpus` (carrying the ceiling that was applied). The EDG-03 diagnostic now names the corpus, which `design.md:575` required and T57 had left half done.
+- T62: STO-01's derivation is pinned by two literal IDs computed outside the codebase plus one independent recomputation. The old grammar/determinism cases held for any digest, slice or alphabet.
+- T63: NAV-07's 8-read / 12,000-token arm was never executed, because every case built `component:` roots. A theory now covers deployment, entrypoint and boundary roots.
+- T64: DEP-05's multi-scope reuse is asserted on all four scopes plus a payload-written-once check; NAV-02 now asserts a Deployment Unit row that resolves to a written artifact.
+- T65: `EnsureValid` was discarding the `Family` and `Artifact` the validator had already derived, so the analyze path could not populate PUB-08's coordinates. Fixed, plus `FamilyFor` gained the three publication trailers and `/measures/`.
+- T66: CRT-02 now states the causal-root precondition the certifier and its test already relied on; the traceability table reads **68 Complete, 1 Partial (PUB-08), 2 Unverified (CRT-04, CRT-05)**.
+
+### Open items the Verifier should weigh
+
+- **PUB-08 is Partial on purpose.** `KnowledgePackageFailureTests` still feeds a hand-built `EngineDiagnostic` through a CLI stub for all nine rejection classes. T65 proved the engine populates the coordinates on two real pipeline failures, but no single test spans render-and-populate. Driving all nine for real needs a fixture per rejection class.
+- **Deferred, not dropped**: the first Verifier's Fix 8 - 80 test cases with no `Requirement` trait, including the CLI suite that solely owns CRT-04/05/07/09, plus four misplaced traits at `PackageBuilderTests.cs:10-13`. It blocks no acceptance criterion and was left out of Phase 8.
+- **CRT-04 and CRT-05 remain unmeasured end to end.** The builder enforces both ceilings and unit cases assert the spec's numbers, but re-run the LocalCorpus filter when the clones return.
+- **`PackageBudget.Default` at 96 MiB is still an AD candidate.** It was raised in T58 and narrowed in meaning by T60; no AD records it.
+
+- **Discrimination sensor**: skipped, per the standing `AGENTS.md` rule. Every Phase 7 and Phase 8 task instead carries a hand-run fault injection recorded in its `tasks.md` gate note.
 - **Blockers**: none.
-- **Uncommitted files**: `.specs/STATE.md` (this file), plus pre-existing `AGENTS.md` and `docs/specs/pacote-conhecimento-util-e-confiavel.md` edits and untracked `docs/prompts/`, `docs/validation/`, `research/`, `.specs/LESSONS.md`, `.specs/lessons.json`.
+- **Uncommitted files**: `.specs/STATE.md` (this file), plus pre-existing `AGENTS.md` and `docs/specs/pacote-conhecimento-util-e-confiavel.md` edits and untracked `research/`, `.specs/LESSONS.md`, `.specs/lessons.json`.
 - **Local wart**: `fixtures/csharp2md-analyze-out-2b1ee4ef…` and `…-5e8132fd…` are leftover analyze outputs sitting in `fixtures/`. Not created by this session; check they are gitignored before the next clean.
 - **Branch**: `feature/simplif`
