@@ -29,6 +29,7 @@ The migration is intentionally incomplete between phases. Every task must still 
 | CLI seam | e2e | `analyze` and `validate` happy, edge and error paths; four journeys and budgets from the committed manifest | `tests/Csharp2Md.Cli.Tests/**/*.cs` | `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release` |
 | Repository topology/configuration | unit | Static surface/isolation assertions plus Release build; only Core and CLI remain after cutover | `tests/Csharp2Md.Core.Tests/Surface/**/*.cs` | `dotnet test csharp2md.slnx --configuration Release` |
 | Optional local corpora | e2e | eShop variant isolation, eShopOnContainers file/byte ceilings and Pitstop file/byte ceilings; dynamic skip only when clone is absent | `tests/Csharp2Md.Cli.Tests/LocalCorpus*.cs` | `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release --filter "Category=LocalCorpus"` |
+| Versioned dependency corpus | e2e | Project-scope `ProjectReference` edges of all six ArchitectureDependencyLab solutions scored against `oracle/project-references.json`; recorded defect baselines, never a skip | `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs` | `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release --filter "Category=OracleCorpus"` |
 
 ## Gate Check Commands
 
@@ -1954,6 +1955,34 @@ The corpus benchmark recorded in `.specs/STATE.md` measured the generator agains
 **Adequacy**: `FixtureRetentionTests.cs:24-42` pins the vendored shape — six `.slnx`, 41 `.csproj`, 87 oracle references and the two `.nupkg` — so a corpus that silently loses references cannot make the generator look better than it is. `:44-58` pins the ignore rules in both directions, and `:60-68` pins the fixture's absence from `csharp2md.slnx`, which keeps the four product and test projects the only thing the gate builds.
 **Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): deleting the `!fixtures/ArchitectureDependencyLab/local-feed/*.nupkg` negation from `.gitignore` killed `Gitignore_KeepsTheLabsBuildOutputOutAndItsPrivateFeedIn` (1 of 5 retention cases) and left the other four green. The fault was reverted before the commit.
 
+### T71: Score project references against the corpus oracle
+
+**What**: Score the Project-scope `ProjectReference` edges the package states against `oracle/project-references.json` per solution, and hold every solution at its measured defect baseline so the gap becomes visible and bounded.  
+**Where**: `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs`  
+**Depends on**: T70  
+**Reuses**: `CliInvoke`, `CliTestPaths` and the `Category` trait convention `LocalCorpusAnalyzeTests` established  
+**Requirement**: DEP-01, DEP-02
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] One analysis of all six solutions produces the package the scoring reads, and the fixture never skips: it is versioned, so its absence is a failure.
+- [x] Source and target are decoded from the base36 local handles into the solution's entity table independently of `Csharp2Md.Core`, whose handle and enum types are internal.
+- [x] Each baseline is documented as a recorded defect rather than an expected outcome, and the assertion message carries the oracle's 87-edge target.
+- [x] A drop in correct edges or a rise in false positives fails as a regression, and an improvement fails too, saying the baseline must be raised in the commit that improved it.
+- [x] At least 8 cases cover all six solutions, the corpus total and the cross-system invariants of `oracle/README.md`.
+
+**Tests**: e2e — ≥8 oracle-scored cases  
+**Gate**: full  
+**Commit**: `test(dependencies): score project references against the corpus oracle`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **621 of 621** unchanged, `Csharp2Md.Cli.Tests` **92 passed / 2 skipped** (up from 84 by this task's 8 oracle-scored cases), the two skips being the absent eShopOnContainers and Pitstop clones CRT-07 allows. One analysis of the six lab solutions takes ~70 s and carries the whole class; the cases are traited `Category=OracleCorpus` so a fast loop can exclude them, and the mandatory gate runs unfiltered.
+**Decision**: the recorded baselines are what the generator scores today, per solution: SistemaA 1 correct / 3 false of 4 oracle edges, SistemaB 3 / 5 of 18, SistemaC 0 / 0 of 1, SistemaD 3 / 3 of 8, SistemaE 2 / 9 of 28, SistemaE.Copia 2 / 9 of 28 — **11 correct and 29 false positives against 87**. Asserting 87 would have left the suite red and asserting a range would always pass, so each case is a two-sided ratchet: fewer correct edges or more false positives fails as a regression, and an improvement fails too, saying the baseline is stale and must be raised in the commit that improved it. Every failure message carries the 87-edge target, the current false positives and the current missing edges, so the distance to a correct generator is printed rather than inferred. The false positives are one family: a self-edge per API project plus a fan-out from the API project to projects it does not reference, which is `PackageBuilder.Pairs` attributing Project scope to the evidence document's owning project. **The fix is not in this task**; the instrument is.
+**Adequacy**: `OracleProjectReferenceScoreTests.cs:52-63` scores each of the six solutions and `:68-82` the corpus total, both against the oracle read from the fixture, so a corpus that loses references cannot loosen the score. `:92-114` asserts rules 2 and 3 of `oracle/README.md` — that no solution's edges name a project its oracle does not know — which is a true invariant today, not a baseline, and is what would catch a merge of `SistemaE.Copia` into SistemaB or SistemaE. The handles and enum ordinals are decoded in the test rather than read through `Csharp2Md.Core`, whose types are internal, so the expectation is not derived from the code being measured. SistemaC is the one weak case: it states nothing at Project scope, so its baseline of 0/0 can only fail upward; that limitation is written next to the baseline.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): two faults injected into `PackageBuilder.Pairs`, each built Release-clean and run against the `OracleCorpus` filter. Deleting the Project-scope pairing killed 6 of 8 — the five solutions with a non-zero baseline and the corpus total — leaving SistemaC (already 0/0) and the cross-system invariant (vacuous with no edges) green. Filtering self-edges out of the Project-scope pairing, a partial *fix* that drops 9 of the 29 false positives, killed the same 6, each with the message that the baseline must be raised: the ratchet cannot silently absorb progress. Both faults were reverted and the full gate re-run before the commit.
+
 ## Requirement-to-Task Traceability
 
 | Requirements | Owning task(s) | Acceptance seam |
@@ -1968,7 +1997,7 @@ The corpus benchmark recorded in `.specs/STATE.md` measured the generator agains
 | PKG-08 | T5, T8, T17, T30, T38-T39, T42 | CLI policy identity |
 | PKG-09 | T3, T12-T16, T42 | factual graph + CLI |
 | PKG-10 | T1, T40, T45, T59 | topology surface |
-| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42, T46-T47, T49, T53 | hand-recalculated dependencies |
+| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42, T46-T47, T49, T53, T71 | hand-recalculated dependencies; oracle-scored project references |
 | MET-01..MET-02, MET-04 | T4, T19, T42 | hand-recalculated direct measures |
 | MET-03 | T19, T42, T55 | hand-recalculated direct measures |
 | MET-05 | T4, T20, T42 | hand-recalculated SCCs |
