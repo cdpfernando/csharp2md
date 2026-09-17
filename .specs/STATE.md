@@ -29,11 +29,11 @@
 ## Handoff
 
 - **Feature**: `pacote-conhecimento-util-e-confiavel` / `.specs/features/pacote-conhecimento-util-e-confiavel`
-- **Phase / Task**: Phase 8 (second Verifier remediation), **7 of 7 done**. T60-T66 are committed. All 66 tasks are complete; the only step left is the re-dispatched Verifier (iteration 2 of the bounded 3).
-- **Completed**: T1-T66. Phase 8 landed at `db16a8a` (T60), `a55f831` (T61), `03a0814` (T62), `bf0bb86` (T63), `98f53fc` (T64), `e8f3ac1` (T65), `df84bac` (T66). The Phase 8 plan and the first Verifier's report are at `10ceb90`.
-- **Gate at `df84bac`**: Release build 0 warnings / 0 errors; `Csharp2Md.Core.Tests` **612/612** (up from 588 at `8295dd0`); `Csharp2Md.Cli.Tests` 81/83.
+- **Phase / Task**: Phase 9 (third Verifier remediation). T67 and T69 are committed; **T68 is parked** because the session redirected away from file size. The feature Verifier returned **PASS 71/71** on iteration 2 before Phase 9 opened.
+- **Completed**: T1-T67 and T69. Phase 8 landed at `db16a8a` (T60), `a55f831` (T61), `03a0814` (T62), `bf0bb86` (T63), `98f53fc` (T64), `e8f3ac1` (T65), `df84bac` (T66). Phase 9: `f2939d4` (plan), `74a8713` (T67), `6bc1f27` (T69). The passing Verifier report is at `accfd41`; the first Verifier's FAIL report and the Phase 8 plan at `10ceb90`.
+- **Gate at `6bc1f27`**: Release build 0 warnings / 0 errors; `Csharp2Md.Core.Tests` **621/621**; `Csharp2Md.Cli.Tests` 81 passed / 2 skipped. Verified independently, not taken from the sub-agent's report.
 - **Only one clone is present**: `fixtures/eShop`. Pitstop and eShopOnContainers are absent, so their `LocalCorpusAnalyzeTests` cases skip by name. The eShop case runs and passes.
-- **Next step**: read the Verifier's verdict for iteration 2. `validation.md` currently holds the iteration-1 FAIL and must be overwritten by the new run.
+- **Next step**: not a spec task. The session pivoted from process to product after the user asked whether the output is useful and reliable. See the two OPEN FINDINGs below and the corpus section; the open question is whether to version `projetosintetico` as a discriminating fixture and repair the projection layer, or to narrow the product. **The user has not decided.**
 
 ### What the first Verifier found, and what Phase 8 did about it
 
@@ -112,7 +112,99 @@ seconds.
 **Deprioritised by the user on 2026-09-17**: package file size and byte ceilings. T68 is parked for the same
 reason. Correctness of the projection comes first.
 
-- **Discrimination sensor**: skipped, per the standing `AGENTS.md` rule. Every Phase 7 and Phase 8 task instead carries a hand-run fault injection recorded in its `tasks.md` gate note.
+### The `projetosintetico` corpus: a discriminating fixture that exists and is not yet versioned
+
+`D:\workspace\projetosintetico` is the user's own synthetic corpus, purpose-built to calibrate C#/.NET
+architecture analysers. **It is the instrument this project has been missing.** Zero commits, no remote, so it
+is local material with no vendoring or licensing question.
+
+- 6 `.slnx` solutions, 41 projects, **an oracle of exactly 87 `ProjectReference`** plus **63 scenarios**
+  (`oracle/scenarios.json`) with five expected states: `confirmed` 38, `absent` 12, `candidate` 10,
+  `open-frontier` 2, `unknown` 1. The 12 `NEG-*` are lookalikes that must be reported absent.
+- **593 KB / 171 files clean** (the 489 MB on disk is all `bin`/`obj`). The current versioned fixture,
+  `fixtures/SyntheticSolution`, is 146 KB / 46 files - same order of magnitude.
+- The two private packages it consumes are 4 KB and 5 KB `.nupkg`; committing them removes the `dotnet pack`
+  prerequisite and makes the fixture self-contained.
+- **Works cold**: analysed with no `bin`, no `obj`, no restore - 13s for SistemaA, 22s for SistemaE, ~100s for
+  all six. Fits the full gate, not the quick gate.
+- **Analysis is NOT deterministic against build state.** SistemaA cold yields 80 aggregated dependencies and 26
+  self-edges; warm yields 115 and 42 - 44% more. The oracle-facing ProjectReference verdict was identical both
+  ways, so **assertions must be anchored to the oracle, never to totals**. This also puts a question over
+  STO-06/STO-07, which promise byte-identical output.
+- Versioning it contradicts the standing `AGENTS.md` rule that `fixtures/SyntheticSolution` is the only
+  versioned analysis fixture. That rule must be rewritten deliberately, not bypassed.
+
+### OPEN FINDING: measured against the oracle, the dependency projection is wrong
+
+Scored with `<scratchpad>/compare_oracle.py` before the T69 fix, on the three solutions that then published:
+
+| System | Oracle refs | Correct | False positives |
+| --- | --- | --- | --- |
+| SistemaA | 4 | **1** | 3 |
+| SistemaB | 18 | **3** | 5 |
+| SistemaE | 28 | **2** | 9 |
+| Total | 50 | **6** | 17 |
+
+Recall 12%, precision 26%. **Every produced edge originates at `Api` or `Testes`**; no library-to-library edge
+is ever produced. That is entry-point reachability flattened as if direct, not the reference graph. The corpus's
+flagship scenario - `SistemaA.Aplicacao -> SistemaA.Infraestrutura`, a deliberate inversion - is undetected,
+and `Api -> Infraestrutura` is invented in its place, which is precisely the corpus's `NEG-003`.
+
+Root cause candidate, **unconfirmed**: `ProjectVariantWorkspace.ReferencedProjects()` returns
+`Solution.Projects.Where(p => p.Id != RootProject.Id)` - every project in the workspace except the root, which
+is not a reference list at all. `CausalRelationExtractor.cs:98` emits `root -> each of them` as
+`project-reference`. Roslyn's `Project.ProjectReferences` is the correct source and is not used. Verify before
+fixing.
+
+### Benchmark against graphify, and what it leaves as the real target
+
+`graphify` (Graphify-Labs/graphify, Python, tree-sitter, Apache-2.0, 118.9k stars, active) was run on the same
+corpus with `graphify update . --no-cluster` - 3 seconds, local, no LLM.
+
+- **graphify scores 87 of 87 project references. Precision and recall 100%, zero false positives, zero
+  cross-system edges, and the nested isolated copy stays separate** (oracle rules 2 and 3 both hold). It catches
+  the deliberate inversion csharp2md misses and does not produce `NEG-003`.
+- **graphify cannot express method-level framework calls.** Zero nodes for `SaveChangesAsync`,
+  `ExecuteSqlRawAsync`, `FromSqlRaw`, `GetStringAsync`, `SetStringAsync`, `ToTable`, `GetConnectionString`, and
+  zero nodes for any HTTP route. Its vocabulary is `references/imports/calls/contains/defines/inherits/
+  implements/method/dispatches_to`. It gets `SistemaADbContext -inherits-> DbContext` and stops there.
+- csharp2md's **relation layer is genuinely good and differentiated**: `CotacaoRepository.SaveAsync ->
+  dataoperation:SaveChangesAsync`, `-> datastore:Microsoft.EntityFrameworkCore.DbSet<SistemaA.Nucleo.Cotacao>`
+  (generic instantiation resolved through the type system), and HTTP routes as first-class entities such as
+  `entity:...:externalsystem:http:/v1/tokens/validar`. Tree-sitter cannot produce any of this.
+
+**Sizing of the differentiated product**, scored with `<scratchpad>/score_scenarios.py` after T69, all six
+solutions publishing. The probe is deliberately generous - it asks whether the target symbol exists as a
+node/entity, not whether the edge is correct - so these are **upper bounds, and they overstate csharp2md**,
+whose edges are largely wrong even where the symbols are present.
+
+| | of 38 `confirmed` |
+| --- | --- |
+| graphify expresses | 22 |
+| csharp2md expresses | 28 |
+| both | 19 |
+| **neither** | **7** (4 HTTP, 1 data-access, 1 configuration, 1 hosting) |
+| **only csharp2md** | **9** |
+
+So **16 of 38 confirmed scenarios (42%) depend on Roslyn-grade semantics**: 7 to build, 9 that already work and
+need the projection repaired. The single largest gap is HTTP route extraction - and it is inconsistent rather
+than absent: **3 of 7 HTTP scenarios are detected** (SistemaC, SistemaD, SistemaE-002), 4 are not
+(SistemaA, SistemaB x2, SistemaE-001).
+
+**The recurring pattern across every dimension measured today: the extraction layer holds the right facts and
+the projection layer destroys them.** Persistence facts are exact at relation level and become
+`Program.cs -> CotacoesTests.cs` plus three self-edges once aggregated. `IEventBus.PublishAsync<PedidoRecebido>`
+is extracted in SistemaB, yet FollowFlow reports `no-causal-root` there because it never becomes a Messaging
+dependency in the outgoing index. Fixing the projection is worth more than anything else on this list.
+
+**T69 made the pipeline honest, which exposed this.** FollowFlow now certifies on 1 of 5 systems: A and B report
+`no-causal-root`, C and D `absent-terminal:contracts`, E passes. T69 did not cause that - it stopped hiding it
+behind a `Failed`.
+
+**Test-project leakage (PKG-05) reconfirmed on a controlled corpus**: with `include_tests: false`,
+`CotacoesTests.cs` is a retained document in SistemaA and appears among its persistence facts.
+
+- **Discrimination sensor**: skipped, per the standing `AGENTS.md` rule. Every Phase 7, 8 and 9 task instead carries a hand-run fault injection recorded in its `tasks.md` gate note.
 - **Blockers**: none.
 - **Uncommitted files**: `.specs/STATE.md` (this file), plus pre-existing `AGENTS.md` and `docs/specs/pacote-conhecimento-util-e-confiavel.md` edits and untracked `research/`, `.specs/LESSONS.md`, `.specs/lessons.json`.
 - **Local wart**: `fixtures/csharp2md-analyze-out-2b1ee4ef…` and `…-5e8132fd…` are leftover analyze outputs sitting in `fixtures/`. Not created by this session; check they are gitignored before the next clean.
