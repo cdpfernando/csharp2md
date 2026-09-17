@@ -123,8 +123,20 @@ internal static class PackageBuilder
         payloads = payloads.Add(Artifact("certification.json", ArtifactFamily.Certification, new PackageCertification([]), 0));
         payloads = payloads.Add(CompactArtifact("manifest.json", ArtifactFamily.Manifest, machine.Manifest, 1));
         var ordered = payloads.OrderBy(artifact => artifact.Path.Value, StringComparer.Ordinal).ToImmutableArray();
-        var bytes = ordered.Sum(artifact => (long)artifact.Payload.Length);
-        if (ordered.Length > budget.MaximumArtifacts)
+        var digest = Digest(ordered);
+
+        // The ceiling binds the committed package, which `design.md:530` defines as "o manifest e artefatos
+        // alcancaveis da geracao committed". Publication writes one more file than the plan carries: the root
+        // manifest.json pointer, outside the generation directory. Measuring the plan alone let a package of
+        // exactly the ceiling commit as ceiling + 1, which is what LocalCorpusAnalyzeTests counts on disk.
+        //
+        // This remains a cheap early gate, not the authoritative one: publication also replaces the reserved
+        // certification.json with the real certification, which is larger, so the committed byte total is not
+        // knowable here. PackagePublication.EnsureWithinBudget re-checks both before the atomic swap.
+        var pointerBytes = CanonicalJson.Write(new PackageGenerationPointer(digest)).Length;
+        var committedArtifacts = ordered.Length + 1;
+        var bytes = ordered.Sum(artifact => (long)artifact.Payload.Length) + pointerBytes;
+        if (committedArtifacts > budget.MaximumArtifacts)
         {
             throw new PackageBudgetExceededException("artifacts", measurement.Corpus!.Corpus, measurement.ByFamily);
         }
@@ -134,7 +146,7 @@ internal static class PackageBuilder
             throw new PackageBudgetExceededException("bytes", measurement.Corpus!.Corpus, measurement.ByFamily);
         }
 
-        return new PackagePlan(machine.Manifest, ordered, Digest(ordered), measurement);
+        return new PackagePlan(machine.Manifest, ordered, digest, measurement);
     }
 
     // Attribution is the "solutions/{id}/" path prefix the writers already lay out. Artifacts belonging to no

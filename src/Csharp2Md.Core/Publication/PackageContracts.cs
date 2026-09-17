@@ -287,9 +287,13 @@ internal sealed record SolutionMeasurement
 
 // CRT-03's fourth dimension, and the one `design.md:575` requires the budget diagnostic to report alongside
 // family. It carries the ceiling that was actually applied, so measurements.json says which corpus limit the
-// package was measured against rather than leaving EDG-03's decision implicit. The measured figures cover the
-// same set ByFamily covers: measurements.json cannot report its own size, so the three trailers are excluded
-// from the reported totals even though the ceiling is enforced on the full committed package.
+// package was measured against rather than leaving EDG-03's decision implicit.
+//
+// The reported figures deliberately cover a smaller set than the ceiling is enforced on, because this record
+// lives inside measurements.json and a file cannot report its own size. Four files are therefore excluded:
+// measurements.json, certification.json and manifest.json, plus the root manifest.json pointer publication
+// writes outside the generation directory. Counts and bytes then describe the same set, and the ceiling check
+// in PackageBuilder holds `ArtifactCount + 4 <= MaximumArtifacts` - which is what a reader counts on disk.
 internal sealed record CorpusMeasurement
 {
     public string Corpus { get; }

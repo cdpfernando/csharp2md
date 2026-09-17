@@ -1852,7 +1852,22 @@ The second feature Verifier returned **PASS** on `ff42c35..6d0a3b3` (71/71 ACs) 
 **Gate**: full + LocalCorpus when present
 **Commit**: `fix(core): measure the committed package against the ceiling`
 
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **617 of 617** (up from 612 by this task's net 5 cases), `Csharp2Md.Cli.Tests` 81 of 83 with the two absent-clone skips; the eShop LocalCorpus case ran and passed.
+
+**The off-by-one was the smaller half of the defect.** Publication writes the root `manifest.json` pointer outside the generation, so the plan undercounts by one file — that is fixed in `PackageBuilder`. But writing the test that reconciles the builder's arithmetic with what a reader counts on disk surfaced a larger gap: publication also **replaces** the plan's reserved `certification.json` with the real certification, which is larger. For the synthetic model the committed package is 4,453 bytes against a plan of 3,840. The plan-time byte ceiling therefore cannot see the committed total at all.
+
+**So the authoritative check moved to where the bytes exist.** EDG-03 says publication SHALL fail "antes da troca atômica", and `PackagePublication.EnsureWithinBudget` now measures the staged package plus the pointer against the ceiling right before `Directory.Move`. The ceiling travels on the plan, in the `CorpusMeasurement` T61 added for exactly this kind of question. `PackageBuilder`'s check stays as a cheap early gate and its comment now says so.
+
+**One case was written, proven non-discriminating, and removed rather than kept green.** `Build_CountsThePointerBytesAgainstTheByteCeiling` passed under the fix and *also* passed when the pointer bytes were dropped. The reason is self-reference: `CorpusMeasurement` serializes the applied ceiling into `measurements.json`, so changing the budget changes the package's own byte total by the digit count of the numbers — `int.MaxValue` is six characters longer than `1500`. The rejection was firing on that incidental wobble, not on the pointer. Keeping it would have re-created exactly the defect T55 existed to remove, so it was deleted; the byte path is covered at the publication seam instead, where the measurement is real.
+
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): three faults injected. Dropping the `+ 1` from the committed count killed `Build_RefusesAPlanWhoseCommittedPackageWouldExceedTheCeilingByThePointer`. Removing the `EnsureWithinBudget` call killed `Publish_RefusesTheCommittedPackageBeyondItsCeilingBeforeTheSwap`. Dropping the pointer bytes from the plan-time sum killed nothing — that is the survivor described above, and the response was to delete the test rather than to claim the fault was covered. All faults were reverted before the commit.
+
+**Known self-reference, left as is**: because the applied ceiling is serialized into `measurements.json`, a package's byte total depends slightly on the digit count of its own ceiling. It is bounded by a few bytes and does not affect the publication-time check, which measures real files.
+
 ### T68: Name the family on a budget rejection
+
+**Status**: Parked. The user redirected the session away from file-size work before this task started: "não vamos nos preocupar com tamanho de arquivo por enquanto, vamos primeiro analisar se o output é útil e confiável". The gap it closes is real and stays recorded — `KnowledgeEngine.cs:83` builds the `package-budget` diagnostic from the message alone, so PUB-08's structured `Family` is null for the one rejection class T60 just made reachable.
 
 **What**: Give the `package-budget` diagnostic the structured coordinates PUB-08 requires, instead of burying the breakdown in the message text.
 **Where**: `src/Csharp2Md.Core/KnowledgeEngine.cs`
