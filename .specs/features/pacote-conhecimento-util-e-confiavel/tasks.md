@@ -1555,13 +1555,22 @@ Every journey of every corpus is Passed except Pitstop's `follow_flow`, which st
 
 **Done when**:
 
-- [ ] No row still reads `Design | Pending`; 65 of 71 did when the Verifier counted them.
-- [ ] Every row's owning task matches this file's Requirement-to-Task Traceability section, and its status reflects the Verifier's per-AC result rather than an assumption.
-- [ ] Rows for NAV-03, CRT-03 and MET-08 cite T58, T57 and T56 and read Complete only once those tasks are verified.
+- [x] No row still reads `Design | Pending`; 65 of 71 did when the Verifier counted them.
+- [x] Every row's owning task matches this file's Requirement-to-Task Traceability section, and its status reflects the Verifier's per-AC result rather than an assumption.
+- [x] Rows for NAV-03, CRT-03 and MET-08 cite T58, T57 and T56 and read Complete only once those tasks are verified.
 
 **Tests**: none — documentation only  
 **Gate**: build  
 **Commit**: `docs(spec): refresh requirement traceability`
+
+**Status**: Complete
+**Gate note**: build gate green — `dotnet build csharp2md.slnx --configuration Release`, 0 warnings, 0 errors. `validate_spec.py` and `validate_tasks.py` both exit 0 (the 9 task warnings are the pre-existing multi-file `Where` smells plus this task's `Tests: none`).
+
+Owners were not copied from the grouped table by hand. Each row's owning tasks are the union of every task whose `**Requirement**` line names that ID, mechanically derived from this file, so the spec's table is the per-ID expansion of the grouped view rather than a second hand-maintained list. All 71 IDs resolve to at least one task; none was left unmapped. NAV-03 cites T58, CRT-03 cites T57, MET-08 cites T56 and MET-03/PUB-08 cite T55, which the grouped table now carries too — it had not been updated for Phase 7.
+
+**69 rows read `Complete`, 2 read `Unverified`.** `Unverified` is a new status value, introduced because `Complete` would have been an assumption for CRT-04 and CRT-05: their owning tasks closed with green gates, but the acceptance seam — `LocalCorpusAnalyzeTests` over eShopOnContainers and Pitstop — skips by name on this machine, and the last real measurement predates T58's ~60% package growth. CRT-07 requires exactly that skip, so it reads `Complete`; CRT-06 reads `Complete` because `fixtures/eShop` is present and its case runs. The Coverage line under the table states the legend and names the re-measurement that clears the two rows.
+
+**No status was inferred from the missing Verifier report**: `.specs/features/pacote-conhecimento-util-e-confiavel/validation.md` does not exist in the working tree or in history, so every `Complete` here rests on the recorded per-task gate notes, not on a report. The Verifier that runs after this task owns the final verdict and may downgrade rows.
 
 ## Requirement-to-Task Traceability
 
@@ -1578,11 +1587,15 @@ Every journey of every corpus is Passed except Pitstop's `follow_flow`, which st
 | PKG-09 | T3, T12-T16, T42 | factual graph + CLI |
 | PKG-10 | T1, T40, T45, T59 | topology surface |
 | DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42, T46-T47, T49, T53 | hand-recalculated dependencies |
-| MET-01..MET-04 | T4, T19, T42 | hand-recalculated direct measures |
+| MET-01..MET-02, MET-04 | T4, T19, T42 | hand-recalculated direct measures |
+| MET-03 | T19, T42, T55 | hand-recalculated direct measures |
 | MET-05 | T4, T20, T42 | hand-recalculated SCCs |
-| MET-06..MET-08 | T4, T17, T21-T22, T42 | hand-recalculated impact/gaps |
+| MET-06..MET-07 | T4, T17, T21, T42 | hand-recalculated impact/gaps |
+| MET-08 | T21-T22, T42, T56 | hand-recalculated impact/gaps |
 | NAV-01 | T26-T27, T32, T37, T42, T54 | manifest/index traversal |
-| NAV-02..NAV-05 | T22, T27-T29, T37, T42 | machine/Markdown equivalence |
+| NAV-02, NAV-05 | T22, T27-T29, T37, T42 | machine/Markdown equivalence |
+| NAV-03 | T28, T42, T58 | machine/Markdown equivalence |
+| NAV-04 | T26, T28, T32, T42, T54, T58 | machine/Markdown equivalence |
 | NAV-06..NAV-07 | T26, T34, T42, T54 | locate budgets |
 | NAV-08..NAV-09 | T26, T35, T42 | graph journey budgets |
 | NAV-10 | T26, T34, T42, T50 | evidence budget |
@@ -1597,8 +1610,9 @@ Every journey of every corpus is Passed except Pitstop's `follow_flow`, which st
 | PUB-03..PUB-04 | T2, T29, T32-T33, T37-T40 | shared public validation |
 | PUB-05 | T32-T33, T36, T43 | byte preservation |
 | PUB-06..PUB-07 | T31, T41, T43 | safety fixture/rejection |
-| PUB-08 | T2, T15, T36, T38-T39, T43 | structured diagnostics |
-| CRT-01..CRT-03 | T15, T30, T34-T37, T42, T48 | journey certification |
+| PUB-08 | T2, T15, T36, T38-T39, T43, T55 | structured diagnostics |
+| CRT-01..CRT-02 | T34-T35, T37, T42, T48, T51 | journey certification |
+| CRT-03 | T5, T15, T30, T37, T42, T57 | journey certification |
 | CRT-04..CRT-07 | T9, T47, T49-T50, T52-T54, T44 | optional corpora |
 | CRT-08 | T8, T12-T14, T31, T41 | fixture integrity |
 | CRT-09 | T42 | CLI E2E |
@@ -1608,7 +1622,7 @@ Every journey of every corpus is Passed except Pitstop's `follow_flow`, which st
 | EDG-04 | T11, T13, T18, T43 | variant-qualified dependency |
 | EDG-05 | T29, T33, T36, T43 | representation divergence |
 
-All 71 requirements have at least one focused owning task and a final acceptance seam.
+All 71 requirements have at least one focused owning task and a final acceptance seam. This table is the grouped view; `spec.md`'s Requirement Traceability carries the per-ID expansion, derived from each task's `**Requirement**` line. T58 is listed against NAV-04 because it replaced the root-absolute summary link that does not resolve from `markdown/`, which NAV-04 requires and T54 had left broken.
 
 ## Task Granularity Check
 

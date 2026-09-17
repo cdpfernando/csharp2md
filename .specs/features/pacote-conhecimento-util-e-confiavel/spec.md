@@ -229,81 +229,81 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 
 ## Requirement Traceability
 
-| Requirement ID | Story | Phase | Status |
+| Requirement ID | Story | Owning task(s) | Status |
 | --- | --- | --- | --- |
-| PKG-01 | Conhecimento útil, critério 1 | Design | Pending |
-| PKG-02 | Conhecimento útil, critério 2 | Design | Pending |
-| PKG-03 | Conhecimento útil, critério 3 | Design | Pending |
-| PKG-04 | Conhecimento útil, critério 4 | Design | Pending |
-| PKG-05 | Conhecimento útil, critério 5 | Design | Pending |
-| PKG-06 | Conhecimento útil, critério 6 | Design | Pending |
-| PKG-07 | Conhecimento útil, critério 7 | Design | Pending |
-| PKG-08 | Conhecimento útil, critério 8 | Design | Pending |
-| PKG-09 | Conhecimento útil, critério 9 | T13 | Complete |
-| PKG-10 | Conhecimento útil, critério 10 | T1, T40, T45 | Complete |
-| DEP-01 | Dependências, critério 1 | Design | Pending |
-| DEP-02 | Dependências, critério 2 | T13 | Complete |
-| DEP-03 | Dependências, critério 3 | Design | Pending |
-| DEP-04 | Dependências, critério 4 | Design | Pending |
-| DEP-05 | Dependências, critério 5 | Design | Pending |
-| DEP-06 | Dependências, critério 6 | Design | Pending |
-| DEP-07 | Dependências, critério 7 | Design | Pending |
-| DEP-08 | Dependências, critério 8 | Design | Pending |
-| MET-01 | Medidas, critério 1 | Design | Pending |
-| MET-02 | Medidas, critério 2 | Design | Pending |
-| MET-03 | Medidas, critério 3 | Design | Pending |
-| MET-04 | Medidas, critério 4 | Design | Pending |
-| MET-05 | Medidas, critério 5 | Design | Pending |
-| MET-06 | Medidas, critério 6 | Design | Pending |
-| MET-07 | Medidas, critério 7 | Design | Pending |
-| MET-08 | Medidas, critério 8 | Design | Pending |
-| NAV-01 | Recuperação, critério 1 | Design | Pending |
-| NAV-02 | Recuperação, critério 2 | Design | Pending |
-| NAV-03 | Recuperação, critério 3 | Design | Pending |
-| NAV-04 | Recuperação, critério 4 | Design | Pending |
-| NAV-05 | Recuperação, critério 5 | Design | Pending |
-| NAV-06 | Recuperação, critério 6 | Design | Pending |
-| NAV-07 | Recuperação, critério 7 | Design | Pending |
-| NAV-08 | Recuperação, critério 8 | Design | Pending |
-| NAV-09 | Recuperação, critério 9 | Design | Pending |
-| NAV-10 | Recuperação, critério 10 | Design | Pending |
-| VAR-01 | Variantes, critério 1 | Design | Pending |
-| VAR-02 | Variantes, critério 2 | Design | Pending |
-| VAR-03 | Variantes, critério 3 | Design | Pending |
-| VAR-04 | Variantes, critério 4 | Design | Pending |
-| VAR-05 | Variantes, critério 5 | Design | Pending |
-| VAR-06 | Variantes, critério 6 | Design | Pending |
-| STO-01 | Armazenamento, critério 1 | Design | Pending |
-| STO-02 | Armazenamento, critério 2 | Design | Pending |
-| STO-03 | Armazenamento, critério 3 | Design | Pending |
-| STO-04 | Armazenamento, critério 4 | Design | Pending |
-| STO-05 | Armazenamento, critério 5 | Design | Pending |
-| STO-06 | Armazenamento, critério 6 | Design | Pending |
-| STO-07 | Armazenamento, critério 7 | Design | Pending |
-| PUB-01 | Publicação, critério 1 | Design | Pending |
-| PUB-02 | Publicação, critério 2 | Design | Pending |
-| PUB-03 | Publicação, critério 3 | Design | Pending |
-| PUB-04 | Publicação, critério 4 | Design | Pending |
-| PUB-05 | Publicação, critério 5 | Design | Pending |
-| PUB-06 | Publicação, critério 6 | Design | Pending |
-| PUB-07 | Publicação, critério 7 | Design | Pending |
-| PUB-08 | Publicação, critério 8 | Design | Pending |
-| CRT-01 | Certificação, critério 1 | Design | Pending |
-| CRT-02 | Certificação, critério 2 | Design | Pending |
-| CRT-03 | Certificação, critério 3 | Design | Pending |
-| CRT-04 | Certificação, critério 4 | Design | Pending |
-| CRT-05 | Certificação, critério 5 | Design | Pending |
-| CRT-06 | Certificação, critério 6 | Design | Pending |
-| CRT-07 | Certificação, critério 7 | Design | Pending |
-| CRT-08 | Certificação, critério 8 | T13 | Complete |
-| CRT-09 | Certificação, critério 9 | Design | Pending |
-| EDG-01 | Edge case 1 | T13 | Complete |
-| EDG-02 | Edge case 2 | Design | Pending |
-| EDG-03 | Edge case 3 | Design | Pending |
-| EDG-04 | Edge case 4 | T13 | Complete |
-| EDG-05 | Edge case 5 | Design | Pending |
+| PKG-01 | Conhecimento útil, critério 1 | T2, T5, T27, T30, T37, T39, T42, T54 | Complete |
+| PKG-02 | Conhecimento útil, critério 2 | T3, T12, T16, T42 | Complete |
+| PKG-03 | Conhecimento útil, critério 3 | T3, T15, T16, T30, T42 | Complete |
+| PKG-04 | Conhecimento útil, critério 4 | T3, T17, T30, T42 | Complete |
+| PKG-05 | Conhecimento útil, critério 5 | T8, T17, T30, T42 | Complete |
+| PKG-06 | Conhecimento útil, critério 6 | T8, T17, T30, T42 | Complete |
+| PKG-07 | Conhecimento útil, critério 7 | T3, T7, T8, T14, T31, T42 | Complete |
+| PKG-08 | Conhecimento útil, critério 8 | T8, T17, T30, T38, T39, T42 | Complete |
+| PKG-09 | Conhecimento útil, critério 9 | T3, T12, T13, T14, T15, T16, T42 | Complete |
+| PKG-10 | Conhecimento útil, critério 10 | T1, T40, T45, T59 | Complete |
+| DEP-01 | Dependências, critério 1 | T4, T18, T42, T46 | Complete |
+| DEP-02 | Dependências, critério 2 | T4, T13, T14, T18, T42 | Complete |
+| DEP-03 | Dependências, critério 3 | T4, T18, T42, T46, T49, T53 | Complete |
+| DEP-04 | Dependências, critério 4 | T18, T42, T46 | Complete |
+| DEP-05 | Dependências, critério 5 | T18, T42, T47, T49, T53 | Complete |
+| DEP-06 | Dependências, critério 6 | T18, T42 | Complete |
+| DEP-07 | Dependências, critério 7 | T18, T22, T42, T47, T49 | Complete |
+| DEP-08 | Dependências, critério 8 | T12, T18 | Complete |
+| MET-01 | Medidas, critério 1 | T4, T19, T42 | Complete |
+| MET-02 | Medidas, critério 2 | T4, T19, T42 | Complete |
+| MET-03 | Medidas, critério 3 | T19, T42, T55 | Complete |
+| MET-04 | Medidas, critério 4 | T19, T42 | Complete |
+| MET-05 | Medidas, critério 5 | T4, T20, T42 | Complete |
+| MET-06 | Medidas, critério 6 | T4, T21, T42 | Complete |
+| MET-07 | Medidas, critério 7 | T4, T17, T21, T42 | Complete |
+| MET-08 | Medidas, critério 8 | T21, T22, T42, T56 | Complete |
+| NAV-01 | Recuperação, critério 1 | T26, T27, T32, T37, T42, T50, T54 | Complete |
+| NAV-02 | Recuperação, critério 2 | T28, T42 | Complete |
+| NAV-03 | Recuperação, critério 3 | T28, T42, T58 | Complete |
+| NAV-04 | Recuperação, critério 4 | T26, T28, T32, T42, T54, T58 | Complete |
+| NAV-05 | Recuperação, critério 5 | T4, T22, T27, T28, T29, T37, T42 | Complete |
+| NAV-06 | Recuperação, critério 6 | T26, T34, T42, T54 | Complete |
+| NAV-07 | Recuperação, critério 7 | T26, T34, T42, T54 | Complete |
+| NAV-08 | Recuperação, critério 8 | T26, T35, T42, T51 | Complete |
+| NAV-09 | Recuperação, critério 9 | T21, T26, T35, T42, T51 | Complete |
+| NAV-10 | Recuperação, critério 10 | T26, T34, T42, T50 | Complete |
+| VAR-01 | Variantes, critério 1 | T9, T10, T41 | Complete |
+| VAR-02 | Variantes, critério 2 | T9, T10, T41 | Complete |
+| VAR-03 | Variantes, critério 3 | T3, T7, T11, T41 | Complete |
+| VAR-04 | Variantes, critério 4 | T3, T7, T10, T11 | Complete |
+| VAR-05 | Variantes, critério 5 | T11 | Complete |
+| VAR-06 | Variantes, critério 6 | T7, T11, T15, T24, T37, T38, T39 | Complete |
+| STO-01 | Armazenamento, critério 1 | T23, T33 | Complete |
+| STO-02 | Armazenamento, critério 2 | T23, T43 | Complete |
+| STO-03 | Armazenamento, critério 3 | T24, T33, T49, T52, T53 | Complete |
+| STO-04 | Armazenamento, critério 4 | T7, T24, T30, T49, T52, T53 | Complete |
+| STO-05 | Armazenamento, critério 5 | T5, T24, T27, T33, T37, T49, T53 | Complete |
+| STO-06 | Armazenamento, critério 6 | T5, T25, T30, T33 | Complete |
+| STO-07 | Armazenamento, critério 7 | T6, T25, T30, T37 | Complete |
+| PUB-01 | Publicação, critério 1 | T5, T6, T36 | Complete |
+| PUB-02 | Publicação, critério 2 | T5, T32, T33, T36 | Complete |
+| PUB-03 | Publicação, critério 3 | T2, T29, T32, T33, T37, T38, T40 | Complete |
+| PUB-04 | Publicação, critério 4 | T2, T33, T36, T38, T39, T40 | Complete |
+| PUB-05 | Publicação, critério 5 | T32, T33, T36, T43 | Complete |
+| PUB-06 | Publicação, critério 6 | T31, T41, T43 | Complete |
+| PUB-07 | Publicação, critério 7 | T31, T41, T43 | Complete |
+| PUB-08 | Publicação, critério 8 | T2, T15, T36, T38, T39, T43, T55 | Complete |
+| CRT-01 | Certificação, critério 1 | T34, T35, T37, T42, T48, T51 | Complete |
+| CRT-02 | Certificação, critério 2 | T34, T35, T42, T48, T51 | Complete |
+| CRT-03 | Certificação, critério 3 | T5, T15, T30, T37, T42, T57 | Complete |
+| CRT-04 | Certificação, critério 4 | T44, T50, T52, T53, T54 | Unverified |
+| CRT-05 | Certificação, critério 5 | T44, T49, T50, T52 | Unverified |
+| CRT-06 | Certificação, critério 6 | T9, T10, T44, T53 | Complete |
+| CRT-07 | Certificação, critério 7 | T44, T52 | Complete |
+| CRT-08 | Certificação, critério 8 | T8, T12, T13, T14, T31, T41 | Complete |
+| CRT-09 | Certificação, critério 9 | T42 | Complete |
+| EDG-01 | Edge case 1 | T13, T16, T17, T33, T43 | Complete |
+| EDG-02 | Edge case 2 | T34, T35, T36, T43 | Complete |
+| EDG-03 | Edge case 3 | T25, T30, T36, T43 | Complete |
+| EDG-04 | Edge case 4 | T11, T13, T18, T43 | Complete |
+| EDG-05 | Edge case 5 | T29, T33, T36, T43 | Complete |
 
-**Coverage:** 71 requisitos, todos mapeados para Design; nenhum requisito não mapeado.
+**Coverage:** 71 requisitos, todos mapeados para tarefas executáveis; nenhum requisito não mapeado. 69 leem `Complete`: suas tarefas donas fecharam com gate verde. CRT-04 e CRT-05 leem `Unverified`: suas tarefas donas fecharam, mas o seam de aceitação — `LocalCorpusAnalyzeTests` sobre eShopOnContainers e Pitstop — pula por ausência do clone local e não foi remedido após T58 crescer o pacote em ~60%. CRT-07 exige exatamente esse skip, então a ausência não falha CI; re-execute o filtro LocalCorpus quando os clones voltarem.
 
 ## Success Criteria
 
