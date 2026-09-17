@@ -29,11 +29,11 @@
 ## Handoff
 
 - **Feature**: `pacote-conhecimento-util-e-confiavel` / `.specs/features/pacote-conhecimento-util-e-confiavel`
-- **Phase / Task**: Phase 9 (third Verifier remediation). T67 and T69 are committed; **T68 is parked** because the session redirected away from file size. The feature Verifier returned **PASS 71/71** on iteration 2 before Phase 9 opened.
+- **Phase / Task**: Phase 10 (oracle-anchored dependency accuracy), **T70-T72 committed and complete**. Phase 9's T67 and T69 are done; **T68 is parked** because the session redirected away from file size. The feature Verifier returned **PASS 71/71** on iteration 2 - against a fixture that could not discriminate, so that verdict is not trustworthy and Phase 10 exists to replace it with a measured one.
 - **Completed**: T1-T67 and T69. Phase 8 landed at `db16a8a` (T60), `a55f831` (T61), `03a0814` (T62), `bf0bb86` (T63), `98f53fc` (T64), `e8f3ac1` (T65), `df84bac` (T66). Phase 9: `f2939d4` (plan), `74a8713` (T67), `6bc1f27` (T69). The passing Verifier report is at `accfd41`; the first Verifier's FAIL report and the Phase 8 plan at `10ceb90`.
-- **Gate at `6bc1f27`**: Release build 0 warnings / 0 errors; `Csharp2Md.Core.Tests` **621/621**; `Csharp2Md.Cli.Tests` 81 passed / 2 skipped. Verified independently, not taken from the sub-agent's report.
+- **Gate at `aed46f5`**: Release build 0 warnings / 0 errors; `Csharp2Md.Core.Tests` **621/621**; `Csharp2Md.Cli.Tests` **94 passed / 2 skipped**. Verified independently in the main session, not taken from a sub-agent's report. The 2 skips are the absent eShopOnContainers and Pitstop clones.
 - **Only one clone is present**: `fixtures/eShop`. Pitstop and eShopOnContainers are absent, so their `LocalCorpusAnalyzeTests` cases skip by name. The eShop case runs and passes.
-- **Next step**: not a spec task. The session pivoted from process to product after the user asked whether the output is useful and reliable. See the two OPEN FINDINGs below and the corpus section; the open question is whether to version `projetosintetico` as a discriminating fixture and repair the projection layer, or to narrow the product. **The user has not decided.**
+- **Next step**: **a product decision the user has not taken.** The measuring instrument now exists and is green; what it measures is bad. The options put to the user were: (1) version the corpus - **done, this is Phase 10**; (2) confirm and fix the projection; (3) re-verify the feature against the corpus; (4) narrow the product to the Roslyn-semantic layer and compose with an existing structural tool. **2 and 3 are now unblocked and cheap; 4 is the open strategic question.**
 
 ### What the first Verifier found, and what Phase 8 did about it
 
@@ -112,7 +112,7 @@ seconds.
 **Deprioritised by the user on 2026-09-17**: package file size and byte ceilings. T68 is parked for the same
 reason. Correctness of the projection comes first.
 
-### The `projetosintetico` corpus: a discriminating fixture that exists and is not yet versioned
+### The corpus is now versioned as `fixtures/ArchitectureDependencyLab` (Phase 10)
 
 `D:\workspace\projetosintetico` is the user's own synthetic corpus, purpose-built to calibrate C#/.NET
 architecture analysers. **It is the instrument this project has been missing.** Zero commits, no remote, so it
@@ -133,6 +133,42 @@ is local material with no vendoring or licensing question.
   STO-06/STO-07, which promise byte-identical output.
 - Versioning it contradicts the standing `AGENTS.md` rule that `fixtures/SyntheticSolution` is the only
   versioned analysis fixture. That rule must be rewritten deliberately, not bypassed.
+
+### THE NUMBER THAT MATTERS: 7 correct of 60
+
+`tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs` (9 cases, `Category=OracleCorpus`, never skips)
+scores the package's Project-scope `ProjectReference` edges against the oracle, per solution, and holds each at
+its measured defect baseline. Run it with
+`dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj -c Release --filter "Category=OracleCorpus"`.
+
+**The target is 60, not 87.** Of the oracle's 87 edges, 27 name a `.Testes` project and the analysis runs
+without `--include-tests`, so PKG-05 requires the generator to exclude them. Every stated edge is classified
+into one of three buckets - correct, false positive, or **test-policy leak** (a real edge that should not be in
+the default package, so evidence of the PKG-05 leak rather than a dependency error).
+
+| solution | oracle | reachable | correct | false positives | test-policy leaks |
+| --- | --- | --- | --- | --- | --- |
+| SistemaA | 4 | 3 | 1 | 3 | 0 |
+| SistemaB | 18 | 12 | 2 | 5 | 1 |
+| SistemaC | 1 | **0** | - | - | - |
+| SistemaD | 8 | 5 | 2 | 3 | 1 |
+| SistemaE | 28 | 20 | 1 | 9 | 1 |
+| SistemaE.Copia | 28 | 20 | 1 | 9 | 1 |
+| **total** | **87** | **60** | **7** | **29** | **4** |
+
+`SistemaC`'s single oracle edge is excluded by policy, so it has nothing to score; its case asserts that by name
+rather than reporting a false failure.
+
+**The baselines are recorded defects, not expected outcomes.** Each case asserts `>=` on correct, `<=` on false
+positives and leaks, *and* exact equality, so a regression fails and **an improvement also fails**, with a
+message saying the baseline is stale and must be raised in the commit that improved it. Verified by hand:
+lowering `SistemaE`'s recorded correct count killed exactly that case, and the message named the 60-edge target,
+all nine false positives, the leak and all nineteen missing edges.
+
+**The false positives are one family**: a self-edge per API project plus an API-to-everything fan-out. No edge
+originates at a library project. A sub-agent attributed this to `PackageBuilder.Pairs` giving Project scope to
+the *evidence document's owning project*; the earlier `ProjectVariantWorkspace.ReferencedProjects()` hypothesis
+is recorded below. **Both are unconfirmed - verify before fixing.**
 
 ### OPEN FINDING: measured against the oracle, the dependency projection is wrong
 
