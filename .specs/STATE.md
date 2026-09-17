@@ -243,5 +243,5 @@ behind a `Failed`.
 - **Discrimination sensor**: skipped, per the standing `AGENTS.md` rule. Every Phase 7, 8 and 9 task instead carries a hand-run fault injection recorded in its `tasks.md` gate note.
 - **Blockers**: none.
 - **Uncommitted files**: `.specs/STATE.md` (this file), plus pre-existing `AGENTS.md` and `docs/specs/pacote-conhecimento-util-e-confiavel.md` edits and untracked `research/`, `.specs/LESSONS.md`, `.specs/lessons.json`.
-- **Local wart, cleared**: `fixtures/csharp2md-analyze-out-2b1ee4ef…` and `…-5e8132fd…` were leftover analyze outputs **committed** under `fixtures/` (one tracked file each), carrying the superseded percent-encoded `id1:` identity scheme. Nothing in the tree referenced them; T73 deleted both from git, added the `fixtures/csharp2md-analyze-out-*/` ignore rule and pinned the absence with a retention case.
+- **Local wart, cleared**: `fixtures/csharp2md-analyze-out-2b1ee4ef…` and `…-5e8132fd…` were leftover analyze outputs **committed** under `fixtures/` (one tracked file each), carrying the superseded percent-encoded `id1:` identity scheme. Nothing in the tree referenced them; T72 deleted both from git, added the `fixtures/csharp2md-analyze-out-*/` ignore rule and pinned the absence with a retention case.
 - **Branch**: `feature/simplif`
