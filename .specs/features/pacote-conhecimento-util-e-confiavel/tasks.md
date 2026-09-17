@@ -83,7 +83,13 @@ T31 -> T32 -> T33 -> T34 -> T35 -> T36 -> T37 -> T38
 T39 -> T40 -> T41 -> T42 -> T43 -> T48 -> T46 -> T47 -> T49 -> T50 -> T51 -> T52 -> T53 -> T54 -> T44 -> T45
 ```
 
-T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. The six phases form six sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+### Phase 7: Verifier remediation
+
+```text
+T55 -> T56 -> T57 -> T58 -> T59
+```
+
+T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. The seven phases form seven sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -1408,6 +1414,120 @@ Every journey of every corpus is Passed except Pitstop's `follow_flow`, which st
 **Overlap kept deliberately**: `KnowledgeValidateCommandTests.ValidateCommand_DoesNotContainComposeOrCompatibilityDispatch` scans `CommandFactory.cs` for tokens the new `src/`-wide scan also covers. It is a passing guard from an earlier task of this feature, narrower than the new one rather than redundant with a test authored here, so it stays.
 **Left behind**: `tests/Csharp2Md.Analysis.Tests/bin/Release/net10.0/BuildHost-netcore/` holds two `Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost` DLLs that `git clean` cannot delete — stray `dotnet` BuildHost processes still hold the handles. The directory is gitignored and carries no tracked file; `git ls-files tests/Csharp2Md.Analysis.Tests` is empty. It disappears on the next `git clean -xfd` after those processes exit.
 
+## Phase 7: Verifier remediation
+
+> Opened on 2026-09-16 from the feature Verifier's FAIL verdict (`validation.md`, diff range `ff42c35..HEAD`). These five tasks close the two acceptance gaps, the one spec-precision gap and the test-integrity findings that verdict raised. Phase 6 was the last implementation phase; these depend on it in full. The discrimination sensor stays skipped per the standing `AGENTS.md` rule — the same skip every feature task so far has carried. The fix→re-verify cycle is bounded to 3 rounds before escalation, so all five land before the Verifier is re-dispatched.
+
+### T55: Discriminate the four non-discriminating tests
+
+**What**: Replace four tests that pass today and would keep passing if the behaviour they name broke.  
+**Where**: `tests/Csharp2Md.Core.Tests/Publication/PackagePublicationTests.cs`  
+**Depends on**: T45  
+**Reuses**: the existing `TempOutput`, `Plan()` and `Model()` helpers in each suite; no new fixture  
+**Requirement**: PUB-08, MET-03
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] `PackagePublicationTests.Publish_CertificationFailurePreventsManifestCommit` drives a real certification failure and asserts no `manifest.json` exists under the output, replacing its `Assert.NotNull(plan)` body.
+- [x] `GraphJourneyCertifierTests.Certify_FlowBudgetFailureNamesMeasure` actually exceeds the 32-read budget and asserts the detail starts with `reads-exceeded:`, closing the untested `reads-exceeded` branch.
+- [x] `DirectMeasureCalculatorTests.Calculate_DoesNotChangeAggregatedOccurrenceCount` runs `DependencyAggregator.Aggregate` then `DirectMeasureCalculator.Calculate` and proves the measure pass leaves the pre-dedup occurrence count intact, instead of asserting its own factory argument.
+- [x] `ConfigurationPersistenceExtractorTests.Extract_ConfigValueNeverEntersGraph` feeds a configuration value that really appears in the input before asserting its absence from the graph.
+- [x] Each replaced test fails when its named behaviour is broken by hand, and the total case count does not drop.
+
+**Tests**: unit — 4 replaced cases, no net deletion  
+**Gate**: quick  
+**Commit**: `test(core): make four passing tests discriminate`
+
+**Status**: Complete
+**Gate note**: quick gate green - `Csharp2Md.Core.Tests` 574 of 574 (0 failed, 0 skipped), the same count as before the task, so four bodies were rewritten and none deleted. Discrimination was proven by hand: four faults injected in production code (certification failure no longer blocking the commit in `PackagePublication.cs`, the flow read budget raised from 32 to 3,200 in `GraphJourneyCertifier.cs`, `DependencyAggregator` counting distinct edges instead of confirmed contributions, and the configuration extractor taking the last string literal instead of the first) killed exactly the four rewritten tests, 4 of 4 failed. The faults were reverted and the tree re-verified clean before the commit.
+
+### T56: Widen the composite-score scan to the published surface
+
+**What**: Make the MET-08 assertion capable of failing by scanning every public property of the package-building and publication types.  
+**Where**: `tests/Csharp2Md.Core.Tests/PackageBuilding/RetrievalModelBuilderTests.cs`  
+**Depends on**: T55  
+**Reuses**: the namespace-filtered reflection scan at `FactualGraphContractTests.cs:126-138`  
+**Requirement**: MET-08
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] The scan covers every public property of every type under `Csharp2Md.Core.PackageBuilding` and `Csharp2Md.Core.Publication`, not only `RetrievalModel`'s single property.
+- [ ] The forbidden substrings include `coupling`, which MET-08 names and the current list omits, alongside the existing score/risk/quality terms.
+- [ ] Adding a property named for a composite score, an automatic quality or risk label, or coupling makes the test fail; proven by hand before the commit.
+
+**Tests**: unit — 1 strengthened case  
+**Gate**: quick  
+**Commit**: `test(core): scan the published surface for composite scores`
+
+### T57: Publish the per-family measurement breakdown
+
+**What**: Record artifact and byte counts per `ArtifactFamily` in the published measurements, closing CRT-03's family dimension.  
+**Where**: `src/Csharp2Md.Core/Publication/PackageContracts.cs`  
+**Depends on**: T56  
+**Reuses**: the `ArtifactFamily` already carried by every `PlannedArtifact` at plan time; no new traversal  
+**Requirement**: CRT-03
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] `PublicationMeasurements` carries an artifact-count and byte-count breakdown keyed by `ArtifactFamily`, ordered canonically so repeat runs stay byte-identical.
+- [ ] `PackageBuilder` populates it from the planned artifacts, and `measurements.json` round-trips through `CanonicalJson` and `PackageValidator` unchanged.
+- [ ] The `EDG-03` budget-exceeded diagnostic quotes the breakdown, which `design.md:596` names as the file-budget mitigation.
+- [ ] At least 4 cases assert the breakdown against a hand-computed expectation, never one derived from the builder under test.
+
+**Tests**: unit — ≥4 cases with hand-computed expectations  
+**Gate**: quick  
+**Commit**: `feat(core): measure published artifacts by family`
+
+### T58: Render document pages and link entity pages
+
+**What**: Give every cited retained document a Markdown page and turn entity-page rows into Markdown links.  
+**Where**: `src/Csharp2Md.Core/PackageBuilding/Rendering/MarkdownRenderer.cs`  
+**Depends on**: T57  
+**Reuses**: the roots index routing and `MarkdownPath` handle scheme from T54; the artifact-existence assertion shape at `RootsIndexRoutingTests.cs:61-68`  
+**Requirement**: NAV-03
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] Every retained document cited by kept evidence has a Markdown page reachable from `markdown/index.md`; uncited documents get none, so PKG-06 still bounds the set.
+- [ ] Each entity page's outgoing, incoming and impact rows are Markdown links whose targets resolve to written artifacts; a row whose target has no page stays plain text rather than producing a dead link.
+- [ ] `RetrievalModelReader`'s markdown/machine equivalence check still passes, and repeat runs are byte-identical.
+- [ ] CRT-04 and CRT-05 are re-measured on all three local clones after the change; the committed file and byte ceilings still hold.
+- [ ] At least 5 cases cover a cited document page, an uncited document with no page, a resolving link, a non-resolving row and the summary reachability.
+
+**Tests**: unit + e2e — ≥5 cases plus re-measured corpus ceilings  
+**Gate**: full + LocalCorpus when present  
+**Commit**: `feat(core): render document pages and link entity rows`
+
+**Risk**: this is the only task of the phase that can breach a ceiling T52-T54 fought to clear. Today eShopOnContainers commits 253 files of 1,500, eShop 220 of 1,500 and Pitstop 140 of 750, so the headroom is wide — but the number of cited documents per corpus is unmeasured. If the ceiling breaks, amend NAV-03 against the measurement rather than silently dropping the pages.
+
+### T59: Refresh the spec requirement traceability table
+
+**What**: Point every requirement row at its owning task and verified status.  
+**Where**: `.specs/features/pacote-conhecimento-util-e-confiavel/spec.md`  
+**Depends on**: T58  
+**Reuses**: the Requirement-to-Task Traceability section of this file as the source of owners  
+**Requirement**: PKG-10
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`.
+
+**Done when**:
+
+- [ ] No row still reads `Design | Pending`; 65 of 71 did when the Verifier counted them.
+- [ ] Every row's owning task matches this file's Requirement-to-Task Traceability section, and its status reflects the Verifier's per-AC result rather than an assumption.
+- [ ] Rows for NAV-03, CRT-03 and MET-08 cite T58, T57 and T56 and read Complete only once those tasks are verified.
+
+**Tests**: none — documentation only  
+**Gate**: build  
+**Commit**: `docs(spec): refresh requirement traceability`
+
 ## Requirement-to-Task Traceability
 
 | Requirements | Owning task(s) | Acceptance seam |
@@ -1421,7 +1541,7 @@ Every journey of every corpus is Passed except Pitstop's `follow_flow`, which st
 | PKG-07 | T3, T7, T8, T14, T31, T42 | CLI safety/config |
 | PKG-08 | T5, T8, T17, T30, T38-T39, T42 | CLI policy identity |
 | PKG-09 | T3, T12-T16, T42 | factual graph + CLI |
-| PKG-10 | T1, T40, T45 | topology surface |
+| PKG-10 | T1, T40, T45, T59 | topology surface |
 | DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42, T46-T47, T49, T53 | hand-recalculated dependencies |
 | MET-01..MET-04 | T4, T19, T42 | hand-recalculated direct measures |
 | MET-05 | T4, T20, T42 | hand-recalculated SCCs |
@@ -1480,6 +1600,11 @@ All 71 requirements have at least one focused owning task and a final acceptance
 | T53 | One canonical-key resolution contract | ✅ Cohesive write/read contract |
 | T54 | One root declaration contract | ✅ Cohesive write/read contract |
 | T45 | One final repository topology cutover | ✅ Cohesive clean-cut deliverable |
+| T55 | One test-discrimination repair set | ✅ Cohesive test-integrity deliverable |
+| T56 | One composite-score scan widening | ✅ Granular |
+| T57 | One per-family measurement contract | ✅ Cohesive write/read contract |
+| T58 | One document-page and link contract | ✅ Cohesive rendering deliverable |
+| T59 | One traceability refresh | ✅ Granular |
 
 T1, T37, T41, T45, T47, T48, T52, T53 and T54 necessarily touch multiple physical files, but each is one indivisible deliverable. Splitting any of them would create an invalid scaffold, a partially qualified package contract, a fixture with no stable oracle, a repository with mixed contracts, or a clarified rule without matching fixtures.
 
@@ -1540,6 +1665,11 @@ T1, T37, T41, T45, T47, T48, T52, T53 and T54 necessarily touch multiple physica
 | T54 | T53 | T53 -> T54 | ✅ Match |
 | T44 | T54 | T54 -> T44 | ✅ Match |
 | T45 | T44 | T44 -> T45 | ✅ Match |
+| T55 | T45 | phase 7 after phase 6 | ✅ Match |
+| T56 | T55 | T55 -> T56 | ✅ Match |
+| T57 | T56 | T56 -> T57 | ✅ Match |
+| T58 | T57 | T57 -> T58 | ✅ Match |
+| T59 | T58 | T58 -> T59 | ✅ Match |
 
 Cross-phase dependencies are represented by the ordered phase chain; all intra-phase edges match exactly.
 
@@ -1601,6 +1731,11 @@ Cross-phase dependencies are represented by the ordered phase chain; all intra-p
 | T54 | Root declaration routing | unit | unit | ✅ OK |
 | T44 | Optional corpora | e2e | e2e | ✅ OK |
 | T45 | Topology + CLI current contract | unit + e2e + build | unit + e2e + build | ✅ OK |
+| T55 | Publication + PackageBuilding + Analysis tests | unit | unit | ✅ OK |
+| T56 | Public facade and contracts | unit | unit | ✅ OK |
+| T57 | Package contracts + PackageBuilding | unit | unit | ✅ OK |
+| T58 | Rendering + CLI seam + optional corpora | unit + e2e | unit + e2e | ✅ OK |
+| T59 | Documentation only | none | none | ✅ OK |
 
 No task defers its required tests to a later task. Later E2E tests add acceptance coverage; they do not substitute for the focused tests committed with the component that they exercise.
 

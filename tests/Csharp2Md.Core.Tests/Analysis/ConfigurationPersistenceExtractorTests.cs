@@ -11,7 +11,15 @@ public sealed class ConfigurationPersistenceExtractorTests
     [InlineData("config.GetValue<string>(\"Orders:Timeout\")", "key:Orders:Timeout")]
     [InlineData("config.GetConnectionString(\"Orders\")", "key:Orders")]
     public void Extract_ConfigurationEmitsSafeStructuralNames(string call, string expected) => Assert.Contains(Extract($"class Cfg {{ public void GetSection(string x){{}} public T GetValue<T>(string x)=>default!; public void GetConnectionString(string x){{}} }} class C {{ void M(Cfg config) {{ {call}; }} }}").Entities, x => x.Kind == EntityKind.Configuration && x.DisplayName == expected);
-    [Fact] public void Extract_ConfigValueNeverEntersGraph() { var r=Extract("class Cfg { public T GetValue<T>(string x)=>default!; } class C { void M(Cfg config) { config.GetValue<string>(\"Password\"); } }"); Assert.DoesNotContain(r.Entities, x=>x.DisplayName.Contains("secret",StringComparison.OrdinalIgnoreCase)); Assert.DoesNotContain(r.Evidence, x=>x.ContentDigest.Contains("secret",StringComparison.OrdinalIgnoreCase)); }
+    [Fact][Trait("Requirement","PKG-07")] public void Extract_ConfigValueNeverEntersGraph()
+    {
+        const string secret="Server=db;User=sa;Password=hunter2";
+        var r=Extract("class Cfg { public T GetValue<T>(string key, T fallback)=>default!; } class C { void M(Cfg config) { config.GetValue<string>(\"Orders:ConnectionString\", \"" + secret + "\"); } }");
+        Assert.Contains(r.Entities, x=>x.Kind==EntityKind.Configuration && x.DisplayName=="key:Orders:ConnectionString");
+        Assert.DoesNotContain(r.Entities, x=>x.DisplayName.Contains("hunter2",StringComparison.Ordinal)||x.CanonicalKey.Contains("hunter2",StringComparison.Ordinal));
+        Assert.DoesNotContain(r.Occurrences, x=>x.ShapeDigest.Contains("hunter2",StringComparison.Ordinal)||x.Locator.RelativePath.Contains("hunter2",StringComparison.Ordinal));
+        Assert.All(r.Evidence, x=>Assert.Matches("^[0-9a-f]{64}$",x.ContentDigest));
+    }
     [Theory]
     [InlineData("ctx.SaveChangesAsync()")]
     [InlineData("ctx.Orders.Add(new Order())")]

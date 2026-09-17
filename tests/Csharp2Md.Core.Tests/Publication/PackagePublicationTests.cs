@@ -22,12 +22,20 @@ public sealed class PackagePublicationTests
     [Fact][Trait("Requirement", "PUB-04")] public void Publish_RootManifestReferencesOnlyTheCommittedGeneration() { using var output = new TempOutput(); var plan = Plan(); PackagePublication.Publish(plan, output.Path); using var document = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(output.Path, "manifest.json"))); Assert.Equal(plan.PackageDigest, document.RootElement.GetProperty("generation").GetString()); Assert.DoesNotContain(Directory.GetFiles(output.Path, "*", SearchOption.TopDirectoryOnly), path => Path.GetFileName(path) is not "manifest.json" and not "package.lock"); }
     [Fact][Trait("Requirement", "EDG-03")] public void Publish_BudgetFailureOccursBeforePublication() { using var output = new TempOutput(); Assert.Throws<PackageBudgetExceededException>(() => PackageBuilder.Build(Model(), false, new PackageBudget(1, long.MaxValue))); Assert.False(File.Exists(Path.Combine(output.Path, "manifest.json"))); }
     [Fact][Trait("Requirement", "EDG-05")] public void Publish_InvalidMarkdownPlanIsRejectedBeforeManifestSwap() { using var output = new TempOutput(); var plan = Plan(); var broken = new PackagePlan(plan.Manifest, plan.Artifacts.Select(a => a.Path.Value == "markdown/index.md" ? new PlannedArtifact(a.Path, a.Family, "broken"u8.ToArray().ToImmutableArray(), a.RecordCount, a.ContentDigest) : a).ToImmutableArray(), plan.PackageDigest, plan.Measurements); Assert.Throws<PackagePublicationException>(() => PackagePublication.Publish(broken, output.Path)); Assert.False(File.Exists(Path.Combine(output.Path, "manifest.json"))); }
-    [Fact][Trait("Requirement", "PUB-08")] public void Publish_CertificationFailurePreventsManifestCommit() { using var output = new TempOutput(); var plan = Plan(); Assert.NotNull(plan); }
+    [Fact][Trait("Requirement", "PUB-08")] public void Publish_CertificationFailurePreventsManifestCommit() { using var output = new TempOutput(); var failure = Assert.Throws<PackagePublicationException>(() => PackagePublication.Publish(PackageBuilder.Build(Uncertifiable()), output.Path)); Assert.Equal("publication: 'journey-certification'.", failure.Message); Assert.False(File.Exists(Path.Combine(output.Path, "manifest.json"))); Assert.False(Directory.Exists(Path.Combine(output.Path, "generations"))); }
     [Fact][Trait("Requirement", "PUB-01")] public void Publish_PreservesPlanDigest() { using var output = new TempOutput(); var plan = Plan(); Assert.Equal(plan.PackageDigest, PackagePublication.Publish(plan, output.Path).PackageDigest); }
     [Fact][Trait("Requirement", "PUB-02")] public void Publish_RecordsAllFourJourneys() { using var output = new TempOutput(); Assert.Equal(4, Assert.Single(PackagePublication.Publish(Plan(), output.Path).Certification.Solutions).Journeys.Length); }
     [Fact][Trait("Requirement", "PUB-04")] public void Publish_ValidationHasNoInterpretationDifference() { using var output = new TempOutput(); PackagePublication.Publish(Plan(), output.Path); Assert.True(PackagePublication.Validate(output.Path).Succeeded); }
     [Fact][Trait("Requirement", "PUB-05")] public void Publish_UsesExclusiveLockFile() { using var output = new TempOutput(); PackagePublication.Publish(Plan(), output.Path); Assert.True(File.Exists(Path.Combine(output.Path, "package.lock"))); }
     private static PackagePlan Plan(string solution = "app") => PackageBuilder.Build(Model(solution));
+    // A solution whose only causal fact is an outgoing HTTP call has a flow root but neither a contract
+    // nor a persistence terminal, so JourneyCertifier fails follow_flow and Publish must stop before the swap.
+    private static RetrievalModel Uncertifiable() =>
+        new([new SolutionRetrievalModel(
+            CanonicalIdentity.CreateSolution("app", "src/app.sln"),
+            [new EntityHandle("component:orders")],
+            [new AggregatedDependency(AggregationScope.Component, new EntityHandle("component:orders"), new EntityHandle("component:payments"), DependencyCategory.Http, DependencyNature.Direct, 1, [], [], [])],
+            [])]);
     private static RetrievalModel Model(string solution = "app") =>
         new([new SolutionRetrievalModel(
             CanonicalIdentity.CreateSolution(solution, $"src/{solution}.sln"),
