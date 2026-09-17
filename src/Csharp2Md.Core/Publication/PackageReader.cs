@@ -87,13 +87,26 @@ internal sealed class PackageReader : IDisposable
             artifacts.TryAdd(tablePath, ReadArtifact(tablePath));
         }
 
-        var markdownPaths = Manifest.Solutions
+        var rootsIndexes = Manifest.Solutions
             .Select(solution => CanonicalJson.Read<RootsIndexData>(artifacts[solution.Roots.EntryPath].AsSpan()))
+            .ToArray();
+        var markdownPaths = rootsIndexes
             .SelectMany(index => index.Roots.Select(root => index.MarkdownPath(root.Handle)))
             .Distinct(StringComparer.Ordinal);
         foreach (var markdownPath in markdownPaths)
         {
             artifacts.TryAdd(markdownPath, ReadArtifact(markdownPath));
+        }
+
+        foreach (var rootsIndex in rootsIndexes)
+        {
+            artifacts.TryAdd(rootsIndex.DocumentsIndexPath, ReadArtifact(rootsIndex.DocumentsIndexPath));
+            var documents = CanonicalJson.Read<DocumentsIndexData>(artifacts[rootsIndex.DocumentsIndexPath].AsSpan());
+            foreach (var document in documents.Documents)
+            {
+                var documentPath = documents.MarkdownPath(document.Handle);
+                artifacts.TryAdd(documentPath, ReadArtifact(documentPath));
+            }
         }
 
         var pointerPaths = Manifest.Solutions

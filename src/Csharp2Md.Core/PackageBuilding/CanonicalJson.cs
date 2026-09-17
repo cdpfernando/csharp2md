@@ -106,6 +106,7 @@ internal static class CanonicalJson
 [JsonSerializable(typeof(EngineDiagnostic))]
 [JsonSerializable(typeof(ImmutableArray<SolutionManifestEntry>))]
 [JsonSerializable(typeof(RootsIndexData))]
+[JsonSerializable(typeof(DocumentsIndexData))]
 [JsonSerializable(typeof(RootIndexEntry))]
 [JsonSerializable(typeof(ImmutableArray<RootIndexEntry>))]
 [JsonSerializable(typeof(ImmutableArray<IndexManifestEntry>))]

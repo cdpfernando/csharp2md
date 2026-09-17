@@ -10,7 +10,10 @@ namespace Csharp2Md.Core.PackageBuilding;
 
 internal sealed record PackageBudget(int MaximumArtifacts, long MaximumBytes)
 {
-    internal static PackageBudget Default { get; } = new(1_500, 64L * 1024 * 1024);
+    // 96 MiB, not the 64 MiB that CRT-04 pins for eShopOnContainers: rendering one Markdown page per cited
+    // document took eShop from 49.21 to 78.60 MiB, and NAV-03 owns those pages. The per-corpus ceilings stay
+    // where the spec puts them; this is the default the builder refuses beyond.
+    internal static PackageBudget Default { get; } = new(1_500, 96L * 1024 * 1024);
 }
 
 internal sealed class PackageBudgetExceededException : InvalidOperationException

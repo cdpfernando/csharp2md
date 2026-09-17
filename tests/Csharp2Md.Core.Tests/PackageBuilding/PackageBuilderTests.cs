@@ -23,16 +23,17 @@ public sealed class PackageBuilderTests
         var message = Assert.Throws<PackageBudgetExceededException>(() => PackageBuilder.Build(Model(), false, new PackageBudget(1, long.MaxValue))).Message;
         Assert.Contains("Table=4/", message, StringComparison.Ordinal);
         Assert.Contains("Graph=1/", message, StringComparison.Ordinal);
-        Assert.Contains("Index=8/", message, StringComparison.Ordinal);
+        Assert.Contains("Index=9/", message, StringComparison.Ordinal);
         Assert.Contains("Measure=2/", message, StringComparison.Ordinal);
         Assert.Contains("Markdown=2/", message, StringComparison.Ordinal);
         Assert.DoesNotContain("Manifest=", message, StringComparison.Ordinal);
     }
     // One component root with one HTTP dependency and one measure produces a package whose family shape is
-    // fixed by the writers: 4 local tables, 1 entity graph shard, 8 navigation indexes, 2 measure artifacts
-    // and 2 Markdown pages (the summary and the root page). CRT-03 requires the breakdown to report exactly that.
+    // fixed by the writers: 4 local tables, 1 entity graph shard, 8 navigation indexes plus the documents
+    // router, 2 measure artifacts and 2 Markdown pages (the summary and the root page). The dependency is
+    // component-scoped, so no document earns a page. CRT-03 requires the breakdown to report exactly that.
     [Fact][Trait("Requirement", "CRT-03")] public void Build_CountsArtifactsByFamily() => Assert.Equal(
-        [(ArtifactFamily.Table, 4), (ArtifactFamily.Graph, 1), (ArtifactFamily.Index, 8), (ArtifactFamily.Measure, 2), (ArtifactFamily.Markdown, 2)],
+        [(ArtifactFamily.Table, 4), (ArtifactFamily.Graph, 1), (ArtifactFamily.Index, 9), (ArtifactFamily.Measure, 2), (ArtifactFamily.Markdown, 2)],
         Plan().Measurements.ByFamily.Select(family => (family.Family, family.ArtifactCount)));
     [Fact][Trait("Requirement", "CRT-03")] public void Build_SumsBytesByFamily() => Assert.All(
         Plan().Measurements.ByFamily,

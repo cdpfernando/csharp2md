@@ -59,6 +59,7 @@ internal static class RetrievalModelReader
             VerifyIndex(NavigationIndexKind.Contracts, MachineArtifactWriter.BuildDependencyIndex(outgoing.ArtifactPath, dependencies, static dependency => dependency.Source.Value, DependencyCategory.Contract));
             VerifyIndex(NavigationIndexKind.Persistence, MachineArtifactWriter.BuildDependencyIndex(outgoing.ArtifactPath, dependencies, static dependency => dependency.Source.Value, DependencyCategory.Persistence));
             VerifyIndex(NavigationIndexKind.Measures, MachineArtifactWriter.BuildMeasuresIndex(measuresIndex.ArtifactPath, measures));
+            VerifyDocuments(artifacts, indexes[NavigationIndexKind.Roots], dependencies, entry.Id);
             solutions.Add(new SolutionRetrievalModel(
                 identities[0],
                 ReadRoots(artifacts, indexes[NavigationIndexKind.Roots], entry.Roots),
@@ -89,6 +90,22 @@ internal static class RetrievalModelReader
             {
                 throw new PackageCorruptionException(artifact.Path.Value);
             }
+        }
+    }
+
+    // The documents router is rebuilt from the rehydrated dependencies and compared byte for byte, so a
+    // tampered or stale documents index is rejected instead of silently routing to a page that is not there.
+    private static void VerifyDocuments(
+        IReadOnlyDictionary<string, ImmutableArray<byte>> artifacts,
+        string rootsIndexPath,
+        ImmutableArray<AggregatedDependency> dependencies,
+        SolutionId solutionId)
+    {
+        var path = Read<RootsIndexData>(artifacts, rootsIndexPath).DocumentsIndexPath;
+        var actual = Read<DocumentsIndexData>(artifacts, path);
+        if (!CanonicalJson.Write(actual).AsSpan().SequenceEqual(CanonicalJson.Write(MachineArtifactWriter.BuildDocuments(dependencies, solutionId)).AsSpan()))
+        {
+            throw new PackageCorruptionException(path);
         }
     }
 

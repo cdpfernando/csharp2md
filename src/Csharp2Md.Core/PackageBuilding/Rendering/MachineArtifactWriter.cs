@@ -12,9 +12,19 @@ internal sealed record NavigationIndexEntry(string Key, ImmutableArray<int> Ordi
 internal sealed record DependencyPayload(ImmutableArray<StoredRelation> Relations, ImmutableArray<string> Evidence, ImmutableArray<AggregatedDependency> Dependencies);
 internal sealed record StoredRelation(string CanonicalKey, string SourceCanonicalKey, string TargetCanonicalKey, string Category, ImmutableArray<EvidenceHandle> Evidence);
 internal sealed record EvidenceIndexData(ImmutableArray<EvidenceShardEntry> Shards);
-internal sealed record RootsIndexData(string CitationArtifact, string MarkdownPrefix, ImmutableArray<RootIndexEntry> Roots)
+internal sealed record RootsIndexData(string CitationArtifact, string MarkdownPrefix, ImmutableArray<RootIndexEntry> Roots, string DocumentsIndexPath)
 {
     internal string MachineCitation(string handle) => $"{CitationArtifact}#{handle}";
+    internal string MarkdownPath(string handle) => $"{MarkdownPrefix}{handle}.md";
+}
+
+/// <summary>
+/// Routes the Markdown pages of the retained documents. It is a separate artifact rather than a
+/// section of the roots index so Locate keeps reading one short router: the roots index pays a
+/// single path for it, not a row per document.
+/// </summary>
+internal sealed record DocumentsIndexData(string MarkdownPrefix, ImmutableArray<RootIndexEntry> Documents)
+{
     internal string MarkdownPath(string handle) => $"{MarkdownPrefix}{handle}.md";
 }
 internal sealed record RootIndexEntry(string DisplayName, string Handle);
@@ -57,6 +67,8 @@ internal static class MachineArtifactWriter
             AddCompact(artifacts, dependenciesPath, ArtifactFamily.Measure, BuildDependencyPayload(solution, entities, variants), solution.Dependencies.Length);
             AddCompact(artifacts, measuresPath, ArtifactFamily.Measure, BuildMeasures(solution.Measures, entities, cycles), solution.Measures.Length);
 
+            var documentsIndex = BuildDocuments(solution.Dependencies, solutionId);
+            AddCompact(artifacts, rootsIndex.DocumentsIndexPath, ArtifactFamily.Index, documentsIndex, documentsIndex.Documents.Length);
             var evidenceIndex = AddEvidenceTable(artifacts, $"{prefix}/tables/evidence", solution.RetainedGraph?.Evidence ?? []);
             var indexes = IndexPaths(prefix).ToImmutableArray();
             foreach (var index in indexes)
@@ -193,7 +205,23 @@ internal static class MachineArtifactWriter
         var prefix = $"solutions/{solutionId.Value}";
         var keys = Keys(solution.Roots.Select(root => root.Value));
         var roots = keys.Select((key, ordinal) => new RootIndexEntry(key, LocalTableBuilder.HandleForOrdinal(ordinal))).ToImmutableArray();
-        return new RootsIndexData($"{prefix}/graph/entities.000000.json", $"{prefix}/markdown/components/", roots);
+        return new RootsIndexData($"{prefix}/graph/entities.000000.json", $"{prefix}/markdown/components/", roots, $"{prefix}/indexes/documents.json");
+    }
+
+    /// <summary>
+    /// The retained documents are the endpoints of the document-scoped dependencies. A document earns an
+    /// edge only through kept evidence, so this is exactly the cited set PKG-06 bounds, and it is derived
+    /// from the dependencies alone so a rehydrated package rebuilds the same routing.
+    /// </summary>
+    internal static DocumentsIndexData BuildDocuments(ImmutableArray<AggregatedDependency> dependencies, SolutionId solutionId)
+    {
+        var keys = Keys(dependencies.IsDefaultOrEmpty
+            ? []
+            : dependencies.Where(static dependency => dependency.Scope == AggregationScope.Document)
+                .SelectMany(static dependency => new[] { dependency.Source.Value, dependency.Target.Value }));
+        return new DocumentsIndexData(
+            $"solutions/{solutionId.Value}/markdown/documents/",
+            keys.Select(static (key, ordinal) => new RootIndexEntry(key, LocalTableBuilder.HandleForOrdinal(ordinal))).ToImmutableArray());
     }
 
     internal static ImmutableArray<string> EntityKeys(SolutionRetrievalModel solution) =>
