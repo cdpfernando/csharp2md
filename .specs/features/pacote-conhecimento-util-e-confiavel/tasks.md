@@ -95,7 +95,13 @@ T55 -> T56 -> T57 -> T58 -> T59
 T60 -> T61 -> T62 -> T63 -> T64 -> T65 -> T66
 ```
 
-T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. The eight phases form eight sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+### Phase 9: Third Verifier remediation
+
+```text
+T67 -> T68
+```
+
+T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. Phase 9 was opened after the third Verifier run returned PASS with five ranked non-blocking gaps, of which the user chose to close the two carrying functional consequence; it depends on Phase 8 in full. The nine phases form nine sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -1814,6 +1820,58 @@ Three cases were added rather than one. Two are theory rows asserting a literal 
 **CRT-04 and CRT-05 stay `Unverified`, now for a narrower reason.** Before T60 the ceilings lived only in a skipped test; now the builder enforces them and unit cases assert the spec's own numbers. What is still missing is the end-to-end measurement, because the eShopOnContainers and Pitstop clones are absent from this machine. CRT-07 requires that skip, so CI is unaffected.
 
 **The Coverage block was rewritten as a legend** rather than a one-line count, since three distinct statuses now appear and each needs its reason on the page: 68 `Complete`, 1 `Partial`, 2 `Unverified`.
+
+## Phase 9: Third Verifier remediation
+
+The second feature Verifier returned **PASS** on `ff42c35..6d0a3b3` (71/71 ACs) and ranked five non-blocking gaps. The user chose to close only the two with functional consequence; the other three are recorded as deferred below. The discrimination sensor remains a standing **skip** per `AGENTS.md`, so each task records a hand-run fault injection in its gate note.
+
+**Deferred by the user's decision, not dropped:**
+
+- The corpus ceilings are written as literals in both `PackageBuilder.cs` and `LocalCorpusAnalyzeTests.cs`, in different assemblies, with no test asserting they agree; a renamed or `.slnx` solution falls back to the 96 MiB default silently.
+- 80 test cases carry no `Requirement` trait, including the CLI suite that solely owns CRT-04, CRT-05, CRT-07 and CRT-09; PUB-06's discriminating case is traited `CRT-08`.
+- DEP-06 names Candidate, Unknown and Open Frontier, but its only test asserts an `IsConfirmed` boolean — a spec-precision gap.
+
+### T67: Measure the committed package, not the plan
+
+**What**: Count and weigh the root manifest pointer against the corpus ceiling, so the builder measures what the committed package actually holds.
+**Where**: `src/Csharp2Md.Core/PackageBuilding/PackageBuilder.cs`
+**Depends on**: T66
+**Reuses**: `PackageGenerationPointer` and `CanonicalJson.Write`, which `PackagePublication.ReplaceRootManifest` already uses to produce that file
+**Requirement**: CRT-04, CRT-05, EDG-03
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] The artifact count compared against the ceiling includes the root `manifest.json` pointer that publication writes outside the generation directory, so a plan of exactly the ceiling is refused rather than committed as ceiling + 1.
+- [ ] The byte total likewise includes that pointer's bytes, which are computable at plan time because the package digest is already known; `design.md:530` counts "o manifest e artefatos alcançáveis da geração committed".
+- [ ] `CorpusMeasurement` reports the same set the ceiling is enforced on, or states in the contract why it differs.
+- [ ] At least 3 cases pin the boundary: a plan one under the ceiling commits, a plan exactly at it is refused, and the measured count matches what `LocalCorpusAnalyzeTests` counts on disk.
+
+**Tests**: unit — ≥3 boundary cases
+**Gate**: full + LocalCorpus when present
+**Commit**: `fix(core): measure the committed package against the ceiling`
+
+### T68: Name the family on a budget rejection
+
+**What**: Give the `package-budget` diagnostic the structured coordinates PUB-08 requires, instead of burying the breakdown in the message text.
+**Where**: `src/Csharp2Md.Core/KnowledgeEngine.cs`
+**Depends on**: T67
+**Reuses**: the `family`/`artifact` mapping T65 established for `PackagePublicationException`
+**Requirement**: PUB-08, EDG-03
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] A `package-budget` rejection carries a structured `Family` rather than only a message that happens to contain the per-family breakdown.
+- [ ] The family reported is the one the rejection is attributable to, chosen by a stated rule rather than an arbitrary pick, and the corpus T61 added is carried too.
+- [ ] At least 2 cases drive a real budget rejection through the engine and assert the coordinates, not a hand-built `EngineDiagnostic`.
+- [ ] Dropping the coordinate makes the matching case fail; proven by hand.
+
+**Tests**: unit — ≥2 cases on a real rejection
+**Gate**: full
+**Commit**: `fix(core): qualify the package budget rejection`
 
 ## Requirement-to-Task Traceability
 
