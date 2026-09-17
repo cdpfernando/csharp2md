@@ -3,7 +3,7 @@ namespace Csharp2Md.Cli.Tests.Isolation;
 public sealed class FixtureRetentionTests
 {
     [Fact]
-    [Trait("Requirement", "ENG-50")]
+    [Trait("Requirement", "CRT-08")]
     public void SyntheticSolution_ExistsWithASolutionOrProjectFile()
     {
         var path = Path.Combine(CliTestPaths.RepoRoot, "fixtures", "SyntheticSolution");
@@ -22,8 +22,7 @@ public sealed class FixtureRetentionTests
     }
 
     [Fact]
-    [Trait("Requirement", "ENG-50")]
-    [Trait("Requirement", "APR-42")]
+    [Trait("Requirement", "CRT-08")]
     public void Gitignore_ExcludesLocalEShopCorpora()
     {
         var gitignorePath = Path.Combine(CliTestPaths.RepoRoot, ".gitignore");

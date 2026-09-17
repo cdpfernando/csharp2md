@@ -1,0 +1,89 @@
+using Csharp2Md.Core.PackageBuilding;
+using Csharp2Md.Core.Publication.Certification;
+
+namespace Csharp2Md.Core.Publication;
+
+internal sealed class PackagePublicationException : InvalidOperationException
+{
+    internal PackagePublicationException(string cause, Exception? innerException = null) : base($"publication: '{cause}'.", innerException) { }
+
+    // PUB-08 requires a rejection to report the applicable family alongside the cause. The validator already
+    // derives both, so a rejection raised from it carries them through instead of collapsing to the cause.
+    internal PackagePublicationException(string cause, string? family, string? artifact, Exception? innerException = null)
+        : base($"publication: '{cause}'.", innerException)
+    {
+        Family = family;
+        Artifact = artifact;
+    }
+
+    internal string? Family { get; }
+
+    internal string? Artifact { get; }
+}
+
+internal static class PackagePublication
+{
+    internal static CommittedPackage Publish(PackagePlan plan, string outputDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentException.ThrowIfNullOrWhiteSpace(outputDirectory);
+        var output = Path.GetFullPath(outputDirectory);
+        Directory.CreateDirectory(output);
+        using var @lock = AcquireLock(output);
+        var staging = Path.Combine(output, $".staging-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(staging);
+            WriteAll(staging, plan.Artifacts);
+            EnsureValid(staging);
+            var certification = JourneyCertifier.Certify(staging);
+            if (certification.Solutions.SelectMany(solution => solution.Journeys).Any(journey => journey.Status == JourneyCertificationStatus.Failed)) throw new PackagePublicationException("journey-certification");
+            Write(staging, "certification.json", CanonicalJson.Write(certification));
+            EnsureValid(staging);
+            var generation = Path.Combine(output, "generations", plan.PackageDigest);
+            Directory.CreateDirectory(Path.GetDirectoryName(generation)!);
+            if (Directory.Exists(generation)) Directory.Delete(generation, recursive: true);
+            Directory.Move(staging, generation);
+            ReplaceRootManifest(output, plan.PackageDigest);
+            CleanupGenerations(output, generation);
+            return new CommittedPackage(output, plan.PackageDigest, certification);
+        }
+        catch (PackagePublicationException) { TryDelete(staging); throw; }
+        catch (Exception exception) { TryDelete(staging); throw new PackagePublicationException("staging-or-validation", exception); }
+    }
+
+    internal static PackageValidationReport Validate(string packageDirectory) => PackageValidator.Validate(packageDirectory);
+
+    private static FileStream AcquireLock(string output) => new(Path.Combine(output, "package.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+    private static void EnsureValid(string directory)
+    {
+        var report = PackageValidator.Validate(directory);
+        if (!report.Succeeded)
+        {
+            var failure = report.Failures[0];
+            throw new PackagePublicationException(failure.Cause, failure.Family, failure.Artifact);
+        }
+    }
+    private static void WriteAll(string directory, IEnumerable<PlannedArtifact> artifacts)
+    {
+        foreach (var artifact in artifacts) Write(directory, artifact.Path.Value, artifact.Payload);
+    }
+    private static void Write(string directory, string relative, ImmutableArray<byte> bytes)
+    {
+        var path = Path.Combine(directory, relative.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllBytes(path, bytes.ToArray());
+    }
+    private static void ReplaceRootManifest(string output, string packageDigest)
+    {
+        var replacement = Path.Combine(output, $".manifest-{Guid.NewGuid():N}.json");
+        File.WriteAllBytes(replacement, CanonicalJson.Write(new PackageGenerationPointer(packageDigest)).ToArray());
+        File.Move(replacement, Path.Combine(output, "manifest.json"), overwrite: true);
+    }
+    private static void CleanupGenerations(string output, string current)
+    {
+        var generations = Path.Combine(output, "generations");
+        foreach (var directory in Directory.GetDirectories(generations).Where(directory => !string.Equals(directory, current, StringComparison.Ordinal))) TryDelete(directory);
+    }
+    private static void TryDelete(string path) { try { if (Directory.Exists(path)) Directory.Delete(path, recursive: true); } catch (IOException) { } }
+}

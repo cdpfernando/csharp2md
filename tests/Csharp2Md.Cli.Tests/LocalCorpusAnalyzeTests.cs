@@ -1,141 +1,157 @@
-using Csharp2Md.Cli;
+using System.Text.Json;
 
 namespace Csharp2Md.Cli.Tests;
 
+/// <summary>
+/// Acceptance for the optional local clones. Every case carries <c>Category=LocalCorpus</c>, which the
+/// mandatory gates exclude with <c>--filter "Category!=LocalCorpus"</c>, and a clone that is absent is
+/// reported as a named skip rather than a failure -- no mandatory gate depends on a clone existing.
+/// </summary>
 public sealed class LocalCorpusAnalyzeTests
 {
-    public static TheoryData<string, string> LocalCorpora { get; } = new()
-    {
-        { "eShop", Path.Combine("fixtures", "eShop", "eShop.slnx") },
-        { "eShopOnContainers", Path.Combine("fixtures", "eShopOnContainers", "eShopOnContainers-ServicesAndWebApps.sln") },
-    };
+    private const long MiB = 1024L * 1024L;
 
-    private static readonly string[] PitstopIsolatedProjects =
-    [
-        "Infrastructure.Messaging",
-        "CustomerManagementAPI",
-        "VehicleManagementAPI",
-        "WorkshopManagementAPI",
-        "WorkshopManagement.UnitTests",
-        "WorkshopManagementEventHandler",
-        "AuditlogService",
-        "InvoiceService",
-        "NotificationService",
-        "TimeService",
-        "WebApp",
-        "TestUtils",
-        "UITest",
-        "InvoiceService.UnitTests",
-        "NotificationService.UnitTests",
-    ];
-
-    public static TheoryData<string, string> PitstopCorpora { get; } = CreatePitstopCorpora();
-
-    [Theory]
-    [MemberData(nameof(LocalCorpora))]
+    [LocalCorpusFact(LocalCorpus.EShop, LocalCorpus.EShopSolution)]
     [Trait("Category", "LocalCorpus")]
-    public async Task Analyze_LocalCorpus_WritesPackageWhenCloneIsPresent(string name, string relativeSolution)
+    public async Task Analyze_eShop_CompletesWithoutCrossProjectVariantCollision()
     {
-        var solutionPath = Path.Combine(CliTestPaths.RepoRoot, relativeSolution);
+        var package = CliTestPaths.UniqueOutputPath();
+        try
+        {
+            var stderr = await AnalyzeAsync(LocalCorpus.EShop, LocalCorpus.EShopSolution, package);
+
+            Assert.DoesNotContain("variant-collision", stderr, StringComparison.Ordinal);
+        }
+        finally
+        {
+            CliTestPaths.TryDeleteDirectory(package);
+        }
+    }
+
+    [LocalCorpusFact(LocalCorpus.EShopOnContainers, LocalCorpus.EShopOnContainersSolution)]
+    [Trait("Category", "LocalCorpus")]
+    public async Task Analyze_eShopOnContainers_CommitsWithinFileAndByteCeilings()
+    {
+        var package = CliTestPaths.UniqueOutputPath();
+        try
+        {
+            await AnalyzeAsync(LocalCorpus.EShopOnContainers, LocalCorpus.EShopOnContainersSolution, package);
+
+            AssertCommittedCeiling(package, maximumFiles: 1_500, maximumBytes: 64 * MiB);
+        }
+        finally
+        {
+            CliTestPaths.TryDeleteDirectory(package);
+        }
+    }
+
+    [LocalCorpusFact(LocalCorpus.Pitstop, LocalCorpus.PitstopSolution)]
+    [Trait("Category", "LocalCorpus")]
+    public async Task Analyze_Pitstop_CommitsWithinFileAndByteCeilings()
+    {
+        var package = CliTestPaths.UniqueOutputPath();
+        try
+        {
+            await AnalyzeAsync(LocalCorpus.Pitstop, LocalCorpus.PitstopSolution, package);
+
+            AssertCommittedCeiling(package, maximumFiles: 750, maximumBytes: 25 * MiB);
+        }
+        finally
+        {
+            CliTestPaths.TryDeleteDirectory(package);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "LocalCorpus")]
+    public void AbsentClone_SkipsWithAReasonNamingTheCloneAndItsPath()
+    {
+        var absent = new LocalCorpusFactAttribute("eShop", "absent-clone.slnx");
+
+        Assert.Equal(
+            $"local eShop clone is not present at '{Path.Combine(CliTestPaths.RepoRoot, "fixtures", "eShop", "absent-clone.slnx")}'.",
+            absent.Skip);
+    }
+
+    [Fact]
+    [Trait("Category", "LocalCorpus")]
+    public void PresentClone_RunsInsteadOfSkipping() =>
+        Assert.Null(new LocalCorpusFactAttribute("..", "csharp2md.slnx").Skip);
+
+    [Fact]
+    [Trait("Category", "LocalCorpus")]
+    public void LocalCorpora_AreGitIgnoredAndAnalyzedOutsideTheRepository()
+    {
+        var ignored = File.ReadAllLines(Path.Combine(CliTestPaths.RepoRoot, ".gitignore"))
+            .Select(static line => line.Trim())
+            .ToArray();
+
+        Assert.Contains($"fixtures/{LocalCorpus.EShop}/", ignored);
+        Assert.Contains($"fixtures/{LocalCorpus.EShopOnContainers}/", ignored);
+        Assert.Contains($"fixtures/{LocalCorpus.Pitstop}/", ignored);
+        Assert.DoesNotContain(
+            CliTestPaths.RepoRoot,
+            CliTestPaths.UniqueOutputPath(),
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task<string> AnalyzeAsync(string clone, string solutionFileName, string package)
+    {
+        var (exitCode, stdout, stderr) = await CliInvoke.RunAsync(
+            ["analyze", "--solution", LocalCorpus.SolutionPath(clone, solutionFileName), "--output", package]);
+
+        Assert.True(exitCode == ExitCodes.Success, $"analyze exited {exitCode}: {stderr}");
+        Assert.Contains("committed and certified", stdout, StringComparison.Ordinal);
+        return stderr;
+    }
+
+    private static void AssertCommittedCeiling(string package, int maximumFiles, long maximumBytes)
+    {
+        var rootManifest = Path.Combine(package, "manifest.json");
+        using var pointer = JsonDocument.Parse(File.ReadAllText(rootManifest));
+        var committed = Path.Combine(
+            package,
+            "generations",
+            pointer.RootElement.GetProperty("generation").GetString()!);
+
+        var reachable = Directory.EnumerateFiles(committed, "*", SearchOption.AllDirectories)
+            .Append(rootManifest)
+            .Select(static path => new FileInfo(path).Length)
+            .ToArray();
+
+        Assert.InRange(reachable.Length, 1, maximumFiles);
+        Assert.InRange(reachable.Sum(), 1L, maximumBytes);
+    }
+}
+
+public static class LocalCorpus
+{
+    public const string EShop = "eShop";
+    public const string EShopSolution = "eShop.slnx";
+    public const string EShopOnContainers = "eShopOnContainers";
+    public const string EShopOnContainersSolution = "eShopOnContainers-ServicesAndWebApps.sln";
+    public const string Pitstop = "Pitstop";
+    public const string PitstopSolution = "pitstop.sln";
+
+    public static string SolutionPath(string clone, string solutionFileName) =>
+        Path.Combine(CliTestPaths.RepoRoot, "fixtures", clone, solutionFileName);
+}
+
+/// <summary>
+/// Marks a case that needs an optional local clone. The clone is resolved at discovery: when its
+/// solution file is absent the case reports a skip naming the clone and the path it looked for, so a
+/// machine without the clone never fails the run. xunit 2.9.3 does not honour the v3
+/// <c>$XunitDynamicSkip$</c> token, so the decision is made here rather than thrown from the body.
+/// </summary>
+[AttributeUsage(AttributeTargets.Method)]
+public sealed class LocalCorpusFactAttribute : FactAttribute
+{
+    public LocalCorpusFactAttribute(string clone, string solutionFileName)
+    {
+        var solutionPath = LocalCorpus.SolutionPath(clone, solutionFileName);
         if (!File.Exists(solutionPath))
         {
-            throw new InvalidOperationException(
-                string.Concat("$XunitDynamicSkip$", $"local {name} clone is not present at '{solutionPath}'."));
+            Skip = $"local {clone} clone is not present at '{solutionPath}'.";
         }
-
-        var outputPath = CliTestPaths.UniqueOutputPath();
-        try
-        {
-            var (exitCode, _, _) = await CliInvoke.RunAsync(
-                ["analyze", "--solution", solutionPath, "--output", outputPath]);
-
-            Assert.Equal(0, exitCode);
-            var manifest = Assert.Single(
-                Directory.EnumerateFiles(outputPath, "manifest.json", SearchOption.AllDirectories));
-            Assert.Equal("manifest.json", Path.GetFileName(manifest));
-            Assert.StartsWith(Path.GetFullPath(outputPath), Path.GetFullPath(manifest), StringComparison.OrdinalIgnoreCase);
-        }
-        finally
-        {
-            CliTestPaths.TryDeleteDirectory(outputPath);
-        }
-    }
-
-    [Theory]
-    [MemberData(nameof(PitstopCorpora))]
-    [Trait("Category", "LocalCorpus")]
-    [Trait("Requirement", "APR-41")]
-    [Trait("Requirement", "APR-42")]
-    public async Task Analyze_Pitstop_WritesPackageWhenCloneIsPresent(string name, string relativePath)
-    {
-        var sourcePath = Path.Combine(CliTestPaths.RepoRoot, relativePath);
-        if (!File.Exists(sourcePath))
-        {
-            throw new InvalidOperationException(
-                string.Concat("$XunitDynamicSkip$", $"local {name} clone is not present at '{sourcePath}'."));
-        }
-
-        var outputPath = CliTestPaths.UniqueOutputPath();
-        string? isolatedSolution = null;
-        try
-        {
-            var solutionPath = MaterializeSolutionIfNeeded(sourcePath, out isolatedSolution);
-            var (exitCode, _, stderr) = await CliInvoke.RunAsync(
-                ["analyze", "--solution", solutionPath, "--output", outputPath]);
-
-            Assert.True(
-                exitCode is ExitCodes.Success or ExitCodes.Degraded or ExitCodes.CertificationFailed,
-                $"Pitstop analyze did not write a package; exit {exitCode}: {stderr}");
-            var manifest = Assert.Single(
-                Directory.EnumerateFiles(outputPath, "manifest.json", SearchOption.AllDirectories));
-            Assert.Equal("manifest.json", Path.GetFileName(manifest));
-            Assert.StartsWith(Path.GetFullPath(outputPath), Path.GetFullPath(manifest), StringComparison.OrdinalIgnoreCase);
-        }
-        finally
-        {
-            CliTestPaths.TryDeleteDirectory(outputPath);
-            if (isolatedSolution is not null && File.Exists(isolatedSolution))
-            {
-                File.Delete(isolatedSolution);
-            }
-        }
-    }
-
-    private static TheoryData<string, string> CreatePitstopCorpora()
-    {
-        var data = new TheoryData<string, string>
-        {
-            { "Pitstop", Path.Combine("fixtures", "Pitstop", "pitstop.sln") },
-        };
-
-        foreach (var project in PitstopIsolatedProjects)
-        {
-            data.Add(
-                "Pitstop." + project,
-                Path.Combine("fixtures", "Pitstop", project, project + ".csproj"));
-        }
-
-        return data;
-    }
-
-    private static string MaterializeSolutionIfNeeded(string sourcePath, out string? isolatedSolution)
-    {
-        if (sourcePath.EndsWith(".sln", StringComparison.OrdinalIgnoreCase)
-            || sourcePath.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase))
-        {
-            isolatedSolution = null;
-            return sourcePath;
-        }
-
-        var directory = Path.GetDirectoryName(sourcePath)
-            ?? throw new InvalidOperationException($"Project path '{sourcePath}' has no directory.");
-        isolatedSolution = Path.Combine(
-            directory,
-            Path.GetFileNameWithoutExtension(sourcePath) + ".csharp2md-isolated.slnx");
-        var projectFileName = Path.GetFileName(sourcePath);
-        File.WriteAllText(
-            isolatedSolution,
-            $"<Solution>{Environment.NewLine}  <Project Path=\"{projectFileName}\" />{Environment.NewLine}</Solution>{Environment.NewLine}");
-        return isolatedSolution;
     }
 }

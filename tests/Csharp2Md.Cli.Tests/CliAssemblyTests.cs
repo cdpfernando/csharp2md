@@ -6,7 +6,7 @@ namespace Csharp2Md.Cli.Tests;
 public sealed class CliAssemblyTests
 {
     [Fact]
-    [Trait("Requirement", "ENG-02")]
+    [Trait("Requirement", "PKG-10")]
     public void CliAssembly_HasNameCsharp2MdCliAndANonNullEntryPoint()
     {
         var assembly = Assembly.Load("Csharp2Md.Cli");
@@ -16,8 +16,8 @@ public sealed class CliAssemblyTests
     }
 
     [Fact]
-    [Trait("Requirement", "ENG-02")]
-    public void CliTestsCsproj_ReferencesCsharp2MdCli()
+    [Trait("Requirement", "PKG-10")]
+    public void CliTestsCsproj_ReferencesOnlyCsharp2MdCli()
     {
         var csprojPath = Path.Combine(
             CliTestPaths.RepoRoot,
@@ -29,12 +29,13 @@ public sealed class CliAssemblyTests
 
         var includes = XDocument.Load(csprojPath)
             .Descendants()
-            .Where(element => element.Name.LocalName == "ProjectReference")
-            .Select(element => element.Attribute("Include")?.Value)
-            .Where(include => !string.IsNullOrWhiteSpace(include))
-            .Select(include => Path.GetFileNameWithoutExtension(include!.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
+            .Where(static element => element.Name.LocalName == "ProjectReference")
+            .Select(static element => element.Attribute("Include")?.Value)
+            .Where(static include => !string.IsNullOrWhiteSpace(include))
+            .Select(static include => Path.GetFileNameWithoutExtension(include!.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)))
+            .OrderBy(static name => name, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Contains("Csharp2Md.Cli", includes);
+        Assert.Equal(["Csharp2Md.Cli"], includes);
     }
 }

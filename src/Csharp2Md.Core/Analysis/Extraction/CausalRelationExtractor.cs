@@ -1,0 +1,257 @@
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace Csharp2Md.Core.Analysis.Extraction;
+
+internal sealed record CausalRelationExtractionInput(
+    SolutionIdentity Solution,
+    ProjectIdentity Project,
+    AnalysisVariant Variant,
+    Compilation Compilation,
+    ImmutableArray<ProjectIdentity> ReferencedProjects);
+
+internal sealed record CausalRelationExtractionResult(
+    ImmutableArray<LogicalEntity> Entities,
+    ImmutableArray<VariantOccurrence> Occurrences,
+    ImmutableArray<EvidenceRecord> Evidence,
+    ImmutableArray<FactualRelation> Relations,
+    ImmutableArray<KnowledgeGap> Gaps);
+
+internal static class CausalRelationExtractor
+{
+    private const string ProjectReference = "project-reference";
+    private const string InternalInvocation = "internal-invocation";
+    private const string StructuralTypeUse = "structural-type-use";
+    private const string Http = "http";
+    private const string Grpc = "grpc";
+    private const string Messaging = "messaging";
+    private const string Contract = "contract";
+
+    public static CausalRelationExtractionResult Extract(CausalRelationExtractionInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(input.Solution);
+        ArgumentNullException.ThrowIfNull(input.Project);
+        ArgumentNullException.ThrowIfNull(input.Variant);
+        ArgumentNullException.ThrowIfNull(input.Compilation);
+
+        var entities = new Dictionary<string, LogicalEntity>(StringComparer.Ordinal);
+        var occurrences = new List<VariantOccurrence>();
+        var evidence = new List<EvidenceRecord>();
+        var relations = new List<FactualRelation>();
+        var gaps = new List<KnowledgeGap>();
+
+        void AddEntity(LogicalEntity entity, LogicalLocator locator, string shape, string evidenceKey)
+        {
+            if (!entities.TryAdd(entity.CanonicalKey, entity))
+            {
+                return;
+            }
+
+            occurrences.Add(new VariantOccurrence(entity.CanonicalKey, input.Project, input.Variant, locator, shape, [evidenceKey]));
+        }
+
+        EvidenceRecord AddEvidence(string kind, LogicalLocator locator, string payload)
+        {
+            var digest = Digest(kind + ":" + payload);
+            var record = new EvidenceRecord(
+                "evidence:" + digest,
+                CanonicalIdentity.CreateDocumentKey(input.Solution, locator.RelativePath),
+                input.Variant,
+                locator.Span,
+                digest);
+            evidence.Add(record);
+            return record;
+        }
+
+        string AddSymbol(ISymbol symbol, LogicalLocator locator, EvidenceRecord proof)
+        {
+            var kind = symbol is IMethodSymbol ? EntityKind.Callable : EntityKind.Symbol;
+            var qualified = symbol.ToDisplayString();
+            var display = string.IsNullOrWhiteSpace(symbol.Name) ? qualified : symbol.Name;
+            var key = CanonicalIdentity.CreateEntityKey(input.Solution, kind, qualified);
+            AddEntity(new LogicalEntity(kind, key, display, qualified), locator, "semantic:" + kind.ToString().ToLowerInvariant(), proof.CanonicalKey);
+            return key;
+        }
+
+        string AddNamed(EntityKind kind, string name, LogicalLocator locator, EvidenceRecord proof)
+        {
+            var key = CanonicalIdentity.CreateEntityKey(input.Solution, kind, name);
+            AddEntity(new LogicalEntity(kind, key, name, name), locator, "causal:" + kind.ToString().ToLowerInvariant(), proof.CanonicalKey);
+            return key;
+        }
+
+        void AddRelation(string category, string source, string target, EvidenceRecord proof, string discriminator)
+        {
+            var key = "relation:" + Digest(category + ":" + source + ":" + target + ":" + discriminator);
+            relations.Add(new FactualRelation(key, source, target, category, [proof.CanonicalKey]));
+        }
+
+        void AddGap(GapKind kind, string cause, string source, EvidenceRecord proof, string discriminator)
+        {
+            var key = "gap:" + Digest(kind + ":" + cause + ":" + source + ":" + discriminator);
+            gaps.Add(new KnowledgeGap(key, kind, cause, [source], [proof.CanonicalKey]));
+        }
+
+        foreach (var referencedProject in input.ReferencedProjects.OrderBy(project => project.CanonicalKey, StringComparer.Ordinal))
+        {
+            var locator = new LogicalLocator(input.Project.LogicalRelativePath, new SourceSpan(1, 1, 1, 1), input.Project);
+            var proof = AddEvidence(ProjectReference, locator, referencedProject.LogicalRelativePath);
+            var source = AddNamed(EntityKind.Project, input.Project.LogicalRelativePath, locator, proof);
+            var target = AddNamed(EntityKind.Project, referencedProject.LogicalRelativePath, locator, proof);
+            AddRelation(ProjectReference, source, target, proof, referencedProject.CanonicalKey);
+        }
+
+        foreach (var tree in input.Compilation.SyntaxTrees.OrderBy(tree => tree.FilePath, StringComparer.Ordinal))
+        {
+            var relativePath = ToLogicalPath(input.Project, tree.FilePath);
+            if (relativePath is null)
+            {
+                continue;
+            }
+
+            var model = input.Compilation.GetSemanticModel(tree);
+            var root = tree.GetRoot();
+            foreach (var invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+            {
+                var locator = new LogicalLocator(relativePath, SpanOf(invocation), input.Project);
+                var proof = AddEvidence("invocation", locator, invocation.ToString());
+                var sourceMethod = model.GetEnclosingSymbol(invocation.SpanStart) as IMethodSymbol;
+                if (sourceMethod is null)
+                {
+                    continue;
+                }
+
+                var source = AddSymbol(sourceMethod, locator, proof);
+                if (model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol targetMethod)
+                {
+                    if (IsHttpInvocation(invocation))
+                    {
+                        var destination = ExtractStringArgument(invocation);
+                        if (destination is not null)
+                        {
+                            var external = AddNamed(EntityKind.ExternalSystem, "http:" + destination, locator, proof);
+                            AddRelation(Http, source, external, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                            continue;
+                        }
+                    }
+
+                    AddGap(GapKind.Unknown, "unresolved-invocation", source, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    continue;
+                }
+
+                if (IsMessaging(targetMethod))
+                {
+                    var eventType = targetMethod.TypeArguments.FirstOrDefault()?.ToDisplayString();
+                    if (string.IsNullOrWhiteSpace(eventType))
+                    {
+                        AddGap(GapKind.Unknown, "messaging-payload-unresolved", source, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                        continue;
+                    }
+
+                    var contract = AddNamed(EntityKind.Contract, eventType, locator, proof);
+                    AddRelation(Messaging, source, contract, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    AddRelation(Contract, source, contract, proof, "contract:" + invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    continue;
+                }
+
+                if (IsHttp(targetMethod))
+                {
+                    var destination = ExtractStringArgument(invocation);
+                    if (destination is null)
+                    {
+                        AddGap(GapKind.Candidate, "http-destination-unresolved", source, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                        continue;
+                    }
+
+                    var external = AddNamed(EntityKind.ExternalSystem, "http:" + destination, locator, proof);
+                    AddRelation(Http, source, external, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    continue;
+                }
+
+                if (IsGrpc(targetMethod))
+                {
+                    var external = AddNamed(EntityKind.ExternalSystem, "grpc:" + targetMethod.ContainingType.ToDisplayString(), locator, proof);
+                    AddRelation(Grpc, source, external, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    continue;
+                }
+
+                var target = AddSymbol(targetMethod, locator, proof);
+                AddRelation(InternalInvocation, source, target, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+
+            foreach (var typeSyntax in root.DescendantNodes().OfType<TypeSyntax>())
+            {
+                if (typeSyntax.Parent is BaseTypeSyntax)
+                {
+                    continue;
+                }
+
+                var sourceMethod = typeSyntax.Ancestors().OfType<BaseMethodDeclarationSyntax>()
+                    .Select(method => model.GetDeclaredSymbol(method))
+                    .OfType<IMethodSymbol>()
+                    .FirstOrDefault();
+                var targetType = model.GetTypeInfo(typeSyntax).Type;
+                if (sourceMethod is null || targetType is null || targetType.TypeKind == TypeKind.Error)
+                {
+                    continue;
+                }
+
+                var locator = new LogicalLocator(relativePath, SpanOf(typeSyntax), input.Project);
+                var proof = AddEvidence("type-use", locator, typeSyntax.ToString());
+                var source = AddSymbol(sourceMethod, locator, proof);
+                var target = AddSymbol(targetType, locator, proof);
+                AddRelation(StructuralTypeUse, source, target, proof, typeSyntax.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+        }
+
+        return new CausalRelationExtractionResult(
+            entities.Values.OrderBy(entity => entity.CanonicalKey, StringComparer.Ordinal).ToImmutableArray(),
+            occurrences.OrderBy(item => item.EntityCanonicalKey, StringComparer.Ordinal).ThenBy(item => item.Locator.RelativePath, StringComparer.Ordinal).ToImmutableArray(),
+            evidence.DistinctBy(item => item.CanonicalKey).OrderBy(item => item.CanonicalKey, StringComparer.Ordinal).ToImmutableArray(),
+            relations.OrderBy(item => item.CanonicalKey, StringComparer.Ordinal).ToImmutableArray(),
+            gaps.OrderBy(item => item.CanonicalKey, StringComparer.Ordinal).ToImmutableArray());
+    }
+
+    private static bool IsMessaging(IMethodSymbol method) => method.Name is "Publish" or "PublishAsync" or "Subscribe" or "SubscribeAsync";
+
+    private static bool IsHttp(IMethodSymbol method) => method.Name is "GetAsync" or "PostAsync" or "PostAsJsonAsync" or "PutAsync" or "DeleteAsync";
+
+    private static bool IsHttpInvocation(InvocationExpressionSyntax invocation) =>
+        invocation.Expression is MemberAccessExpressionSyntax member
+        && member.Name.Identifier.ValueText is "GetAsync" or "PostAsync" or "PostAsJsonAsync" or "PutAsync" or "DeleteAsync";
+
+    private static bool IsGrpc(IMethodSymbol method) =>
+        method.ContainingType.BaseType?.ToDisplayString().Contains("Grpc.Core.ClientBase", StringComparison.Ordinal) == true;
+
+    private static string? ExtractStringArgument(InvocationExpressionSyntax invocation) =>
+        invocation.ArgumentList.Arguments.Select(argument => argument.Expression).OfType<LiteralExpressionSyntax>()
+            .FirstOrDefault(literal => literal.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.StringLiteralExpression))?.Token.ValueText;
+
+    private static string? ToLogicalPath(ProjectIdentity project, string? absolutePath)
+    {
+        if (string.IsNullOrWhiteSpace(absolutePath))
+        {
+            return null;
+        }
+
+        var directory = Path.GetDirectoryName(project.LogicalRelativePath)?.Replace('\\', '/') ?? string.Empty;
+        var fileName = Path.GetFileName(absolutePath);
+        return string.IsNullOrEmpty(directory) ? fileName : directory + "/" + fileName;
+    }
+
+    private static SourceSpan SpanOf(SyntaxNode node)
+    {
+        var span = node.GetLocation().GetLineSpan();
+        return new SourceSpan(
+            span.StartLinePosition.Line + 1,
+            span.StartLinePosition.Character + 1,
+            span.EndLinePosition.Line + 1,
+            span.EndLinePosition.Character + 1);
+    }
+
+
+    private static string Digest(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
+}

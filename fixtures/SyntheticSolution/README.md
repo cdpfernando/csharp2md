@@ -109,3 +109,12 @@ with an unregistered language string, not through this fixture — no real,
 low-effort way to make an MSBuild-loaded C#/.NET project trigger that branch
 was found (F# would, but pulling in the F# SDK for one test case wasn't
 judged worth it). See `SolutionLoaderClassificationTests.cs`.
+
+## Knowledge package oracle
+
+`knowledge-oracle.json` is hand-authored acceptance data. It names the expected
+roots, boundary edges, variant occurrences, causal cycle, controlled unresolved
+Shipping destination, and values that must not reach a published package. The
+fixture adds `Acme.Shipping.Tests` to make include-tests observable and changes
+`Acme.Shared.Contracts` to `net8.0;net10.0` so per-project target frameworks
+are exercised without a solution-wide target framework.
