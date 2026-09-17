@@ -1,3 +1,4 @@
+using System.Text;
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.PackageBuilding;
 using Csharp2Md.Core.PackageBuilding.Measures;
@@ -57,6 +58,46 @@ public sealed class ScopePairingTests
     public void Build_DeploymentUnitScopeKeepsItsMembershipDerivation() =>
         Assert.Contains(Edges(AggregationScope.DeploymentUnit), edge =>
             edge.Source.Value == "entity:deployment" && edge.Target.Value == "entity:deployment");
+
+
+    // DEP-05 is about one low-level relation contributing to MORE THAN ONE scope: its reference is reused and
+    // its factual payload is not duplicated. Repetition inside a single scope does not exercise that.
+    // `relation:source-target` is confirmed once in Caller.cs and reaches Document, Project, Component and
+    // Deployment Unit through membership, so it is the case the criterion describes.
+    [Fact] [Trait("Requirement", "DEP-05")]
+    public void Build_ReusesOneRelationAcrossEveryScopeItContributesTo()
+    {
+        var carrying = Dependencies()
+            .Where(edge => edge.Relations.Any(relation => relation.Value == "relation:source-target"))
+            .ToArray();
+        Assert.Equal(
+            [AggregationScope.Document, AggregationScope.Project, AggregationScope.Component, AggregationScope.DeploymentUnit],
+            carrying.Select(edge => edge.Scope).Distinct().Order());
+        Assert.All(carrying, edge => Assert.Single(edge.Relations, relation => relation.Value == "relation:source-target"));
+    }
+
+    // The payload half of DEP-05. The relation's factual record is written once into the shard's `relations`
+    // table and every scope row points at it by ordinal, so the canonical key occurs exactly once in the whole
+    // package however many scopes carry the edge.
+    [Fact] [Trait("Requirement", "DEP-05")]
+    public void Build_WritesTheSharedRelationPayloadOnlyOnce()
+    {
+        var plan = PackageBuilder.Build([Graph()]);
+        var occurrences = plan.Artifacts.Sum(artifact =>
+            Occurrences(Encoding.UTF8.GetString(artifact.Payload.AsSpan()), "relation:source-target"));
+        Assert.Equal(1, occurrences);
+    }
+
+    private static int Occurrences(string text, string value)
+    {
+        var count = 0;
+        for (var index = text.IndexOf(value, StringComparison.Ordinal); index >= 0; index = text.IndexOf(value, index + 1, StringComparison.Ordinal))
+        {
+            count++;
+        }
+
+        return count;
+    }
 
     private static ImmutableArray<AggregatedDependency> EdgesInto(string document) =>
         Edges(AggregationScope.Document).Where(edge => edge.Target.Value == document).ToImmutableArray();

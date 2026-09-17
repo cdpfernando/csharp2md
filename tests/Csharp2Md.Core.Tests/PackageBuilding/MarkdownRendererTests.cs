@@ -9,6 +9,33 @@ namespace Csharp2Md.Core.Tests.PackageBuilding;
 public sealed class MarkdownRendererTests
 {
     [Fact][Trait("Requirement", "NAV-02")] public void Render_SummaryListsComponents() => Assert.Contains("component:orders", Text("markdown/index.md"));
+    // NAV-02 asks the summary for componentes AND Deployment Units; the section is even titled after both.
+    // Every case above builds only `component:` roots, so the Deployment Unit half was never asserted.
+    [Fact][Trait("Requirement", "NAV-02")] public void Render_SummaryListsDeploymentUnitsNotOnlyComponents()
+    {
+        var text = Text("markdown/index.md");
+        Assert.Contains("## Components and Deployment Units", text, StringComparison.Ordinal);
+        Assert.Contains("deployment:orders-api", text, StringComparison.Ordinal);
+        var link = System.Text.RegularExpressions.Regex.Match(text, @"- \[deployment:orders-api\]\(([^)]+)\)");
+        Assert.True(link.Success, "the deployment unit row is not a Markdown link");
+        var written = Write().Markdown.Select(artifact => artifact.Path.Value).ToHashSet(StringComparer.Ordinal);
+        Assert.Contains(Resolve("markdown/index.md", link.Groups[1].Value), written);
+    }
+
+    // Resolves a Markdown link the way a reader following it would, so the assertion proves the row reaches a
+    // written artifact rather than merely looking like a link.
+    private static string Resolve(string from, string target)
+    {
+        var segments = new List<string>(from.Split('/')[..^1]);
+        foreach (var part in target.Split('/'))
+        {
+            if (part == "..") segments.RemoveAt(segments.Count - 1);
+            else if (part != ".") segments.Add(part);
+        }
+
+        return string.Join('/', segments);
+    }
+
     [Fact][Trait("Requirement", "NAV-02")] public void Render_SummaryListsTopFanInAndOut() => Assert.Contains("fan-in 1, fan-out 1", Text("markdown/index.md"));
     [Fact][Trait("Requirement", "NAV-02")] public void Render_SummaryListsCycles() => Assert.Contains("cycle:orders", Text("markdown/index.md"));
     [Fact][Trait("Requirement", "NAV-02")] public void Render_SummaryListsFourJourneys() { var text=Text("markdown/index.md"); var solution=Assert.Single(Write().Manifest.Solutions); Assert.All(solution.Journeys, journey => Assert.Contains($"{journey.Kind} via {journey.EntryIndex}", text)); }
@@ -142,7 +169,7 @@ public sealed class MarkdownRendererTests
             new GapCounts(0, 1, 0)));
         return new RetrievalModel([new SolutionRetrievalModel(
             solution,
-            [new EntityHandle(root), new EntityHandle("component:billing")],
+            [new EntityHandle(root), new EntityHandle("component:billing"), new EntityHandle("deployment:orders-api")],
             dependencies,
             measures)]);
     }

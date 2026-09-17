@@ -1731,13 +1731,22 @@ Three cases were added rather than one. Two are theory rows asserting a literal 
 
 **Done when**:
 
-- [ ] One case proves a single low-level relation contributing to more than one scope is referenced from each scope without its factual payload being duplicated, which is what DEP-05 requires; same-scope repetition is not sufficient.
-- [ ] One case asserts the Markdown summary lists a Deployment Unit, not only a Component.
-- [ ] Duplicating the payload, or dropping the deployment unit from the summary, makes the matching case fail; proven by hand.
+- [x] One case proves a single low-level relation contributing to more than one scope is referenced from each scope without its factual payload being duplicated, which is what DEP-05 requires; same-scope repetition is not sufficient.
+- [x] One case asserts the Markdown summary lists a Deployment Unit, not only a Component.
+- [x] Duplicating the payload, or dropping the deployment unit from the summary, makes the matching case fail; proven by hand.
 
 **Tests**: unit — ≥2 added cases
 **Gate**: quick
 **Commit**: `test(core): assert scope reuse and deployment navigation`
+
+**Status**: Complete
+**Gate note**: quick gate green — `Csharp2Md.Core.Tests` **611 of 611** (up from 608 by this task's 3 cases).
+
+**DEP-05, split into the two halves the criterion actually states.** `relation:source-target` is confirmed once in `Caller.cs` and reaches Document, Project, Component and Deployment Unit through membership, which is precisely "uma relação de baixo nível [que] contribuir para mais de um escopo". `Build_ReusesOneRelationAcrossEveryScopeItContributesTo` asserts it appears in all four scopes and is referenced once per edge; `Build_WritesTheSharedRelationPayloadOnlyOnce` asserts its canonical key occurs exactly once across every artifact in the package. The shard writes the factual record into a `relations` table and every scope row points at it by ordinal, so the second assertion is the payload half and the first is the reference half.
+
+**NAV-02.** The summary section is titled "Components and Deployment Units", but every renderer case built only `component:` roots, so the Deployment Unit half of the criterion was never exercised. The shared model now also carries a `deployment:orders-api` root, and the new case asserts the row is present, is a Markdown link, and that the link resolves to an artifact the renderer actually wrote — resolved by walking the relative path the way a reader would, rather than by string match.
+
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): two faults injected. Writing each edge's relation reference as the canonical key instead of the local-table ordinal killed both DEP-05 cases — the payload count went from 1 to 5 — along with four pre-existing cases whose resolution then broke. Filtering the summary's root rows to `component:` only killed exactly one case, the new NAV-02 one, and nothing else. Both were reverted and the suite re-run before the commit.
 
 ### T65: Give publication-rejection diagnostics their coordinates
 
