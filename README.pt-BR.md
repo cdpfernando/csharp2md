@@ -2,17 +2,17 @@
 
 [English](README.md) | Português
 
-O `csharp2md` analisa `1..N` soluções C#/.NET explícitas e publica fatos, observações, relações causais e projeções de fonte precisas, auditáveis e diretamente navegáveis por uma LLM.
+O `csharp2md` analisa `1..N` soluções C#/.NET explícitas e publica um único pacote de conhecimento: fatos, observações, relações causais e projeções de fonte precisas, auditáveis e diretamente navegáveis por uma LLM.
 
 ## Estado do projeto
 
-A base do motor de conhecimento arquitetural foi implementada pelos workstreams 1–8. O workstream posterior `analysis-publication-resilience` também foi encerrado com PASS. O código-fonte, o CLI e os schemas atuais são a base operacional, mas não definem o contrato da próxima substituição incompatível. [A proposta para o próximo contrato do pacote](docs/specs/pacote-conhecimento-util-e-confiavel.md) existe como especificação local e sua implementação não foi iniciada.
+O contrato do pacote de conhecimento é o único contrato do repositório. A substituição está concluída: `Csharp2Md.Core` é dono da análise, da construção do pacote e da publicação, e `Csharp2Md.Cli` é seu único seam externo. Não existe dispatch de versão, leitor legado, conversor nem rota de compatibilidade.
 
 Comece por:
 
 1. [Linguagem do domínio](CONTEXT.md)
 2. [Decisões ativas e handoff](.specs/STATE.md)
-3. [Proposta para o próximo contrato do pacote](docs/specs/pacote-conhecimento-util-e-confiavel.md)
+3. [Especificação do contrato do pacote](docs/specs/pacote-conhecimento-util-e-confiavel.md)
 
 ## Limites do produto
 
@@ -20,7 +20,6 @@ Comece por:
 - Markdown é uma projeção; fatos e observações legíveis por máquina são a autoridade.
 - A interpretação de regras de negócio pertence a uma LLM posterior, alimentada com o código relevante completo.
 - Query engines, ingestão de wiki, `kb`, QMD, embeddings e análise incremental ficam adiados até o output do gerador estar completo.
-- Não existe exigência de retrocompatibilidade durante a substituição. A continuidade começa no primeiro release completo pós-migração.
 
 ## Pré-requisitos
 
@@ -54,18 +53,34 @@ Se `csharp2md` não for encontrado, reabra o terminal e confira se o diretório 
 
 Para substituir uma instalação existente por um pacote recém-gerado, execute `dotnet tool uninstall --global csharp2md` e repita os comandos de empacotamento e instalação acima. O mesmo comando de desinstalação remove a ferramenta quando ela não for mais necessária.
 
-## Executar o CLI atual
+## Executar o CLI
 
-Os comandos abaixo descrevem a base operacional atual. A proposta para o próximo contrato do pacote pode substituí-los de forma incompatível.
+O CLI expõe dois comandos: `analyze` e `validate`.
 
-Restaure a solução que deseja analisar e informe seu arquivo `.sln` ou `.slnx` e um diretório de saída:
+### `analyze`
+
+Restaure as soluções que deseja analisar e informe cada uma delas e um único diretório de saída:
 
 ```shell
 dotnet restore "caminho/para/MinhaSolucao.slnx"
 csharp2md analyze --solution "caminho/para/MinhaSolucao.slnx" --output "artifacts/minha-solucao"
 ```
 
-Substitua o caminho de exemplo pelo da sua solução. Repita `--solution` para analisar várias soluções na mesma execução. Use `csharp2md analyze --help` para consultar todas as opções de análise; `csharp2md --help` também lista os comandos `validate` e `compose` para pacotes já publicados.
+| Opção             | Obrigatória | Significado                                                                        |
+| ----------------- | ----------- | ---------------------------------------------------------------------------------- |
+| `--solution`      | sim         | Caminho de uma solução a analisar. Repita a opção por solução; um pacote cobre todas. |
+| `--output`        | sim         | Diretório que recebe o pacote comprometido.                                          |
+| `--include-tests` | não         | Inclui projetos e documentos de teste e registra essa escolha na identidade do pacote. |
+
+A análise compromete o pacote inteiro ou não altera nada. Uma execução materializa, reidrata e valida em staging, certifica as quatro jornadas de recuperação e só então troca o `manifest.json` raiz sob lock. Uma execução rejeitada deixa o pacote anterior intacto.
+
+### `validate`
+
+Revalida um pacote já publicado. Lê apenas o pacote e não toca em nenhuma solução:
+
+```shell
+csharp2md validate --package "artifacts/minha-solucao"
+```
 
 ### Executar sem instalar
 
@@ -78,38 +93,43 @@ dotnet run --project src/Csharp2Md.Cli --no-launch-profile -- analyze --solution
 
 ### Experimentar com a fixture incluída
 
-`Acme.Shipping` é uma solução pequena incluída no repositório:
+`fixtures/SyntheticSolution` é a fixture de análise versionada. `Acme.Orders` é uma de suas soluções:
 
 ```shell
-dotnet restore fixtures/SyntheticSolution/Acme.Shipping/Acme.Shipping.slnx
-dotnet run --project src/Csharp2Md.Cli --no-launch-profile -- analyze --solution fixtures/SyntheticSolution/Acme.Shipping/Acme.Shipping.slnx --output artifacts/shipping-out
+dotnet restore fixtures/SyntheticSolution/Acme.Orders/Acme.Orders.slnx
+dotnet run --project src/Csharp2Md.Cli --no-launch-profile -- analyze --solution fixtures/SyntheticSolution/Acme.Orders/Acme.Orders.slnx --output artifacts/orders-out
 ```
 
 Com a ferramenta instalada, substitua `dotnet run --project src/Csharp2Md.Cli --no-launch-profile --` por `csharp2md`.
 
-A fixture pode publicar um pacote com certificação `degraded` (código de saída `3`): o exemplo atual informa cobertura incompleta de chamadas. Consulte os motivos em `run-certification.json`, dentro do pacote publicado.
+## O pacote publicado
 
-O diretório de saída recebe `batch-manifest.json` e um diretório de pacote chamado `s-<hash>` para cada solução publicada. Comece pelo manifesto do lote para localizar cada pacote. Leia os diagnósticos e o resultado da certificação no CLI: a existência de arquivos gerados, por si só, não indica uma análise totalmente bem-sucedida. Os códigos de saída atuais são:
+Quem lê o pacote começa por exatamente um arquivo: o `manifest.json` na raiz da saída. Ele aponta para a geração comprometida em `generations/<digest>/`, e nada mais precisa ser enumerado para navegar o pacote.
 
-| Código | Significado |
-| --- | --- |
-| `0` | Sucesso |
-| `1` | Invocação inválida |
-| `2` | Composição parcial ou falha na publicação do lote |
-| `3` | Certificação degradada |
-| `4` | Certificação reprovada |
-| `5` | Corrupção estrutural |
-| `6` | Proveniência ou versão de contrato incompatível |
+Para cada solução analisada o manifesto declara oito índices de navegação — `identity`, `roots`, `outgoing`, `incoming`, `contracts`, `persistence`, `evidence` e `measures` — e quatro jornadas de recuperação certificadas: `locate`, `follow_flow`, `reverse_impact` e `evidence_disposition`. O resultado da certificação fica em `certification.json` e os budgets das jornadas em `measurements.json`.
+
+Leia os diagnósticos do CLI além dos arquivos: a existência de conteúdo gerado, por si só, não indica uma análise bem-sucedida. Os diagnósticos vão para stderr no formato `csharp2md: code=... stage=... cause=...`, com as coordenadas de solução, projeto, variante, família e artefato que se aplicarem.
+
+Códigos de saída:
+
+| Código | Significado             |
+| ------ | ----------------------- |
+| `0`    | Sucesso                 |
+| `1`    | Invocação inválida      |
+| `4`    | Certificação reprovada  |
+| `5`    | Corrupção estrutural    |
 
 ## Base de desenvolvimento
 
 - SDK do .NET conforme o [global.json](global.json)
 - `Microsoft.CodeAnalysis.Workspaces.MSBuild` 5.6.0
-- sem referência direta a `Microsoft.Build.*` e sem `MSBuildLocator.RegisterDefaults()`
+- sem referência direta a `Microsoft.Build.*` e sem `MSBuildLocator.RegisterDefaults()`: o Roslyn 4.9+ carrega projetos por um BuildHost fora de processo
+
+A solução contém quatro projetos — `Csharp2Md.Core`, `Csharp2Md.Cli` e seus projetos de teste:
 
 ```shell
 dotnet build csharp2md.slnx
 dotnet test csharp2md.slnx
 ```
 
-Não deduza a semântica da próxima substituição a partir da implementação atual. O trabalho começa somente quando a proposta do pacote for convertida explicitamente em uma feature executável pelo processo `tlc-spec-driven`.
+`fixtures/SyntheticSolution` é a única fixture de análise versionada. Clones locais de corpora maiores são opcionais: quando presentes ampliam a aceitação e, quando ausentes, seus testes são ignorados em vez de falhar.

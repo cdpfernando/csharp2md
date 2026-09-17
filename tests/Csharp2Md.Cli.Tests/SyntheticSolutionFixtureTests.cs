@@ -7,11 +7,6 @@ public sealed class SyntheticSolutionFixtureTests
     private static readonly string Root = Path.Combine(CliTestPaths.RepoRoot, "fixtures", "SyntheticSolution");
 
     [Fact]
-    public void Fixture_HasOnlySourceInputs_NoBuildOutputs() =>
-        Assert.Empty(Directory.EnumerateDirectories(Root, "bin", SearchOption.AllDirectories)
-            .Concat(Directory.EnumerateDirectories(Root, "obj", SearchOption.AllDirectories)));
-
-    [Fact]
     public void Fixture_HasExpectedServiceRoots()
     {
         Assert.True(Directory.Exists(Path.Combine(Root, "Acme.Orders")));

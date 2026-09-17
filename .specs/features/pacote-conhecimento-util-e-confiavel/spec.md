@@ -240,7 +240,7 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 | PKG-07 | Conhecimento útil, critério 7 | Design | Pending |
 | PKG-08 | Conhecimento útil, critério 8 | Design | Pending |
 | PKG-09 | Conhecimento útil, critério 9 | T13 | Complete |
-| PKG-10 | Conhecimento útil, critério 10 | Design | Pending |
+| PKG-10 | Conhecimento útil, critério 10 | T1, T40, T45 | Complete |
 | DEP-01 | Dependências, critério 1 | Design | Pending |
 | DEP-02 | Dependências, critério 2 | T13 | Complete |
 | DEP-03 | Dependências, critério 3 | Design | Pending |
