@@ -13,6 +13,8 @@ public sealed class ScopePairingTests
     private static readonly string SilentDocument = CanonicalIdentity.CreateDocumentKey(Solution, "Other.cs");
     private static readonly string TargetDocument = CanonicalIdentity.CreateDocumentKey(Solution, "Target.cs");
     private static readonly string ComponentDocument = CanonicalIdentity.CreateDocumentKey(Solution, "App.csproj");
+    private const string TestProjectPath = "App.Tests/App.Tests.csproj";
+    private static readonly string TestDocument = CanonicalIdentity.CreateDocumentKey(Solution, "App.Tests/TargetCalledFromTest.cs");
 
     [Fact] [Trait("Requirement", "DEP-01")]
     public void Build_DocumentEdgeStartsAtTheDocumentHoldingTheEvidence() =>
@@ -58,6 +60,25 @@ public sealed class ScopePairingTests
     public void Build_DeploymentUnitScopeKeepsItsMembershipDerivation() =>
         Assert.Contains(Edges(AggregationScope.DeploymentUnit), edge =>
             edge.Source.Value == "entity:deployment" && edge.Target.Value == "entity:deployment");
+
+    // PKG-05: a genuinely-retained target entity (called from real production code) that is ALSO called
+    // from a test project must not have its Document/Project membership widened by that test-side
+    // occurrence - otherwise a real dependency edge fans out to a test file/project it has nothing to do
+    // with, purely because the target symbol happens to be exercised by a test too.
+    [Fact] [Trait("Requirement", "PKG-05")]
+    public void Build_TargetMembershipExcludesATestProjectOccurrenceByDefault()
+    {
+        var edges = Dependencies(Graph(includeTestOccurrenceOnTarget: true));
+        Assert.DoesNotContain(edges, edge => edge.Scope == AggregationScope.Document && edge.Target.Value == TestDocument);
+        Assert.DoesNotContain(edges, edge => edge.Scope == AggregationScope.Project && edge.Target.Value == CanonicalIdentity.CreateProject(Solution, TestProjectPath).CanonicalKey);
+    }
+
+    [Fact] [Trait("Requirement", "PKG-08")]
+    public void Build_TargetMembershipIncludesATestProjectOccurrenceWhenPolicyEnabled()
+    {
+        var edges = Dependencies(Graph(includeTestOccurrenceOnTarget: true), includeTests: true);
+        Assert.Contains(edges, edge => edge.Scope == AggregationScope.Document && edge.Target.Value == TestDocument);
+    }
 
 
     // DEP-05 is about one low-level relation contributing to MORE THAN ONE scope: its reference is reused and
@@ -108,14 +129,14 @@ public sealed class ScopePairingTests
     private static ImmutableArray<AggregatedDependency> Dependencies()
         => Dependencies(Graph());
 
-    private static ImmutableArray<AggregatedDependency> Dependencies(FactualGraph graph)
+    private static ImmutableArray<AggregatedDependency> Dependencies(FactualGraph graph, bool includeTests = false)
     {
-        var plan = PackageBuilder.Build([graph]);
+        var plan = PackageBuilder.Build([graph], includeTests);
         var artifacts = plan.Artifacts.ToDictionary(artifact => artifact.Path.Value, artifact => artifact.Payload, StringComparer.Ordinal);
         return Assert.Single(RetrievalModelReader.Read(artifacts).Solutions).Dependencies;
     }
 
-    private static FactualGraph Graph(bool includeEvidenceDocumentOccurrence = true)
+    private static FactualGraph Graph(bool includeEvidenceDocumentOccurrence = true, bool includeTestOccurrenceOnTarget = false)
     {
         var project = CanonicalIdentity.CreateProject(Solution, "App.csproj");
         var variant = CanonicalIdentity.CreateVariant("net10.0", "Release", [], "ci");
@@ -141,6 +162,21 @@ public sealed class ScopePairingTests
         if (includeEvidenceDocumentOccurrence)
             occurrences.Add(Occurrence("entity:source", "Caller.cs", "evidence:one"));
 
+        var sources = new List<SourceDocumentSnapshot>
+        {
+            new(EvidenceDocument, new LogicalLocator("Caller.cs", span, project), false, "a"),
+            new(SilentDocument, new LogicalLocator("Other.cs", span, project), false, "b"),
+            new(TargetDocument, new LogicalLocator("Target.cs", span, project), false, "c"),
+            new(ComponentDocument, new LogicalLocator("App.csproj", span, project), false, "d"),
+        };
+
+        if (includeTestOccurrenceOnTarget)
+        {
+            var testProject = CanonicalIdentity.CreateProject(Solution, TestProjectPath);
+            occurrences.Add(new VariantOccurrence("entity:target", testProject, variant, new LogicalLocator("App.Tests/TargetCalledFromTest.cs", span, testProject), "shape:entity:target", ["evidence:one"]));
+            sources.Add(new SourceDocumentSnapshot(TestDocument, new LogicalLocator("App.Tests/TargetCalledFromTest.cs", span, testProject), true, "e"));
+        }
+
         return new FactualGraph(
             Solution,
             [.. entities],
@@ -152,10 +188,7 @@ public sealed class ScopePairingTests
             ],
             [],
             [
-                new SourceDocumentSnapshot(EvidenceDocument, new LogicalLocator("Caller.cs", span, project), false, "a"),
-                new SourceDocumentSnapshot(SilentDocument, new LogicalLocator("Other.cs", span, project), false, "b"),
-                new SourceDocumentSnapshot(TargetDocument, new LogicalLocator("Target.cs", span, project), false, "c"),
-                new SourceDocumentSnapshot(ComponentDocument, new LogicalLocator("App.csproj", span, project), false, "d"),
+                .. sources,
             ],
             new ExtractionMeasurements(0, 0));
 

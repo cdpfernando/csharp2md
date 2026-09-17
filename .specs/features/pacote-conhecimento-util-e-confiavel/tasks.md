@@ -112,10 +112,10 @@ T70 -> T71 -> T72
 ### Phase 11: Correct the retained dependency projection
 
 ```text
-T73 -> T74 -> T75 -> T76
+T73 -> T74 -> T75 -> T76 -> T77 -> T78
 ```
 
-T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. Phase 9 was opened after the third Verifier run returned PASS with five ranked non-blocking gaps, of which the user chose to close the two carrying functional consequence; it depends on Phase 8 in full. Phase 10 was opened after the corpus benchmark showed the generator scoring 11 of 87 `ProjectReference` edges on a real corpus while the whole suite stayed green; it depends on Phase 9 in full. Phase 11 was opened by the user's explicit decision to confirm and fix the projection rather than only re-measure it; it depends on Phase 10 in full. The eleven phases form eleven sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. Phase 9 was opened after the third Verifier run returned PASS with five ranked non-blocking gaps, of which the user chose to close the two carrying functional consequence; it depends on Phase 8 in full. Phase 10 was opened after the corpus benchmark showed the generator scoring 11 of 87 `ProjectReference` edges on a real corpus while the whole suite stayed green; it depends on Phase 9 in full. Phase 11 was opened by the user's explicit decision to confirm and fix the projection rather than only re-measure it; it depends on Phase 10 in full. T77 was added mid-phase when verifying T76 surfaced a third, independent test-leakage admission point beyond T75's root/incoming-edge fix. The eleven phases form eleven sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -2146,6 +2146,53 @@ Both are fixed in the same commit as the original `ReferencedProjects()` defect 
 **Adequacy**: `LooksLikeTestDocument_UsesPathSegments` gained the `.Testes` case plus two negative cases (`Testemunho`, `Manifesto`) proving the suffix match requires the literal `.` separator, not just a "Testes" substring. `IsTestProject_RecognizesThePortugueseTestesConvention` pins the project-path variant T75 depends on. `Corpus_ScoresTheRecordedShareOfItsReachableOracle` moving from 7/29/4 to 60/0/0 in one ratchet assertion is the adequacy evidence that matters most: every one of the corpus's 87 declared edges is now accounted for correctly.
 **Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): the `.Testes`/`testes` patterns were removed from `LooksLikeTestDocument`, rebuilt Release-clean, and run against `SourceInventoryTests` - it killed `IsTestProject_RecognizesThePortugueseTestesConvention` and the `.Testes` case of `LooksLikeTestDocument_UsesPathSegments` (2 of 2 new cases), leaving every other case, including the two new negative cases, green. Reverted and the full gate re-run before the commit.
 
+### T77: Exclude test-project occurrences from entity membership lifting
+
+**What**: Stop a genuinely-retained entity's Document/Project/Component/DeploymentUnit membership from being widened by an occurrence recorded while analysing a test project as its own root - discovered while verifying T76: a shared symbol called from both production code and a test file (e.g. `CotacoesTests.cs` calling into production code it exercises) leaked a `.Testes`-owned document and project into the default package's dependency graph and local entity table, even though the test project's own roots and incoming edges were already correctly excluded by T75.
+**Where**: `src/Csharp2Md.Core/PackageBuilding/PackageBuilder.cs`
+**Depends on**: T76
+**Reuses**: `SourceInventory.IsTestProject` (T75); the same occurrence-based owner check, applied at a third admission point
+**Requirement**: PKG-05
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] `BuildMemberships` and `BuildProjectsByDocument` derive Document/Project/Component/DeploymentUnit membership from occurrences with a test-project owner excluded by default, sharing one `NonTestOccurrences` filter rather than duplicating the check.
+- [x] A retained entity called from both a real production file and a test file keeps its production-side membership and drops the test-side one by default, and keeps both when `--include-tests` is set.
+- [x] At least 2 cases on `ScopePairingTests.cs` pin default-exclusion and opt-in inclusion for this specific admission point, independent of T75's root/incoming-edge cases.
+- [x] `fixtures/ArchitectureDependencyLab`'s real leak (`SistemaA.Testes/CotacoesTests.cs` reachable through a shared symbol) is closed, confirmed via the oracle package's own entity table.
+
+**Tests**: unit — ≥2 cases
+**Gate**: full + `Category=OracleCorpus`
+**Commit**: `fix(packagebuilding): exclude test occurrences from membership`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **637 of 637** (up from 635 by this task's 2 focused cases), `Csharp2Md.Cli.Tests` **96 passed / 2 skipped** (up from 95 by the leak-detection case this task's fix now passes; the two skips are the absent eShopOnContainers and Pitstop clones).
+**Decision**: this was not visible from the oracle's Project-scope `ProjectReference` score alone (60/60/0/0 was already reached by T73-T76) - it surfaced only when verifying T76's own fourth Done-when bullet ("no source document, Component, or DeploymentUnit... contains a `.Testes` project segment") against the real corpus. Root cause, confirmed by tracing raw occurrences through a throwaway diagnostic (deleted before commit): `BuildMemberships`/`BuildProjectsByDocument` derive an entity's Document/Project/Component/DeploymentUnit membership from **every** occurrence of that entity in the unfiltered `FactualGraph`, including one recorded while analysing `SistemaA.Testes` as its own root when its compilation calls into a genuinely-retained production symbol. T75 excluded the test project's own roots and its outbound incoming edges; this closes the third path - the target side of an otherwise-legitimate production relation being widened by a test-side occurrence of the same symbol. `NonTestOccurrences` centralises the filter so `BuildMemberships`'s two internal uses (`occurrences` and the nested `RootsByProject`) and `BuildProjectsByDocument` share one answer to "does this occurrence count."
+**Adequacy**: `Build_TargetMembershipExcludesATestProjectOccurrenceByDefault` extends `ScopePairingTests`' existing fixture with a second occurrence of the already-retained `entity:target` from a test project, and asserts no Document- or Project-scope edge names the test file or test project by default; `Build_TargetMembershipIncludesATestProjectOccurrenceWhenPolicyEnabled` asserts the opposite with `--include-tests`. Both are independent of T75's cases, which cover root selection and incoming-edge admission, not target-side membership lifting.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): `NonTestOccurrences` was reverted to unconditionally return `graph.Occurrences`, rebuilt Release-clean, and run against `ScopePairingTests` - it killed `Build_TargetMembershipExcludesATestProjectOccurrenceByDefault`, reproducing the exact leak shape found in the real corpus (`Caller.cs -> App.Tests/TargetCalledFromTest.cs`), and left every other case in the file green. Reverted and the full gate re-run before the commit.
+
+### T78: Correct the traceability table and close the open finding
+
+**What**: Update `spec.md`'s Requirement Traceability for DEP-01, DEP-02, DEP-03 and PKG-05 to cite T73-T77 and reflect a measured, not assumed, "Complete"; replace `.specs/STATE.md`'s "OPEN FINDING: the component dependency graph is complete" and the unmeasured project-reference finding with the corrected, re-measured numbers.
+**Where**: `.specs/features/pacote-conhecimento-util-e-confiavel/spec.md`, `.specs/STATE.md`
+**Depends on**: T77
+**Reuses**: nothing — documentation only
+**Requirement**: none (documentation)
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`.
+
+**Done when**:
+
+- [ ] `spec.md`'s traceability rows for DEP-01, DEP-02, DEP-03 and PKG-05 name T73-T77 and state the measured outcome (oracle score, complete-graph check, test-leak check), not a restated assumption.
+- [ ] `.specs/STATE.md`'s two open-finding sections are replaced by the corrected state: the re-measured oracle score, the confirmed absence of BCL/primitive entities in a real corpus's retained graph, and the confirmed absence of `.Testes`-owned entities in the default package.
+- [ ] Any claim this phase could not fully close (for example, a residual fan-out from a legitimate, genuinely shared in-solution type used by many components) is written down as a named residual, not silently dropped.
+
+**Tests**: none (documentation)
+**Gate**: `validate_state.py` on this feature
+**Commit**: `docs(state): correct the projection traceability after phase 11`
+
 ## Requirement-to-Task Traceability
 
 | Requirements | Owning task(s) | Acceptance seam |
@@ -2310,6 +2357,8 @@ T1, T37, T41, T45, T47, T48, T52, T53 and T54 necessarily touch multiple physica
 | T74 | T73 | T73 -> T74 | ✅ Match |
 | T75 | T74 | T74 -> T75 | ✅ Match |
 | T76 | T75 | T75 -> T76 | ✅ Match |
+| T77 | T76 | T76 -> T77 | ✅ Match |
+| T78 | T77 | T77 -> T78 | ✅ Match |
 
 Cross-phase dependencies are represented by the ordered phase chain; all intra-phase edges match exactly.
 

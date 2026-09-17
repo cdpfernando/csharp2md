@@ -170,6 +170,30 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
     }
 
     /// <summary>
+    /// T75/T76/T77: no entity whose logical path names a <c>.Testes</c> project - a retained Document,
+    /// Component or DeploymentUnit, or a document/project reached only as a dependency's Document/Project-
+    /// scope target through membership lifting - survives in the default package. `default mode` here is
+    /// exactly this fixture's own analysis, run without <c>--include-tests</c>.
+    /// </summary>
+    [Fact]
+    [Trait("Requirement", "PKG-05")]
+    [Trait("Category", "OracleCorpus")]
+    public void Entities_NeverNameATestesProjectByDefault()
+    {
+        foreach (var defect in RecordedBaselines)
+        {
+            var leaked = package.EntityKeys(defect.Solution)
+                .Where(static key => key.Contains(".Testes", StringComparison.Ordinal))
+                .ToArray();
+
+            Assert.True(
+                leaked.Length == 0,
+                $"{defect.Solution} retains {leaked.Length} entity(ies) naming a .Testes project by default: "
+                + $"{string.Join(", ", leaked)}. PKG-05 excludes tests from the default package.");
+        }
+    }
+
+    /// <summary>
     /// Rules 2 and 3 of <c>oracle/README.md</c>: the five systems are independent, and the nested copy at
     /// <c>src/SistemaB/Copias/SistemaE.Copia</c> is neither merged into SistemaB nor into SistemaE. Both
     /// hold today, so this is a true invariant rather than a baseline -- it fails only on a new defect.

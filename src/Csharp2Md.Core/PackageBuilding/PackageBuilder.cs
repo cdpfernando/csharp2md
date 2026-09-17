@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Csharp2Md.Core.Analysis;
+using Csharp2Md.Core.Analysis.Inventory;
 using Csharp2Md.Core.PackageBuilding.Measures;
 using Csharp2Md.Core.PackageBuilding.Rendering;
 using Csharp2Md.Core.PackageBuilding.Retention;
@@ -181,8 +182,8 @@ internal static class PackageBuilder
     {
         var retained = RetentionPolicy.Apply(graph, RetainedGraphBuilder.Build(graph, includeTests), includeTests);
         var evidence = retained.Evidence.ToDictionary(static item => item.CanonicalKey, StringComparer.Ordinal);
-        var memberships = BuildMemberships(graph, retained);
-        var projectsByDocument = BuildProjectsByDocument(graph);
+        var memberships = BuildMemberships(graph, retained, includeTests);
+        var projectsByDocument = BuildProjectsByDocument(graph, includeTests);
         var contributions = retained.Relations.SelectMany(relation =>
             Contributions(relation, evidence, memberships, projectsByDocument));
         var dependencies = DependencyAggregator.Aggregate(contributions);
@@ -282,8 +283,8 @@ internal static class PackageBuilder
     }
 
     private static IReadOnlyDictionary<string, ImmutableArray<EntityHandle>> BuildProjectsByDocument(
-        FactualGraph graph) =>
-        graph.Occurrences
+        FactualGraph graph, bool includeTests) =>
+        NonTestOccurrences(graph, includeTests)
             .GroupBy(
                 occurrence => CanonicalIdentity.CreateDocumentKey(graph.Solution, occurrence.Locator.RelativePath),
                 StringComparer.Ordinal)
@@ -292,12 +293,23 @@ internal static class PackageBuilder
                 static group => Handles(group.Select(static occurrence => occurrence.Project.CanonicalKey)),
                 StringComparer.Ordinal);
 
+    // PKG-05 excludes tests by default: an entity genuinely retained through a real, production relation
+    // must not have its Document/Project/Component/DeploymentUnit membership widened by an occurrence
+    // recorded while analysing a test project as its own root (e.g. a shared symbol also called from a
+    // test file). Filtering the raw occurrences once here, before any membership is derived from them, is
+    // what RetainedGraphBuilder/RetentionPolicy already do for roots and incoming edges - this closes the
+    // same gap at the aggregation seam.
+    private static IEnumerable<VariantOccurrence> NonTestOccurrences(FactualGraph graph, bool includeTests) =>
+        includeTests ? graph.Occurrences : graph.Occurrences.Where(static occurrence => !SourceInventory.IsTestProject(occurrence.Project));
+
     private static IReadOnlyDictionary<string, EntityMembership> BuildMemberships(
         FactualGraph graph,
-        RetainedGraph retained)
+        RetainedGraph retained,
+        bool includeTests)
     {
         var retainedKeys = retained.Entities.Select(static entity => entity.CanonicalKey).ToHashSet(StringComparer.Ordinal);
-        var occurrences = graph.Occurrences
+        var scoped = NonTestOccurrences(graph, includeTests).ToImmutableArray();
+        var occurrences = scoped
             .Where(occurrence => retainedKeys.Contains(occurrence.EntityCanonicalKey))
             .GroupBy(static occurrence => occurrence.EntityCanonicalKey, StringComparer.Ordinal)
             .ToDictionary(static group => group.Key, static group => group.ToArray(), StringComparer.Ordinal);
@@ -324,7 +336,7 @@ internal static class PackageBuilder
             StringComparer.Ordinal);
 
         Dictionary<string, ImmutableArray<string>> RootsByProject(EntityKind kind) =>
-            graph.Occurrences
+            scoped
                 .Where(occurrence => retainedKeys.Contains(occurrence.EntityCanonicalKey)
                     && kinds.GetValueOrDefault(occurrence.EntityCanonicalKey) == kind)
                 .GroupBy(static occurrence => occurrence.Project.CanonicalKey, StringComparer.Ordinal)
