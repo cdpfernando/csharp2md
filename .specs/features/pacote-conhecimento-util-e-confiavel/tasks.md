@@ -1793,14 +1793,27 @@ Three cases were added rather than one. Two are theory rows asserting a literal 
 
 **Done when**:
 
-- [ ] CRT-02 states the applicability precondition that `GraphJourneyCertifierTests.cs:28` relies on, so the test no longer encodes a rule the spec never made.
-- [ ] CRT-03, EDG-03, STO-01, DEP-05, NAV-02 and NAV-07 carry the status their T60-T65 evidence supports, and cite those tasks as owners.
-- [ ] CRT-04 and CRT-05 cite T60 and state plainly that the builder now enforces their ceilings while the corpus run itself stays pending the absent clones.
-- [ ] No row's status is inferred from a task's gate note where the Verifier recorded contrary evidence.
+- [x] CRT-02 states the applicability precondition that `GraphJourneyCertifierTests.cs:28` relies on, so the test no longer encodes a rule the spec never made.
+- [x] CRT-03, EDG-03, STO-01, DEP-05, NAV-02 and NAV-07 carry the status their T60-T65 evidence supports, and cite those tasks as owners.
+- [x] CRT-04 and CRT-05 cite T60 and state plainly that the builder now enforces their ceilings while the corpus run itself stays pending the absent clones.
+- [x] No row's status is inferred from a task's gate note where the Verifier recorded contrary evidence.
 
 **Tests**: none — documentation only
 **Gate**: build
 **Commit**: `docs(spec): state the precondition and the verified status`
+
+**Status**: Complete
+**Gate note**: build gate green — `dotnet build csharp2md.slnx --configuration Release`, 0 warnings / 0 errors. `validate_spec.py` exits 0.
+
+**CRT-02 carried a rule the spec never stated.** The criterion listed Persistence among the categories that make FollowFlow applicable, but T51 narrowed the causal root to exclude it — persistence is a flow terminal, never its origin — and `GraphJourneyCertifier.cs:19` omits it accordingly. `Certify_FlowWithOnlyPersistenceIsNotApplicable` then locked in `not_applicable:no-causal-root` for a precondition no criterion made. CRT-02 now states it: FollowFlow additionally requires a causal root, a Persistence-only solution records `no-causal-root`, and ReverseImpact stays applicable. The code and the test were already right; the spec was behind them.
+
+**Six rows the Verifier rebased to Partial now read `Complete` on evidence, not assumption.** CRT-03 cites T61 for the per-solution and per-corpus dimensions, EDG-03 cites T60 and T61, STO-01 cites T62, DEP-05 and NAV-02 cite T64, NAV-07 cites T63. Each was downgraded because the assertion behind it was weaker than the criterion; each is upgraded because a Phase 8 task closed exactly that gap and proved it by hand-run fault injection.
+
+**PUB-08 reads `Partial`, a status this feature had not used.** T65 made the engine populate family and artifact on a real publication rejection and two real pipeline failures assert it, but the nine-class CLI theory still runs on a fabricated diagnostic. The CLI proves it renders the coordinates; the engine proves it populates them; no single test spans both. Recording that as `Complete` would repeat exactly the error the Verifier caught in T59.
+
+**CRT-04 and CRT-05 stay `Unverified`, now for a narrower reason.** Before T60 the ceilings lived only in a skipped test; now the builder enforces them and unit cases assert the spec's own numbers. What is still missing is the end-to-end measurement, because the eShopOnContainers and Pitstop clones are absent from this machine. CRT-07 requires that skip, so CI is unaffected.
+
+**The Coverage block was rewritten as a legend** rather than a one-line count, since three distinct statuses now appear and each needs its reason on the page: 68 `Complete`, 1 `Partial`, 2 `Unverified`.
 
 ## Requirement-to-Task Traceability
 

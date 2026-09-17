@@ -208,7 +208,7 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 **Acceptance Criteria**:
 
 1. **CRT-01:** WHEN uma jornada for aplicável ao corpus THEN a certificação SHALL exercitá-la separadamente em cada solução e falhar se qualquer solução não alcançar a resposta esperada.
-2. **CRT-02:** WHEN uma jornada não for aplicável ao corpus THEN a certificação SHALL registrá-la como não aplicável com motivo, sem marcá-la como aprovada. FollowFlow e ReverseImpact só são aplicáveis quando a solução contém ao menos uma dependência HTTP, gRPC, Messaging, Contract ou Persistence; sem essas categorias, cada uma SHALL ser registrada como não aplicável.
+2. **CRT-02:** WHEN uma jornada não for aplicável ao corpus THEN a certificação SHALL registrá-la como não aplicável com motivo, sem marcá-la como aprovada. FollowFlow e ReverseImpact só são aplicáveis quando a solução contém ao menos uma dependência HTTP, gRPC, Messaging, Contract ou Persistence; sem essas categorias, cada uma SHALL ser registrada como não aplicável. FollowFlow exige adicionalmente uma raiz causal: Persistence é terminal de fluxo, nunca sua origem, portanto uma solução cujas únicas dependências forem Persistence SHALL registrar FollowFlow como não aplicável por `no-causal-root`, enquanto ReverseImpact permanece aplicável.
 3. **CRT-03:** The pacote SHALL registrar métricas separadas de extração e publicação, itens filtrados por motivo e medidas por família, solução, jornada e corpus; cada budget de jornada SHALL iniciar com medição zerada.
 4. **CRT-04:** WHEN eShopOnContainers estiver presente THEN o pacote comprometido SHALL conter no máximo 1.500 arquivos e 64 MiB.
 5. **CRT-05:** WHEN Pitstop estiver presente THEN o pacote comprometido SHALL conter no máximo 750 arquivos e 25 MiB.
@@ -240,12 +240,12 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 | PKG-07 | Conhecimento útil, critério 7 | T3, T7, T8, T14, T31, T42 | Complete |
 | PKG-08 | Conhecimento útil, critério 8 | T8, T17, T30, T38, T39, T42 | Complete |
 | PKG-09 | Conhecimento útil, critério 9 | T3, T12, T13, T14, T15, T16, T42 | Complete |
-| PKG-10 | Conhecimento útil, critério 10 | T1, T40, T45, T59 | Complete |
+| PKG-10 | Conhecimento útil, critério 10 | T1, T40, T45, T59, T66 | Complete |
 | DEP-01 | Dependências, critério 1 | T4, T18, T42, T46 | Complete |
 | DEP-02 | Dependências, critério 2 | T4, T13, T14, T18, T42 | Complete |
 | DEP-03 | Dependências, critério 3 | T4, T18, T42, T46, T49, T53 | Complete |
 | DEP-04 | Dependências, critério 4 | T18, T42, T46 | Complete |
-| DEP-05 | Dependências, critério 5 | T18, T42, T47, T49, T53 | Complete |
+| DEP-05 | Dependências, critério 5 | T18, T42, T47, T49, T53, T64 | Complete |
 | DEP-06 | Dependências, critério 6 | T18, T42 | Complete |
 | DEP-07 | Dependências, critério 7 | T18, T22, T42, T47, T49 | Complete |
 | DEP-08 | Dependências, critério 8 | T12, T18 | Complete |
@@ -258,12 +258,12 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 | MET-07 | Medidas, critério 7 | T4, T17, T21, T42 | Complete |
 | MET-08 | Medidas, critério 8 | T21, T22, T42, T56 | Complete |
 | NAV-01 | Recuperação, critério 1 | T26, T27, T32, T37, T42, T50, T54 | Complete |
-| NAV-02 | Recuperação, critério 2 | T28, T42 | Complete |
+| NAV-02 | Recuperação, critério 2 | T28, T42, T64 | Complete |
 | NAV-03 | Recuperação, critério 3 | T28, T42, T58 | Complete |
 | NAV-04 | Recuperação, critério 4 | T26, T28, T32, T42, T54, T58 | Complete |
 | NAV-05 | Recuperação, critério 5 | T4, T22, T27, T28, T29, T37, T42 | Complete |
 | NAV-06 | Recuperação, critério 6 | T26, T34, T42, T54 | Complete |
-| NAV-07 | Recuperação, critério 7 | T26, T34, T42, T54 | Complete |
+| NAV-07 | Recuperação, critério 7 | T26, T34, T42, T54, T63 | Complete |
 | NAV-08 | Recuperação, critério 8 | T26, T35, T42, T51 | Complete |
 | NAV-09 | Recuperação, critério 9 | T21, T26, T35, T42, T51 | Complete |
 | NAV-10 | Recuperação, critério 10 | T26, T34, T42, T50 | Complete |
@@ -273,7 +273,7 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 | VAR-04 | Variantes, critério 4 | T3, T7, T10, T11 | Complete |
 | VAR-05 | Variantes, critério 5 | T11 | Complete |
 | VAR-06 | Variantes, critério 6 | T7, T11, T15, T24, T37, T38, T39 | Complete |
-| STO-01 | Armazenamento, critério 1 | T23, T33 | Complete |
+| STO-01 | Armazenamento, critério 1 | T23, T33, T62 | Complete |
 | STO-02 | Armazenamento, critério 2 | T23, T43 | Complete |
 | STO-03 | Armazenamento, critério 3 | T24, T33, T49, T52, T53 | Complete |
 | STO-04 | Armazenamento, critério 4 | T7, T24, T30, T49, T52, T53 | Complete |
@@ -287,23 +287,27 @@ Esta feature substitui o contrato atual por um pacote compacto, factual, auditá
 | PUB-05 | Publicação, critério 5 | T32, T33, T36, T43 | Complete |
 | PUB-06 | Publicação, critério 6 | T31, T41, T43 | Complete |
 | PUB-07 | Publicação, critério 7 | T31, T41, T43 | Complete |
-| PUB-08 | Publicação, critério 8 | T2, T15, T36, T38, T39, T43, T55 | Complete |
+| PUB-08 | Publicação, critério 8 | T2, T15, T36, T38, T39, T43, T55, T65 | Partial |
 | CRT-01 | Certificação, critério 1 | T34, T35, T37, T42, T48, T51 | Complete |
-| CRT-02 | Certificação, critério 2 | T34, T35, T42, T48, T51 | Complete |
-| CRT-03 | Certificação, critério 3 | T5, T15, T30, T37, T42, T57 | Complete |
-| CRT-04 | Certificação, critério 4 | T44, T50, T52, T53, T54 | Unverified |
-| CRT-05 | Certificação, critério 5 | T44, T49, T50, T52 | Unverified |
+| CRT-02 | Certificação, critério 2 | T34, T35, T42, T48, T51, T66 | Complete |
+| CRT-03 | Certificação, critério 3 | T5, T15, T30, T37, T42, T57, T61 | Complete |
+| CRT-04 | Certificação, critério 4 | T44, T50, T52, T53, T54, T60 | Unverified |
+| CRT-05 | Certificação, critério 5 | T44, T49, T50, T52, T60 | Unverified |
 | CRT-06 | Certificação, critério 6 | T9, T10, T44, T53 | Complete |
 | CRT-07 | Certificação, critério 7 | T44, T52 | Complete |
 | CRT-08 | Certificação, critério 8 | T8, T12, T13, T14, T31, T41 | Complete |
 | CRT-09 | Certificação, critério 9 | T42 | Complete |
 | EDG-01 | Edge case 1 | T13, T16, T17, T33, T43 | Complete |
 | EDG-02 | Edge case 2 | T34, T35, T36, T43 | Complete |
-| EDG-03 | Edge case 3 | T25, T30, T36, T43 | Complete |
+| EDG-03 | Edge case 3 | T25, T30, T36, T43, T60, T61 | Complete |
 | EDG-04 | Edge case 4 | T11, T13, T18, T43 | Complete |
 | EDG-05 | Edge case 5 | T29, T33, T36, T43 | Complete |
 
-**Coverage:** 71 requisitos, todos mapeados para tarefas executáveis; nenhum requisito não mapeado. 69 leem `Complete`: suas tarefas donas fecharam com gate verde. CRT-04 e CRT-05 leem `Unverified`: suas tarefas donas fecharam, mas o seam de aceitação — `LocalCorpusAnalyzeTests` sobre eShopOnContainers e Pitstop — pula por ausência do clone local e não foi remedido após T58 crescer o pacote em ~60%. CRT-07 exige exatamente esse skip, então a ausência não falha CI; re-execute o filtro LocalCorpus quando os clones voltarem.
+**Coverage:** 71 requisitos, todos mapeados para tarefas executáveis; nenhum requisito não mapeado. Os status abaixo refletem a evidência que o segundo Verifier localizou em `validation.md` mais o que a Phase 8 (T60-T66) acrescentou; nenhum deriva de uma gate note onde o Verifier registrou evidência contrária.
+
+- **68 leem `Complete`.** Incluíos os seis que o Verifier rebaixou — CRT-03, EDG-03, STO-01, DEP-05, NAV-02 e NAV-07 — cada um agora com a tarefa que fechou a lacuna: T61 acrescentou as dimensões por solução e corpus, T60 tornou o limite aplicável ao corpus, T62 derivou a identidade pública de forma independente, T64 provou o reuso multi-escopo e a Deployment Unit no sumário, T63 fixou o bound de Locate não-componente.
+- **PUB-08 lê `Partial`.** T65 fez a rejeição de publicação carregar família e artefato, provado por duas falhas reais de pipeline, mas a teoria de nove classes em `KnowledgePackageFailureTests` continua alimentando um `EngineDiagnostic` fabricado por um stub. A CLI prova que renderiza as coordenadas; o motor prova que as popula; nenhum teste cobre as duas pontas de uma vez.
+- **CRT-04 e CRT-05 leem `Unverified`.** T60 passou a impor os tetos de 1.500 arquivos / 64 MiB e 750 / 25 MiB dentro do builder, com testes unitários sobre os números do próprio spec, mas `LocalCorpusAnalyzeTests` continua pulando por ausência dos clones de eShopOnContainers e Pitstop, e a última medição real precede o crescimento de ~60% do T58. CRT-07 exige exatamente esse skip, então a ausência não falha CI; re-execute o filtro LocalCorpus quando os clones voltarem.
 
 ## Success Criteria
 
