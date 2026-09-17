@@ -55,6 +55,63 @@ The first Verifier returned FAIL on `ff42c35..71e7094` with 9 ranked gaps and 64
 - **CRT-04 and CRT-05 remain unmeasured end to end.** The builder enforces both ceilings and unit cases assert the spec's numbers, but re-run the LocalCorpus filter when the clones return.
 - **`PackageBudget.Default` at 96 MiB is still an AD candidate.** It was raised in T58 and narrowed in meaning by T60; no AD records it.
 
+### OPEN FINDING: the component dependency graph is complete, and the package is factually wrong
+
+Measured on the real `fixtures/eShop` clone on 2026-09-17, after the second Verifier returned PASS 71/71.
+**This is the highest-priority item in the feature and it invalidates the usefulness of the shipped output.**
+
+**Symptom.** Every one of the 71 component pages carries the identical shape: 52 outgoing edges, 17 distinct
+targets, 14 `ProjectReference`. A direct measurement over the analysed graph produces **289 of 289 possible
+component pairs, including all 17 self-pairs** - the complete graph. It carries no information.
+
+**The claims are false, not merely noisy.** `src/Ordering.API/Ordering.API.csproj` really references exactly
+five projects: `EventBusRabbitMQ`, `IntegrationEventLogEF`, `eShop.ServiceDefaults`, `Ordering.Domain`,
+`Ordering.Infrastructure`. **None of the five appears** as a dependency of it in the package, and all 14
+`ProjectReference` edges it does publish are false. For `eShop.AppHost` and the test projects the direction is
+inverted: they reference `Ordering.API`, not the reverse.
+
+**Root cause, measured.** Primitive and BCL symbols are retained as graph entities and occur in every project,
+so their component membership is all 17. Component-scope lifting then emits `source.Components x
+target.Components`:
+
+| Category | Endpoint pairs contributed |
+| --- | --- |
+| `structural-type-use` | 1,206,044 |
+| `internal-invocation` | 296,218 |
+| `project-reference` | 1,464 |
+| everything else | < 800 |
+
+The worst individual relations fan out 13x17 = 221 pairs each, targeting `symbol:string` and `symbol:int`.
+`string`, `int`, `System.Threading.Tasks.Task`, `bool` and `CancellationToken` are each attributed to all 17
+components; 1,332 entities are attributed to more than one. The entity `solution:eShop:eShop.slnx` is itself
+attributed to 17 components.
+
+PKG-05 already forbids this: it excludes "usos de tipo nao retidos". A `structural-type-use` edge to `string`
+is exactly an unretained type use, and retention is not filtering it.
+
+**Second, separate leak.** The manifest records `include_tests: false`, yet 12 test projects are published as
+Component and DeploymentUnit roots and the summary carries 154 `UnitTests`/`FunctionalTests` mentions. Also
+PKG-05.
+
+**Why the whole suite is green and two Verifier runs passed.** Every dependency-scope acceptance test runs on
+`fixtures/SyntheticSolution`, which has two entities. At that size a complete graph and a correct graph are
+indistinguishable. `ScopePairingTests.Build_ComponentScopeKeepsItsMembershipDerivation` even asserts a
+**self-edge** (`entity:component -> entity:component`) as correct behaviour. T64 proved DEP-05 against the same
+fixture and passed, because multi-scope reuse holds in a degenerate graph too. No fixture in the tree can
+discriminate a correct projection from this one.
+
+**Not yet done, deliberately.** The traceability table and `validation.md` were left untouched by the user's
+decision, so DEP-01, DEP-02, DEP-03 and PKG-05 still read `Complete` while the real corpus contradicts them.
+Anyone reading the table before this finding is fixed is reading a claim the evidence does not support.
+
+**Reproduce**: the throwaway diagnostic that produced these numbers is kept outside the repo at
+`<scratchpad>/eshop-fanout-diagnostic.cs`; drop it into `tests/Csharp2Md.Core.Tests/`, run its single fact, and
+delete it again. It calls `SolutionAnalyzer.AnalyzeAsync` on the eShop clone directly and takes about 90
+seconds.
+
+**Deprioritised by the user on 2026-09-17**: package file size and byte ceilings. T68 is parked for the same
+reason. Correctness of the projection comes first.
+
 - **Discrimination sensor**: skipped, per the standing `AGENTS.md` rule. Every Phase 7 and Phase 8 task instead carries a hand-run fault injection recorded in its `tasks.md` gate note.
 - **Blockers**: none.
 - **Uncommitted files**: `.specs/STATE.md` (this file), plus pre-existing `AGENTS.md` and `docs/specs/pacote-conhecimento-util-e-confiavel.md` edits and untracked `research/`, `.specs/LESSONS.md`, `.specs/lessons.json`.
