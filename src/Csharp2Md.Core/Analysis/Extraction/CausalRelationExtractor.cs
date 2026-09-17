@@ -76,6 +76,16 @@ internal static class CausalRelationExtractor
             return key;
         }
 
+        // PKG-05 excludes "usos de tipo nao retidos": a symbol with no declaration in the analyzed source
+        // (BCL, NuGet, any other referenced assembly) is not retainable as a causal target. A symbol
+        // reached through a same-solution ProjectReference is still IsInSource - Roslyn resolves it via a
+        // CompilationReference to the referenced project's own compilation, not raw metadata - so a
+        // genuine cross-component call or type use is unaffected.
+        static bool IsDeclaredInAnalyzedSource(ISymbol symbol) => symbol.Locations.Any(static location => location.IsInSource);
+
+        string? AddSymbolIfDeclaredInSource(ISymbol symbol, LogicalLocator locator, EvidenceRecord proof) =>
+            IsDeclaredInAnalyzedSource(symbol) ? AddSymbol(symbol, locator, proof) : null;
+
         string AddNamed(EntityKind kind, string name, LogicalLocator locator, EvidenceRecord proof, ProjectIdentity? owner = null)
         {
             var key = CanonicalIdentity.CreateEntityKey(input.Solution, kind, name);
@@ -186,8 +196,11 @@ internal static class CausalRelationExtractor
                     continue;
                 }
 
-                var target = AddSymbol(targetMethod, locator, proof);
-                AddRelation(InternalInvocation, source, target, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                var target = AddSymbolIfDeclaredInSource(targetMethod, locator, proof);
+                if (target is not null)
+                {
+                    AddRelation(InternalInvocation, source, target, proof, invocation.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                }
             }
 
             foreach (var typeSyntax in root.DescendantNodes().OfType<TypeSyntax>())
@@ -210,8 +223,11 @@ internal static class CausalRelationExtractor
                 var locator = new LogicalLocator(relativePath, SpanOf(typeSyntax), input.Project);
                 var proof = AddEvidence("type-use", locator, typeSyntax.ToString());
                 var source = AddSymbol(sourceMethod, locator, proof);
-                var target = AddSymbol(targetType, locator, proof);
-                AddRelation(StructuralTypeUse, source, target, proof, typeSyntax.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                var target = AddSymbolIfDeclaredInSource(targetType, locator, proof);
+                if (target is not null)
+                {
+                    AddRelation(StructuralTypeUse, source, target, proof, typeSyntax.SpanStart.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                }
             }
         }
 

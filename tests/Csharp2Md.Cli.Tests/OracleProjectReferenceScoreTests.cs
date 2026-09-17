@@ -146,6 +146,34 @@ public sealed class OracleProjectReferenceScoreTests : IClassFixture<Architectur
     }
 
     /// <summary>
+    /// <summary>
+    /// PKG-05 excludes "usos de tipo nao retidos": before T74, a use of or call to a BCL/framework symbol
+    /// (<c>string</c>, <c>int</c>, <c>Task</c>, ...) was retained as a shared <c>Symbol</c>/<c>Callable</c>
+    /// entity whose occurrence spans every project that happens to use it, producing a near-complete
+    /// Component-scope dependency graph (measured on a real corpus in <c>.specs/STATE.md</c>: 52 identical
+    /// outgoing edges per component page). This corpus's business classes use plenty of BCL types
+    /// (<c>string</c>, collections, <c>Task</c>) yet retains none of them as entities.
+    /// </summary>
+    [Fact]
+    [Trait("Requirement", "PKG-05")]
+    [Trait("Category", "OracleCorpus")]
+    public void Entities_NeverRetainABareSymbolOrCallableFromOutsideTheAnalyzedSource()
+    {
+        foreach (var defect in RecordedDefects)
+        {
+            var leaked = package.EntityKeys(defect.Solution)
+                .Where(static key => key.StartsWith("symbol:", StringComparison.Ordinal) || key.StartsWith("callable:", StringComparison.Ordinal))
+                .ToArray();
+
+            Assert.True(
+                leaked.Length == 0,
+                $"{defect.Solution} retains {leaked.Length} symbol/callable entity(ies) from outside its own "
+                + $"source: {string.Join(", ", leaked)}. PKG-05 excludes non-retained type uses; a BCL or "
+                + "framework symbol has no declaration in the analyzed solution and must not survive retention.");
+        }
+    }
+
+    /// <summary>
     /// Rules 2 and 3 of <c>oracle/README.md</c>: the five systems are independent, and the nested copy at
     /// <c>src/SistemaB/Copias/SistemaE.Copia</c> is neither merged into SistemaB nor into SistemaE. Both
     /// hold today, so this is a true invariant rather than a baseline -- it fails only on a new defect.
@@ -270,6 +298,7 @@ public sealed class ArchitectureDependencyLabPackage : IAsyncLifetime
 
     private readonly string output = CliTestPaths.UniqueOutputPath();
     private Dictionary<string, HashSet<ProjectEdge>> stated = [];
+    private Dictionary<string, List<string>> entitiesBySolution = [];
 
     public async Task InitializeAsync()
     {
@@ -285,7 +314,7 @@ public sealed class ArchitectureDependencyLabPackage : IAsyncLifetime
 
         Assert.True(exitCode == ExitCodes.Success, $"analyze exited {exitCode}: {stderr}");
         Assert.Contains("committed and certified", stdout, StringComparison.Ordinal);
-        stated = ReadProjectReferenceEdges(output);
+        (stated, entitiesBySolution) = ReadProjectReferenceEdges(output);
     }
 
     public Task DisposeAsync()
@@ -296,6 +325,9 @@ public sealed class ArchitectureDependencyLabPackage : IAsyncLifetime
 
     internal IReadOnlyCollection<ProjectEdge> StatedEdges(string solution) =>
         stated.TryGetValue(solution, out var edges) ? edges : [];
+
+    internal IReadOnlyList<string> EntityKeys(string solution) =>
+        entitiesBySolution.TryGetValue(solution, out var keys) ? keys : [];
 
     internal SolutionScore Score(string solution)
     {
@@ -342,7 +374,7 @@ public sealed class ArchitectureDependencyLabPackage : IAsyncLifetime
                 StringComparer.Ordinal);
     }
 
-    private static Dictionary<string, HashSet<ProjectEdge>> ReadProjectReferenceEdges(string package)
+    private static (Dictionary<string, HashSet<ProjectEdge>> Edges, Dictionary<string, List<string>> Entities) ReadProjectReferenceEdges(string package)
     {
         using var pointer = JsonDocument.Parse(File.ReadAllText(Path.Combine(package, "manifest.json")));
         var solutions = Path.Combine(
@@ -352,11 +384,20 @@ public sealed class ArchitectureDependencyLabPackage : IAsyncLifetime
             "solutions");
 
         var edgesBySolution = new Dictionary<string, HashSet<ProjectEdge>>(StringComparer.Ordinal);
+        var entitiesBySolution = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         foreach (var solution in Directory.EnumerateDirectories(solutions))
         {
             var entities = ReadShards(Path.Combine(solution, "tables"), "entities.*.json", static shard => shard
                 .RootElement.EnumerateArray()
                 .Select(static entity => entity.GetString()!));
+
+            // Every entity key reads <kind>:solution:<name>:<solution file>:<rest>, so any entity in this
+            // solution's own shard names it - a solution with zero entities cannot occur since it always
+            // has at least its own Solution/Project entities.
+            if (entities.Count > 0)
+            {
+                entitiesBySolution[SolutionNameOf(entities[0])] = entities;
+            }
 
             var dependencies = ReadShards(Path.Combine(solution, "measures"), "dependencies.*.json", static shard => shard
                 .RootElement.GetProperty("dependencies")
@@ -383,8 +424,11 @@ public sealed class ArchitectureDependencyLabPackage : IAsyncLifetime
             }
         }
 
-        return edgesBySolution;
+        return (edgesBySolution, entitiesBySolution);
     }
+
+    /// <summary>Every entity key reads <c>&lt;kind&gt;:solution:&lt;name&gt;:&lt;solution file&gt;:&lt;rest&gt;</c>.</summary>
+    private static string SolutionNameOf(string entityKey) => entityKey.Split(':', 5)[2];
 
     private static List<T> ReadShards<T>(string directory, string pattern, Func<JsonDocument, IEnumerable<T>> read)
     {

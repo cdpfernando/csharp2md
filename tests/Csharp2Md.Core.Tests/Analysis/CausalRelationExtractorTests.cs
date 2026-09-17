@@ -56,6 +56,60 @@ public sealed class CausalRelationExtractorTests
     }
 
     [Fact]
+    [Trait("Requirement", "PKG-05")]
+    public void Extract_InternalInvocation_ToABclMethod_IsNotRetained()
+    {
+        var result = Extract("class Sample { void Source() { \"x\".Trim(); } }");
+
+        Assert.DoesNotContain(result.Relations, relation => relation.Category == "internal-invocation");
+        Assert.DoesNotContain(result.Entities, entity => entity.DisplayName == "Trim");
+    }
+
+    [Fact]
+    [Trait("Requirement", "PKG-05")]
+    public void Extract_StructuralTypeUse_OfABclType_IsNotRetained()
+    {
+        var result = Extract("class Sample { void Source(string value) { } }");
+
+        Assert.DoesNotContain(result.Relations, relation => relation.Category == "structural-type-use");
+        Assert.DoesNotContain(result.Entities, entity => entity.DisplayName == "string" || entity.QualifiedName == "string");
+    }
+
+    [Fact]
+    [Trait("Requirement", "DEP-01")]
+    public void Extract_InternalInvocation_ToAMethodInAReferencedInSolutionProject_IsStillRetained()
+    {
+        // A same-solution ProjectReference is a CompilationReference: the referenced compilation's
+        // symbols keep their real source location, unlike a symbol from an external MetadataReference
+        // (BCL, NuGet). This must not be swept up by the BCL/framework exclusion.
+        var solution = CanonicalIdentity.CreateSolution("causal", "src/Causal.slnx");
+        var sharedTree = CSharpSyntaxTree.ParseText("public class Shared { public void Target() { } }", path: "src/Shared/Shared.cs");
+        var sharedCompilation = CSharpCompilation.Create(
+            "Shared",
+            [sharedTree],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var project = CanonicalIdentity.CreateProject(solution, "src/App/App.csproj");
+        var appTree = CSharpSyntaxTree.ParseText("class Sample { void Source(Shared shared) => shared.Target(); }", path: "src/App/Sample.cs");
+        var appCompilation = CSharpCompilation.Create(
+            "App",
+            [appTree],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location), sharedCompilation.ToMetadataReference()],
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var result = CausalRelationExtractor.Extract(new CausalRelationExtractionInput(
+            solution,
+            project,
+            CanonicalIdentity.CreateVariant("net10.0", "Release", [], "ci"),
+            appCompilation,
+            []));
+
+        Assert.Contains(result.Relations, relation => relation.Category == "internal-invocation");
+        Assert.Contains(result.Entities, entity => entity.DisplayName == "Target");
+    }
+
+    [Fact]
     [Trait("Requirement", "DEP-02")]
     public void Extract_HttpLiteral_EmitsHttpRelationToObservedDestination()
     {
