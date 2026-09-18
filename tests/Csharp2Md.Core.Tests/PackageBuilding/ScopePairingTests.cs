@@ -61,6 +61,22 @@ public sealed class ScopePairingTests
         Assert.Contains(Edges(AggregationScope.DeploymentUnit), edge =>
             edge.Source.Value == "entity:deployment" && edge.Target.Value == "entity:deployment");
 
+    // The two cases above are single-component fixtures, so a self-edge is the only shape they can ever
+    // produce - it cannot tell a correct Component-scope projection from a defective one that fans every
+    // relation out to every component regardless of whose occurrences it actually touches (the eShop
+    // fan-out this project measured: 138 of 144 possible pairs before the fix). This fixture has two real
+    // components with a relation whose endpoints are attributable one to each, so the pairing must name
+    // exactly that pair - not the two components' own self-edges instead of, or in addition to, it.
+    [Fact] [Trait("Requirement", "DEP-01")]
+    public void Build_ComponentScopeAggregatesAGenuineCrossComponentRelation()
+    {
+        var edges = Dependencies(TwoComponentGraph()).Where(edge => edge.Scope == AggregationScope.Component).ToArray();
+
+        Assert.Contains(edges, edge => edge.Source.Value == "entity:component-a" && edge.Target.Value == "entity:component-b");
+        Assert.DoesNotContain(edges, edge => edge.Source.Value == "entity:component-a" && edge.Target.Value == "entity:component-a");
+        Assert.DoesNotContain(edges, edge => edge.Source.Value == "entity:component-b" && edge.Target.Value == "entity:component-b");
+    }
+
     // PKG-05: a genuinely-retained target entity (called from real production code) that is ALSO called
     // from a test project must not have its Document/Project membership widened by that test-side
     // occurrence - otherwise a real dependency edge fans out to a test file/project it has nothing to do
@@ -194,5 +210,50 @@ public sealed class ScopePairingTests
 
         VariantOccurrence Occurrence(string entity, string path, string evidenceKey) =>
             new(entity, project, variant, new LogicalLocator(path, span, project), "shape:" + entity, [evidenceKey]);
+    }
+
+    private static FactualGraph TwoComponentGraph()
+    {
+        var projectA = CanonicalIdentity.CreateProject(Solution, "App.A.csproj");
+        var projectB = CanonicalIdentity.CreateProject(Solution, "App.B.csproj");
+        var variant = CanonicalIdentity.CreateVariant("net10.0", "Release", [], "ci");
+        var span = new SourceSpan(1, 1, 1, 1);
+        var callProof = new EvidenceRecord("evidence:cross-call", CanonicalIdentity.CreateDocumentKey(Solution, "App.A/Caller.cs"), variant, span, "cross-digest");
+        var componentAProof = new EvidenceRecord("evidence:component-a", CanonicalIdentity.CreateDocumentKey(Solution, "App.A.csproj"), variant, span, "component-a-digest");
+        var componentBProof = new EvidenceRecord("evidence:component-b", CanonicalIdentity.CreateDocumentKey(Solution, "App.B.csproj"), variant, span, "component-b-digest");
+
+        var entities = new[]
+        {
+            new LogicalEntity(EntityKind.Component, "entity:component-a", "component-a", null),
+            new LogicalEntity(EntityKind.Component, "entity:component-b", "component-b", null),
+            new LogicalEntity(EntityKind.Symbol, "entity:cross-source", "cross-source", null),
+            new LogicalEntity(EntityKind.Symbol, "entity:cross-target", "cross-target", null),
+        };
+
+        var occurrences = new[]
+        {
+            new VariantOccurrence("entity:component-a", projectA, variant, new LogicalLocator("App.A.csproj", span, projectA), "shape:entity:component-a", ["evidence:component-a"]),
+            new VariantOccurrence("entity:component-b", projectB, variant, new LogicalLocator("App.B.csproj", span, projectB), "shape:entity:component-b", ["evidence:component-b"]),
+            new VariantOccurrence("entity:cross-source", projectA, variant, new LogicalLocator("App.A/Caller.cs", span, projectA), "shape:entity:cross-source", ["evidence:cross-call"]),
+            new VariantOccurrence("entity:cross-target", projectB, variant, new LogicalLocator("App.B/Callee.cs", span, projectB), "shape:entity:cross-target", ["evidence:cross-call"]),
+        };
+
+        var sources = new[]
+        {
+            new SourceDocumentSnapshot(CanonicalIdentity.CreateDocumentKey(Solution, "App.A/Caller.cs"), new LogicalLocator("App.A/Caller.cs", span, projectA), false, "a"),
+            new SourceDocumentSnapshot(CanonicalIdentity.CreateDocumentKey(Solution, "App.B/Callee.cs"), new LogicalLocator("App.B/Callee.cs", span, projectB), false, "b"),
+            new SourceDocumentSnapshot(CanonicalIdentity.CreateDocumentKey(Solution, "App.A.csproj"), new LogicalLocator("App.A.csproj", span, projectA), false, "c"),
+            new SourceDocumentSnapshot(CanonicalIdentity.CreateDocumentKey(Solution, "App.B.csproj"), new LogicalLocator("App.B.csproj", span, projectB), false, "d"),
+        };
+
+        return new FactualGraph(
+            Solution,
+            [.. entities],
+            [.. occurrences],
+            [callProof, componentAProof, componentBProof],
+            [new FactualRelation("relation:cross-component", "entity:cross-source", "entity:cross-target", "internal-invocation", ["evidence:cross-call"])],
+            [],
+            [.. sources],
+            new ExtractionMeasurements(0, 0));
     }
 }

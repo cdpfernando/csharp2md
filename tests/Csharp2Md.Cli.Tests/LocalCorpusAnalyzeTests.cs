@@ -28,6 +28,58 @@ public sealed class LocalCorpusAnalyzeTests
         }
     }
 
+    [LocalCorpusFact(LocalCorpus.EShop, LocalCorpus.EShopSolution)]
+    [Trait("Category", "LocalCorpus")]
+    [Trait("Requirement", "DEP-01")]
+    public async Task Analyze_eShop_ComponentScopeHasNoCrossComponentFalsePositive()
+    {
+        // DEP-01 regression: Component-scope lifting once crossed every relation's source component
+        // against the full membership of a shared symbol's *target* entity - a shared library type used
+        // by every host fanned out to 138 of 144 possible component pairs on this exact corpus (measured
+        // 2026-09-17). The fix requires a relation's own endpoints to be attributable to both components,
+        // not merely "some occurrence of each entity exists somewhere in that component" - so a real,
+        // multi-service solution like eShop must show zero false cross-component pairs.
+        const int ComponentScope = 2;
+        var package = CliTestPaths.UniqueOutputPath();
+        try
+        {
+            await AnalyzeAsync(LocalCorpus.EShop, LocalCorpus.EShopSolution, package);
+
+            using var pointer = JsonDocument.Parse(File.ReadAllText(Path.Combine(package, "manifest.json")));
+            var solutionDir = Directory.EnumerateDirectories(Path.Combine(
+                package,
+                "generations",
+                pointer.RootElement.GetProperty("generation").GetString()!,
+                "solutions")).Single();
+
+            var entities = ReadShards(Path.Combine(solutionDir, "tables"), "entities.*.json", static shard => shard
+                .RootElement.EnumerateArray()
+                .Select(static entity => entity.GetString()!)).ToArray();
+
+            var componentPairs = ReadShards(Path.Combine(solutionDir, "measures"), "dependencies.*.json", static shard => shard
+                    .RootElement.GetProperty("dependencies")
+                    .EnumerateArray()
+                    .Where(static dependency => dependency.GetProperty("scope").GetInt32() == ComponentScope)
+                    .Select(static dependency => (
+                        Source: dependency.GetProperty("source").GetString()!,
+                        Target: dependency.GetProperty("target").GetString()!)))
+                .Select(pair => (Source: entities[Ordinal(pair.Source)], Target: entities[Ordinal(pair.Target)]))
+                .Distinct()
+                .ToArray();
+
+            var crossComponent = componentPairs.Where(pair => pair.Source != pair.Target).ToArray();
+
+            Assert.True(
+                crossComponent.Length == 0,
+                "Component-scope aggregated a relation between two distinct components without the relation's "
+                + "own endpoints proving it - found: " + string.Join(", ", crossComponent.Select(static p => $"{p.Source}->{p.Target}")));
+        }
+        finally
+        {
+            CliTestPaths.TryDeleteDirectory(package);
+        }
+    }
+
     [LocalCorpusFact(LocalCorpus.EShopOnContainers, LocalCorpus.EShopOnContainersSolution)]
     [Trait("Category", "LocalCorpus")]
     public async Task Analyze_eShopOnContainers_CommitsWithinFileAndByteCeilings()
@@ -121,6 +173,34 @@ public sealed class LocalCorpusAnalyzeTests
 
         Assert.InRange(reachable.Length, 1, maximumFiles);
         Assert.InRange(reachable.Sum(), 1L, maximumBytes);
+    }
+
+    private static List<T> ReadShards<T>(string directory, string pattern, Func<JsonDocument, IEnumerable<T>> read)
+    {
+        var items = new List<T>();
+        foreach (var shard in Directory.EnumerateFiles(directory, pattern).Order(StringComparer.Ordinal))
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(shard));
+            items.AddRange(read(document));
+        }
+
+        return items;
+    }
+
+    /// <summary>Local handles are lowercase base36 ordinals into the solution's sorted entity table.</summary>
+    private static int Ordinal(string handle)
+    {
+        const string Alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+        var ordinal = 0;
+        foreach (var character in handle)
+        {
+            var digit = Alphabet.IndexOf(character, StringComparison.Ordinal);
+            Assert.True(digit >= 0, $"'{handle}' is not a base36 local handle.");
+            ordinal = (ordinal * 36) + digit;
+        }
+
+        return ordinal;
     }
 }
 

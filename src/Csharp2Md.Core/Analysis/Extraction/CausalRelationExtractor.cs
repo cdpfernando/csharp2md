@@ -10,7 +10,8 @@ internal sealed record CausalRelationExtractionInput(
     ProjectIdentity Project,
     AnalysisVariant Variant,
     Compilation Compilation,
-    ImmutableArray<ProjectIdentity> ReferencedProjects);
+    ImmutableArray<ProjectIdentity> ReferencedProjects,
+    ImmutableArray<ReferencedProjectCompilation> ReferencedCompilations);
 
 internal sealed record CausalRelationExtractionResult(
     ImmutableArray<LogicalEntity> Entities,
@@ -66,13 +67,16 @@ internal static class CausalRelationExtractor
             return record;
         }
 
-        string AddSymbol(ISymbol symbol, LogicalLocator locator, EvidenceRecord proof)
+        string AddSymbol(ISymbol symbol, LogicalLocator locator, EvidenceRecord proof, ProjectIdentity? owner = null)
         {
             var kind = symbol is IMethodSymbol ? EntityKind.Callable : EntityKind.Symbol;
             var qualified = symbol.ToDisplayString();
             var display = string.IsNullOrWhiteSpace(symbol.Name) ? qualified : symbol.Name;
-            var key = CanonicalIdentity.CreateEntityKey(input.Solution, kind, qualified);
-            AddEntity(new LogicalEntity(kind, key, display, qualified), locator, "semantic:" + kind.ToString().ToLowerInvariant(), proof.CanonicalKey);
+            // Qualified by the symbol's real owner, not just its display string: Roslyn renders a
+            // top-level-statements entry point identically in every project, which otherwise collides
+            // every host's Program into one entity and floods Component-scope lifting through it.
+            var key = CanonicalIdentity.CreateEntityKey(input.Solution, kind, owner ?? input.Project, qualified);
+            AddEntity(new LogicalEntity(kind, key, display, qualified), locator, "semantic:" + kind.ToString().ToLowerInvariant(), proof.CanonicalKey, owner);
             return key;
         }
 
@@ -81,10 +85,27 @@ internal static class CausalRelationExtractor
         // reached through a same-solution ProjectReference is still IsInSource - Roslyn resolves it via a
         // CompilationReference to the referenced project's own compilation, not raw metadata - so a
         // genuine cross-component call or type use is unaffected.
-        static bool IsDeclaredInAnalyzedSource(ISymbol symbol) => symbol.Locations.Any(static location => location.IsInSource);
+        //
+        // DEP-01 requires proven membership: a shared symbol declared in a directly-referenced project
+        // must be attributed to that project, not to every root that happens to call it - otherwise
+        // Component/DeploymentUnit-scope lifting crosses the citing root against every project that
+        // shares the symbol instead of against its true owner (the eShop/STATE.md fan-out defect). The
+        // declaration keeps its own locator (its real file and span), matching how a ProjectReference
+        // target already names itself rather than the citing root.
+        string? AddSymbolIfDeclaredInSource(ISymbol symbol, LogicalLocator locator, EvidenceRecord proof)
+        {
+            var declaration = symbol.Locations.FirstOrDefault(static location => location.IsInSource);
+            if (declaration is null)
+            {
+                return null;
+            }
 
-        string? AddSymbolIfDeclaredInSource(ISymbol symbol, LogicalLocator locator, EvidenceRecord proof) =>
-            IsDeclaredInAnalyzedSource(symbol) ? AddSymbol(symbol, locator, proof) : null;
+            var owner = SymbolOwnership.Resolve(symbol, input.Project, input.Compilation, input.ReferencedCompilations) ?? input.Project;
+            var declarationLocator = owner.CanonicalKey == input.Project.CanonicalKey
+                ? locator
+                : SymbolOwnership.DeclarationLocator(symbol, owner);
+            return AddSymbol(symbol, declarationLocator, proof, owner);
+        }
 
         string AddNamed(EntityKind kind, string name, LogicalLocator locator, EvidenceRecord proof, ProjectIdentity? owner = null)
         {
@@ -266,9 +287,11 @@ internal static class CausalRelationExtractor
         return string.IsNullOrEmpty(directory) ? fileName : directory + "/" + fileName;
     }
 
-    private static SourceSpan SpanOf(SyntaxNode node)
+    private static SourceSpan SpanOf(SyntaxNode node) => SpanOf(node.GetLocation());
+
+    private static SourceSpan SpanOf(Location location)
     {
-        var span = node.GetLocation().GetLineSpan();
+        var span = location.GetLineSpan();
         return new SourceSpan(
             span.StartLinePosition.Line + 1,
             span.StartLinePosition.Character + 1,

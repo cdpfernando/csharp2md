@@ -27,6 +27,18 @@ internal static class CanonicalIdentity
         return Join("entity", solution.CanonicalKey, kind.ToString().ToLowerInvariant(), CanonicalText.Require(logicalName, nameof(logicalName)));
     }
 
+    // A symbol's display string alone is not solution-unique: Roslyn renders some compiler-synthesized
+    // symbols (a top-level-statements program's entry point, for one) with the exact same text in every
+    // project, and two unrelated symbols could otherwise collide onto one entity. Qualifying by the
+    // symbol's own owning project keeps genuinely distinct per-project symbols distinct while a symbol
+    // that really is declared once and shared (its owner resolves the same way regardless of caller)
+    // still unifies to one key, as DEP-01/VAR-03 require.
+    public static string CreateEntityKey(SolutionIdentity solution, EntityKind kind, ProjectIdentity owner, string logicalName)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        return CreateEntityKey(solution, kind, owner.LogicalRelativePath + ":" + logicalName);
+    }
+
     public static string CreateDocumentKey(SolutionIdentity solution, string logicalRelativePath)
     {
         ArgumentNullException.ThrowIfNull(solution);
