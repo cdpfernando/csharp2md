@@ -154,7 +154,7 @@ internal static class SolutionAnalyzer
 
 - **Dependencies**: Roslyn Workspaces MSBuild 5.6, inventário de arquivos autorizado e classificadores factuais.
 - **Reuses**:
-  - algoritmos úteis de inventário, extração e classificação existentes em `src/Csharp2Md.Analysis`;
+  - algoritmos úteis de inventário, extração e classificação existentes em `src/Csharp2Md.Analysis` (assembly anterior ao corte T45, removido da árvore);
   - `PathGuard` para conter arquivos no root autorizado;
   - vocabulário factual atual quando seu comportamento ainda satisfizer a spec.
 - **Does not reuse**:
@@ -535,6 +535,8 @@ Arquivos `<range>` usam sequência ordinal determinística, não prefixo variáv
 
 ### Existing implementation to leverage
 
+> Os caminhos em `src/Csharp2Md.Analysis`, `src/Csharp2Md.Storage` e `tests/Csharp2Md.Storage.Tests` referem-se aos assemblies anteriores ao corte T45, removidos da árvore.
+
 | Existing implementation | Location | How to use |
 | --- | --- | --- |
 | Roslyn workspace loading | `src/Csharp2Md.Analysis/Semantics/MsBuildWorkspaceFactory.cs` | Reusar `MSBuildWorkspace` 5.6 e o BuildHost out-of-process; substituir o carregamento global por discovery + avaliação por projeto. |
@@ -582,6 +584,8 @@ Todos os erros esperados carregam `code`, `stage`, `cause` e, quando aplicável,
 ---
 
 ## Risks & Concerns
+
+> Os caminhos em `src/Csharp2Md.Analysis`, `src/Csharp2Md.Storage` e `src/Csharp2Md.Projection` referem-se aos assemblies anteriores ao corte T45, removidos da árvore.
 
 | Concern | Location (file:line) | Impact | Mitigation |
 | --- | --- | --- | --- |

@@ -1,8 +1,8 @@
 # Pacote de conhecimento útil e confiável
 
-**Status:** especificação local; implementação não iniciada.
+**Status:** implementada; ver `.specs/features/pacote-conhecimento-util-e-confiavel/validation.md`.
 
-**Triage:** ready-for-agent — registro local, sem publicação no GitHub.
+**Triage:** implementada; ver `.specs/features/pacote-conhecimento-util-e-confiavel/validation.md`. Registro local, sem publicação no GitHub.
 
 **Origem:** diagnóstico da versão atual em 15 de setembro de 2026 usando os corpora locais eShop, eShopOnContainers e Pitstop.
 

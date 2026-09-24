@@ -93,11 +93,11 @@ dotnet run --project src/Csharp2Md.Cli --no-launch-profile -- analyze --solution
 
 ### Try the bundled fixture
 
-`fixtures/SyntheticSolution` is the versioned analysis fixture. `Acme.Orders` is one of its solutions:
+`fixtures/SyntheticSolution` is the small hand-authored fixture. `Acme.Journey.slnx` is its restorable end-to-end solution:
 
 ```shell
-dotnet restore fixtures/SyntheticSolution/Acme.Orders/Acme.Orders.slnx
-dotnet run --project src/Csharp2Md.Cli --no-launch-profile -- analyze --solution fixtures/SyntheticSolution/Acme.Orders/Acme.Orders.slnx --output artifacts/orders-out
+dotnet restore fixtures/SyntheticSolution/Acme.Journey.slnx
+dotnet run --project src/Csharp2Md.Cli --no-launch-profile -- analyze --solution fixtures/SyntheticSolution/Acme.Journey.slnx --output artifacts/journey-out
 ```
 
 With the tool installed, replace `dotnet run --project src/Csharp2Md.Cli --no-launch-profile --` with `csharp2md`.
@@ -132,4 +132,4 @@ dotnet build csharp2md.slnx
 dotnet test csharp2md.slnx
 ```
 
-`fixtures/SyntheticSolution` is the only versioned analysis fixture. Local clones of larger corpora are optional: when present they widen acceptance, and when absent their tests skip rather than fail.
+Four analysis fixtures are versioned: `SyntheticSolution`, `ArchitectureDependencyLab`, `CertificationCorpus` and `PublicationResilience`, all under `fixtures/`. [AGENTS.md](AGENTS.md) describes each one and its test consumers. Local clones of larger corpora are optional: when present they widen acceptance, and when absent their tests skip rather than fail.
