@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaD.Testes</RootNamespace>
+    <AssemblyName>SistemaD.Testes</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaD.Api\SistemaD.Api.csproj" />
+    <ProjectReference Include="..\SistemaD.Aplicacao\SistemaD.Aplicacao.csproj" />
+    <ProjectReference Include="..\SistemaD.Nucleo\SistemaD.Nucleo.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+</Project>

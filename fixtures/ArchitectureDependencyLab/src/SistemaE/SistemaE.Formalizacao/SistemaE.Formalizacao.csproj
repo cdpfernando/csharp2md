@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaE.Formalizacao</RootNamespace>
+    <AssemblyName>SistemaE.Formalizacao</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaE.Nucleo\SistemaE.Nucleo.csproj" />
+    <ProjectReference Include="..\SistemaE.Infraestrutura\SistemaE.Infraestrutura.csproj" />
+    <ProjectReference Include="..\SistemaE.Oferta\SistemaE.Oferta.csproj" />
+    <ProjectReference Include="..\SistemaE.PosProcessamento\SistemaE.PosProcessamento.csproj" />
+  </ItemGroup>
+</Project>

@@ -78,6 +78,9 @@ internal static class SolutionAnalyzer
                     File.ReadAllText(projectPath),
                     compilation));
 
+                var referencedCompilations = compilation is null
+                    ? ImmutableArray<ReferencedProjectCompilation>.Empty
+                    : await ReferencedCompilationsAsync(workspace, solution, authorizedRoot, cancellationToken).ConfigureAwait(false);
                 var causal = compilation is null
                     ? new CausalRelationExtractionResult([], [], [], [], [])
                     : CausalRelationExtractor.Extract(new CausalRelationExtractionInput(
@@ -85,14 +88,16 @@ internal static class SolutionAnalyzer
                         project,
                         variant,
                         compilation,
-                        ReferencedProjects(workspace, solution, authorizedRoot)));
+                        ReferencedProjects(workspace, solution, authorizedRoot),
+                        referencedCompilations));
                 var persistence = compilation is null
                     ? new ConfigurationPersistenceExtractionResult([], [], [], [])
                     : ConfigurationPersistenceExtractor.Extract(new ConfigurationPersistenceExtractionInput(
                         solution,
                         project,
                         variant,
-                        compilation));
+                        compilation,
+                        referencedCompilations));
 
                 var entities = architecture.Entities
                     .AddRange(causal.Entities)
@@ -191,6 +196,39 @@ internal static class SolutionAnalyzer
                 PathGuard.ToLogicalPath(authorizedRoot, project.FilePath!)))
             .OrderBy(static project => project.CanonicalKey, StringComparer.Ordinal)
             .ToImmutableArray();
+
+    // Pairs each directly-referenced project with its own already-computed Compilation, so
+    // CausalRelationExtractor can resolve a target symbol's true owner by exact SyntaxTree identity
+    // (see DEP-01's OwnerOf) instead of attributing it to whichever root observed it. Roslyn already
+    // builds these compilations as a side effect of resolving the root's own CompilationReferences, so
+    // this reuses cached results rather than triggering new compilation work.
+    private static async Task<ImmutableArray<ReferencedProjectCompilation>> ReferencedCompilationsAsync(
+        ProjectVariantWorkspace workspace,
+        SolutionIdentity solution,
+        string authorizedRoot,
+        CancellationToken cancellationToken)
+    {
+        var builder = ImmutableArray.CreateBuilder<ReferencedProjectCompilation>();
+        foreach (var project in workspace.ReferencedProjects())
+        {
+            if (string.IsNullOrWhiteSpace(project.FilePath))
+            {
+                continue;
+            }
+
+            var compilation = await project.GetCompilationAsync(cancellationToken).ConfigureAwait(false);
+            if (compilation is null)
+            {
+                continue;
+            }
+
+            builder.Add(new ReferencedProjectCompilation(
+                CanonicalIdentity.CreateProject(solution, PathGuard.ToLogicalPath(authorizedRoot, project.FilePath!)),
+                compilation));
+        }
+
+        return builder.ToImmutable();
+    }
 
     private static string FindAuthorizedRoot(string solutionPath)
     {

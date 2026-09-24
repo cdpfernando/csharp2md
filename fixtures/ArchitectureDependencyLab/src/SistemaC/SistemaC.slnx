@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="SistemaC.ApiMonolitica/SistemaC.ApiMonolitica.csproj" />
+  <Project Path="SistemaC.Testes/SistemaC.Testes.csproj" />
+</Solution>

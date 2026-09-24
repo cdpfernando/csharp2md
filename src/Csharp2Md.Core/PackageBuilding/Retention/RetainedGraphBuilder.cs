@@ -1,4 +1,5 @@
 using Csharp2Md.Core.Analysis;
+using Csharp2Md.Core.Analysis.Inventory;
 
 namespace Csharp2Md.Core.PackageBuilding.Retention;
 
@@ -18,7 +19,7 @@ internal static class RetainedGraphBuilder
         EntityKind.BoundaryOperation,
     ];
 
-    internal static RetainedGraph Build(FactualGraph graph)
+    internal static RetainedGraph Build(FactualGraph graph, bool includeTests)
     {
         ArgumentNullException.ThrowIfNull(graph);
 
@@ -35,8 +36,19 @@ internal static class RetainedGraphBuilder
             }
         }
 
+        // PKG-05 excludes tests by default. A Component/DeploymentUnit/EntryPoint/BoundaryOperation entity
+        // whose every occurrence belongs to a test project is not "comprovado" as a default-package root -
+        // its documents may already be absent from SourceInventory, but the project-level entity itself
+        // does not depend on that and must be excluded independently.
+        var ownerByEntity = graph.Occurrences.ToLookup(occurrence => occurrence.EntityCanonicalKey, occurrence => occurrence.Project);
+        bool IsTestOnly(string entityKey)
+        {
+            var owners = ownerByEntity[entityKey].ToArray();
+            return owners.Length > 0 && owners.All(SourceInventory.IsTestProject);
+        }
+
         var retainedKeys = new HashSet<string>(
-            graph.Entities.Where(entity => RootKinds.Contains(entity.Kind)).Select(entity => entity.CanonicalKey),
+            graph.Entities.Where(entity => RootKinds.Contains(entity.Kind) && (includeTests || !IsTestOnly(entity.CanonicalKey))).Select(entity => entity.CanonicalKey),
             StringComparer.Ordinal);
         var rootProjects = graph.Occurrences
             .Where(occurrence => retainedKeys.Contains(occurrence.EntityCanonicalKey))

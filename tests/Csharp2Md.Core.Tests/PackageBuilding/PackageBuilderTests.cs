@@ -159,6 +159,31 @@ public sealed class PackageBuilderTests
         Assert.Contains("corpus: 'pitstop.sln'.", Assert.Throws<PackageBudgetExceededException>(
             () => PackageBuilder.Build(Crowded("src/pitstop.sln"))).Message, StringComparison.Ordinal);
 
+    // The ceiling binds the committed package, not the plan. Publication writes one file the plan does not
+    // carry - the root manifest.json pointer - so a budget equal to the plan's own size used to pass while the
+    // package on disk held one file more than the ceiling allowed.
+    [Fact][Trait("Requirement", "CRT-04")] public void Build_RefusesAPlanWhoseCommittedPackageWouldExceedTheCeilingByThePointer()
+    {
+        var planned = Plan().Artifacts.Length;
+
+        var rejection = Assert.Throws<PackageBudgetExceededException>(
+            () => PackageBuilder.Build(Model(), false, new PackageBudget(planned, long.MaxValue)));
+
+        Assert.StartsWith("package-budget: 'artifacts'.", rejection.Message, StringComparison.Ordinal);
+    }
+
+    [Fact][Trait("Requirement", "CRT-04")] public void Build_AcceptsAPlanWhoseCommittedPackageExactlyMeetsTheCeiling() =>
+        Assert.Equal(Plan().Artifacts.Length, PackageBuilder.Build(Model(), false, new PackageBudget(Plan().Artifacts.Length + 1, long.MaxValue)).Artifacts.Length);
+
+    // The contract states the reported corpus figures exclude four files: the three trailers plus the pointer.
+    [Fact][Trait("Requirement", "CRT-03")] public void Build_CorpusMeasurementSitsFourBelowTheEnforcedCount()
+    {
+        var plan = Plan();
+        var corpus = plan.Measurements.Corpus;
+        Assert.NotNull(corpus);
+        Assert.Equal(plan.Artifacts.Length + 1, corpus.ArtifactCount + 4);
+    }
+
     private static RetrievalModel Corpus(string fileName) => new([Solution("corpus", "src/" + fileName)]);
 
     private static SolutionRetrievalModel Solution(string key, string path) =>

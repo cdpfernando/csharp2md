@@ -29,6 +29,7 @@ The migration is intentionally incomplete between phases. Every task must still 
 | CLI seam | e2e | `analyze` and `validate` happy, edge and error paths; four journeys and budgets from the committed manifest | `tests/Csharp2Md.Cli.Tests/**/*.cs` | `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release` |
 | Repository topology/configuration | unit | Static surface/isolation assertions plus Release build; only Core and CLI remain after cutover | `tests/Csharp2Md.Core.Tests/Surface/**/*.cs` | `dotnet test csharp2md.slnx --configuration Release` |
 | Optional local corpora | e2e | eShop variant isolation, eShopOnContainers file/byte ceilings and Pitstop file/byte ceilings; dynamic skip only when clone is absent | `tests/Csharp2Md.Cli.Tests/LocalCorpus*.cs` | `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release --filter "Category=LocalCorpus"` |
+| Versioned dependency corpus | e2e | Project-scope `ProjectReference` edges of all six ArchitectureDependencyLab solutions scored against the PKG-05-reachable part of `oracle/project-references.json` (60 of 87); correct, false-positive and test-policy-leak baselines counted apart, never a skip | `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs` | `dotnet test tests/Csharp2Md.Cli.Tests/Csharp2Md.Cli.Tests.csproj --configuration Release --filter "Category=OracleCorpus"` |
 
 ## Gate Check Commands
 
@@ -95,7 +96,32 @@ T55 -> T56 -> T57 -> T58 -> T59
 T60 -> T61 -> T62 -> T63 -> T64 -> T65 -> T66
 ```
 
-T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. The eight phases form eight sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
+### Phase 9: Third Verifier remediation
+
+```text
+T67 -> T68
+T67 -> T69
+```
+
+### Phase 10: Oracle-anchored dependency accuracy
+
+```text
+T70 -> T71 -> T72
+```
+
+### Phase 11: Correct the retained dependency projection
+
+```text
+T73 -> T74 -> T75 -> T76 -> T77 -> T78
+```
+
+### Phase 12: Close the Component/DeploymentUnit-scope fan-out the full-scope Verifier measured
+
+```text
+T79
+```
+
+T46-T54 were added after T43 was complete, so they carry higher numbers than the tasks that follow them; execution order is the diagram, not the number. Phase 7 was opened after the feature Verifier returned FAIL; it depends on Phase 6 in full. Phase 8 was opened after the second Verifier returned FAIL on the completed Phase 7; it depends on Phase 7 in full. Phase 9 was opened after the third Verifier run returned PASS with five ranked non-blocking gaps, of which the user chose to close the two carrying functional consequence; it depends on Phase 8 in full. Phase 10 was opened after the corpus benchmark showed the generator scoring 11 of 87 `ProjectReference` edges on a real corpus while the whole suite stayed green; it depends on Phase 9 in full. Phase 11 was opened by the user's explicit decision to confirm and fix the projection rather than only re-measure it; it depends on Phase 10 in full. T77 was added mid-phase when verifying T76 surfaced a third, independent test-leakage admission point beyond T75's root/incoming-edge fix. Phase 12 was opened after the full-scope Verifier (dispatched per Phase 11's own queued next step) returned FAIL: it measured Component/DeploymentUnit-scope density directly on `fixtures/eShop` for the first time and found 138 of 144 possible component pairs (95.8%) — the exact residual `STATE.md` had named and left open as unmeasured after Phase 11; it depends on Phase 11 in full. The twelve phases form twelve sequential task-budgeted batches. At Execute, offer batch sub-agents and dispatch them only if the user accepts; never split a phase and never run batches concurrently.
 
 ## Task Breakdown
 
@@ -1815,6 +1841,408 @@ Three cases were added rather than one. Two are theory rows asserting a literal 
 
 **The Coverage block was rewritten as a legend** rather than a one-line count, since three distinct statuses now appear and each needs its reason on the page: 68 `Complete`, 1 `Partial`, 2 `Unverified`.
 
+## Phase 9: Third Verifier remediation
+
+The second feature Verifier returned **PASS** on `ff42c35..6d0a3b3` (71/71 ACs) and ranked five non-blocking gaps. The user chose to close only the two with functional consequence; the other three are recorded as deferred below. The discrimination sensor remains a standing **skip** per `AGENTS.md`, so each task records a hand-run fault injection in its gate note.
+
+**Deferred by the user's decision, not dropped:**
+
+- The corpus ceilings are written as literals in both `PackageBuilder.cs` and `LocalCorpusAnalyzeTests.cs`, in different assemblies, with no test asserting they agree; a renamed or `.slnx` solution falls back to the 96 MiB default silently.
+- 80 test cases carry no `Requirement` trait, including the CLI suite that solely owns CRT-04, CRT-05, CRT-07 and CRT-09; PUB-06's discriminating case is traited `CRT-08`.
+- DEP-06 names Candidate, Unknown and Open Frontier, but its only test asserts an `IsConfirmed` boolean — a spec-precision gap.
+
+### T67: Measure the committed package, not the plan
+
+**What**: Count and weigh the root manifest pointer against the corpus ceiling, so the builder measures what the committed package actually holds.
+**Where**: `src/Csharp2Md.Core/PackageBuilding/PackageBuilder.cs`
+**Depends on**: T66
+**Reuses**: `PackageGenerationPointer` and `CanonicalJson.Write`, which `PackagePublication.ReplaceRootManifest` already uses to produce that file
+**Requirement**: CRT-04, CRT-05, EDG-03
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] The artifact count compared against the ceiling includes the root `manifest.json` pointer that publication writes outside the generation directory, so a plan of exactly the ceiling is refused rather than committed as ceiling + 1.
+- [ ] The byte total likewise includes that pointer's bytes, which are computable at plan time because the package digest is already known; `design.md:530` counts "o manifest e artefatos alcançáveis da geração committed".
+- [ ] `CorpusMeasurement` reports the same set the ceiling is enforced on, or states in the contract why it differs.
+- [ ] At least 3 cases pin the boundary: a plan one under the ceiling commits, a plan exactly at it is refused, and the measured count matches what `LocalCorpusAnalyzeTests` counts on disk.
+
+**Tests**: unit — ≥3 boundary cases
+**Gate**: full + LocalCorpus when present
+**Commit**: `fix(core): measure the committed package against the ceiling`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **617 of 617** (up from 612 by this task's net 5 cases), `Csharp2Md.Cli.Tests` 81 of 83 with the two absent-clone skips; the eShop LocalCorpus case ran and passed.
+
+**The off-by-one was the smaller half of the defect.** Publication writes the root `manifest.json` pointer outside the generation, so the plan undercounts by one file — that is fixed in `PackageBuilder`. But writing the test that reconciles the builder's arithmetic with what a reader counts on disk surfaced a larger gap: publication also **replaces** the plan's reserved `certification.json` with the real certification, which is larger. For the synthetic model the committed package is 4,453 bytes against a plan of 3,840. The plan-time byte ceiling therefore cannot see the committed total at all.
+
+**So the authoritative check moved to where the bytes exist.** EDG-03 says publication SHALL fail "antes da troca atômica", and `PackagePublication.EnsureWithinBudget` now measures the staged package plus the pointer against the ceiling right before `Directory.Move`. The ceiling travels on the plan, in the `CorpusMeasurement` T61 added for exactly this kind of question. `PackageBuilder`'s check stays as a cheap early gate and its comment now says so.
+
+**One case was written, proven non-discriminating, and removed rather than kept green.** `Build_CountsThePointerBytesAgainstTheByteCeiling` passed under the fix and *also* passed when the pointer bytes were dropped. The reason is self-reference: `CorpusMeasurement` serializes the applied ceiling into `measurements.json`, so changing the budget changes the package's own byte total by the digit count of the numbers — `int.MaxValue` is six characters longer than `1500`. The rejection was firing on that incidental wobble, not on the pointer. Keeping it would have re-created exactly the defect T55 existed to remove, so it was deleted; the byte path is covered at the publication seam instead, where the measurement is real.
+
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): three faults injected. Dropping the `+ 1` from the committed count killed `Build_RefusesAPlanWhoseCommittedPackageWouldExceedTheCeilingByThePointer`. Removing the `EnsureWithinBudget` call killed `Publish_RefusesTheCommittedPackageBeyondItsCeilingBeforeTheSwap`. Dropping the pointer bytes from the plan-time sum killed nothing — that is the survivor described above, and the response was to delete the test rather than to claim the fault was covered. All faults were reverted before the commit.
+
+**Known self-reference, left as is**: because the applied ceiling is serialized into `measurements.json`, a package's byte total depends slightly on the digit count of its own ceiling. It is bounded by a few bytes and does not affect the publication-time check, which measures real files.
+
+### T68: Name the family on a budget rejection
+
+**Status**: Parked. The user redirected the session away from file-size work before this task started: "não vamos nos preocupar com tamanho de arquivo por enquanto, vamos primeiro analisar se o output é útil e confiável". The gap it closes is real and stays recorded — `KnowledgeEngine.cs:83` builds the `package-budget` diagnostic from the message alone, so PUB-08's structured `Family` is null for the one rejection class T60 just made reachable.
+
+**What**: Give the `package-budget` diagnostic the structured coordinates PUB-08 requires, instead of burying the breakdown in the message text.
+**Where**: `src/Csharp2Md.Core/KnowledgeEngine.cs`
+**Depends on**: T67
+**Reuses**: the `family`/`artifact` mapping T65 established for `PackagePublicationException`
+**Requirement**: PUB-08, EDG-03
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [ ] A `package-budget` rejection carries a structured `Family` rather than only a message that happens to contain the per-family breakdown.
+- [ ] The family reported is the one the rejection is attributable to, chosen by a stated rule rather than an arbitrary pick, and the corpus T61 added is carried too.
+- [ ] At least 2 cases drive a real budget rejection through the engine and assert the coordinates, not a hand-built `EngineDiagnostic`.
+- [ ] Dropping the coordinate makes the matching case fail; proven by hand.
+
+**Tests**: unit — ≥2 cases on a real rejection
+**Gate**: full
+**Commit**: `fix(core): qualify the package budget rejection`
+
+### T69: Separate an absent flow terminal from an unreachable one
+
+**What**: Stop the flow journey from failing a package because the corpus holds no contract or persistence fact, so an absent terminal records `not_applicable` with its name and only an index that cannot reach a terminal the graph does record still fails.  
+**Where**: `src/Csharp2Md.Core/Publication/Certification/GraphJourneyCertifier.cs`  
+**Depends on**: T67  
+**Reuses**: the Contracts and Persistence indexes `CertifyFlow` already opens, and the causal-root applicability T51 settled  
+**Requirement**: CRT-01, CRT-02, NAV-08
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] A solution carrying a flow root whose retained graph records no contract, no persistence or no external effect records `not_applicable:absent-terminal:<names>` for the flow journey and publishes.
+- [x] A solution whose retained graph does record a terminal but whose matching index cannot reach it still fails with `missing-terminal:<name>`, and that failure outranks any terminal the corpus merely lacks.
+- [x] The journey opens the same artifacts as before, so the budget detail of a passing solution is byte-identical.
+- [x] At least 3 cases pin the split: an absent terminal, an unreachable terminal, and a package that is both at once.
+
+**Tests**: unit — ≥3 applicability/navigation cases  
+**Gate**: full + the six-solution synthetic corpus  
+**Commit**: `fix(publication): separate absent flow terminals from unreachable ones`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **621 of 621** (up from 617 by this task's net 4 cases), `Csharp2Md.Cli.Tests` 81 passed / 2 skipped, the two skips being the absent eShopOnContainers and Pitstop clones CRT-07 allows. The synthetic corpus at `D:\workspace\projetosintetico` now commits all five analysable solutions: SistemaC and SistemaD publish for the first time with `follow_flow` `not_applicable:absent-terminal:contracts`, and SistemaA, SistemaB and SistemaE keep every journey detail byte-identical to the pre-fix run (`no-causal-root`, `no-causal-root` and `reads:4;bytes:8546;tokens:2137` respectively).
+**Decision**: `CertifyFlow` demanded Contract **and** Persistence categories and treated their absence as `missing-terminal`, which conflated two different things: a corpus that does not contain the fact, and a package that cannot navigate to a fact it does contain. CRT-02 already governs the first — it makes a journey not applicable "quando" its categories are absent, a necessary condition the criterion states twice — so no amendment was needed; the fix reads the Contracts and Persistence index contents `CertifyFlow` was already paying to open and discarding. An index that is empty because the retained graph holds no such dependency is the corpus case (`not_applicable:absent-terminal:…`); an index that cannot reach a category the outgoing index does record is the navigation case (`missing-terminal:…`). The navigation check runs **first** so a real defect is never masked by a terminal the corpus merely lacks. No read was added, so a passing journey's budget detail is unchanged.
+**Adequacy**: `GraphJourneyCertifierTests.cs:76-89` asserts `Failed` with the exact `missing-terminal:contracts` and `missing-terminal:persistence` details for a package whose graph does hold the terminal but whose index was emptied — the certifier cannot become vacuous without killing them. `:90-96` asserts the ordering: a package missing contracts *and* carrying a broken persistence index fails rather than reporting not-applicable. `:41-75` asserts the five absent-terminal details exactly, including the combined `persistence,external-effects`. `PackagePublicationTests.cs:114-121` moved its uncertifiable model to a reverse-impact scope with no reachable set, so PUB-08's rejection-before-swap case still drives a real `journey-certification` failure instead of the flow rule this task changed.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): three faults injected into `GraphJourneyCertifier.cs`, each built Release-clean and run against `GraphJourneyCertifierTests`. Making `Reaches` return `true` unconditionally — the vacuous certifier — killed `Certify_FlowWithAnUnreachableContractsIndexFails`, `Certify_FlowWithAnUnreachablePersistenceIndexFails` and `Certify_FlowFailureOutranksAnAbsentTerminal` (3 of 24). Swapping the absent and unreachable branches killed only `Certify_FlowFailureOutranksAnAbsentTerminal` (1 of 24). Deleting the `absent-terminal` return, so an absent terminal reaches `Budget` and passes, killed all five absent-terminal cases (5 of 24). All three were reverted and the full gate re-run before the commit.
+
+## Phase 10: Oracle-anchored dependency accuracy
+
+The corpus benchmark recorded in `.specs/STATE.md` measured the generator against a real answer key for the first time and found it stating a near-complete graph rather than the declared one. Nothing in the suite could see it: every dependency case runs on `fixtures/SyntheticSolution`, whose two entities make a complete graph and a correct graph the same graph, and one case there asserts a self-edge as correct behaviour. This phase installs the instrument, not the fix. The discrimination sensor remains a standing **skip** per `AGENTS.md`, so each task records a hand-run fault injection in its gate note.
+
+### T70: Vendor the architecture dependency lab corpus
+
+**What**: Version the six-solution synthetic corpus and its normative oracle as a repository fixture, so dependency claims can be scored against a declared answer key instead of a two-entity sample.  
+**Where**: `fixtures/ArchitectureDependencyLab`  
+**Depends on**: T69  
+**Reuses**: the `fixtures/SyntheticSolution` retention pattern and the repository `.gitignore` build-output rules  
+**Requirement**: CRT-08, DEP-01
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] The committed tree carries the six `.slnx` solutions, their 41 projects, the whole `oracle/` directory and the two private `.nupkg` of `local-feed/`, and carries no `.git`, `bin` or `obj` content.
+- [x] The `bin`/`obj` the Roslyn BuildHost writes inside the fixture whenever it is analysed are gitignored, and the vendored packages survive the blanket `*.nupkg` rule.
+- [x] The fixture stays outside `csharp2md.slnx`, which keeps listing only the two product and two test projects.
+- [x] `analyze` on a lab solution commits and certifies a package cold, with no restore and no `dotnet pack` prerequisite.
+- [x] At least 3 retention cases pin the fixture's shape, its ignore rules and its absence from the build.
+
+**Tests**: e2e — ≥3 retention cases  
+**Gate**: full  
+**Commit**: `test(fixture): vendor the architecture dependency lab corpus`
+
+**Status**: Complete
+**Gate note**: full gate green on the fixture-only state — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **621 of 621** unchanged, `Csharp2Md.Cli.Tests` **84 passed / 2 skipped** (up from 81 by this task's 3 retention cases), the two skips being the absent eShopOnContainers and Pitstop clones CRT-07 allows; the present eShop clone ran and passed. A cold `analyze` of `src/SistemaA/SistemaA.slnx` committed and certified a package in 11 s with no restore and no build of the corpus.
+**Decision**: the vendored tree is 164 files / 566 KB — the corpus minus `.git`, `bin`, `obj`, its own `.gitignore` and the `.idea` directories of SistemaC and SistemaD. The corpus `.gitignore` was dropped deliberately: its `local-feed/*.nupkg` rule is the one thing this fixture must not inherit, because vendoring those two packages is what removes the `dotnet pack` prerequisite and makes the fixture analysable cold. The repository `.gitignore` already ignores `bin/` and `obj/` everywhere, which covers the build output the Roslyn BuildHost writes inside the fixture on every analysis, so only one negation was added for the two packages. The `.idea` directories are IDE state that the repository `.gitignore` excludes anyway and that no oracle scenario names; keeping them would have left files on disk that can never be committed.
+**Adequacy**: `FixtureRetentionTests.cs:24-42` pins the vendored shape — six `.slnx`, 41 `.csproj`, 87 oracle references and the two `.nupkg` — so a corpus that silently loses references cannot make the generator look better than it is. `:44-58` pins the ignore rules in both directions, and `:60-68` pins the fixture's absence from `csharp2md.slnx`, which keeps the four product and test projects the only thing the gate builds.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): deleting the `!fixtures/ArchitectureDependencyLab/local-feed/*.nupkg` negation from `.gitignore` killed `Gitignore_KeepsTheLabsBuildOutputOutAndItsPrivateFeedIn` (1 of 5 retention cases) and left the other four green. The fault was reverted before the commit.
+
+### T71: Score project references against the corpus oracle
+
+**What**: Score the Project-scope `ProjectReference` edges the package states against `oracle/project-references.json` per solution, and hold every solution at its measured defect baseline so the gap becomes visible and bounded.  
+**Where**: `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs`  
+**Depends on**: T70  
+**Reuses**: `CliInvoke`, `CliTestPaths` and the `Category` trait convention `LocalCorpusAnalyzeTests` established  
+**Requirement**: DEP-01, DEP-02
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] One analysis of all six solutions produces the package the scoring reads, and the fixture never skips: it is versioned, so its absence is a failure.
+- [x] Source and target are decoded from the base36 local handles into the solution's entity table independently of `Csharp2Md.Core`, whose handle and enum types are internal.
+- [x] Each baseline is documented as a recorded defect rather than an expected outcome, and the assertion message carries the oracle's 87-edge target.
+- [x] A drop in correct edges or a rise in false positives fails as a regression, and an improvement fails too, saying the baseline must be raised in the commit that improved it.
+- [x] At least 8 cases cover all six solutions, the corpus total and the cross-system invariants of `oracle/README.md`.
+
+**Tests**: e2e — ≥8 oracle-scored cases  
+**Gate**: full  
+**Commit**: `test(dependencies): score project references against the corpus oracle`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **621 of 621** unchanged, `Csharp2Md.Cli.Tests` **92 passed / 2 skipped** (up from 84 by this task's 8 oracle-scored cases), the two skips being the absent eShopOnContainers and Pitstop clones CRT-07 allows. One analysis of the six lab solutions takes ~70 s and carries the whole class; the cases are traited `Category=OracleCorpus` so a fast loop can exclude them, and the mandatory gate runs unfiltered.
+**Decision**: the recorded baselines are what the generator scores today, per solution: SistemaA 1 correct / 3 false of 4 oracle edges, SistemaB 3 / 5 of 18, SistemaC 0 / 0 of 1, SistemaD 3 / 3 of 8, SistemaE 2 / 9 of 28, SistemaE.Copia 2 / 9 of 28 — **11 correct and 29 false positives against 87**. Asserting 87 would have left the suite red and asserting a range would always pass, so each case is a two-sided ratchet: fewer correct edges or more false positives fails as a regression, and an improvement fails too, saying the baseline is stale and must be raised in the commit that improved it. Every failure message carries the 87-edge target, the current false positives and the current missing edges, so the distance to a correct generator is printed rather than inferred. The false positives are one family: a self-edge per API project plus a fan-out from the API project to projects it does not reference, which is `PackageBuilder.Pairs` attributing Project scope to the evidence document's owning project. **The fix is not in this task**; the instrument is.
+**Adequacy**: `OracleProjectReferenceScoreTests.cs:52-63` scores each of the six solutions and `:68-82` the corpus total, both against the oracle read from the fixture, so a corpus that loses references cannot loosen the score. `:92-114` asserts rules 2 and 3 of `oracle/README.md` — that no solution's edges name a project its oracle does not know — which is a true invariant today, not a baseline, and is what would catch a merge of `SistemaE.Copia` into SistemaB or SistemaE. The handles and enum ordinals are decoded in the test rather than read through `Csharp2Md.Core`, whose types are internal, so the expectation is not derived from the code being measured. SistemaC is the one weak case: it states nothing at Project scope, so its baseline of 0/0 can only fail upward; that limitation is written next to the baseline.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): two faults injected into `PackageBuilder.Pairs`, each built Release-clean and run against the `OracleCorpus` filter. Deleting the Project-scope pairing killed 6 of 8 — the five solutions with a non-zero baseline and the corpus total — leaving SistemaC (already 0/0) and the cross-system invariant (vacuous with no edges) green. Filtering self-edges out of the Project-scope pairing, a partial *fix* that drops 9 of the 29 false positives, killed the same 6, each with the message that the baseline must be raised: the ratchet cannot silently absorb progress. Both faults were reverted and the full gate re-run before the commit.
+
+### T72: Score only the edges the default package may contain
+
+**What**: Stop charging the generator for oracle edges that PKG-05 excludes from the default package, name the four fixtures the repository actually versions, and drop the committed legacy artifacts that contradict PKG-10.
+**Where**: `tests/Csharp2Md.Cli.Tests/OracleProjectReferenceScoreTests.cs`
+**Depends on**: T71
+**Reuses**: the ratchet and `Category=OracleCorpus` trait T71 established
+**Requirement**: PKG-05, PKG-10, DEP-01
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] The scoring target is the PKG-05-reachable part of the oracle - 60 of 87 edges - and every stated edge lands in one of three buckets: correct, false positive, or test-policy leak.
+- [x] `SistemaC` states plainly that it has no scoreable edge in default mode instead of reporting 0 of 1 as if it were a failure.
+- [x] The ratchet semantics are unchanged: an improvement still fails with the stale-baseline message.
+- [x] `AGENTS.md` names all four versioned fixtures and what each is for, and stays uncommitted because the user holds unrelated edits in it.
+- [x] The two committed `fixtures/csharp2md-analyze-out-*` directories are removed and a `.gitignore` rule keeps future stray analyze output out of the index.
+
+**Tests**: unit - 9 cases in the oracle class, no skips
+**Gate**: full
+**Commit**: `test(dependencies): score only the edges the default package may contain`
+
+**Status**: Complete
+**Gate note**: full gate green - Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **621 of 621**, `Csharp2Md.Cli.Tests` **94 passed / 2 skipped** (up from 92; the two skips are the absent eShopOnContainers and Pitstop clones).
+
+**The denominator was wrong, and it flattered nobody.** T71 scored against all 87 oracle edges, but 27 of them name a `.Testes` project and the analysis runs without `--include-tests`, so PKG-05 requires the generator to leave them out. Charging it for edges it is instructed to exclude is not a measurement. The target is now the 60 reachable edges, with 87 and the 27 exclusions still printed so the full picture stays visible.
+
+**Three buckets, not two.** An edge matching a reachable oracle row is correct; an edge matching no oracle row at all is a false positive; an edge matching one of the 27 excluded rows is a **test-policy leak** - a real dependency that should not be in the default package. Folding leaks into either other bucket would have hidden the PKG-05 defect behind a dependency number.
+
+**The corrected score is worse than the headline it replaces**: 7 correct of 60, not 11 of 87. Four edges previously counted as correct were test-policy leaks.
+
+**`SistemaC` has nothing to score.** Its single oracle edge is `SistemaC.Testes -> SistemaC.ApiMonolitica`, excluded by PKG-05, so in default mode it is empty rather than failing. It has its own case asserting that exclusion by name; its baseline row cannot regress and can only be raised if the policy changes.
+
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): lowering `SistemaE`'s recorded `CorrectToday` from 1 to 0 - the shape of the generator improving past its baseline - killed exactly that solution's case, with the message naming the 60-edge target, all nine false positives, the leak and all nineteen missing edges. Reverted and the class re-run at 9 of 9 before the commit.
+
+**`AGENTS.md` left uncommitted on purpose**: the rule now names `SyntheticSolution`, `ArchitectureDependencyLab`, `CertificationCorpus` and `PublicationResilience`, but the user holds a large unrelated rewrite in that file and sweeping it into this commit would take work they did not offer.
+
+**Carried out by a sub-agent that hit the session limit mid-task.** Its code was complete and green; the task record, the discrimination run and the commit were finished in the main session.
+
+## Phase 11: Correct the retained dependency projection
+
+T71/T72 installed the instrument and recorded the defect; this phase is the fix the user asked for by name ("Confirmar e consertar a projeção"). Four independent root causes were confirmed by reading, not inferred from symptoms alone — each is cited to the exact line it lives on, and the Roslyn APIs the fixes depend on (`Project.ProjectReferences`, `Location.IsInSource`) were verified against `/dotnet/roslyn` through Context7 before being written into a task, per `AGENTS.md`'s "never guess Roslyn APIs". The discrimination sensor remains a standing **skip** per `AGENTS.md`, so each task records a hand-run fault injection in its gate note. It depends on Phase 10 in full.
+
+### T73: Emit Project Reference edges only for projects Roslyn actually resolved
+
+**What**: Replace the "every other project in the workspace" approximation with the solution's real `ProjectReference` graph, so a root project states only the projects it actually references, in the direction it actually references them.
+**Where**: `src/Csharp2Md.Core/Analysis/Semantics/ProjectVariantWorkspace.cs`
+**Depends on**: T72
+**Reuses**: `SolutionAnalyzer.ReferencedProjects`'s existing mapping from `Project` to `ProjectIdentity`, unchanged; only the set it maps over changes
+**Requirement**: DEP-01, DEP-02, DEP-03
+
+**Tools**: MCP: Context7 (`/dotnet/roslyn`, confirmed `Project.ProjectReferences`/`ProjectReference.ProjectId`/`Solution.GetProject`); Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] `ProjectVariantWorkspace.ReferencedProjects()` returns the projects reachable from `RootProject.ProjectReferences` resolved through `Solution.GetProject`, not `Solution.Projects.Where(p.Id != RootProject.Id)`.
+- [x] A root project that references 2 of 4 sibling projects in its solution states exactly those 2 as `project-reference`, in both directions verified (never the reverse of an actual reference).
+- [x] `OracleProjectReferenceScoreTests.cs`'s baselines are re-measured against the fix and raised in this same commit, per the ratchet's own rule that an improvement must be recorded, not silently absorbed; the false-positive and correct-edge counts move together with the code change.
+- [x] At least 2 unit/integration cases on `fixtures/SyntheticSolution` (or an equivalent minimal multi-project fixture) pin the exact-reference behavior independently of the oracle corpus.
+
+**Tests**: unit/integration — ≥2 cases; e2e — the oracle class re-measured
+**Gate**: full + `Category=OracleCorpus`
+**Commit**: `fix(analysis): emit project references from the resolved reference graph`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **624 of 624** (up from 621 by this task's 3 focused cases), `Csharp2Md.Cli.Tests` **94 passed / 2 skipped** (the two skips being the absent eShopOnContainers and Pitstop clones); the present eShop clone ran and passed. `Category=OracleCorpus` (9 cases) green.
+**Decision**: reading `ReferencedProjects()` alone was not enough. Confirming it by hand against `fixtures/ArchitectureDependencyLab/src/SistemaB` (dumping raw `FactualGraph.Occurrences` and relation evidence from a throwaway diagnostic, deleted before commit) found two further, compounding aggregation bugs neither STATE.md nor this task's own "Done when" had named:
+1. The project-reference evidence payload was `referencedProject.LogicalRelativePath` alone - it never named the citing root - so two different roots referencing the *same* target hashed to the identical evidence key. `Assemble`'s `Evidence.DistinctBy(CanonicalKey)` then kept only one root's document and silently reattributed every other root's relation to it at Project/Component scope. This is why the pre-fix false positives read as "one API project fanning out to everything": whichever root's evidence won the collision for a common target donated its document to every other relation citing that target.
+2. `AddEntity` always recorded a named entity's occurrence against `input.Project` - correct for the *citing* root's own Project entity, wrong for the *referenced* project's entity, which was thereby recorded as "occurring in" every root that happened to reference it rather than in itself. `PackageBuilder.BuildMemberships` derives Project/Component membership from exactly these occurrences, so a heavily-referenced project's membership ballooned to include every one of its referrers.
+
+Both are fixed in the same commit as the original `ReferencedProjects()` defect because they are the same DEP-01 violation ("somente pertencimento comprovado") surfacing at the aggregation seam rather than the extraction seam, and fixing only one of the three left the others fully able to reproduce the complete-graph symptom on their own (confirmed: with only `ReferencedProjects()` fixed, the oracle's false-positive count rose from 29 to 37, driven entirely by these two remaining bugs).
+**Adequacy**: `ReferencedProjects_NamesOnlyTheDirectReference_NotATransitiveOne` uses `Acme.Shipping.Tests -> Acme.Shipping -> Acme.Shared.Contracts`, a genuine two-hop chain already present in `fixtures/SyntheticSolution`, so a fix that merely shrinks the *old* "every other loaded project" answer without computing real direct references still fails it. `Extract_ProjectReference_EvidenceKeyNamesBothTheCitingRootAndTheTarget` and `Extract_ProjectReference_TargetEntityOccursInItselfNotInTheCitingRoot` isolate the two aggregation bugs directly against `CausalRelationExtractor.Extract`, independent of Roslyn workspace loading or the oracle corpus. `OracleProjectReferenceScoreTests` moved from 7/60 correct, 29 false positives, 4 leaks to **60/60 correct, 0 false positives, 27 leaks** - every reachable edge in the entire corpus is now exactly right; the remaining 27 are real edges sourced from `.Testes` projects that retention does not yet exclude (T75/T76).
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): three faults injected one at a time into `ProjectVariantWorkspace.cs`/`CausalRelationExtractor.cs`, each rebuilt Release-clean. Reverting `ReferencedProjects()` to `Solution.Projects.Where(p.Id != RootProject.Id)` killed `ReferencedProjects_NamesOnlyTheDirectReference_NotATransitiveOne`. Reverting the evidence payload to `referencedProject.LogicalRelativePath` alone killed `Extract_ProjectReference_EvidenceKeyNamesBothTheCitingRootAndTheTarget`. Reverting the target's `owner: referencedProject` argument killed `Extract_ProjectReference_TargetEntityOccursInItselfNotInTheCitingRoot`. All three were reverted and the full gate re-run green before the commit.
+
+### T74: Stop retaining causal edges to symbols outside the analyzed source
+
+**What**: Exclude `internal-invocation` and `structural-type-use` relations whose target symbol is not declared in the solution's source (BCL, NuGet, any referenced-assembly symbol), so a type used everywhere (`string`, `int`, `Task`) stops being retained as a shared entity whose Component/Deployment-Unit membership is the union of every project that happens to use it.
+**Where**: `src/Csharp2Md.Core/Analysis/Extraction/CausalRelationExtractor.cs`
+**Depends on**: T73
+**Reuses**: the existing `AddSymbol`/`AddRelation` pipeline; only the admission check changes, and `ConfigurationPersistenceExtractor`'s dedicated persistence/HTTP/messaging entities are untouched since they never route through `AddSymbol`
+**Requirement**: PKG-05, DEP-01
+
+**Tools**: MCP: Context7 (`/dotnet/roslyn`, confirmed `ISymbol.Locations`/`Location.IsInSource` as the documented source-vs-metadata distinction); Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] A `structural-type-use` or `internal-invocation` relation is only added when the target symbol has at least one `Location` with `IsInSource == true`; a purely-metadata target (BCL, NuGet, any other referenced assembly) is skipped before `AddSymbol`/`AddRelation` runs for it.
+- [x] A method call or type reference into a different project of the **same solution** (a genuine cross-component edge, resolved as source because the workspace opens the whole solution) is still retained — this is not a same-project-only filter.
+- [x] At least 3 unit cases on `CausalRelationExtractorTests.cs` prove: a call to a BCL method produces no relation/entity for it, a use of a BCL type produces no relation/entity for it, and a call into a sibling in-solution project still produces its relation.
+- [x] One e2e/integration case on `fixtures/ArchitectureDependencyLab` (or the eShop LocalCorpus case when present) asserts the Component-scope dependency set for a known multi-project solution is **not** the complete graph — concretely, that no retained entity's canonical key names a bare BCL/primitive type (`symbol:string`, `symbol:int`, `symbol:System.Threading.Tasks.Task`, …).
+
+**Tests**: unit — ≥3 extractor cases; integration/e2e — ≥1 non-complete-graph case
+**Gate**: full + LocalCorpus when present
+**Commit**: `fix(analysis): exclude causal edges to symbols outside source`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **627 of 627** (up from 624 by this task's 3 focused cases), `Csharp2Md.Cli.Tests` **95 passed / 2 skipped** (up from 94 by this task's oracle-corpus case; the two skips are the absent eShopOnContainers and Pitstop clones); the present eShop clone ran and passed.
+**Decision**: `ISymbol.Locations.Any(l => l.IsInSource)` (confirmed against `/dotnet/roslyn` through Context7) distinguishes a symbol declared in the analyzed source from one reached only through metadata. A same-solution `ProjectReference` resolves through a `CompilationReference` to the referenced project's own `Compilation`, so its symbols keep `IsInSource == true` and a genuine cross-component call is untouched - confirmed empirically with a two-`Compilation` unit test (`Extract_InternalInvocation_ToAMethodInAReferencedInSolutionProject_IsStillRetained`) before writing this into the fix. Measured directly on `fixtures/ArchitectureDependencyLab/src/SistemaE`: the retained graph carries **zero** `symbol:`/`callable:` entities (down from the class of defect STATE.md measured on eShop - 1,332 entities attributed to more than one component, `string`/`int`/`Task` each fanning out to all 17). `ConfigurationPersistenceExtractor`'s differentiated persistence/HTTP/messaging entities are untouched: they never route through `AddSymbol`.
+**Adequacy**: `Extract_InternalInvocation_ToABclMethod_IsNotRetained` and `Extract_StructuralTypeUse_OfABclType_IsNotRetained` pin the exclusion directly against `CausalRelationExtractor.Extract` for `string.Trim()` and a bare `string` parameter type. `Extract_InternalInvocation_ToAMethodInAReferencedInSolutionProject_IsStillRetained` proves the fix is not a blanket "only my own project" filter. `Entities_NeverRetainABareSymbolOrCallableFromOutsideTheAnalyzedSource` (Cli.Tests, `Category=OracleCorpus`) asserts the corpus-wide absence of `symbol:`/`callable:` entities across all six real solutions, whose business code uses plenty of BCL types - a fixture too small to exercise this (like `fixtures/SyntheticSolution`) could not catch a regression here.
+**Known residual, named rather than dropped**: a constructed generic's `Locations` resolve to its unbound original definition, so `List<Foo>` (a BCL container of a user type `Foo`) is excluded exactly like a bare BCL type would be - `Foo`'s own direct uses elsewhere are unaffected, but a type reachable *only* wrapped in a BCL generic produces no structural-type-use edge. This is a deliberate simplification within PKG-05's scope, not the defect this task closes.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): the `IsDeclaredInAnalyzedSource` filter was removed from both call sites (target reverted to unconditional `AddSymbol`), rebuilt Release-clean, and run against the extractor suite - it killed `Extract_InternalInvocation_ToABclMethod_IsNotRetained` and `Extract_StructuralTypeUse_OfABclType_IsNotRetained` (2 of 2), leaving every other case green. Reverted and the full gate re-run before the commit.
+
+### T75: Exclude test-project entities from retention when tests are excluded
+
+**What**: Make `includeTests` govern which entities the retention closure treats as roots and walks into, not only which source documents survive — so a Component, Deployment Unit, Entry Point or Boundary Operation owned by a test project stops publishing when `--include-tests` is absent, and a test-project's Project entity stops surviving as a dependency target through it.
+**Where**: `src/Csharp2Md.Core/PackageBuilding/Retention/RetainedGraphBuilder.cs`, `src/Csharp2Md.Core/PackageBuilding/PackageBuilder.cs`
+**Depends on**: T74
+**Reuses**: `SourceInventory`'s existing test-project naming heuristic (extended in T76), threaded in rather than reimplemented
+**Requirement**: PKG-05
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] `RetainedGraphBuilder.Build` takes `includeTests` and never selects a root, nor admits an incoming (dependent) edge into an already-retained entity, whose owning project is a test project, unless `includeTests` is true.
+- [x] `PackageBuilder.cs:182` passes the same `includeTests` it already threads to `RetentionPolicy.Apply`.
+- [x] A synthetic solution with a test-project Component (e.g., a test host with `OutputType=Exe`) publishes no Component/DeploymentUnit for it by default and does publish it with `--include-tests`.
+- [x] ~~`OracleProjectReferenceScoreTests.cs`'s test-policy-leak counts drop~~ **Revised while executing**: this corpus names its test projects `.Testes` (Portuguese), which the naming heuristic this task reuses does not yet recognize (that is T76). T75's own mechanism is proven with English-named (`.Tests`) synthetic fixtures instead; the corpus-visible drop to 0 leaks is T76's Done-when, measured with T73-T76 combined.
+- [x] At least 3 cases on `RetainedGraphBuilderTests.cs`/`RetentionPolicyTests.cs` pin default-exclusion and opt-in inclusion; the existing, untouched cases in both files (e.g. `Apply_AddsIncomingSupportRelation`, `Build_RetainsReachableConfirmedRelationAndEvidence`) keep passing unchanged, which is the proof that a real non-test dependent still survives.
+
+**Tests**: unit — ≥3 cases; e2e — the oracle class re-measured
+**Gate**: full + `Category=OracleCorpus`
+**Commit**: `fix(packagebuilding): exclude test entities from retention`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **631 of 631** (up from 627 by this task's 4 focused cases), `Csharp2Md.Cli.Tests` **95 passed / 2 skipped** (unchanged - the ArchitectureDependencyLab corpus's `.Testes` naming is not yet recognized, per the revised checkbox above; the two skips are the absent eShopOnContainers and Pitstop clones). `Category=OracleCorpus` confirmed unchanged (10 of 10), which is the expected, verified-by-running result before T76 lands.
+**Decision**: two admission points needed the same exclusion, not one. `RetainedGraphBuilder.Build`'s root selection is the entry point STATE.md named (Component/DeploymentUnit roots), but tracing a concrete leak (`SistemaB.Testes -> SistemaB.Api`) by hand showed a second, independent admission path: `RetentionPolicy.Apply`'s "incoming" step (design.md step 5, sustaining dependents/reverse impact) re-admits a source purely because it points at an already-retained, non-test target - regardless of whether the source itself is a test project. Fixing only the root-selection side would have left every test project's outbound edge into a real component republished through this second path. Both now share the same `SourceInventory.IsTestProject` check via an occurrence-based owner lookup, reused rather than reimplemented in each file.
+**Adequacy**: `Build_ExcludesARootOwnedOnlyByATestProjectByDefault` / `Build_IncludesATestProjectRootWhenPolicyEnabled` pin the root-selection admission point directly; `Apply_ExcludesIncomingRelationFromATestProjectSourceByDefault` / `Apply_IncludesIncomingRelationFromATestProjectSourceWhenPolicyEnabled` pin the incoming-edge admission point the first fix alone would have missed. Both use `App.Tests/App.Tests.csproj`, a naming convention already recognized before this task, so the tests are independent of T76's naming fix.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): two faults, each rebuilt Release-clean. Disabling the root-selection exclusion (`RootKinds.Contains(entity.Kind) && (includeTests || !IsTestOnly(...) || true)`) killed `Build_ExcludesARootOwnedOnlyByATestProjectByDefault` (1 of 2 in that file) and left the rest of the suite, including `Build_StartsClosureAtEveryProvenRootKind`, green. Disabling the incoming-edge exclusion the same way killed `Apply_ExcludesIncomingRelationFromATestProjectSourceByDefault` (1 of 2 in that file) and left `Apply_AddsIncomingSupportRelation`/`Apply_AddsIncomingSupportEntity` green, proving the fix does not touch a non-test dependent. Both reverted and the full gate re-run before the commit.
+
+### T76: Recognize the corpus's own test-naming convention
+
+**What**: Extend the test-document heuristic to recognize `.Testes` (and a bare `testes` segment), so `--include-tests`'s absence actually excludes `fixtures/ArchitectureDependencyLab`'s test projects — today it silently does not, because the heuristic only knows the English `.Tests`/`.UnitTests`/`.IntegrationTests` spellings and the project's own primary accuracy fixture is named in Portuguese.
+**Where**: `src/Csharp2Md.Core/Analysis/Inventory/SourceInventory.cs`
+**Depends on**: T75
+**Reuses**: the existing segment-based `LooksLikeTestDocument` shape; only the recognized suffix set grows
+**Requirement**: PKG-05
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] `LooksLikeTestDocument` recognizes a path segment equal to `testes` or ending in `.Testes`, case-insensitively, alongside the existing English patterns.
+- [x] `SourceInventoryTests.cs` gains a case for `SistemaA.Testes/Foo.cs` alongside the existing English cases, and a case proving an unrelated segment such as `Testemunho` or `Manifesto` is not mistaken for a test path.
+- [x] `OracleProjectReferenceScoreTests.cs` is re-measured with T73-T76 combined and every baseline raised to the true measured value in this commit, with the false-positive and test-policy-leak counts named explicitly in the commit's task record.
+- [x] The `analyze` of `fixtures/ArchitectureDependencyLab` with default flags publishes no source document, Component, or DeploymentUnit **entity** whose logical path contains a `.Testes` project segment (confirmed: `RetainedGraph.Entities` carries zero such entries for every solution). **Revised while executing**: a *stricter*, wire-level check - whether a `.Testes` document/project key appears anywhere in the committed package, including as a dependency's Document/Project-scope target reached through membership lifting rather than as a retained entity in its own right - found one more leak. That check and its fix are T77; this bullet's own, narrower wording is satisfied here.
+
+**Tests**: unit — ≥2 cases; e2e — the oracle class re-measured
+**Gate**: full + `Category=OracleCorpus`
+**Commit**: `fix(analysis): recognize .Testes as a test-project path segment`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **635 of 635** (up from 631 by this task's 2 new Fact/Theory methods — 1 `Fact` plus 3 `InlineData` rows added to an existing `Theory`, 4 cases in total), `Csharp2Md.Cli.Tests` **95 passed / 2 skipped** (the two skips being the absent eShopOnContainers and Pitstop clones); `Category=OracleCorpus` (10 of 10) confirmed the corpus-wide perfect score: **60 correct, 0 false positives, 0 test-policy leaks** - every one of the 87 oracle edges accounted for (60 reachable + 27 correctly excluded).
+**Decision**: `LooksLikeTestDocument` gained `testes` (bare segment) and `.Testes` (suffix) alongside the existing English patterns, matching the exact convention `IsTestProject`/T75 already reuses. `RecordedDefects` was renamed to `RecordedBaselines` and its doc comments rewritten: with T73-T76 combined the numbers pin a *correct* state (60/0/0), not a defect, and the two-sided ratchet degenerates naturally into an exact-match check at that ceiling rather than needing new machinery.
+**Adequacy**: `LooksLikeTestDocument_UsesPathSegments` gained the `.Testes` case plus two negative cases (`Testemunho`, `Manifesto`) proving the suffix match requires the literal `.` separator, not just a "Testes" substring. `IsTestProject_RecognizesThePortugueseTestesConvention` pins the project-path variant T75 depends on. `Corpus_ScoresTheRecordedShareOfItsReachableOracle` moving from 7/29/4 to 60/0/0 in one ratchet assertion is the adequacy evidence that matters most: every one of the corpus's 87 declared edges is now accounted for correctly.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): the `.Testes`/`testes` patterns were removed from `LooksLikeTestDocument`, rebuilt Release-clean, and run against `SourceInventoryTests` - it killed `IsTestProject_RecognizesThePortugueseTestesConvention` and the `.Testes` case of `LooksLikeTestDocument_UsesPathSegments` (2 of 2 new cases), leaving every other case, including the two new negative cases, green. Reverted and the full gate re-run before the commit.
+
+### T77: Exclude test-project occurrences from entity membership lifting
+
+**What**: Stop a genuinely-retained entity's Document/Project/Component/DeploymentUnit membership from being widened by an occurrence recorded while analysing a test project as its own root - discovered while verifying T76: a shared symbol called from both production code and a test file (e.g. `CotacoesTests.cs` calling into production code it exercises) leaked a `.Testes`-owned document and project into the default package's dependency graph and local entity table, even though the test project's own roots and incoming edges were already correctly excluded by T75.
+**Where**: `src/Csharp2Md.Core/PackageBuilding/PackageBuilder.cs`
+**Depends on**: T76
+**Reuses**: `SourceInventory.IsTestProject` (T75); the same occurrence-based owner check, applied at a third admission point
+**Requirement**: PKG-05
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] `BuildMemberships` and `BuildProjectsByDocument` derive Document/Project/Component/DeploymentUnit membership from occurrences with a test-project owner excluded by default, sharing one `NonTestOccurrences` filter rather than duplicating the check.
+- [x] A retained entity called from both a real production file and a test file keeps its production-side membership and drops the test-side one by default, and keeps both when `--include-tests` is set.
+- [x] At least 2 cases on `ScopePairingTests.cs` pin default-exclusion and opt-in inclusion for this specific admission point, independent of T75's root/incoming-edge cases.
+- [x] `fixtures/ArchitectureDependencyLab`'s real leak (`SistemaA.Testes/CotacoesTests.cs` reachable through a shared symbol) is closed, confirmed via the oracle package's own entity table.
+
+**Tests**: unit — ≥2 cases
+**Gate**: full + `Category=OracleCorpus`
+**Commit**: `fix(packagebuilding): exclude test occurrences from membership`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **637 of 637** (up from 635 by this task's 2 focused cases), `Csharp2Md.Cli.Tests` **96 passed / 2 skipped** (up from 95 by the leak-detection case this task's fix now passes; the two skips are the absent eShopOnContainers and Pitstop clones).
+**Decision**: this was not visible from the oracle's Project-scope `ProjectReference` score alone (60/60/0/0 was already reached by T73-T76) - it surfaced only when verifying T76's own fourth Done-when bullet ("no source document, Component, or DeploymentUnit... contains a `.Testes` project segment") against the real corpus. Root cause, confirmed by tracing raw occurrences through a throwaway diagnostic (deleted before commit): `BuildMemberships`/`BuildProjectsByDocument` derive an entity's Document/Project/Component/DeploymentUnit membership from **every** occurrence of that entity in the unfiltered `FactualGraph`, including one recorded while analysing `SistemaA.Testes` as its own root when its compilation calls into a genuinely-retained production symbol. T75 excluded the test project's own roots and its outbound incoming edges; this closes the third path - the target side of an otherwise-legitimate production relation being widened by a test-side occurrence of the same symbol. `NonTestOccurrences` centralises the filter so `BuildMemberships`'s two internal uses (`occurrences` and the nested `RootsByProject`) and `BuildProjectsByDocument` share one answer to "does this occurrence count."
+**Adequacy**: `Build_TargetMembershipExcludesATestProjectOccurrenceByDefault` extends `ScopePairingTests`' existing fixture with a second occurrence of the already-retained `entity:target` from a test project, and asserts no Document- or Project-scope edge names the test file or test project by default; `Build_TargetMembershipIncludesATestProjectOccurrenceWhenPolicyEnabled` asserts the opposite with `--include-tests`. Both are independent of T75's cases, which cover root selection and incoming-edge admission, not target-side membership lifting.
+**Discrimination proven by hand** (sensor is a standing skip per `AGENTS.md`): `NonTestOccurrences` was reverted to unconditionally return `graph.Occurrences`, rebuilt Release-clean, and run against `ScopePairingTests` - it killed `Build_TargetMembershipExcludesATestProjectOccurrenceByDefault`, reproducing the exact leak shape found in the real corpus (`Caller.cs -> App.Tests/TargetCalledFromTest.cs`), and left every other case in the file green. Reverted and the full gate re-run before the commit.
+
+### T78: Correct the traceability table and close the open finding
+
+**What**: Update `spec.md`'s Requirement Traceability for DEP-01, DEP-02, DEP-03 and PKG-05 to cite T73-T77 and reflect a measured, not assumed, "Complete"; replace `.specs/STATE.md`'s "OPEN FINDING: the component dependency graph is complete" and the unmeasured project-reference finding with the corrected, re-measured numbers.
+**Where**: `.specs/features/pacote-conhecimento-util-e-confiavel/spec.md`, `.specs/STATE.md`
+**Depends on**: T77
+**Reuses**: nothing — documentation only
+**Requirement**: none (documentation)
+
+**Tools**: MCP: NONE; Skills: `tlc-spec-driven`.
+
+**Done when**:
+
+- [x] `spec.md`'s traceability rows for DEP-01, DEP-02, DEP-03 and PKG-05 name T73-T77 and state the measured outcome (oracle score, complete-graph check, test-leak check), not a restated assumption.
+- [x] `.specs/STATE.md`'s two open-finding sections are replaced by the corrected state: the re-measured oracle score, the confirmed absence of BCL/primitive entities in a real corpus's retained graph, and the confirmed absence of `.Testes`-owned entities in the default package.
+- [x] Any claim this phase could not fully close (for example, a residual fan-out from a legitimate, genuinely shared in-solution type used by many components) is written down as a named residual, not silently dropped.
+
+**Tests**: none (documentation)
+**Gate**: `validate_state.py` on this feature
+**Commit**: `docs(state): correct the projection traceability after phase 11`
+
+**Status**: Complete
+**Gate note**: `validate_state.py pacote-conhecimento-util-e-confiavel` → 0 errors. No code changed; the full test gate from T77 stands (`Csharp2Md.Core.Tests` 637/637, `Csharp2Md.Cli.Tests` 96/98 with 2 expected skips).
+**Decision**: `spec.md`'s traceability rows were extended (task list + a one-line measured-outcome note) rather than rewritten, keeping the existing per-requirement task history intact. `STATE.md`'s two OPEN FINDING sections and the "NUMBER THAT MATTERS" section were kept verbatim as historical measurement, headed by a short RESOLVED note pointing to the fixing task and the test that now holds it — the diagnostic narrative remains available as the record of what was found and how, per the project's own convention of appending decisions rather than deleting them. `validation.md` (the prior Verifier's report) was deliberately left untouched: it reflects the pre-Phase-11 state, and rewriting a Verifier report by hand would misrepresent it as a fresh verification. A named residual (legitimately-shared in-solution types still fan out at Component scope; a BCL-generic-wrapped user type produces no structural-type-use edge) is recorded in `STATE.md` rather than silently dropped.
+**Adequacy**: n/a (documentation-only task; the gate is `validate_state.py`, run above with 0 errors).
+
+## Phase 12: Close the Component/DeploymentUnit-scope fan-out the full-scope Verifier measured
+
+### T79: Attribute a symbol's occurrence and canonical key to its real owner, not the citing project
+
+**What**: Fix the residual DEP-01 defect a full-scope Verifier measured on `fixtures/eShop` after Phase 11: Component/DeploymentUnit-scope lifting still crossed a relation's source component against the *complete* membership of its target entity, because three independent extraction-layer bugs each attributed a symbol's occurrence (and, for two of them, its canonical key) to whichever project happened to observe it rather than to the project that actually owns it. Root causes, confirmed by direct measurement on the real eShop clone (not by inspection alone):
+1. `CausalRelationExtractor.AddSymbol` always used `input.Project` as a target symbol's occurrence owner, even for a symbol genuinely declared in a directly-referenced project (e.g. `eShop.ServiceDefaults`'s extension methods) - every host project that called it independently misattributed it to itself, so its membership spanned every caller.
+2. Every Callable/Symbol entity's canonical key was built from `symbol.ToDisplayString()` alone. Roslyn renders a top-level-statements program's synthesized entry point identically (`<top-level-statements-entry-point>`) in every project regardless of assembly, so every host's own `Program.cs` collided onto one shared entity - the single largest contributor, because nearly every top-level call in every service shares this one source.
+3. `ConfigurationPersistenceExtractor`'s `DataStore`/`DataOperation`/`DataObject` entities had the same two defects one layer down: occurrences were always attributed to the citing project, and keys were built from a bare method name or a receiver/entity type's display string alone - eShop's own template scaffolds an identically-named, identically-namespaced `MigrateDbContextExtensions` helper independently into every service, which collided the same way.
+
+Measured before this task (2026-09-17, full-scope Verifier): 138 of 144 possible Component-scope pairs (95.8%) on `fixtures/eShop`, `Ordering.API` claiming a dependency on all 11 other components. Measured after: 12 of 144 (8.3%), all 12 self-pairs, zero cross-component false positives.
+
+**Where**: `src/Csharp2Md.Core/Analysis/Extraction/CausalRelationExtractor.cs`, `src/Csharp2Md.Core/Analysis/Extraction/ConfigurationPersistenceExtractor.cs`, `src/Csharp2Md.Core/Analysis/Extraction/SymbolOwnership.cs` (new), `src/Csharp2Md.Core/Analysis/IdentityPrimitives.cs`, `src/Csharp2Md.Core/Analysis/SolutionAnalyzer.cs`
+**Depends on**: T78
+**Reuses**: the T73 pattern (name a target's own project explicitly rather than defaulting to the citing root) generalized from `ProjectReference` targets to every Callable/Symbol/DataStore/DataOperation/DataObject entity; `ProjectVariantWorkspace.ReferencedProjects()`'s already-resolved direct-reference list
+**Requirement**: DEP-01
+
+**Tools**: MCP: NONE (Roslyn APIs used - `SyntaxTree` identity via `Compilation.SyntaxTrees.Contains`, `ISymbol.Locations`, `Location.SourceTree` - were confirmed by direct measurement against the real eShop clone, not assumed); Skills: `tlc-spec-driven`, `dotnet-test:run-tests`.
+
+**Done when**:
+
+- [x] A new `SymbolOwnership.Resolve` resolves a symbol's true declaring project by exact `SyntaxTree` object identity against the root's own compilation and its directly-referenced projects' compilations (threaded through as `ReferencedProjectCompilation` pairs) - never by path or display-string matching - falling back to the citing project only when unresolved (a deeper transitive reference), never excluding.
+- [x] Every Callable/Symbol entity's canonical key folds in its resolved owner (`CanonicalIdentity.CreateEntityKey(solution, kind, owner, name)`), so two textually-identical but physically-distinct symbols in different projects never collide, while a genuinely shared symbol (same resolved owner from every caller) still unifies to one entity.
+- [x] `ConfigurationPersistenceExtractor`'s `DataStore`, `DataOperation` and `DataObject` entities get the same owner-qualified key and owner-attributed occurrence via a shared `ResolveOwnerAndLocator` helper; `Configuration` entities are qualified by the citing project by the same uniform mechanism (no observed defect there, but no principled reason to leave it inconsistent).
+- [x] A declaration-site locator (`SymbolOwnership.DeclarationLocator`) is used whenever the resolved owner differs from the citing project, so Document-scope membership (derived from the locator's path) stays consistent with the occurrence's corrected `Project` field.
+- [x] Measured directly on `fixtures/eShop` (not merely asserted by a hand-built fixture): Component-scope cross-component false positives fall from 138/144 to 0/144.
+- [x] A committed test measures Component-scope pair density on `fixtures/eShop` and fails if any cross-component pair appears (`LocalCorpusAnalyzeTests.Analyze_eShop_ComponentScopeHasNoCrossComponentFalsePositive`), gated `Category=LocalCorpus` per CRT-07 so its absence never fails CI.
+- [x] Unit-level regression cases pin both collision mechanisms directly: two projects' own top-level entry points get distinct canonical keys (`CausalRelationExtractorTests`), and two projects' own identically-named/namespaced DbContext-shaped types get distinct `DataStore` keys (`ConfigurationPersistenceExtractorTests`).
+- [x] `ScopePairingTests`' Component-scope evidence is no longer only a self-edge on a single-component fixture (the Verifier's Gap 3): a new two-component fixture proves a genuine cross-component relation is aggregated as exactly that pair, not folded into either component's self-edge.
+
+**Tests**: unit — 4 focused cases (2 extraction-layer collision regressions, 1 `ScopePairingTests` cross-component case, plus the strengthened existing `Extract_InternalInvocation_ToAMethodInAReferencedInSolutionProject_IsStillRetained`); integration — 1 `LocalCorpus`-gated corpus density case
+**Gate**: full + `Category=OracleCorpus` + `Category=LocalCorpus` (eShop present)
+**Commit**: `fix(analysis): attribute symbol ownership by declaration, not by citing project`
+
+**Status**: Complete
+**Gate note**: full gate green — Release build 0 warnings / 0 errors, `Csharp2Md.Core.Tests` **640 of 640** (up from 637 by this task's cases), `Csharp2Md.Cli.Tests` **97 passed / 2 skipped** (up from 96 by the new eShop density case; the two skips are the absent eShopOnContainers and Pitstop clones). `Category=OracleCorpus` held at 60 correct / 0 false positives / 0 test-policy leaks - this task changes nothing about Project-scope `ProjectReference` attribution, only Callable/Symbol/DataStore/DataOperation/DataObject entities.
+**Decision**: the fix was found in three passes, not one - each measurement round on the real eShop clone showed the density essentially unchanged until the next root cause was located by direct inspection (a throwaway diagnostic test, deleted before commit, dumping entities/occurrences for several host projects side by side), rather than by reasoning about the code alone. This is recorded because the first fix (target-symbol ownership) was necessary but nowhere near sufficient, and a Verifier or future maintainer re-measuring should expect that a single plausible-looking root cause does not guarantee the defect is closed - only a direct measurement does. `Add()`'s `qualifyByProject` boolean flag (an intermediate, narrower fix) was replaced by uniform owner-based qualification once the second collision (`DataStore`) showed the narrower fix was itself insufficient - the flag was never committed on its own.
+**Adequacy**: `Extract_TopLevelEntryPointsInDifferentProjects_DoNotCollideIntoOneEntity` asserts the two entities have the *same* display string and *different* canonical keys - a shallow "an entity exists" check would not have caught the original collision. `Analyze_eShop_ComponentScopeHasNoCrossComponentFalsePositive` decodes the actual committed machine-readable shards (not Markdown) and asserts an exact count (zero), matching the project's established pattern of exact-equality baselines over threshold checks.
+**Discrimination proven by measurement, not hand fault-injection** (sensor is a standing skip per `AGENTS.md`): each of the three fixes was validated by re-running a full `analyze` on the real eShop clone and re-measuring Component-scope density after every change, rather than reverting code and re-running tests - the measurement itself is the strongest form of discrimination available here, since (per Phase 11's own finding) no fixture in the tree before this task could tell a correct Component-scope projection from a complete one.
+
 ## Requirement-to-Task Traceability
 
 | Requirements | Owning task(s) | Acceptance seam |
@@ -1829,7 +2257,7 @@ Three cases were added rather than one. Two are theory rows asserting a literal 
 | PKG-08 | T5, T8, T17, T30, T38-T39, T42 | CLI policy identity |
 | PKG-09 | T3, T12-T16, T42 | factual graph + CLI |
 | PKG-10 | T1, T40, T45, T59 | topology surface |
-| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42, T46-T47, T49, T53 | hand-recalculated dependencies |
+| DEP-01..DEP-08 | T4, T12-T13, T18, T22, T42, T46-T47, T49, T53, T71 | hand-recalculated dependencies; oracle-scored project references |
 | MET-01..MET-02, MET-04 | T4, T19, T42 | hand-recalculated direct measures |
 | MET-03 | T19, T42, T55 | hand-recalculated direct measures |
 | MET-05 | T4, T20, T42 | hand-recalculated SCCs |
@@ -1840,7 +2268,7 @@ Three cases were added rather than one. Two are theory rows asserting a literal 
 | NAV-03 | T28, T42, T58 | machine/Markdown equivalence |
 | NAV-04 | T26, T28, T32, T42, T54, T58 | machine/Markdown equivalence |
 | NAV-06..NAV-07 | T26, T34, T42, T54 | locate budgets |
-| NAV-08..NAV-09 | T26, T35, T42 | graph journey budgets |
+| NAV-08..NAV-09 | T26, T35, T42, T69 | graph journey budgets |
 | NAV-10 | T26, T34, T42, T50 | evidence budget |
 | VAR-01..VAR-02 | T9-T10, T41 | real workspace fixture |
 | VAR-03..VAR-05 | T3, T7, T11, T41 | occurrence/collision tests |
@@ -1854,10 +2282,10 @@ Three cases were added rather than one. Two are theory rows asserting a literal 
 | PUB-05 | T32-T33, T36, T43 | byte preservation |
 | PUB-06..PUB-07 | T31, T41, T43 | safety fixture/rejection |
 | PUB-08 | T2, T15, T36, T38-T39, T43, T55 | structured diagnostics |
-| CRT-01..CRT-02 | T34-T35, T37, T42, T48, T51 | journey certification |
+| CRT-01..CRT-02 | T34-T35, T37, T42, T48, T51, T69 | journey certification |
 | CRT-03 | T5, T15, T30, T37, T42, T57 | journey certification |
 | CRT-04..CRT-07 | T9, T47, T49-T50, T52-T54, T44 | optional corpora |
-| CRT-08 | T8, T12-T14, T31, T41 | fixture integrity |
+| CRT-08 | T8, T12-T14, T31, T41, T70 | fixture integrity |
 | CRT-09 | T42 | CLI E2E |
 | EDG-01 | T13, T16-T17, T33, T43 | evidence rejection |
 | EDG-02 | T34-T36, T43 | journey budget rejection |
@@ -1962,6 +2390,25 @@ T1, T37, T41, T45, T47, T48, T52, T53 and T54 necessarily touch multiple physica
 | T57 | T56 | T56 -> T57 | ✅ Match |
 | T58 | T57 | T57 -> T58 | ✅ Match |
 | T59 | T58 | T58 -> T59 | ✅ Match |
+| T60 | T59 | phase 8 after phase 7 | ✅ Match |
+| T61 | T60 | T60 -> T61 | ✅ Match |
+| T62 | T61 | T61 -> T62 | ✅ Match |
+| T63 | T62 | T62 -> T63 | ✅ Match |
+| T64 | T63 | T63 -> T64 | ✅ Match |
+| T65 | T64 | T64 -> T65 | ✅ Match |
+| T66 | T65 | T65 -> T66 | ✅ Match |
+| T67 | T66 | phase 9 after phase 8 | ✅ Match |
+| T68 | T67 | T67 -> T68 | ✅ Match |
+| T69 | T67 | T67 -> T69 | ✅ Match |
+| T70 | T69 | phase 10 after phase 9 | ✅ Match |
+| T71 | T70 | T70 -> T71 | ✅ Match |
+| T72 | T71 | T71 -> T72 | ✅ Match |
+| T73 | T72 | phase 11 after phase 10 | ✅ Match |
+| T74 | T73 | T73 -> T74 | ✅ Match |
+| T75 | T74 | T74 -> T75 | ✅ Match |
+| T76 | T75 | T75 -> T76 | ✅ Match |
+| T77 | T76 | T76 -> T77 | ✅ Match |
+| T78 | T77 | T77 -> T78 | ✅ Match |
 
 Cross-phase dependencies are represented by the ordered phase chain; all intra-phase edges match exactly.
 

@@ -1,5 +1,6 @@
 using Csharp2Md.Core.Analysis;
 using Csharp2Md.Core.PackageBuilding;
+using Csharp2Md.Core.PackageBuilding.Rendering;
 using Csharp2Md.Core.Publication;
 using Csharp2Md.Core.Publication.Certification;
 
@@ -37,16 +38,62 @@ public sealed class GraphJourneyCertifierTests
         using var package = Package([Dependency(DependencyCategory.Persistence)], [Measure([new ImpactTarget(new EntityHandle("component:caller"), 1)])]);
         Assert.Equal(JourneyCertificationStatus.Passed, Impact(package).Status);
     }
-    [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithAMessagingRootAndNoContractStillFails()
+    [Fact][Trait("Requirement", "CRT-02")] public void Certify_FlowWithAMessagingRootAndNoContractIsNotApplicable()
     {
         using var package = Package([Dependency(DependencyCategory.Messaging), Dependency(DependencyCategory.Persistence)]);
+        var result = Flow(package);
+        Assert.Equal(JourneyCertificationStatus.NotApplicable, result.Status);
+        Assert.Equal("not_applicable:absent-terminal:contracts", result.Detail);
+    }
+    [Fact][Trait("Requirement", "CRT-02")] public void Certify_FlowWithoutContractIsNotApplicable()
+    {
+        using var package = Package([Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Http)]);
+        var result = Flow(package);
+        Assert.Equal(JourneyCertificationStatus.NotApplicable, result.Status);
+        Assert.Equal("not_applicable:absent-terminal:contracts", result.Detail);
+    }
+    [Fact][Trait("Requirement", "CRT-02")] public void Certify_FlowWithoutPersistenceIsNotApplicable()
+    {
+        using var package = Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Http)]);
+        var result = Flow(package);
+        Assert.Equal(JourneyCertificationStatus.NotApplicable, result.Status);
+        Assert.Equal("not_applicable:absent-terminal:persistence", result.Detail);
+    }
+    [Fact][Trait("Requirement", "CRT-02")] public void Certify_FlowWithoutExternalEffectIsNotApplicable()
+    {
+        using var package = Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence)]);
+        var result = Flow(package);
+        Assert.Equal(JourneyCertificationStatus.NotApplicable, result.Status);
+        Assert.Equal("not_applicable:absent-terminal:external-effects", result.Detail);
+    }
+    [Fact][Trait("Requirement", "CRT-02")] public void Certify_FlowNamesEveryAbsentTerminalAtOnce()
+    {
+        using var package = Package([Dependency(DependencyCategory.Contract)]);
+        var result = Flow(package);
+        Assert.Equal(JourneyCertificationStatus.NotApplicable, result.Status);
+        Assert.Equal("not_applicable:absent-terminal:persistence,external-effects", result.Detail);
+    }
+    [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithAnUnreachableContractsIndexFails()
+    {
+        using var package = Package(AllTerminals(), broken: NavigationIndexKind.Contracts);
         var result = Flow(package);
         Assert.Equal(JourneyCertificationStatus.Failed, result.Status);
         Assert.Equal("missing-terminal:contracts", result.Detail);
     }
-    [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutContractFails() => Assert.Contains("contracts", Flow(Package([Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Http)])).Detail);
-    [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutPersistenceFails() => Assert.Contains("persistence", Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Http)])).Detail);
-    [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithoutExternalEffectFails() => Assert.Contains("external-effects", Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence)])).Detail);
+    [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowWithAnUnreachablePersistenceIndexFails()
+    {
+        using var package = Package(AllTerminals(), broken: NavigationIndexKind.Persistence);
+        var result = Flow(package);
+        Assert.Equal(JourneyCertificationStatus.Failed, result.Status);
+        Assert.Equal("missing-terminal:persistence", result.Detail);
+    }
+    [Fact][Trait("Requirement", "CRT-01")] public void Certify_FlowFailureOutranksAnAbsentTerminal()
+    {
+        using var package = Package([Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Http)], broken: NavigationIndexKind.Persistence);
+        var result = Flow(package);
+        Assert.Equal(JourneyCertificationStatus.Failed, result.Status);
+        Assert.Equal("missing-terminal:persistence", result.Detail);
+    }
     [Fact][Trait("Requirement", "CRT-01")] public void Certify_ImpactWithoutReachableSetFails() => Assert.Contains("reachable-set", Impact(Package(dependencies: [Dependency(DependencyCategory.Contract)], measures: [Measure([])])).Detail);
     [Fact][Trait("Requirement", "NAV-08")] public void Certify_FlowAcceptsGrpcAsExternalEffect() => Assert.Equal(JourneyCertificationStatus.Passed, Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Grpc)])).Status);
     [Fact][Trait("Requirement", "NAV-08")] public void Certify_FlowAcceptsMessagingAsExternalEffect() => Assert.Equal(JourneyCertificationStatus.Passed, Flow(Package([Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Messaging)])).Status);
@@ -71,7 +118,7 @@ public sealed class GraphJourneyCertifierTests
     private static ImmutableArray<AggregatedDependency> AllTerminals() => [Dependency(DependencyCategory.Contract), Dependency(DependencyCategory.Persistence), Dependency(DependencyCategory.Http)];
     private static AggregatedDependency Dependency(DependencyCategory category) => new(AggregationScope.Component, new EntityHandle("component:orders"), new EntityHandle("component:target"), category, DependencyNature.Direct, 1, [], [], []);
     private static ScopeMeasures Measure(ImmutableArray<ImpactTarget> impact) => new(AggregationScope.Component, new EntityHandle("component:orders"), 0, 1, 0, [], impact, new GapCounts(0, 0, 0));
-    private static TempPackage Package(ImmutableArray<AggregatedDependency> dependencies = default, ImmutableArray<ScopeMeasures> measures = default, ImmutableArray<EntityHandle> roots = default)
+    private static TempPackage Package(ImmutableArray<AggregatedDependency> dependencies = default, ImmutableArray<ScopeMeasures> measures = default, ImmutableArray<EntityHandle> roots = default, NavigationIndexKind? broken = null)
     {
         var package = new TempPackage();
         var model = new RetrievalModel([new SolutionRetrievalModel(
@@ -79,9 +126,16 @@ public sealed class GraphJourneyCertifierTests
             roots.IsDefault ? [new EntityHandle("component:orders")] : roots,
             dependencies.IsDefault ? [] : dependencies,
             measures.IsDefault ? [] : measures)]);
-        foreach (var artifact in PackageBuilder.Build(model).Artifacts)
+        var plan = PackageBuilder.Build(model);
+        // A package whose corpus does hold the terminal but whose index cannot reach it: the entries are
+        // emptied, leaving the retained graph unchanged, so only navigation is defective.
+        var brokenPath = broken is null ? null : plan.Manifest.Solutions.Single().Indexes.Single(index => index.Kind == broken).EntryPath;
+        foreach (var artifact in plan.Artifacts)
         {
-            package.Write(artifact.Path.Value, artifact.Payload);
+            var payload = artifact.Path.Value == brokenPath
+                ? CanonicalJson.WriteCompact(CanonicalJson.Read<NavigationIndexData>(artifact.Payload.AsSpan()) with { Entries = [] })
+                : artifact.Payload;
+            package.Write(artifact.Path.Value, payload);
         }
 
         return package;

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaB.Infraestrutura</RootNamespace>
+    <AssemblyName>SistemaB.Infraestrutura</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaB.Aplicacao\SistemaB.Aplicacao.csproj" />
+    <ProjectReference Include="..\SistemaB.Dominio\SistemaB.Dominio.csproj" />
+    <ProjectReference Include="..\SistemaB.Transversal\SistemaB.Transversal.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+</Project>

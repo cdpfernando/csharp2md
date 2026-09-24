@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaB.Composicao</RootNamespace>
+    <AssemblyName>SistemaB.Composicao</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaB.Aplicacao\SistemaB.Aplicacao.csproj" />
+    <ProjectReference Include="..\SistemaB.Infraestrutura\SistemaB.Infraestrutura.csproj" />
+    <ProjectReference Include="..\SistemaB.Transversal\SistemaB.Transversal.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+</Project>

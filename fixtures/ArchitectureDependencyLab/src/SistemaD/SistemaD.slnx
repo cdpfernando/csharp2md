@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="SistemaD.Api/SistemaD.Api.csproj" />
+  <Project Path="SistemaD.Aplicacao/SistemaD.Aplicacao.csproj" />
+  <Project Path="SistemaD.Infraestrutura/SistemaD.Infraestrutura.csproj" />
+  <Project Path="SistemaD.Nucleo/SistemaD.Nucleo.csproj" />
+  <Project Path="SistemaD.Testes/SistemaD.Testes.csproj" />
+</Solution>

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SistemaB.Dominio</RootNamespace>
+    <AssemblyName>SistemaB.Dominio</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaB.Transversal\SistemaB.Transversal.csproj" />
+  </ItemGroup>
+</Project>

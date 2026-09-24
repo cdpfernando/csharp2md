@@ -56,6 +56,66 @@ public sealed class CausalRelationExtractorTests
     }
 
     [Fact]
+    [Trait("Requirement", "PKG-05")]
+    public void Extract_InternalInvocation_ToABclMethod_IsNotRetained()
+    {
+        var result = Extract("class Sample { void Source() { \"x\".Trim(); } }");
+
+        Assert.DoesNotContain(result.Relations, relation => relation.Category == "internal-invocation");
+        Assert.DoesNotContain(result.Entities, entity => entity.DisplayName == "Trim");
+    }
+
+    [Fact]
+    [Trait("Requirement", "PKG-05")]
+    public void Extract_StructuralTypeUse_OfABclType_IsNotRetained()
+    {
+        var result = Extract("class Sample { void Source(string value) { } }");
+
+        Assert.DoesNotContain(result.Relations, relation => relation.Category == "structural-type-use");
+        Assert.DoesNotContain(result.Entities, entity => entity.DisplayName == "string" || entity.QualifiedName == "string");
+    }
+
+    [Fact]
+    [Trait("Requirement", "DEP-01")]
+    public void Extract_InternalInvocation_ToAMethodInAReferencedInSolutionProject_IsStillRetained()
+    {
+        // A same-solution ProjectReference is a CompilationReference: the referenced compilation's
+        // symbols keep their real source location, unlike a symbol from an external MetadataReference
+        // (BCL, NuGet). This must not be swept up by the BCL/framework exclusion.
+        var solution = CanonicalIdentity.CreateSolution("causal", "src/Causal.slnx");
+        var sharedProject = CanonicalIdentity.CreateProject(solution, "src/Shared/Shared.csproj");
+        var sharedTree = CSharpSyntaxTree.ParseText("public class Shared { public void Target() { } }", path: "src/Shared/Shared.cs");
+        var sharedCompilation = CSharpCompilation.Create(
+            "Shared",
+            [sharedTree],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var project = CanonicalIdentity.CreateProject(solution, "src/App/App.csproj");
+        var appTree = CSharpSyntaxTree.ParseText("class Sample { void Source(Shared shared) => shared.Target(); }", path: "src/App/Sample.cs");
+        var appCompilation = CSharpCompilation.Create(
+            "App",
+            [appTree],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location), sharedCompilation.ToMetadataReference()],
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var result = CausalRelationExtractor.Extract(new CausalRelationExtractionInput(
+            solution,
+            project,
+            CanonicalIdentity.CreateVariant("net10.0", "Release", [], "ci"),
+            appCompilation,
+            [sharedProject],
+            [new ReferencedProjectCompilation(sharedProject, sharedCompilation)]));
+
+        Assert.Contains(result.Relations, relation => relation.Category == "internal-invocation");
+        var target = Assert.Single(result.Entities.Where(entity => entity.DisplayName == "Target"));
+        // DEP-01: the shared method belongs to its own project, not to every root that calls it -
+        // otherwise Component/DeploymentUnit-scope lifting would fan its membership out to every caller.
+        var occurrence = Assert.Single(result.Occurrences.Where(occurrence => occurrence.EntityCanonicalKey == target.CanonicalKey));
+        Assert.Equal(sharedProject.CanonicalKey, occurrence.Project.CanonicalKey);
+    }
+
+    [Fact]
     [Trait("Requirement", "DEP-02")]
     public void Extract_HttpLiteral_EmitsHttpRelationToObservedDestination()
     {
@@ -169,6 +229,101 @@ public sealed class CausalRelationExtractorTests
         Assert.Contains(result.Evidence, evidence => evidence.CanonicalKey == gap.EvidenceCanonicalKeys[0]);
     }
 
+    [Fact]
+    [Trait("Requirement", "DEP-01")]
+    public void Extract_TopLevelEntryPointsInDifferentProjects_DoNotCollideIntoOneEntity()
+    {
+        // Roslyn renders every top-level-statements entry point with the exact same display string
+        // ("<top-level-statements-entry-point>"), regardless of project or assembly. Measured on the real
+        // eShop corpus: every host project's own Program.cs collided onto this one shared entity, whose
+        // membership then spanned every host and fanned Component-scope lifting out through it.
+        var solution = CanonicalIdentity.CreateSolution("causal", "src/Causal.slnx");
+
+        CausalRelationExtractionResult ExtractTopLevel(string projectPath)
+        {
+            var project = CanonicalIdentity.CreateProject(solution, projectPath);
+            var tree = CSharpSyntaxTree.ParseText("System.Console.WriteLine(\"hi\");", path: projectPath.Replace(".csproj", "/Program.cs"));
+            var compilation = CSharpCompilation.Create(
+                "Service",
+                [tree],
+                [MetadataReference.CreateFromFile(typeof(object).Assembly.Location), MetadataReference.CreateFromFile(typeof(Console).Assembly.Location)],
+                new CSharpCompilationOptions(OutputKind.ConsoleApplication));
+            return CausalRelationExtractor.Extract(new CausalRelationExtractionInput(
+                solution,
+                project,
+                CanonicalIdentity.CreateVariant("net10.0", "Release", [], "ci"),
+                compilation,
+                [],
+                []));
+        }
+
+        var first = ExtractTopLevel("src/ServiceA/ServiceA.csproj");
+        var second = ExtractTopLevel("src/ServiceB/ServiceB.csproj");
+
+        var firstEntry = Assert.Single(first.Entities.Where(entity => entity.Kind == EntityKind.Callable));
+        var secondEntry = Assert.Single(second.Entities.Where(entity => entity.Kind == EntityKind.Callable));
+        // Same display string - Roslyn's synthesized name carries no project identity...
+        Assert.Equal(firstEntry.QualifiedName, secondEntry.QualifiedName);
+        // ...but distinct canonical keys, because each is qualified by its own owning project.
+        Assert.NotEqual(firstEntry.CanonicalKey, secondEntry.CanonicalKey);
+    }
+
+    [Fact]
+    [Trait("Requirement", "DEP-01")]
+    public void Extract_ProjectReference_EvidenceKeyNamesBothTheCitingRootAndTheTarget()
+    {
+        // Two different roots each reference the same target. Before the fix, the evidence payload named
+        // only the target, so both roots hashed to the same evidence key and Assemble's DistinctBy kept
+        // only one root's document - silently reattributing the other root's edge to it.
+        var solution = CanonicalIdentity.CreateSolution("causal", "src/Causal.slnx");
+        var target = CanonicalIdentity.CreateProject(solution, "src/Shared/Shared.csproj");
+        var first = ExtractForRoot(solution, "src/Api/Api.csproj", target);
+        var second = ExtractForRoot(solution, "src/Worker/Worker.csproj", target);
+
+        var firstEvidence = Assert.Single(first.Relations.Where(relation => relation.Category == "project-reference")).EvidenceCanonicalKeys;
+        var secondEvidence = Assert.Single(second.Relations.Where(relation => relation.Category == "project-reference")).EvidenceCanonicalKeys;
+
+        Assert.NotEqual(firstEvidence[0], secondEvidence[0]);
+        Assert.Equal(
+            CanonicalIdentity.CreateDocumentKey(solution, "src/Api/Api.csproj"),
+            Assert.Single(first.Evidence).DocumentCanonicalKey);
+        Assert.Equal(
+            CanonicalIdentity.CreateDocumentKey(solution, "src/Worker/Worker.csproj"),
+            Assert.Single(second.Evidence).DocumentCanonicalKey);
+    }
+
+    [Fact]
+    [Trait("Requirement", "DEP-01")]
+    public void Extract_ProjectReference_TargetEntityOccursInItselfNotInTheCitingRoot()
+    {
+        var solution = CanonicalIdentity.CreateSolution("causal", "src/Causal.slnx");
+        var target = CanonicalIdentity.CreateProject(solution, "src/Shared/Shared.csproj");
+        var result = ExtractForRoot(solution, "src/Api/Api.csproj", target);
+
+        var targetEntity = Assert.Single(result.Entities.Where(entity => entity.Kind == EntityKind.Project && entity.QualifiedName == "src/Shared/Shared.csproj"));
+        var occurrence = Assert.Single(result.Occurrences.Where(occurrence => occurrence.EntityCanonicalKey == targetEntity.CanonicalKey));
+        Assert.Equal(target.CanonicalKey, occurrence.Project.CanonicalKey);
+    }
+
+    private static CausalRelationExtractionResult ExtractForRoot(SolutionIdentity solution, string rootPath, ProjectIdentity referenced)
+    {
+        var project = CanonicalIdentity.CreateProject(solution, rootPath);
+        var tree = CSharpSyntaxTree.ParseText("class Sample { }", path: rootPath.Replace(".csproj", ".cs"));
+        var compilation = CSharpCompilation.Create(
+            "Root",
+            [tree],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        return CausalRelationExtractor.Extract(new CausalRelationExtractionInput(
+            solution,
+            project,
+            CanonicalIdentity.CreateVariant("net10.0", "Release", [], "ci"),
+            compilation,
+            [referenced],
+            []));
+    }
+
     private static CausalRelationExtractionResult Extract(string source)
     {
         var solution = CanonicalIdentity.CreateSolution("causal", "src/Causal.slnx");
@@ -186,6 +341,7 @@ public sealed class CausalRelationExtractorTests
             project,
             CanonicalIdentity.CreateVariant("net10.0", "Release", [], "ci"),
             compilation,
-            [referenced]));
+            [referenced],
+            []));
     }
 }

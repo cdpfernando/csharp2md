@@ -1,0 +1,12 @@
+<Solution>
+  <Project Path="SistemaE.Copia.Api/SistemaE.Copia.Api.csproj" />
+  <Project Path="SistemaE.Copia.Aplicacao/SistemaE.Copia.Aplicacao.csproj" />
+  <Project Path="SistemaE.Copia.Formalizacao/SistemaE.Copia.Formalizacao.csproj" />
+  <Project Path="SistemaE.Copia.Identificacao/SistemaE.Copia.Identificacao.csproj" />
+  <Project Path="SistemaE.Copia.Infraestrutura/SistemaE.Copia.Infraestrutura.csproj" />
+  <Project Path="SistemaE.Copia.Nucleo/SistemaE.Copia.Nucleo.csproj" />
+  <Project Path="SistemaE.Copia.Oferta/SistemaE.Copia.Oferta.csproj" />
+  <Project Path="SistemaE.Copia.PosProcessamento/SistemaE.Copia.PosProcessamento.csproj" />
+  <Project Path="SistemaE.Copia.Testes/SistemaE.Copia.Testes.csproj" />
+  <Project Path="SistemaE.Copia.Validacao/SistemaE.Copia.Validacao.csproj" />
+</Solution>

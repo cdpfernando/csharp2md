@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- SCENARIO:STR-003 -->
+    <RootNamespace>SistemaE.Copia.Identificacao</RootNamespace>
+    <AssemblyName>SistemaE.Copia.Identificacao</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaE.Copia.Nucleo\SistemaE.Copia.Nucleo.csproj" />
+    <ProjectReference Include="..\SistemaE.Copia.Infraestrutura\SistemaE.Copia.Infraestrutura.csproj" />
+  </ItemGroup>
+</Project>

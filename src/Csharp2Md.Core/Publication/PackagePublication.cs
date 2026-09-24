@@ -40,6 +40,7 @@ internal static class PackagePublication
             if (certification.Solutions.SelectMany(solution => solution.Journeys).Any(journey => journey.Status == JourneyCertificationStatus.Failed)) throw new PackagePublicationException("journey-certification");
             Write(staging, "certification.json", CanonicalJson.Write(certification));
             EnsureValid(staging);
+            EnsureWithinBudget(plan, staging);
             var generation = Path.Combine(output, "generations", plan.PackageDigest);
             Directory.CreateDirectory(Path.GetDirectoryName(generation)!);
             if (Directory.Exists(generation)) Directory.Delete(generation, recursive: true);
@@ -55,6 +56,34 @@ internal static class PackagePublication
     internal static PackageValidationReport Validate(string packageDirectory) => PackageValidator.Validate(packageDirectory);
 
     private static FileStream AcquireLock(string output) => new(Path.Combine(output, "package.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+    // EDG-03 refuses a package that exceeds its corpus ceiling "antes da troca atomica", and this is the only
+    // point where the committed bytes are actually known: publication replaces the plan's reserved
+    // certification.json with the real certification, which is larger, and adds the root manifest.json pointer
+    // outside the generation. PackageBuilder's check stays as a cheap early gate; this one is authoritative.
+    // The ceiling travels on the plan, in the CorpusMeasurement T61 added for exactly this kind of question.
+    private static void EnsureWithinBudget(PackagePlan plan, string staging)
+    {
+        var corpus = plan.Measurements.Corpus;
+        if (corpus is null)
+        {
+            return;
+        }
+
+        var staged = Directory.EnumerateFiles(staging, "*", SearchOption.AllDirectories).Select(static path => new FileInfo(path).Length).ToArray();
+        var pointerBytes = CanonicalJson.Write(new PackageGenerationPointer(plan.PackageDigest)).Length;
+        var artifacts = staged.Length + 1;
+        var bytes = staged.Sum() + pointerBytes;
+        if (artifacts > corpus.MaximumArtifacts)
+        {
+            throw new PackagePublicationException($"package-budget:artifacts:{artifacts}>{corpus.MaximumArtifacts}");
+        }
+
+        if (bytes > corpus.MaximumBytes)
+        {
+            throw new PackagePublicationException($"package-budget:bytes:{bytes}>{corpus.MaximumBytes}");
+        }
+    }
+
     private static void EnsureValid(string directory)
     {
         var report = PackageValidator.Validate(directory);

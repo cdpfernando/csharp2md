@@ -1,0 +1,29 @@
+# SCENARIO:HOST-001
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sistema-d-api
+  labels:
+    app: sistema-d
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sistema-d
+  template:
+    metadata:
+      labels:
+        app: sistema-d
+    spec:
+      containers:
+      - name: api
+        image: synthetic-registry.local/sistema-d:1.0.0
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ConnectionStrings__Primary
+          value: "Data Source=synthetic_data.db"
+        - name: Authentication__ClientSecret
+          value: "NOT_A_REAL_SECRET_ROTATE_ME"

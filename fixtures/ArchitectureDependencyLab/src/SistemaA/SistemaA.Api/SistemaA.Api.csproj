@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>SistemaA.Api</RootNamespace>
+    <AssemblyName>SistemaA.Api</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SCENARIO:NEG-001 -->
+    <!-- SCENARIO:NEG-003 -->
+    <ProjectReference Include="..\SistemaA.Aplicacao\SistemaA.Aplicacao.csproj" />
+  </ItemGroup>
+</Project>

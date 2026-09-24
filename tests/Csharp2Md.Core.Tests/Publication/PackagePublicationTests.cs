@@ -47,6 +47,54 @@ public sealed class PackagePublicationTests
         Assert.Equal("markdown", rejection.Family);
         Assert.False(File.Exists(Path.Combine(output.Path, "manifest.json")));
     }
+    // Anchors the builder's arithmetic to what a reader actually counts. LocalCorpusAnalyzeTests measures the
+    // generation directory plus the root pointer against CRT-04 and CRT-05; this asserts the builder's ceiling
+    // is applied to that same number, so the two cannot drift apart while the corpus clones are absent.
+    [Fact][Trait("Requirement", "CRT-04")] public void Publish_CommittedFileCountMatchesWhatTheCeilingIsAppliedTo()
+    {
+        using var output = new TempOutput();
+        var plan = Plan();
+
+        PackagePublication.Publish(plan, output.Path);
+
+        var onDisk = Directory.EnumerateFiles(Path.Combine(output.Path, "generations", plan.PackageDigest), "*", SearchOption.AllDirectories)
+            .Append(Path.Combine(output.Path, "manifest.json"))
+            .ToArray();
+        Assert.Equal(plan.Artifacts.Length + 1, onDisk.Length);
+
+        // The committed bytes exceed the plan's own, because publication replaces the reserved
+        // certification.json with the real certification. That is why the authoritative ceiling check runs at
+        // publication rather than at plan time.
+        Assert.True(
+            onDisk.Sum(path => new FileInfo(path).Length) > plan.Artifacts.Sum(artifact => (long)artifact.Payload.Length),
+            "the committed package is not larger than its plan, so the certification was not written");
+    }
+
+    // The authoritative EDG-03 check: a ceiling the committed package breaks is refused before the atomic swap,
+    // even when the plan itself fitted. The diagnostic names the measured total and the limit it broke.
+    [Fact][Trait("Requirement", "EDG-03")] public void Publish_RefusesTheCommittedPackageBeyondItsCeilingBeforeTheSwap()
+    {
+        using var output = new TempOutput();
+        var plan = Plan();
+        var tight = new PackagePlan(
+            plan.Manifest,
+            plan.Artifacts,
+            plan.PackageDigest,
+            new PublicationMeasurements(
+                plan.Measurements.Extraction,
+                plan.Measurements.PublishedArtifactCount,
+                plan.Measurements.FilteredByReason,
+                plan.Measurements.ByFamily,
+                plan.Measurements.BySolution,
+                new CorpusMeasurement("pitstop.sln", plan.Measurements.Corpus!.ArtifactCount, plan.Measurements.Corpus!.Bytes, int.MaxValue, 1)));
+
+        var rejection = Assert.Throws<PackagePublicationException>(() => PackagePublication.Publish(tight, output.Path));
+
+        Assert.Contains("package-budget:bytes:", rejection.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Combine(output.Path, "manifest.json")));
+        Assert.False(Directory.Exists(Path.Combine(output.Path, "generations")));
+    }
+
     [Fact][Trait("Requirement", "PUB-05")] public void Publish_FailureBeforeCommitLeavesNoManifest() { using var output = new TempOutput(); Assert.Throws<PackagePublicationException>(() => PackagePublication.Publish(new PackagePlan(Plan().Manifest, [new PlannedArtifact(new RelativeArtifactPath("manifest.json"), ArtifactFamily.Manifest, CanonicalJson.Write(Plan().Manifest), 1, "digest")], "bad", Plan().Measurements), output.Path)); Assert.False(File.Exists(Path.Combine(output.Path, "manifest.json"))); }
     [Fact][Trait("Requirement", "PUB-01")] public void Publish_CreatesImmutableGeneration() { using var output = new TempOutput(); var plan = Plan(); PackagePublication.Publish(plan, output.Path); Assert.True(Directory.Exists(Path.Combine(output.Path, "generations", plan.PackageDigest))); }
     [Fact][Trait("Requirement", "PUB-04")] public void Publish_RootManifestExistsAfterCommit() { using var output = new TempOutput(); PackagePublication.Publish(Plan(), output.Path); Assert.True(File.Exists(Path.Combine(output.Path, "manifest.json"))); }
@@ -64,14 +112,15 @@ public sealed class PackagePublicationTests
     [Fact][Trait("Requirement", "PUB-04")] public void Publish_ValidationHasNoInterpretationDifference() { using var output = new TempOutput(); PackagePublication.Publish(Plan(), output.Path); Assert.True(PackagePublication.Validate(output.Path).Succeeded); }
     [Fact][Trait("Requirement", "PUB-05")] public void Publish_UsesExclusiveLockFile() { using var output = new TempOutput(); PackagePublication.Publish(Plan(), output.Path); Assert.True(File.Exists(Path.Combine(output.Path, "package.lock"))); }
     private static PackagePlan Plan(string solution = "app") => PackageBuilder.Build(Model(solution));
-    // A solution whose only causal fact is an outgoing HTTP call has a flow root but neither a contract
-    // nor a persistence terminal, so JourneyCertifier fails follow_flow and Publish must stop before the swap.
+    // A solution with an incoming contract edge makes reverse_impact applicable, but its only measured scope
+    // carries no reachable set, so the journey has a question it cannot answer: JourneyCertifier fails
+    // reverse_impact and Publish must stop before the swap.
     private static RetrievalModel Uncertifiable() =>
         new([new SolutionRetrievalModel(
             CanonicalIdentity.CreateSolution("app", "src/app.sln"),
             [new EntityHandle("component:orders")],
-            [new AggregatedDependency(AggregationScope.Component, new EntityHandle("component:orders"), new EntityHandle("component:payments"), DependencyCategory.Http, DependencyNature.Direct, 1, [], [], [])],
-            [])]);
+            [new AggregatedDependency(AggregationScope.Component, new EntityHandle("component:orders"), new EntityHandle("component:payments"), DependencyCategory.Contract, DependencyNature.Direct, 1, [], [], [])],
+            [new ScopeMeasures(AggregationScope.Component, new EntityHandle("component:orders"), 0, 1, 0, [], [], new GapCounts(0, 0, 0))])]);
     private static RetrievalModel Model(string solution = "app") =>
         new([new SolutionRetrievalModel(
             CanonicalIdentity.CreateSolution(solution, $"src/{solution}.sln"),

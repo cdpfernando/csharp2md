@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Csharp2Md.Core.Analysis;
+using Csharp2Md.Core.Analysis.Inventory;
 using Csharp2Md.Core.PackageBuilding.Measures;
 using Csharp2Md.Core.PackageBuilding.Rendering;
 using Csharp2Md.Core.PackageBuilding.Retention;
@@ -123,8 +124,20 @@ internal static class PackageBuilder
         payloads = payloads.Add(Artifact("certification.json", ArtifactFamily.Certification, new PackageCertification([]), 0));
         payloads = payloads.Add(CompactArtifact("manifest.json", ArtifactFamily.Manifest, machine.Manifest, 1));
         var ordered = payloads.OrderBy(artifact => artifact.Path.Value, StringComparer.Ordinal).ToImmutableArray();
-        var bytes = ordered.Sum(artifact => (long)artifact.Payload.Length);
-        if (ordered.Length > budget.MaximumArtifacts)
+        var digest = Digest(ordered);
+
+        // The ceiling binds the committed package, which `design.md:530` defines as "o manifest e artefatos
+        // alcancaveis da geracao committed". Publication writes one more file than the plan carries: the root
+        // manifest.json pointer, outside the generation directory. Measuring the plan alone let a package of
+        // exactly the ceiling commit as ceiling + 1, which is what LocalCorpusAnalyzeTests counts on disk.
+        //
+        // This remains a cheap early gate, not the authoritative one: publication also replaces the reserved
+        // certification.json with the real certification, which is larger, so the committed byte total is not
+        // knowable here. PackagePublication.EnsureWithinBudget re-checks both before the atomic swap.
+        var pointerBytes = CanonicalJson.Write(new PackageGenerationPointer(digest)).Length;
+        var committedArtifacts = ordered.Length + 1;
+        var bytes = ordered.Sum(artifact => (long)artifact.Payload.Length) + pointerBytes;
+        if (committedArtifacts > budget.MaximumArtifacts)
         {
             throw new PackageBudgetExceededException("artifacts", measurement.Corpus!.Corpus, measurement.ByFamily);
         }
@@ -134,7 +147,7 @@ internal static class PackageBuilder
             throw new PackageBudgetExceededException("bytes", measurement.Corpus!.Corpus, measurement.ByFamily);
         }
 
-        return new PackagePlan(machine.Manifest, ordered, Digest(ordered), measurement);
+        return new PackagePlan(machine.Manifest, ordered, digest, measurement);
     }
 
     // Attribution is the "solutions/{id}/" path prefix the writers already lay out. Artifacts belonging to no
@@ -167,10 +180,10 @@ internal static class PackageBuilder
 
     private static SolutionRetrievalModel BuildSolution(FactualGraph graph, bool includeTests)
     {
-        var retained = RetentionPolicy.Apply(graph, RetainedGraphBuilder.Build(graph), includeTests);
+        var retained = RetentionPolicy.Apply(graph, RetainedGraphBuilder.Build(graph, includeTests), includeTests);
         var evidence = retained.Evidence.ToDictionary(static item => item.CanonicalKey, StringComparer.Ordinal);
-        var memberships = BuildMemberships(graph, retained);
-        var projectsByDocument = BuildProjectsByDocument(graph);
+        var memberships = BuildMemberships(graph, retained, includeTests);
+        var projectsByDocument = BuildProjectsByDocument(graph, includeTests);
         var contributions = retained.Relations.SelectMany(relation =>
             Contributions(relation, evidence, memberships, projectsByDocument));
         var dependencies = DependencyAggregator.Aggregate(contributions);
@@ -270,8 +283,8 @@ internal static class PackageBuilder
     }
 
     private static IReadOnlyDictionary<string, ImmutableArray<EntityHandle>> BuildProjectsByDocument(
-        FactualGraph graph) =>
-        graph.Occurrences
+        FactualGraph graph, bool includeTests) =>
+        NonTestOccurrences(graph, includeTests)
             .GroupBy(
                 occurrence => CanonicalIdentity.CreateDocumentKey(graph.Solution, occurrence.Locator.RelativePath),
                 StringComparer.Ordinal)
@@ -280,12 +293,23 @@ internal static class PackageBuilder
                 static group => Handles(group.Select(static occurrence => occurrence.Project.CanonicalKey)),
                 StringComparer.Ordinal);
 
+    // PKG-05 excludes tests by default: an entity genuinely retained through a real, production relation
+    // must not have its Document/Project/Component/DeploymentUnit membership widened by an occurrence
+    // recorded while analysing a test project as its own root (e.g. a shared symbol also called from a
+    // test file). Filtering the raw occurrences once here, before any membership is derived from them, is
+    // what RetainedGraphBuilder/RetentionPolicy already do for roots and incoming edges - this closes the
+    // same gap at the aggregation seam.
+    private static IEnumerable<VariantOccurrence> NonTestOccurrences(FactualGraph graph, bool includeTests) =>
+        includeTests ? graph.Occurrences : graph.Occurrences.Where(static occurrence => !SourceInventory.IsTestProject(occurrence.Project));
+
     private static IReadOnlyDictionary<string, EntityMembership> BuildMemberships(
         FactualGraph graph,
-        RetainedGraph retained)
+        RetainedGraph retained,
+        bool includeTests)
     {
         var retainedKeys = retained.Entities.Select(static entity => entity.CanonicalKey).ToHashSet(StringComparer.Ordinal);
-        var occurrences = graph.Occurrences
+        var scoped = NonTestOccurrences(graph, includeTests).ToImmutableArray();
+        var occurrences = scoped
             .Where(occurrence => retainedKeys.Contains(occurrence.EntityCanonicalKey))
             .GroupBy(static occurrence => occurrence.EntityCanonicalKey, StringComparer.Ordinal)
             .ToDictionary(static group => group.Key, static group => group.ToArray(), StringComparer.Ordinal);
@@ -312,7 +336,7 @@ internal static class PackageBuilder
             StringComparer.Ordinal);
 
         Dictionary<string, ImmutableArray<string>> RootsByProject(EntityKind kind) =>
-            graph.Occurrences
+            scoped
                 .Where(occurrence => retainedKeys.Contains(occurrence.EntityCanonicalKey)
                     && kinds.GetValueOrDefault(occurrence.EntityCanonicalKey) == kind)
                 .GroupBy(static occurrence => occurrence.Project.CanonicalKey, StringComparer.Ordinal)
